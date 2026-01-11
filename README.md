@@ -77,6 +77,7 @@ Quick links:
 |-------------- |----------------|
 | Bobby Chan    | bobbyc@sfu.ca  |
 | Dingsong Zhou | dza68@sfu.ca   |
+| Ran Wang      | rwa122@sfu.ca  |
 
 ---
 
