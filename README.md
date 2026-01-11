@@ -32,6 +32,11 @@ This guide covers:
 - Backend setup: `docs/backend.md`
 - Workflow and standards: `docs/workflow.md`
 
+Quick links:
+<a href="docs/frontend.md"><kbd>Frontend Docs</kbd></a>
+<a href="docs/backend.md"><kbd>Backend Docs</kbd></a>
+<a href="docs/workflow.md"><kbd>Workflow Docs</kbd></a>
+
 ---
 
 ## 🧱 Project Structure
@@ -42,6 +47,7 @@ This guide covers:
 - `src/lib`: Shared utilities and services
 - `src/middlewares`: Request/response middleware
 - `src/types`: Shared types and interfaces
+- `database`: Database scripts, seeds, and init files
 - `docs`: Project documentation and onboarding notes
 
 ---
