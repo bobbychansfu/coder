@@ -9,6 +9,7 @@ Each student creates a base branch from `main`, then creates feature sub-branche
 Branch example:
 `Spring-2026/students/dza68`
 
+```
 flowchart TD
     A[main branch (protected)] -->|create student base| B[Spring-2026/students/dza68]
 
