@@ -1,0 +1,49 @@
+.card {
+  background-color: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 170px;
+}
+
+.title {
+  font-family: Inter, sans-serif;
+  font-size: 18px;
+  line-height: 28px;
+  font-weight: 700;
+  color: #0a0a0a;
+  letter-spacing: -0.4395px;
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid #ffd6a7;
+  background-color: #fff7ed;
+  color: #f54900;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+.status {
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  color: #4a5565;
+  letter-spacing: -0.1504px;
+}

@@ -1,0 +1,77 @@
+.card {
+  background-color: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 142px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title {
+  font-family: Inter, sans-serif;
+  font-size: 18px;
+  line-height: 28px;
+  font-weight: 700;
+  color: #0a0a0a;
+  letter-spacing: -0.4395px;
+}
+
+.solved {
+  font-size: 20px;
+  color: #00a63e;
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  text-transform: capitalize;
+}
+
+.badgeEasy {
+  background-color: #f0fdf4;
+  border: 1px solid #b9f8cf;
+  color: #00a63e;
+}
+
+.badgeMedium {
+  background-color: #fff7ed;
+  border: 1px solid #ffd6a7;
+  color: #f54900;
+}
+
+.badgeHard {
+  background-color: #fef2f2;
+  border: 1px solid #ffc9c9;
+  color: #e7000b;
+}
+
+.points {
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  color: #4a5565;
+  letter-spacing: -0.1504px;
+}
