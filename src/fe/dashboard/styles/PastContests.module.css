@@ -1,0 +1,38 @@
+.container {
+  width: 100%;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.title {
+  font-family: Inter, sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: #1a1a1a;
+}
+
+.viewAll {
+  color: #1a1a1a;
+  text-decoration: none;
+  font-family: Inter, sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.viewAll:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}

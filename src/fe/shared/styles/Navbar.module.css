@@ -1,0 +1,120 @@
+.navbar {
+  background-color: white;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 1100;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 32px;
+  height: 64px;
+  min-height: 64px;
+}
+
+@media (max-width: 768px) {
+  .toolbar {
+    padding: 0 16px;
+  }
+}
+
+.logo {
+  font-weight: 800;
+  font-size: 24px;
+  font-family: Inter, sans-serif;
+  color: #e7000b;
+  letter-spacing: 0.0703px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.leftGroup {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.navLinks {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .navLinks {
+    display: none;
+  }
+}
+
+.navLink {
+  color: #0a0a0a;
+  text-transform: none;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  padding: 8px 16px;
+  font-family: Inter, sans-serif;
+  text-decoration: none;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  height: 36px;
+  letter-spacing: -0.1504px;
+}
+
+.navLink:hover {
+  background-color: #f3f4f6;
+}
+
+.navLinkActive {
+  background-color: #f3f4f6;
+}
+
+.navLinkAdmin {
+  color: #e7000b;
+}
+
+.navLinkAdmin:hover {
+  background-color: #f3f4f6;
+}
+
+.profileButton {
+  color: #e7000b;
+  text-transform: none;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  padding: 8px 16px;
+  font-family: Inter, sans-serif;
+  text-decoration: none;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  height: 36px;
+  letter-spacing: -0.1504px;
+}
+
+.profileButton:hover {
+  background-color: #f3f4f6;
+}
+
+.icon {
+  font-size: 16px;
+}
+
+.profileIcon {
+  font-size: 16px;
+}

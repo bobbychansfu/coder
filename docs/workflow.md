@@ -7,11 +7,11 @@ Consistent branch names and a clear branching flow make it easy to understand wh
 Each student creates a base branch from `main`, then creates feature sub-branches from their base. Feature branches run student CI and an AI code review before merging back into the student base; the student base opens a weekly PR to `main`. The weekly PR runs strict CI and an AI code review, then peer developers review; a tech lead or release manager merges.
 
 Branch example:
-`Spring-2026/students/dza68`
+`Spring-2026/students/bobby123`
 
 ```
 flowchart TD
-    A[main branch (protected)] -->|create student base| B[Spring-2026/students/dza68]
+    A[main branch (protected)] -->|create student base| B[Spring-2026/students/bobby123]
 
     B -->|create sub-branch| C1[feature/auth-signin-signup]
     B -->|create sub-branch| C2[chore/update-eslint]
@@ -80,6 +80,17 @@ This structure keeps branch lists sortable, descriptive, and future-proof.
 - Keep the name descriptive but concise - aim for 3-5 segments
 - Avoid uppercase letters so Git tooling and scripts stay predictable
 
+## Commits
+- Keep commits small and focused; avoid mixing unrelated changes
+- Use a clear message format: `<type>: <short summary>`
+- Match the commit type to the branch type when possible
+- Push updates regularly so reviewers can follow progress
+
+Examples:
+- `feat: add auth flow validation`
+- `fix: handle login redirect edge case`
+- `chore: update lint rules`
+
 ## Pull Requests
 ### Requirements
 - Keep PRs focused; avoid mixing unrelated changes
@@ -95,7 +106,7 @@ Briefly describe the change and scope.
 ## Files Changed (<= 20)
 List key components/features touched (e.g., `cash-asset/*`, `components/area-chart.tsx`).
 
-## UI Changes (screenshots)
+## UI Changes (screenshots, frontend only)
 - Before:
 - After:
 
@@ -117,6 +128,11 @@ Endpoints changed (method + path).
 ## QA
 How was it tested (unit/integration/manual)?
 ```
+
+### Example PRs (this repo)
+- PR #1: sub-branch -> student base (`feat/1.0-auth-flow-cleanup` -> `Spring-2026/students/bobby123`)
+- PR #2: student base -> main (`Spring-2026/students/bobby123` -> `main`)
+- These example branches are for reference only; do not merge them.
 
 ## Releases
 Describe tagging and release process here.
