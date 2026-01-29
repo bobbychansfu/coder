@@ -48,13 +48,14 @@ export default function PracticeListPage() {
     >
       <SearchInput placeholder="Search for ..." />
       <div className={styles.grid}>
-        {practiceProblems.map((problem) => (
+        {practiceProblems.map((problem, index) => (
           <PracticeCard
             key={problem.id}
             title={problem.title}
             difficulty={problem.difficulty}
             points={problem.points}
             solved={problem.solved}
+            size={index >= 3 ? "tall" : "compact"}
           />
         ))}
       </div>

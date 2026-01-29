@@ -9,6 +9,7 @@ interface PracticeCardProps {
   difficulty: PracticeDifficulty;
   points: number;
   solved?: boolean;
+  size?: "compact" | "tall";
 }
 
 const difficultyClass: Record<PracticeDifficulty, string> = {
@@ -22,9 +23,14 @@ export default function PracticeCard({
   difficulty,
   points,
   solved,
+  size = "compact",
 }: PracticeCardProps) {
   return (
-    <div className={styles.card}>
+    <div
+      className={`${styles.card} ${
+        size === "tall" ? styles.cardTall : styles.cardCompact
+      }`}
+    >
       <div className={styles.header}>
         <div className={styles.title}>{title}</div>
         {solved ? <EmojiEventsOutlinedIcon className={styles.solved} /> : null}
