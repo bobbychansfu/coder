@@ -42,7 +42,9 @@ export default function ContestsListPage() {
       actionLabel="Create Contest"
       sidebar={<FilterPanel groups={filters} />}
     >
-      <SearchInput placeholder="Search for ..." />
+      <div className={styles.searchSticky}>
+        <SearchInput placeholder="Search for ..." />
+      </div>
       <div className={styles.grid}>
         {contestList.map((contest) => (
           <ContestCard

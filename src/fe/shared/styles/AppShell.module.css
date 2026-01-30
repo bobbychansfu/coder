@@ -1,8 +1,9 @@
 .container {
-  min-height: 100vh;
+  height: 100vh;
   background-color: #fafafa;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .main {
@@ -11,6 +12,7 @@
   max-width: 1536px;
   margin: 0 auto;
   width: 100%;
+  min-height: 0;
 }
 
 @media (max-width: 768px) {
