@@ -1,4 +1,4 @@
-import { Contest, UpcomingContest, ContestAlert, ContestsResponse } from "@/fe/shared/types";
+import { Contest, UpcomingContest, ContestAlert } from "@/fe/shared/types";
 import { mockPastContests, mockUpcomingContests, mockContestAlert } from "@/fe/dashboard/data";
 import { apiFetch, USE_MOCK_DATA } from "@/fe/shared/services/api";
 

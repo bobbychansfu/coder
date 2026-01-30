@@ -106,6 +106,21 @@ Briefly describe the change and scope.
 ## Files Changed (<= 20)
 List key components/features touched (e.g., `cash-asset/*`, `components/area-chart.tsx`).
 
+## Features Added
+List user-facing features added or updated.
+
+## Components
+List key UI components added/updated.
+
+## Data
+List data files (fixtures, mocks, enums, etc.).
+
+## Data & Utilities
+List shared data helpers, services, or utilities.
+
+## Styles
+List CSS modules or style files updated.
+
 ## UI Changes (screenshots, frontend only)
 - Before:
 - After:

@@ -1,7 +1,7 @@
 # Shared Components & Resources
 
 This folder contains all shared/reusable components, styles, constants, and utilities used across the application.
-Feature-specific UI lives under `src/fe/<feature>` (for example, `src/fe/dashboard`).
+Feature-specific UI lives under `src/fe/<feature>/` with the entry point at `src/fe/<feature>/page/index.ts` (for example, `src/fe/dashboard/page/index.ts`).
 
 ## Folder Structure
 

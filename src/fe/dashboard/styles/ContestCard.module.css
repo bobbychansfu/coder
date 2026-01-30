@@ -90,14 +90,6 @@
   align-items: center;
 }
 
-.courseCode {
-  font-family: Inter, sans-serif;
-  font-weight: 500;
-  font-size: 14px;
-  color: #4a5565;
-  margin-bottom: 8px;
-}
-
 .metadata {
   display: flex;
   align-items: center;

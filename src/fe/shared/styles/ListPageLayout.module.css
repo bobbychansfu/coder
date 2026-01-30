@@ -1,0 +1,81 @@
+.page {
+  --nav-height: 64px;
+  --page-padding: 32px;
+  background-color: #f9fafb;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.title {
+  font-family: Inter, sans-serif;
+  font-size: 30px;
+  line-height: 36px;
+  font-weight: 700;
+  color: #0a0a0a;
+  letter-spacing: 0.3955px;
+  margin: 0;
+}
+
+.actionButton {
+  height: 36px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  background-color: #e7000b;
+  color: #ffffff;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: -0.1504px;
+  border: none;
+  cursor: pointer;
+}
+
+.content {
+  display: grid;
+  grid-template-columns: 256px 1fr;
+  gap: 24px;
+  align-items: start;
+  flex: 1;
+}
+
+.sidebar {
+  width: 100%;
+  position: sticky;
+  top: calc(var(--nav-height) + var(--page-padding));
+  align-self: start;
+  max-height: calc(100vh - var(--nav-height) - var(--page-padding));
+  overflow-y: auto;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.searchBar {
+  background-color: #f9fafb;
+  padding-bottom: 16px;
+}
+
+
+@media (max-width: 1024px) {
+  .content {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    --page-padding: 16px;
+  }
+}
