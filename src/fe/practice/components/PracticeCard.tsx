@@ -2,14 +2,17 @@
 
 import EmojiEventsOutlinedIcon from "@mui/icons-material/EmojiEventsOutlined";
 import styles from "../styles/PracticeCard.module.css";
-import type { PracticeDifficulty } from "../data/practiceProblems";
+import type {
+  PracticeCardSize,
+  PracticeDifficulty,
+} from "../data/practiceProblems";
 
 interface PracticeCardProps {
   title: string;
   difficulty: PracticeDifficulty;
   points: number;
   solved?: boolean;
-  size?: "compact" | "tall";
+  size?: PracticeCardSize;
 }
 
 const difficultyClass: Record<PracticeDifficulty, string> = {

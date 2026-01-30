@@ -16,7 +16,17 @@ export default function PastContests() {
       </div>
       <div className={styles.list}>
         {mockPastContests.map((contest) => (
-          <ContestCard key={contest.id} {...contest} />
+          <ContestCard
+            key={contest.id}
+            title={contest.title}
+            date={contest.date}
+            participants={contest.participants}
+            difficulty={contest.difficulty}
+            rank={contest.rank}
+            problemsSolved={contest.problemsSolved}
+            score={contest.score}
+            timeTaken={contest.timeTaken}
+          />
         ))}
       </div>
     </div>

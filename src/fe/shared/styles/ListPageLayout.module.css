@@ -1,11 +1,10 @@
 .page {
+  --nav-height: 64px;
+  --page-padding: 32px;
   background-color: #f9fafb;
-  margin: -32px;
-  padding: 32px;
   display: flex;
   flex-direction: column;
   gap: 24px;
-  min-height: calc(100vh - 64px);
 }
 
 .header {
@@ -45,10 +44,16 @@
   grid-template-columns: 256px 1fr;
   gap: 24px;
   align-items: start;
+  flex: 1;
 }
 
 .sidebar {
   width: 100%;
+  position: sticky;
+  top: calc(var(--nav-height) + var(--page-padding));
+  align-self: start;
+  max-height: calc(100vh - var(--nav-height) - var(--page-padding));
+  overflow-y: auto;
 }
 
 .main {
@@ -56,6 +61,12 @@
   flex-direction: column;
   gap: 24px;
 }
+
+.searchBar {
+  background-color: #f9fafb;
+  padding-bottom: 16px;
+}
+
 
 @media (max-width: 1024px) {
   .content {
@@ -65,7 +76,6 @@
 
 @media (max-width: 768px) {
   .page {
-    margin: -32px -16px;
-    padding: 32px 16px;
+    --page-padding: 16px;
   }
 }
