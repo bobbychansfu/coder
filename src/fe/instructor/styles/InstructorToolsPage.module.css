@@ -1,0 +1,250 @@
+.page {
+  background-color: #f9fafb;
+  margin: -32px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.title {
+  font-family: Inter, sans-serif;
+  font-size: 24px;
+  line-height: 36px;
+  font-weight: 500;
+  color: #101828;
+  letter-spacing: 0.0703px;
+  margin: 0;
+}
+
+.subtitle {
+  font-family: Inter, sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+  color: #4a5565;
+  letter-spacing: -0.3125px;
+  margin: 0;
+}
+
+.sectionTitle {
+  font-family: Inter, sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+  color: #101828;
+  letter-spacing: -0.3125px;
+  margin: 0;
+}
+
+.actionGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.actionCard {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  height: 186px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.actionIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.actionIconPrimary {
+  background-color: #eff6ff;
+  color: #2563eb;
+}
+
+.actionIconSecondary {
+  background-color: #faf5ff;
+  color: #9333ea;
+}
+
+.actionIconAccent {
+  background-color: #fff7ed;
+  color: #f97316;
+}
+
+.actionTitle {
+  font-family: Inter, sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+  color: #101828;
+  letter-spacing: -0.3125px;
+  margin: 0;
+}
+
+.actionDescription {
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  color: #4a5565;
+  letter-spacing: -0.1504px;
+  margin: 0;
+}
+
+.overviewGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.overviewCard {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  height: 134px;
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.overviewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.overviewLabel {
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  color: #4a5565;
+  letter-spacing: -0.1504px;
+  margin: 0;
+}
+
+.overviewValue {
+  font-family: Inter, sans-serif;
+  font-size: 30px;
+  line-height: 36px;
+  font-weight: 600;
+  color: #101828;
+  letter-spacing: 0.3955px;
+  margin: 0;
+}
+
+.overviewCaption {
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+  color: #6a7282;
+  margin: 0;
+}
+
+.overviewIcon {
+  width: 20px;
+  height: 20px;
+  color: #98a2b3;
+}
+
+.activityList {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.activityItem {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.activityItem:last-child {
+  border-bottom: none;
+}
+
+.activityIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.activityIconSuccess {
+  background-color: #f0fdf4;
+  color: #00a63e;
+}
+
+.activityIconInfo {
+  background-color: #eff6ff;
+  color: #2563eb;
+}
+
+.activityIconHighlight {
+  background-color: #faf5ff;
+  color: #9333ea;
+}
+
+.activityText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.activityDescription {
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  color: #101828;
+  letter-spacing: -0.1504px;
+  margin: 0;
+}
+
+.activityTimestamp {
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+  color: #6a7282;
+  margin: 0;
+}
+
+@media (max-width: 1024px) {
+  .actionGrid,
+  .overviewGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    margin: -32px -16px;
+    padding: 32px 16px;
+  }
+
+  .actionGrid,
+  .overviewGrid {
+    grid-template-columns: 1fr;
+  }
+}
