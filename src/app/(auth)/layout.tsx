@@ -1,8 +1,9 @@
 import { ReactNode } from "react";
+import styles from "./layout.module.css";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div className={styles.container}>
       {children}
     </div>
   );

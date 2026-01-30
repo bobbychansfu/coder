@@ -58,3 +58,11 @@
   font-size: 12px;
   line-height: 16px;
 }
+
+.success {
+  color: #00a63e;
+}
+
+.neutral {
+  color: #4a5565;
+}

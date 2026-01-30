@@ -26,13 +26,6 @@ export default function ContestCard({
   score,
   timeTaken,
 }: ContestCardProps) {
-  const difficultyColors = {
-    Easy: { bg: "transparent", color: "#00A63E", border: "#00A63E" },
-    Medium: { bg: "transparent", color: "#FF8C00", border: "#FF8C00" },
-    Hard: { bg: "transparent", color: "#E03E3E", border: "#E03E3E" },
-  };
-
-  const colorStyle = difficultyColors[difficulty];
 
   return (
     <div className={styles.card}>
@@ -51,12 +44,7 @@ export default function ContestCard({
           <div className={styles.titleRow}>
             <div className={styles.title}>{title}</div>
             <span
-              className={styles.difficultyBadge}
-              style={{
-                backgroundColor: colorStyle.bg,
-                color: colorStyle.color,
-                border: `1px solid ${colorStyle.border}`,
-              }}
+              className={`${styles.difficultyBadge} ${styles[`difficulty${difficulty}`]}`}
             >
               {difficulty}
             </span>
