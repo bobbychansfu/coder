@@ -1,4 +1,5 @@
 export type PracticeDifficulty = "Easy" | "Medium" | "Hard";
+export type PracticeCardSize = "compact" | "tall";
 
 export interface PracticeProblem {
   id: string;
@@ -6,6 +7,7 @@ export interface PracticeProblem {
   difficulty: PracticeDifficulty;
   points: number;
   solved?: boolean;
+  size?: PracticeCardSize;
 }
 
 export const practiceProblems: PracticeProblem[] = [
@@ -15,18 +17,21 @@ export const practiceProblems: PracticeProblem[] = [
     difficulty: "Easy",
     points: 100,
     solved: true,
+    size: "compact",
   },
   {
     id: "problem-2",
     title: "Binary Tree Traversal",
     difficulty: "Medium",
     points: 200,
+    size: "compact",
   },
   {
     id: "problem-3",
     title: "Merge K Sorted Lists",
     difficulty: "Hard",
     points: 300,
+    size: "compact",
   },
   {
     id: "problem-4",
@@ -34,17 +39,195 @@ export const practiceProblems: PracticeProblem[] = [
     difficulty: "Easy",
     points: 100,
     solved: true,
+    size: "tall",
   },
   {
     id: "problem-5",
     title: "Longest Increasing Subsequence",
     difficulty: "Medium",
     points: 250,
+    size: "tall",
   },
   {
     id: "problem-6",
     title: "Graph Shortest Path",
     difficulty: "Medium",
     points: 200,
+    size: "tall",
+  },
+  {
+    id: "problem-7",
+    title: "Reverse Linked List",
+    difficulty: "Easy",
+    points: 100,
+    solved: true,
+    size: "compact",
+  },
+  {
+    id: "problem-8",
+    title: "Maximum Subarray Sum",
+    difficulty: "Medium",
+    points: 200,
+    size: "compact",
+  },
+  {
+    id: "problem-9",
+    title: "Word Ladder",
+    difficulty: "Hard",
+    points: 350,
+    size: "compact",
+  },
+  {
+    id: "problem-10",
+    title: "Valid Parentheses",
+    difficulty: "Easy",
+    points: 100,
+    solved: true,
+    size: "tall",
+  },
+  {
+    id: "problem-11",
+    title: "Course Schedule",
+    difficulty: "Medium",
+    points: 250,
+    size: "tall",
+  },
+  {
+    id: "problem-12",
+    title: "Serialize Binary Tree",
+    difficulty: "Hard",
+    points: 300,
+    size: "tall",
+  },
+  {
+    id: "problem-13",
+    title: "Climbing Stairs",
+    difficulty: "Easy",
+    points: 100,
+    solved: true,
+    size: "compact",
+  },
+  {
+    id: "problem-14",
+    title: "House Robber",
+    difficulty: "Medium",
+    points: 200,
+    size: "compact",
+  },
+  {
+    id: "problem-15",
+    title: "N-Queens Problem",
+    difficulty: "Hard",
+    points: 400,
+    size: "compact",
+  },
+  {
+    id: "problem-16",
+    title: "Missing Number",
+    difficulty: "Easy",
+    points: 100,
+    size: "tall",
+  },
+  {
+    id: "problem-17",
+    title: "Coin Change",
+    difficulty: "Medium",
+    points: 250,
+    solved: true,
+    size: "tall",
+  },
+  {
+    id: "problem-18",
+    title: "Trapping Rain Water",
+    difficulty: "Hard",
+    points: 350,
+    size: "tall",
+  },
+  {
+    id: "problem-19",
+    title: "Best Time to Buy and Sell Stock",
+    difficulty: "Easy",
+    points: 100,
+    solved: true,
+    size: "compact",
+  },
+  {
+    id: "problem-20",
+    title: "Longest Common Subsequence",
+    difficulty: "Medium",
+    points: 250,
+    size: "compact",
+  },
+  {
+    id: "problem-21",
+    title: "Edit Distance",
+    difficulty: "Hard",
+    points: 350,
+    size: "compact",
+  },
+  {
+    id: "problem-22",
+    title: "Merge Intervals",
+    difficulty: "Medium",
+    points: 200,
+    size: "tall",
+  },
+  {
+    id: "problem-23",
+    title: "Longest Substring Without Repeating",
+    difficulty: "Medium",
+    points: 250,
+    solved: true,
+    size: "tall",
+  },
+  {
+    id: "problem-24",
+    title: "Find Median in Data Stream",
+    difficulty: "Hard",
+    points: 400,
+    size: "tall",
+  },
+  {
+    id: "problem-25",
+    title: "Contains Duplicate",
+    difficulty: "Easy",
+    points: 100,
+    solved: true,
+    size: "compact",
+  },
+  {
+    id: "problem-26",
+    title: "Product of Array Except Self",
+    difficulty: "Medium",
+    points: 200,
+    size: "compact",
+  },
+  {
+    id: "problem-27",
+    title: "Word Search II",
+    difficulty: "Hard",
+    points: 400,
+    size: "compact",
+  },
+  {
+    id: "problem-28",
+    title: "Implement Stack Using Queues",
+    difficulty: "Easy",
+    points: 100,
+    size: "tall",
+  },
+  {
+    id: "problem-29",
+    title: "Design LRU Cache",
+    difficulty: "Medium",
+    points: 300,
+    size: "tall",
+  },
+  {
+    id: "problem-30",
+    title: "Alien Dictionary",
+    difficulty: "Hard",
+    points: 450,
+    size: "tall",
   },
 ];
