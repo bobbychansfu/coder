@@ -26,24 +26,22 @@ export default function InstructorToolsPage() {
         ))}
       </section>
 
-      <section className={styles.header}>
+      <section className={styles.sectionBlock}>
         <h2 className={styles.sectionTitle}>Quick Overview</h2>
+        <div className={styles.overviewGrid}>
+          {overviewStats.map((stat) => (
+            <OverviewCard key={stat.id} stat={stat} />
+          ))}
+        </div>
       </section>
 
-      <section className={styles.overviewGrid}>
-        {overviewStats.map((stat) => (
-          <OverviewCard key={stat.id} stat={stat} />
-        ))}
-      </section>
-
-      <section className={styles.header}>
+      <section className={styles.sectionBlock}>
         <h2 className={styles.sectionTitle}>Recent Activity</h2>
-      </section>
-
-      <section className={styles.activityList}>
-        {recentActivity.map((item) => (
-          <ActivityItem key={item.id} item={item} />
-        ))}
+        <div className={styles.activityList}>
+          {recentActivity.map((item) => (
+            <ActivityItem key={item.id} item={item} />
+          ))}
+        </div>
       </section>
     </div>
   );

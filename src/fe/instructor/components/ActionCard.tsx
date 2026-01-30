@@ -26,12 +26,12 @@ export default function ActionCard({ action }: ActionCardProps) {
   const Icon = iconMap[action.tone];
 
   return (
-    <div className={styles.actionCard}>
+    <button className={styles.actionCard} type="button">
       <div className={`${styles.actionIcon} ${toneClassMap[action.tone]}`}>
         <Icon fontSize="small" />
       </div>
       <h3 className={styles.actionTitle}>{action.title}</h3>
       <p className={styles.actionDescription}>{action.description}</p>
-    </div>
+    </button>
   );
 }
