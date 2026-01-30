@@ -6,35 +6,39 @@ import {
   ThisWeek,
   RecentBadges,
   mockContestAlert,
-} from "@/fe/dashboard";
+} from "@/fe/dashboard/page";
+import { ScrollbarHider } from "@/fe/shared";
 import styles from "./page.module.css";
 
 export default function Home() {
   return (
-    <div className={styles.container}>
-      {/* Main Content */}
-      <div className={styles.mainContent}>
-        {/* Statistics Section */}
-        <StatisticsSection />
+    <>
+      <ScrollbarHider />
+      <div className={styles.container}>
+        {/* Main Content */}
+        <div className={styles.mainContent}>
+          {/* Statistics Section */}
+          <StatisticsSection />
 
-        {/* Contest Alert */}
-        {mockContestAlert.isActive && (
-          <ContestAlert
-            title={mockContestAlert.title}
-            description={mockContestAlert.description}
-          />
-        )}
+          {/* Contest Alert */}
+          {mockContestAlert.isActive && (
+            <ContestAlert
+              title={mockContestAlert.title}
+              description={mockContestAlert.description}
+            />
+          )}
 
-        {/* Past Contests */}
-        <PastContests />
+          {/* Past Contests */}
+          <PastContests />
+        </div>
+
+        {/* Sidebar */}
+        <div className={styles.sidebar}>
+          <UpcomingContests />
+          <ThisWeek />
+          <RecentBadges />
+        </div>
       </div>
-
-      {/* Sidebar */}
-      <div className={styles.sidebar}>
-        <UpcomingContests />
-        <ThisWeek />
-        <RecentBadges />
-      </div>
-    </div>
+    </>
   );
 }

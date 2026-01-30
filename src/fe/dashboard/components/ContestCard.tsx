@@ -7,7 +7,6 @@ import styles from "../styles/ContestCard.module.css";
 
 interface ContestCardProps {
   title: string;
-  courseCode: string;
   date: string;
   participants: number;
   difficulty: "Easy" | "Medium" | "Hard";
@@ -19,7 +18,6 @@ interface ContestCardProps {
 
 export default function ContestCard({
   title,
-  courseCode,
   date,
   participants,
   difficulty,
@@ -63,7 +61,6 @@ export default function ContestCard({
               {difficulty}
             </span>
           </div>
-          <div className={styles.courseCode}>{courseCode}</div>
           <div className={styles.metadata}>
             <div className={styles.metadataItem}>
               <CalendarTodayIcon className={styles.metadataIcon} />

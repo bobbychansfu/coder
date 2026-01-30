@@ -3,6 +3,7 @@ import { FilterPanel, ListPageLayout, SearchInput } from "@/fe/shared";
 import { practiceProblems } from "../data/practiceProblems";
 import PracticeCard from "./PracticeCard";
 import styles from "../styles/PracticeListPage.module.css";
+import layoutStyles from "@/fe/shared/styles/ListPageLayout.module.css";
 
 const filters = [
   {
@@ -45,7 +46,7 @@ export default function PracticeListPage() {
       actionLabel="Create Problem"
       sidebar={<FilterPanel groups={filters} />}
     >
-      <div className={styles.searchSticky}>
+      <div className={layoutStyles.searchBar}>
         <SearchInput placeholder="Search for ..." />
       </div>
       <div className={styles.grid}>

@@ -16,30 +16,16 @@ export default function ScrollArea({
   sx,
   maxHeight,
 }: ScrollAreaProps) {
+  const mergedClassName = ["scrollbar-thin", className]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <Box
-      className={className}
+      className={mergedClassName}
       sx={{
         overflowY: "auto",
         maxHeight: maxHeight,
-        "&::-webkit-scrollbar": {
-          width: "8px",
-        },
-        "&::-webkit-scrollbar-track": {
-          backgroundColor: "transparent",
-          marginTop: "4px",
-          marginBottom: "4px",
-        },
-        "&::-webkit-scrollbar-thumb": {
-          backgroundColor: "#d1d5db",
-          borderRadius: "4px",
-          "&:hover": {
-            backgroundColor: "#9ca3af",
-          },
-        },
-        // Firefox scrollbar styling
-        scrollbarWidth: "thin",
-        scrollbarColor: "#d1d5db transparent",
         ...sx,
       }}
     >

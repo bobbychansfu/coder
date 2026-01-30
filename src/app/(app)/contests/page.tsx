@@ -1,4 +1,4 @@
-import { ContestsListPage } from "@/fe/contests";
+import { ContestsListPage } from "@/fe/contests/page";
 
 export default function ContestsPage() {
   return <ContestsListPage />;

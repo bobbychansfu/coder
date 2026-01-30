@@ -4,6 +4,7 @@ import { FilterPanel, ListPageLayout, SearchInput } from "@/fe/shared";
 import { contestList } from "../data/contests";
 import ContestCard from "./ContestCard";
 import styles from "../styles/ContestsListPage.module.css";
+import layoutStyles from "@/fe/shared/styles/ListPageLayout.module.css";
 
 const filters = [
   {
@@ -42,7 +43,7 @@ export default function ContestsListPage() {
       actionLabel="Create Contest"
       sidebar={<FilterPanel groups={filters} />}
     >
-      <div className={styles.searchSticky}>
+      <div className={layoutStyles.searchBar}>
         <SearchInput placeholder="Search for ..." />
       </div>
       <div className={styles.grid}>
