@@ -16,7 +16,7 @@ export default function RecentBadges() {
           <div key={badge.id} className={styles.badge}>
             <div
               className={styles.badgeIcon}
-              style={{ backgroundColor: `${badge.color}15` }}
+              style={{ "--badge-color": badge.color } as React.CSSProperties}
             >
               {badge.icon}
             </div>

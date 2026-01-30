@@ -15,7 +15,7 @@ export default function StatisticsSection() {
             value={stat.value}
             subtitle={stat.subtitle}
             icon={stat.icon}
-            subtitleColor={stat.subtitleColor}
+            variant={stat.variant}
           />
         ))}
       </div>

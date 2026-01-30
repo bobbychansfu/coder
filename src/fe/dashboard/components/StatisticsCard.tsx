@@ -6,7 +6,7 @@ interface StatisticsCardProps {
   value: string;
   subtitle: string;
   icon: string;
-  subtitleColor?: string;
+  variant?: "success" | "neutral";
 }
 
 export default function StatisticsCard({
@@ -14,7 +14,7 @@ export default function StatisticsCard({
   value,
   subtitle,
   icon,
-  subtitleColor = "#4a5565",
+  variant = "neutral",
 }: StatisticsCardProps) {
   return (
     <div className={styles.card}>
@@ -32,7 +32,7 @@ export default function StatisticsCard({
       </div>
       <div className={styles.content}>
         <p className={styles.value}>{value}</p>
-        <p className={styles.subtitle} style={{ color: subtitleColor }}>
+        <p className={`${styles.subtitle} ${styles[variant]}`}>
           {subtitle}
         </p>
       </div>

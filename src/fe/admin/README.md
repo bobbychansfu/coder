@@ -1,3 +1,3 @@
 # Admin Feature
 
-Place admin-specific UI, data, and services here.
+Admin tools UI, mock data, and styles live here.
