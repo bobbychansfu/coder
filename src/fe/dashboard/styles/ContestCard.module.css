@@ -139,3 +139,21 @@
   font-size: 16px;
   color: #1a1a1a;
 }
+
+.difficultyEasy {
+  background-color: transparent;
+  color: #00A63E;
+  border: 1px solid #00A63E;
+}
+
+.difficultyMedium {
+  background-color: transparent;
+  color: #FF8C00;
+  border: 1px solid #FF8C00;
+}
+
+.difficultyHard {
+  background-color: transparent;
+  color: #E03E3E;
+  border: 1px solid #E03E3E;
+}

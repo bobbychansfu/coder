@@ -3,7 +3,7 @@ export interface Statistic {
   value: string;
   subtitle: string;
   icon: string;
-  subtitleColor?: string;
+  variant?: "success" | "neutral";
 }
 
 export interface StatisticsResponse {
