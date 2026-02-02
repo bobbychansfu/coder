@@ -2,7 +2,7 @@
 
 import React, { ReactNode } from "react";
 import type { SvgIconComponent } from "@mui/icons-material";
-import type { AccentType, ToneType } from "@/fe/shared/types/common";
+import type { ActivityItemData, StatCardData, ToolCardData } from "@/fe/shared/types/common";
 import styles from "../../styles/ManagementLayout.module.css";
 import ScrollbarHider from "@/fe/shared/components/ui/ScrollbarHider";
 import ToolCard from "@/fe/shared/components/ToolCard";
@@ -10,43 +10,15 @@ import StatCard from "@/fe/shared/components/StatCard";
 import ActivityFeedItem from "@/fe/shared/components/ActivityFeedItem";
 import StatisticsSection from "@/fe/dashboard/components/StatisticsSection";
 
-// --- Types ---
-export interface DashboardAction {
-  id: string;
-  title: string;
-  description: string;
-  tone: ToneType;
-  icon?: SvgIconComponent;
-}
-
-export interface DashboardStat {
-  id: string;
-  label: string;
-  value: string;
-  caption?: string;
-  tone: string;
-  valueAccent?: AccentType;
-  captionAccent?: AccentType;
-  icon?: SvgIconComponent;
-}
-
-export interface DashboardActivity {
-  id: string;
-  description: string;
-  timestamp: string;
-  tone: ToneType;
-  icon?: SvgIconComponent;
-}
-
 interface ManagementLayoutProps {
   title: string;
   subtitle: string;
   headerIcon: SvgIconComponent;
   headerIconColor?: "red" | "blue" | "green"; // Default is red in CSS
   
-  actions: DashboardAction[];
-  stats: DashboardStat[];
-  activity: DashboardActivity[];
+  actions: ToolCardData[];
+  stats: StatCardData[];
+  activity: ActivityItemData[];
   
   children?: ReactNode; // For extra sections like Quick Actions
 }

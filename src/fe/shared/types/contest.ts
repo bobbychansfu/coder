@@ -1,4 +1,5 @@
 export type DifficultyLevel = "Easy" | "Medium" | "Hard";
+export type ContestStatus = "Closed" | "In Progress";
 
 export interface Contest {
   id: string;
@@ -7,6 +8,7 @@ export interface Contest {
   date: string;
   participants: number;
   difficulty: DifficultyLevel;
+  status: ContestStatus;
   rank: number;
   problemsSolved: string;
   score: string;
