@@ -31,9 +31,8 @@ const filters = [
     label: "Status",
     options: [
       { label: "All", active: true },
-      { label: "Upcoming" },
-      { label: "Active" },
-      { label: "Ended" },
+      { label: "In Progress" },
+      { label: "Closed" },
     ],
   },
 ];
@@ -55,6 +54,7 @@ export default function ContestsPage() {
             title={contest.title}
             status={contest.status}
             badge={contest.badge}
+            href={`/contests/${contest.id}`}
           />
         ))}
       </div>

@@ -1,13 +1,14 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Image from "next/image";
 import type { SvgIconComponent } from "@mui/icons-material";
 import type { AccentType } from "@/fe/shared/types/common";
 
 interface StatCardProps {
   label: string;
-  value: string;
-  caption?: string;
+  value: ReactNode;
+  caption?: ReactNode;
   icon?: SvgIconComponent | string;
   tone?: string;
   valueAccent?: AccentType;

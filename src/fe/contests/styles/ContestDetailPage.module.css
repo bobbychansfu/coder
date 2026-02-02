@@ -1,0 +1,645 @@
+/* Global difficulty colors */
+:root {
+  --difficulty-easy-bg: #22c55e;
+  --difficulty-easy-text: #ffffff;
+  --difficulty-medium-bg: #f97316;
+  --difficulty-medium-text: #ffffff;
+  --difficulty-hard-bg: #dc2626;
+  --difficulty-hard-text: #ffffff;
+}
+
+.page {
+  background-color: #f9fafb;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 32px;
+  min-height: 100%;
+}
+
+.backButton {
+  align-self: flex-start;
+  text-transform: none;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #0a0a0a;
+  letter-spacing: -0.15px;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-family: Inter, sans-serif;
+  font-weight: 700;
+  font-size: 32px;
+  line-height: 38px;
+  letter-spacing: -0.4px;
+  color: #0a0a0a;
+}
+
+.statusChip {
+  text-transform: lowercase;
+  font-family: Inter, sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  border-radius: 6px;
+  height: 26px;
+  letter-spacing: -0.1504px;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  max-width: 1200px;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.infoCard {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  background-color: #ffffff;
+  padding: 20px;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+}
+
+.infoHeader {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 32px;
+}
+
+.infoLabel {
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  color: #4a5565;
+  margin: 0;
+  line-height: 20px;
+  letter-spacing: -0.1504px;
+}
+
+.infoContent {
+  display: flex;
+  align-items: center;
+}
+
+.infoValue {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  color: #0a0a0a;
+  line-height: 20px;
+  letter-spacing: -0.1504px;
+}
+
+.infoValueRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.infoIcon {
+  font-size: 16px;
+  color: #6a7282;
+}
+
+.switcher {
+  background-color: #eceef2;
+  padding: 4px;
+  height: 44px;
+  width: fit-content;
+  border-radius: 25px !important;
+  gap: 4px;
+}
+
+.switcherButton {
+  text-transform: none;
+  font-family: Inter, sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  height: 36px;
+  border-radius: 25px;
+  color: #6b7280;
+  border: none;
+  padding: 8px 20px;
+  letter-spacing: -0.15px;
+  transition: all 0.2s ease;
+}
+
+.switcherButton:hover {
+  background-color: transparent;
+  color: #6b7280;
+}
+
+.switcher :global(.Mui-selected) {
+  background-color: #ffffff !important;
+  color: #0a0a0a !important;
+  font-weight: 600 !important;
+  border: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  border-radius: 25px !important;
+}
+
+.switcher :global(.Mui-selected:hover) {
+  background-color: #ffffff !important;
+  color: #0a0a0a !important;
+}
+
+.switcher :global(.MuiToggleButtonGroup-grouped) {
+  border: none !important;
+  border-radius: 25px !important;
+}
+
+.switcher :global(.MuiToggleButtonGroup-grouped:not(:first-of-type)) {
+  border-left: none !important;
+  margin-left: 0 !important;
+}
+
+.problemList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.problemCard {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  background-color: #ffffff;
+  padding: 20px;
+}
+
+.problemRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.problemLeft {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+}
+
+.problemCode {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background-color: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Inter, sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  color: #364153;
+  flex-shrink: 0;
+}
+
+.solvedBadge {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  background-color: #dcfce7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.problemTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.problemTitleRow:last-child {
+  margin-bottom: 0;
+}
+
+.problemTitle {
+  font-family: Inter, sans-serif;
+  font-weight: 500;
+  font-size: 20px;
+  color: #0a0a0a;
+  letter-spacing: -0.2px;
+  line-height: 28px;
+}
+
+.difficultyChip {
+  height: 24px;
+  border-radius: 8px;
+  font-family: Inter, sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  text-transform: lowercase;
+  letter-spacing: -0.15px;
+  padding: 0 12px;
+}
+
+.diffEasy {
+  border-color: var(--difficulty-easy-bg) !important;
+  color: var(--difficulty-easy-bg) !important;
+  background-color: transparent !important;
+}
+
+.diffMedium {
+  border-color: var(--difficulty-medium-bg) !important;
+  color: var(--difficulty-medium-bg) !important;
+  background-color: transparent !important;
+}
+
+.diffHard {
+  border-color: var(--difficulty-hard-bg) !important;
+  color: var(--difficulty-hard-bg) !important;
+  background-color: transparent !important;
+}
+
+.tagChip {
+  height: 28px;
+  border-radius: 8px;
+  font-family: Inter, sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: #0a0a0a;
+  background-color: #ffffff;
+  letter-spacing: -0.15px;
+  padding: 0 12px;
+}
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  color: #6a7282;
+  letter-spacing: -0.1504px;
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.metaItem svg {
+  font-size: 16px;
+  color: #6a7282;
+}
+
+.pointsBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 64px;
+}
+
+.pointsValue {
+  font-family: Inter, sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: #0a0a0a;
+  letter-spacing: -0.4492px;
+}
+
+.pointsLabel {
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  color: #6a7282;
+}
+
+.scoreboardCard {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  background-color: #ffffff;
+  padding: 20px;
+}
+
+.scoreboardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.scoreboardTitle {
+  font-family: Inter, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: #0a0a0a;
+}
+
+.scoreboardButton {
+  text-transform: none;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  border-radius: 6px;
+  color: #0a0a0a;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.scoreboardTable {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-height: 600px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.loadingIndicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  color: #6b7280;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+}
+
+.scoreboardRow {
+  display: grid;
+  grid-template-columns: 64px 180px 90px 90px repeat(5, minmax(72px, 1fr));
+  align-items: center;
+  gap: 0;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  color: #0a0a0a;
+}
+
+.scoreboardRow:last-child {
+  border-bottom: none;
+}
+
+.userRow {
+  font-weight: 600;
+}
+
+.userRowHighlighted {
+  animation: highlightUser 4s ease-out forwards;
+}
+
+@keyframes highlightUser {
+  0% {
+    background: linear-gradient(90deg, #fef3c7 0%, #fef9e7 100%);
+    box-shadow: 0 0 0 2px #f59e0b inset;
+  }
+  75% {
+    background: linear-gradient(90deg, #fef3c7 0%, #fef9e7 100%);
+    box-shadow: 0 0 0 2px #f59e0b inset;
+  }
+  100% {
+    background: transparent;
+    box-shadow: none;
+  }
+}
+
+.scoreboardHeaderRow {
+  font-weight: 500;
+  color: #0a0a0a;
+}
+
+.rankCell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 8px;
+}
+
+.participantCell {
+  padding-left: 8px;
+}
+
+.centerCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.headerCell {
+  flex-direction: row;
+  justify-content: center;
+}
+
+.rightCell {
+  text-align: right;
+  padding-right: 8px;
+}
+
+.scoreValue {
+  font-weight: 700;
+}
+
+.solvedBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 6px;
+  background-color: #eceef2;
+  font-size: 12px;
+  font-weight: 500;
+  color: #030213;
+}
+
+.scoreBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 22px;
+  border-radius: 6px;
+  background-color: #00a63e;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.scorePenalty {
+  background-color: #d4183d;
+}
+
+.scoreTime {
+  font-size: 12px;
+  color: #6a7282;
+}
+
+.emptyCell {
+  color: #d1d5dc;
+}
+
+.clarificationsCard {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  background-color: #ffffff;
+  padding: 20px;
+}
+
+.clarificationsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.clarificationsTitle {
+  font-family: Inter, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: #0a0a0a;
+}
+
+.askButton {
+  background-color: #dc2626;
+  text-transform: none;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  border-radius: 6px;
+}
+
+.clarificationsList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.clarificationItem {
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.clarificationAnswered {
+  background-color: #eff6ff;
+  border-color: #bedbff;
+}
+
+.clarificationPending {
+  background-color: #ffffff;
+}
+
+.clarificationRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.clarificationQuestion {
+  font-family: Inter, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: #0a0a0a;
+}
+
+.clarificationBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  height: 22px;
+  border-radius: 6px;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.badgeAnswered {
+  background-color: #dc2626;
+  color: #ffffff;
+}
+
+.badgePending {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: #0a0a0a;
+  background-color: #ffffff;
+}
+
+.clarificationResponse {
+  margin-top: 8px;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  color: #4a5565;
+}
+
+.clarificationResponse strong {
+  font-weight: 700;
+}
+
+.clarificationTime {
+  margin-top: 6px;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  color: #6a7282;
+}
+
+@media (max-width: 900px) {
+  .page {
+    padding: 24px;
+  }
+
+  .statsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tabs {
+    width: 100%;
+  }
+
+  .scoreboardRow {
+    grid-template-columns: 56px 160px 72px 72px repeat(5, minmax(60px, 1fr));
+  }
+
+  .problemRow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .pointsBlock {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 16px;
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .scoreboardRow {
+    grid-template-columns: 48px 1fr 64px 64px repeat(5, minmax(52px, 1fr));
+    font-size: 12px;
+  }
+}
