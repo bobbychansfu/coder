@@ -1,16 +1,13 @@
 "use client";
 
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import { mockUpcomingContests } from "@/fe/dashboard/data";
+import { mockUpcomingContests } from "@/fe/dashboard/data/contests";
+import DashboardWidget from "./DashboardWidget";
 import styles from "../styles/UpcomingContests.module.css";
 
 export default function UpcomingContests() {
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <AccessTimeIcon className={styles.icon} />
-        <h3 className={styles.title}>Upcoming Contests</h3>
-      </div>
+    <DashboardWidget title="Upcoming Contests" icon={AccessTimeIcon}>
       <div className={styles.list}>
         {mockUpcomingContests.map((contest) => (
           <div key={contest.id}>
@@ -21,6 +18,6 @@ export default function UpcomingContests() {
           </div>
         ))}
       </div>
-    </div>
+    </DashboardWidget>
   );
 }

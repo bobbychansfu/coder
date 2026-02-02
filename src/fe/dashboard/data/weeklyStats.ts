@@ -1,4 +1,4 @@
-import { WeeklyStat } from "@/fe/shared/types";
+import { WeeklyStat } from "@/fe/shared/types/weeklyStats";
 
 export const mockWeeklyStats: WeeklyStat[] = [
   { label: "Problems Solved", value: 5 },

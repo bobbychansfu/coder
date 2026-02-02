@@ -1,5 +1,5 @@
-import { Badge, BadgesResponse } from "@/fe/shared/types";
-import { mockBadges } from "@/fe/dashboard/data";
+import { Badge, BadgesResponse } from "@/fe/shared/types/badge";
+import { mockBadges } from "@/fe/dashboard/data/badges";
 import { apiFetch, USE_MOCK_DATA } from "@/fe/shared/services/api";
 
 /**

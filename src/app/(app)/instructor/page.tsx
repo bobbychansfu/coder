@@ -1,11 +1,5 @@
-import { InstructorToolsPage } from "@/fe/instructor/page";
-import { ScrollbarHider } from "@/fe/shared";
+import InstructorPage from "@/fe/instructor/page/InstructorPage";
 
-export default function InstructorPage() {
-  return (
-    <>
-      <ScrollbarHider />
-      <InstructorToolsPage />
-    </>
-  );
+export default function InstructorPageRoute() {
+  return <InstructorPage />;
 }

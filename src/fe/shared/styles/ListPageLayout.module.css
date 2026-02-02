@@ -2,6 +2,8 @@
   --nav-height: 64px;
   --page-padding: 32px;
   background-color: #f9fafb;
+  margin: 0 -32px -32px -32px;
+  padding: 16px 32px;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -16,7 +18,7 @@
 
 .title {
   font-family: Inter, sans-serif;
-  font-size: 30px;
+  font-size: 28px;
   line-height: 36px;
   font-weight: 700;
   color: #0a0a0a;
@@ -77,5 +79,7 @@
 @media (max-width: 768px) {
   .page {
     --page-padding: 16px;
+    margin: 0 -16px -32px -16px;
+    padding: 16px;
   }
 }
