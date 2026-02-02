@@ -1,4 +1,4 @@
-export type OverviewTone = "courses" | "students" | "problems";
+export type OverviewTone = "contests" | "participants" | "problems";
 
 export interface OverviewStat {
   id: string;
@@ -10,18 +10,18 @@ export interface OverviewStat {
 
 export const overviewStats: OverviewStat[] = [
   {
-    id: "active-courses",
-    label: "Active Courses",
+    id: "active-contests",
+    label: "Active Contests",
     value: "3",
     caption: "2 ongoing, 1 upcoming",
-    tone: "courses",
+    tone: "contests",
   },
   {
-    id: "total-students",
-    label: "Total Students",
+    id: "total-participants",
+    label: "Total Participants",
     value: "147",
-    caption: "Across all courses",
-    tone: "students",
+    caption: "Across all contests",
+    tone: "participants",
   },
   {
     id: "problems-created",

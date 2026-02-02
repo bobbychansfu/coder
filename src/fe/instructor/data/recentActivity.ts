@@ -16,13 +16,13 @@ export const recentActivity: ActivityItem[] = [
   },
   {
     id: "activity-2",
-    description: "CS 201 avg submission rate increased by 15%",
+    description: "CMPT 307 avg submission rate increased by 15%",
     timestamp: "1 day ago",
     tone: "info",
   },
   {
     id: "activity-3",
-    description: "8 new students enrolled in CS 301",
+    description: "8 new students enrolled in CMPT 301",
     timestamp: "3 days ago",
     tone: "highlight",
   },
