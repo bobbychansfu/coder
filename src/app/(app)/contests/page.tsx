@@ -1,5 +1,5 @@
-import { ContestsListPage } from "@/fe/contests/page";
+import ContestsPage from "@/fe/contests/page/ContestsPage";
 
-export default function ContestsPage() {
-  return <ContestsListPage />;
+export default function ContestsPageRoute() {
+  return <ContestsPage />;
 }

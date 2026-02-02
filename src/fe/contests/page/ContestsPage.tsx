@@ -1,9 +1,9 @@
 "use client";
 
 import { FilterPanel, ListPageLayout, SearchInput } from "@/fe/shared";
-import { contestList } from "../data/contests";
-import ContestCard from "./ContestCard";
-import styles from "../styles/ContestsListPage.module.css";
+import { contestList } from "@/fe/contests/data/contests";
+import ContestCard from "@/fe/contests/components/ContestCard";
+import styles from "@/fe/contests/styles/ContestsPage.module.css";
 import layoutStyles from "@/fe/shared/styles/ListPageLayout.module.css";
 
 const filters = [
@@ -36,7 +36,7 @@ const filters = [
   },
 ];
 
-export default function ContestsListPage() {
+export default function ContestsPage() {
   return (
     <ListPageLayout
       title="Contests"

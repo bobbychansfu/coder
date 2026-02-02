@@ -1,8 +1,9 @@
 "use client";
+
 import { FilterPanel, ListPageLayout, SearchInput } from "@/fe/shared";
-import { practiceProblems } from "../data/practiceProblems";
-import PracticeCard from "./PracticeCard";
-import styles from "../styles/PracticeListPage.module.css";
+import { practiceProblems } from "@/fe/practice/data/practiceProblems";
+import PracticeCard from "@/fe/practice/components/PracticeCard";
+import styles from "@/fe/practice/styles/PracticePage.module.css";
 import layoutStyles from "@/fe/shared/styles/ListPageLayout.module.css";
 
 const filters = [
@@ -39,7 +40,7 @@ const filters = [
   },
 ];
 
-export default function PracticeListPage() {
+export default function PracticePage() {
   return (
     <ListPageLayout
       title="Practice Problems"

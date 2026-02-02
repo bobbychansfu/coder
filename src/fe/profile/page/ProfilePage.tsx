@@ -7,7 +7,7 @@ import WhatshotOutlinedIcon from "@mui/icons-material/WhatshotOutlined";
 import PublicOutlinedIcon from "@mui/icons-material/PublicOutlined";
 import LeaderboardOutlinedIcon from "@mui/icons-material/LeaderboardOutlined";
 import WorkspacePremiumOutlinedIcon from "@mui/icons-material/WorkspacePremiumOutlined";
-import styles from "../styles/ProfileMainSection.module.css";
+import styles from "@/fe/profile/styles/ProfilePage.module.css";
 
 const stats = [
   {
@@ -125,7 +125,7 @@ const contests = [
   },
 ];
 
-export default function ProfileMainSection() {
+export default function ProfilePage() {
   return (
     <div className={styles.page}>
       <Link href="/" className={styles.backLink}>

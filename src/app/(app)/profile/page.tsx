@@ -1,5 +1,5 @@
-import { ProfileMainSection } from "@/fe/profile/page";
+import ProfilePage from "@/fe/profile/page/ProfilePage";
 
-export default function ProfilePage() {
-  return <ProfileMainSection />;
+export default function ProfilePageRoute() {
+  return <ProfilePage />;
 }
