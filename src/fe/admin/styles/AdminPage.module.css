@@ -24,7 +24,7 @@
   padding: 32px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 32px;
   font-family: Inter, sans-serif;
 }
 
@@ -41,17 +41,18 @@
 }
 
 .headerIcon {
-  width: 32px;
-  height: 32px;
+  width: 2rem !important;
+  height: 2rem !important;
+  font-size: 2rem !important;
   color: var(--admin-accent-red);
 }
 
 .title {
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 400;
+  font-size: 30px;
+  line-height: 36px;
+  font-weight: 700;
   color: var(--admin-text-primary);
-  letter-spacing: -0.3125px;
+  letter-spacing: 0.3955px;
   margin: 0;
 }
 
@@ -76,27 +77,41 @@
 .sectionBlock {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
+}
+
+.toolHubSection {
+  width: 100%;
 }
 
 .actionGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 24px;
+}
+
+.actionFlex {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  gap: 24px;
+  width: 100%;
 }
 
 .actionCard {
   background-color: var(--admin-surface);
-  border: 1px solid var(--admin-border);
-  border-radius: 8px;
-  height: 186px;
+  border: 1px solid var(--admin-border-muted);
+  border-radius: 12px;
+  min-height: 153px;
   padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
   text-align: left;
   cursor: pointer;
   width: 100%;
+  flex: 1 1 220px;
+  max-width: 290px;
   font: inherit;
   color: inherit;
   appearance: none;
@@ -107,13 +122,32 @@
   outline-offset: 2px;
 }
 
+.actionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
 .actionIcon {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.actionIconGlyph {
+  width: 1.5rem !important;
+  height: 1.5rem !important;
+  font-size: 1.5rem !important;
+}
+
+.actionIconSuccess {
+  background-color: var(--admin-accent-green-bg);
+  color: var(--admin-accent-green);
 }
 
 .actionIconDanger {
@@ -132,20 +166,19 @@
 }
 
 .actionTitle {
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 400;
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 600;
   color: var(--admin-text-primary);
   letter-spacing: -0.3125px;
   margin: 0;
 }
 
 .actionDescription {
-  font-size: 14px;
-  line-height: 20px;
+  font-size: 15px;
+  line-height: 22px;
   font-weight: 400;
   color: var(--admin-text-secondary);
-  letter-spacing: -0.1504px;
   margin: 0;
 }
 
@@ -157,13 +190,13 @@
 
 .overviewCard {
   background-color: var(--admin-surface);
-  border: 1px solid var(--admin-border);
-  border-radius: 8px;
-  height: 134px;
-  padding: 25px;
+  border: 1px solid var(--admin-border-muted);
+  border-radius: 12px;
+  min-height: 164px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  justify-content: space-between;
 }
 
 .overviewHeader {
@@ -173,20 +206,26 @@
 }
 
 .overviewLabel {
-  font-size: 14px;
+  font-size: 16px;
   line-height: 20px;
-  font-weight: 400;
+  font-weight: 500;
   color: var(--admin-text-secondary);
   letter-spacing: -0.1504px;
   margin: 0;
 }
 
+.overviewContent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .overviewValue {
-  font-size: 30px;
-  line-height: 36px;
-  font-weight: 600;
-  color: var(--admin-text-primary);
-  letter-spacing: 0.3955px;
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 700;
+  color: var(--admin-text-dark);
+  letter-spacing: 0.0703px;
   margin: 0;
 }
 
@@ -207,8 +246,9 @@
 }
 
 .overviewIcon {
-  width: 20px;
-  height: 20px;
+  width: 1.5rem !important;
+  height: 1.5rem !important;
+  font-size: 1.5rem !important;
   color: var(--admin-text-muted);
 }
 
@@ -217,6 +257,15 @@
   border: 1px solid var(--admin-border);
   border-radius: 8px;
   overflow: hidden;
+  max-height: 277px;
+  overflow-y: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.activityList::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 .activityItem {
@@ -238,6 +287,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.activityIconGlyph {
+  width: 1.5rem !important;
+  height: 1.5rem !important;
+  font-size: 1.5rem !important;
 }
 
 .activityIconDanger {
@@ -312,8 +367,11 @@
   position: absolute;
   left: 12px;
   top: 10px;
-  width: 16px;
-  height: 16px;
+  width: 1rem !important;
+  height: 1rem !important;
+  font-size: 1rem !important;
+  line-height: 1rem !important;
+  display: block;
 }
 
 @media (max-width: 1200px) {

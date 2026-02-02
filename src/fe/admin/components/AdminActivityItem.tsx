@@ -1,16 +1,16 @@
 "use client";
 
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
-import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
-import BuildOutlinedIcon from "@mui/icons-material/BuildOutlined";
+import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
+import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import StorageOutlinedIcon from "@mui/icons-material/StorageOutlined";
 import type { AdminActivityItem } from "../data";
-import styles from "../styles/AdminToolsPage.module.css";
+import styles from "../styles/AdminPage.module.css";
 
 const iconMap = {
   danger: PersonOutlineIcon,
-  warning: SchoolOutlinedIcon,
-  info: BuildOutlinedIcon,
+  warning: MenuBookOutlinedIcon,
+  info: SettingsOutlinedIcon,
   success: StorageOutlinedIcon,
 } as const;
 
@@ -31,7 +31,7 @@ export default function AdminActivityItem({ item }: AdminActivityItemProps) {
   return (
     <div className={styles.activityItem}>
       <div className={`${styles.activityIcon} ${toneClassMap[item.tone]}`}>
-        <Icon fontSize="small" />
+        <Icon className={styles.activityIconGlyph} fontSize="inherit" />
       </div>
       <div className={styles.activityText}>
         <p className={styles.activityDescription}>{item.description}</p>

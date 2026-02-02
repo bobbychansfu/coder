@@ -1,6 +1,6 @@
 export type AdminOverviewTone =
   | "users"
-  | "courses"
+  | "contests"
   | "problems"
   | "health";
 
@@ -10,7 +10,8 @@ export interface AdminOverviewStat {
   value: string;
   caption: string;
   tone: AdminOverviewTone;
-  accent?: "positive" | "neutral";
+  valueAccent?: "positive" | "neutral";
+  captionAccent?: "positive" | "neutral";
 }
 
 export const adminOverviewStats: AdminOverviewStat[] = [
@@ -20,15 +21,14 @@ export const adminOverviewStats: AdminOverviewStat[] = [
     value: "2,847",
     caption: "+124 this month",
     tone: "users",
-    accent: "positive",
+    captionAccent: "positive",
   },
   {
-    id: "active-courses",
-    label: "Active Courses",
+    id: "total-contests",
+    label: "Total Contests",
     value: "45",
-    caption: "12 starting soon",
-    tone: "courses",
-    accent: "neutral",
+    caption: "3 active now",
+    tone: "contests",
   },
   {
     id: "problems",
@@ -36,7 +36,6 @@ export const adminOverviewStats: AdminOverviewStat[] = [
     value: "1,256",
     caption: "328 public",
     tone: "problems",
-    accent: "neutral",
   },
   {
     id: "system-health",
@@ -44,6 +43,6 @@ export const adminOverviewStats: AdminOverviewStat[] = [
     value: "99.8%",
     caption: "Uptime",
     tone: "health",
-    accent: "positive",
+    valueAccent: "positive",
   },
 ];

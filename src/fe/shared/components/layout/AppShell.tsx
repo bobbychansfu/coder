@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
+import { Box } from "@mui/material";
 import Navbar from "./Navbar";
 import styles from "../../styles/AppShell.module.css";
 
@@ -10,9 +11,9 @@ interface AppShellProps {
 
 export default function AppShell({ children }: AppShellProps) {
   return (
-    <div className={styles.container}>
+    <Box className={styles.container}>
       <Navbar />
-      <main className={styles.main}>{children}</main>
-    </div>
+      <Box component="main" className={styles.main}>{children}</Box>
+    </Box>
   );
 }

@@ -3,6 +3,7 @@
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
+import { Box, Paper, Typography } from "@mui/material";
 import styles from "../styles/ContestCard.module.css";
 
 interface ContestCardProps {
@@ -28,16 +29,16 @@ export default function ContestCard({
 }: ContestCardProps) {
 
   return (
-    <div className={styles.card}>
+    <Paper className={styles.card} elevation={0}>
       {/* Rank Badge */}
-      <div className={styles.rankBadge}>
-        <div className={styles.rankNumber}>#{rank}</div>
-        <div className={styles.rankLabel}>Rank</div>
-      </div>
+      <Box className={styles.rankBadge}>
+        <Box className={styles.rankNumber}>#{rank}</Box>
+        <Typography className={styles.rankLabel}>Rank</Typography>
+      </Box>
 
       {/* Header */}
-      <div className={styles.header}>
-        <div className={styles.iconWrapper}>
+      <Box className={styles.header}>
+        <Box className={styles.iconWrapper}>
           <EmojiEventsIcon className={styles.icon} />
         </div>
         <div className={styles.headerContent}>
@@ -47,38 +48,38 @@ export default function ContestCard({
               className={`${styles.difficultyBadge} ${styles[`difficulty${difficulty}`]}`}
             >
               {difficulty}
-            </span>
-          </div>
-          <div className={styles.metadata}>
-            <div className={styles.metadataItem}>
+            </Box>
+          </Box>
+          <Box className={styles.metadata}>
+            <Box className={styles.metadataItem}>
               <CalendarTodayIcon className={styles.metadataIcon} />
-              <span className={styles.metadataText}>{date}</span>
-            </div>
-            <div className={styles.metadataItem}>
+              <Typography component="span" className={styles.metadataText}>{date}</Typography>
+            </Box>
+            <Box className={styles.metadataItem}>
               <PeopleOutlineIcon className={styles.metadataIcon} />
-              <span className={styles.metadataText}>
+              <Typography component="span" className={styles.metadataText}>
                 {participants} participants
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+      </Box>
 
       {/* Stats */}
-      <div className={styles.stats}>
-        <div className={styles.stat}>
-          <div className={styles.statLabel}>Problems Solved</div>
-          <div className={styles.statValue}>{problemsSolved}</div>
-        </div>
-        <div className={styles.stat}>
-          <div className={styles.statLabel}>Score</div>
-          <div className={styles.statValue}>{score}</div>
-        </div>
-        <div className={styles.stat}>
-          <div className={styles.statLabel}>Time Taken</div>
-          <div className={styles.statValue}>{timeTaken}</div>
-        </div>
-      </div>
-    </div>
+      <Box className={styles.stats}>
+        <Box className={styles.stat}>
+          <Typography className={styles.statLabel}>Problems Solved</Typography>
+          <Typography className={styles.statValue}>{problemsSolved}</Typography>
+        </Box>
+        <Box className={styles.stat}>
+          <Typography className={styles.statLabel}>Score</Typography>
+          <Typography className={styles.statValue}>{score}</Typography>
+        </Box>
+        <Box className={styles.stat}>
+          <Typography className={styles.statLabel}>Time Taken</Typography>
+          <Typography className={styles.statValue}>{timeTaken}</Typography>
+        </Box>
+      </Box>
+    </Paper>
   );
 }
