@@ -12,7 +12,8 @@ import MonitorHeartOutlinedIcon from "@mui/icons-material/MonitorHeartOutlined";
 import PersonAddOutlinedIcon from "@mui/icons-material/PersonAddOutlined";
 import type { SvgIconComponent } from "@mui/icons-material";
 
-import { ScrollbarHider, ToolCard, StatCard, ActivityFeedItem } from "@/fe/shared";
+import ManagementLayout from "@/fe/shared/components/layout/ManagementLayout";
+import type { DashboardAction, DashboardStat, DashboardActivity } from "@/fe/shared/components/layout/ManagementLayout";
 import {
   adminActions,
   adminOverviewStats,
@@ -23,7 +24,6 @@ import {
   type AdminActivityTone,
   type AdminQuickActionTone,
 } from "@/fe/admin/data";
-import { StatisticsSection } from "@/fe/dashboard/components";
 import styles from "@/fe/admin/styles/AdminPage.module.css";
 
 // Icon mappings for admin action cards
@@ -58,111 +58,63 @@ const quickActionIconMap: Record<AdminQuickActionTone, SvgIconComponent> = {
 };
 
 export default function AdminPage() {
+  // Map admin data to DashboardPage format
+  const actions: DashboardAction[] = adminActions.map((action) => ({
+    id: action.id,
+    title: action.title,
+    description: action.description,
+    tone: action.tone,
+    icon: actionIconMap[action.tone],
+  }));
+
+  const stats: DashboardStat[] = adminOverviewStats.map((stat) => ({
+    id: stat.id,
+    label: stat.label,
+    value: stat.value,
+    caption: stat.caption,
+    tone: stat.tone,
+    valueAccent: stat.valueAccent,
+    captionAccent: stat.captionAccent,
+    icon: overviewIconMap[stat.tone],
+  }));
+
+  const activity: DashboardActivity[] = adminRecentActivity.map((item) => ({
+    id: item.id,
+    description: item.description,
+    timestamp: item.timestamp,
+    tone: item.tone,
+    icon: activityIconMap[item.tone],
+  }));
+
   return (
-    <>
-      <ScrollbarHider />
-      <div className={styles.page}>
-        <header className={styles.header}>
-          <div className={styles.headerRow}>
-            <AdminPanelSettingsOutlinedIcon
-              className={styles.headerIcon}
-              fontSize="inherit"
-            />
-            <h1 className={styles.title}>System Administration</h1>
-          </div>
-          <p className={styles.subtitle}>
-            Manage platform-wide settings, users, and system configuration
-          </p>
-        </header>
-
-        <StatisticsSection
-          className={styles.toolHubSection}
-          gridClassName={styles.actionFlex}
-        >
-          {adminActions.map((action) => (
-            <ToolCard
-              key={action.id}
-              title={action.title}
-              description={action.description}
-              icon={actionIconMap[action.tone]}
-              tone={action.tone}
-              className={styles.actionCard}
-              headerClassName={styles.actionHeader}
-              titleClassName={styles.actionTitle}
-              iconClassName={styles.actionIcon}
-              iconGlyphClassName={styles.actionIconGlyph}
-              descriptionClassName={styles.actionDescription}
-            />
-          ))}
-        </StatisticsSection>
-
-        <section className={styles.sectionBlock}>
-          <h2 className={styles.sectionTitle}>System Overview</h2>
-          <div className={styles.overviewGrid}>
-            {adminOverviewStats.map((stat) => (
-              <StatCard
-                key={stat.id}
-                label={stat.label}
-                value={stat.value}
-                caption={stat.caption}
-                icon={overviewIconMap[stat.tone]}
-                tone={stat.tone}
-                valueAccent={stat.valueAccent}
-                captionAccent={stat.captionAccent}
-                className={styles.overviewCard}
-                headerClassName={styles.overviewHeader}
-                labelClassName={styles.overviewLabel}
-                iconClassName={styles.overviewIcon}
-                contentClassName={styles.overviewContent}
-                valueClassName={styles.overviewValue}
-                captionClassName={styles.overviewCaption}
-                valueAccentClassName={styles.overviewValuePositive}
-                captionAccentClassName={styles.overviewCaptionPositive}
-              />
-            ))}
-          </div>
-        </section>
-
-        <section className={styles.sectionBlock}>
-          <h2 className={styles.sectionTitle}>Recent System Activity</h2>
-          <div className={styles.activityList}>
-            {adminRecentActivity.map((item) => (
-              <ActivityFeedItem
-                key={item.id}
-                description={item.description}
-                timestamp={item.timestamp}
-                icon={activityIconMap[item.tone]}
-                tone={item.tone}
-                className={styles.activityItem}
-                iconClassName={styles.activityIcon}
-                iconGlyphClassName={styles.activityIconGlyph}
-                textClassName={styles.activityText}
-                descriptionClassName={styles.activityDescription}
-                timestampClassName={styles.activityTimestamp}
-              />
-            ))}
-          </div>
-        </section>
-
-        <section className={styles.sectionBlock}>
-          <h2 className={styles.sectionTitle}>Quick Actions</h2>
-          <div className={styles.quickActions}>
-            {adminQuickActions.map((action) => {
-              const Icon = quickActionIconMap[action.tone];
-              return (
-                <button
-                  key={action.id}
-                  className={styles.quickActionButton}
-                  type="button"
-                >
-                  <Icon className={styles.quickActionIcon} fontSize="inherit" />
-                  {action.label}
-                </button>
-              );
-            })}
-          </div>
-        </section>
-      </div>
-    </>
+    <ManagementLayout
+      title="System Administration"
+      subtitle="Manage platform-wide settings, users, and system configuration"
+      headerIcon={AdminPanelSettingsOutlinedIcon}
+      headerIconColor="red"
+      actions={actions}
+      stats={stats}
+      activity={activity}
+    >
+      {/* Quick Actions Section */}
+      <section className={styles.sectionBlock}>
+        <h2 className={styles.sectionTitle}>Quick Actions</h2>
+        <div className={styles.quickActions}>
+          {adminQuickActions.map((action) => {
+            const Icon = quickActionIconMap[action.tone];
+            return (
+              <button
+                key={action.id}
+                className={styles.quickActionButton}
+                type="button"
+              >
+                <Icon className={styles.quickActionIcon} fontSize="inherit" />
+                {action.label}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+    </ManagementLayout>
   );
 }

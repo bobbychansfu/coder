@@ -1,5 +1,6 @@
 "use client";
 
+import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
 import CreateOutlinedIcon from "@mui/icons-material/CreateOutlined";
@@ -11,7 +12,8 @@ import TrendingUpOutlinedIcon from "@mui/icons-material/TrendingUpOutlined";
 import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
 import type { SvgIconComponent } from "@mui/icons-material";
 
-import { ToolCard, StatCard, ActivityFeedItem } from "@/fe/shared";
+import ManagementLayout from "@/fe/shared/components/layout/ManagementLayout";
+import type { DashboardAction, DashboardStat, DashboardActivity } from "@/fe/shared/components/layout/ManagementLayout";
 import {
   instructorActions,
   overviewStats,
@@ -20,7 +22,6 @@ import {
   type OverviewTone,
   type ActivityTone,
 } from "@/fe/instructor/data";
-import styles from "@/fe/instructor/styles/InstructorPage.module.css";
 
 // Icon mappings for instructor action cards
 const actionIconMap: Record<InstructorActionTone, SvgIconComponent> = {
@@ -45,76 +46,41 @@ const activityIconMap: Record<ActivityTone, SvgIconComponent> = {
 };
 
 export default function InstructorPage() {
+  // Map instructor data to DashboardPage format
+  const actions: DashboardAction[] = instructorActions.map((action) => ({
+    id: action.id,
+    title: action.title,
+    description: action.description,
+    tone: action.tone,
+    icon: actionIconMap[action.tone],
+  }));
+
+  const stats: DashboardStat[] = overviewStats.map((stat) => ({
+    id: stat.id,
+    label: stat.label,
+    value: stat.value,
+    caption: stat.caption,
+    tone: stat.tone,
+    icon: overviewIconMap[stat.tone],
+  }));
+
+  const activity: DashboardActivity[] = recentActivity.map((item) => ({
+    id: item.id,
+    description: item.description,
+    timestamp: item.timestamp,
+    tone: item.tone,
+    icon: activityIconMap[item.tone],
+  }));
+
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
-        <h1 className={styles.title}>Instructor Tools</h1>
-        <p className={styles.subtitle}>
-          Manage your courses, create problems, and track student progress
-        </p>
-      </header>
-
-      <section className={styles.actionGrid}>
-        {instructorActions.map((action) => (
-          <ToolCard
-            key={action.id}
-            title={action.title}
-            description={action.description}
-            icon={actionIconMap[action.tone]}
-            tone={action.tone}
-            className={styles.actionCard}
-            headerClassName={styles.actionHeader}
-            titleClassName={styles.actionTitle}
-            iconClassName={styles.actionIcon}
-            iconGlyphClassName={styles.actionIconGlyph}
-            descriptionClassName={styles.actionDescription}
-          />
-        ))}
-      </section>
-
-      <section className={styles.sectionBlock}>
-        <h2 className={styles.sectionTitle}>Quick Overview</h2>
-        <div className={styles.overviewGrid}>
-          {overviewStats.map((stat) => (
-            <StatCard
-              key={stat.id}
-              label={stat.label}
-              value={stat.value}
-              caption={stat.caption}
-              icon={overviewIconMap[stat.tone]}
-              tone={stat.tone}
-              className={styles.overviewCard}
-              headerClassName={styles.overviewHeader}
-              labelClassName={styles.overviewLabel}
-              iconClassName={styles.overviewIcon}
-              contentClassName={styles.overviewContent}
-              valueClassName={styles.overviewValue}
-              captionClassName={styles.overviewCaption}
-            />
-          ))}
-        </div>
-      </section>
-
-      <section className={styles.sectionBlock}>
-        <h2 className={styles.sectionTitle}>Recent Activity</h2>
-        <div className={styles.activityList}>
-          {recentActivity.map((item) => (
-            <ActivityFeedItem
-              key={item.id}
-              description={item.description}
-              timestamp={item.timestamp}
-              icon={activityIconMap[item.tone]}
-              tone={item.tone}
-              className={styles.activityItem}
-              iconClassName={styles.activityIcon}
-              iconGlyphClassName={styles.activityIconGlyph}
-              textClassName={styles.activityText}
-              descriptionClassName={styles.activityDescription}
-              timestampClassName={styles.activityTimestamp}
-            />
-          ))}
-        </div>
-      </section>
-    </div>
+    <ManagementLayout
+      title="Instructor Tools"
+      subtitle="Manage your courses, create problems, and track student progress"
+      headerIcon={SchoolOutlinedIcon}
+      headerIconColor="red"
+      actions={actions}
+      stats={stats}
+      activity={activity}
+    />
   );
 }

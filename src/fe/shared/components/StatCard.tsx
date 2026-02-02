@@ -1,14 +1,15 @@
 "use client";
 
+import Image from "next/image";
 import type { SvgIconComponent } from "@mui/icons-material";
-import type { AccentType } from "@/fe/shared/types";
+import type { AccentType } from "@/fe/shared/types/common";
 
 interface StatCardProps {
   label: string;
   value: string;
-  caption: string;
-  icon: SvgIconComponent;
-  tone: string;
+  caption?: string;
+  icon?: SvgIconComponent | string;
+  tone?: string;
   valueAccent?: AccentType;
   captionAccent?: AccentType;
   className?: string;
@@ -30,7 +31,7 @@ export default function StatCard({
   label,
   value,
   caption,
-  icon: Icon,
+  icon,
   tone,
   valueAccent,
   captionAccent,
@@ -62,11 +63,22 @@ export default function StatCard({
     <div className={className} data-tone={tone}>
       <div className={headerClassName}>
         <p className={labelClassName}>{label}</p>
-        <Icon className={iconClassName} fontSize="inherit" />
+        {icon && (
+          typeof icon === 'string' ? (
+             <div className={iconClassName} style={{ position: 'relative' }}>
+                <Image src={icon} alt={label} fill style={{ objectFit: 'contain' }} />
+             </div>
+          ) : (
+            (() => {
+              const Icon = icon;
+              return <Icon className={iconClassName} fontSize="inherit" />;
+            })()
+          )
+        )}
       </div>
       <div className={contentClassName}>
         <p className={valueClasses.trim()}>{value}</p>
-        <p className={captionClasses.trim()}>{caption}</p>
+        {caption && <p className={captionClasses.trim()}>{caption}</p>}
       </div>
     </div>
   );

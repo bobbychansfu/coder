@@ -1,12 +1,12 @@
 "use client";
 
 import type { SvgIconComponent } from "@mui/icons-material";
-import type { ToneType } from "@/fe/shared/types";
+import type { ToneType } from "@/fe/shared/types/common";
 
 interface ToolCardProps {
   title: string;
   description: string;
-  icon: SvgIconComponent;
+  icon?: SvgIconComponent;
   tone: ToneType;
   className?: string;
   iconClassName?: string;
@@ -38,9 +38,11 @@ export default function ToolCard({
     <button className={className} type="button" onClick={onClick}>
       <div className={headerClassName}>
         <h3 className={titleClassName}>{title}</h3>
-        <div className={iconClassName} data-tone={tone}>
-          <Icon className={iconGlyphClassName} fontSize="inherit" />
-        </div>
+        {Icon && (
+          <div className={iconClassName} data-tone={tone}>
+            <Icon className={iconGlyphClassName} fontSize="inherit" />
+          </div>
+        )}
       </div>
       <p className={descriptionClassName}>{description}</p>
     </button>

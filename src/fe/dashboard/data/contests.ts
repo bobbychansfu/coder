@@ -1,4 +1,4 @@
-import { Contest, UpcomingContest, ContestAlert } from "@/fe/shared/types";
+import { Contest, UpcomingContest, ContestAlert } from "@/fe/shared/types/contest";
 
 export const mockPastContests: Contest[] = [
   {

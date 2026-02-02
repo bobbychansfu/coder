@@ -1,18 +1,12 @@
+import type { ManagementStat } from "@/fe/shared/types/management";
+
 export type AdminOverviewTone =
   | "users"
   | "contests"
   | "problems"
   | "health";
 
-export interface AdminOverviewStat {
-  id: string;
-  label: string;
-  value: string;
-  caption: string;
-  tone: AdminOverviewTone;
-  valueAccent?: "positive" | "neutral";
-  captionAccent?: "positive" | "neutral";
-}
+export type AdminOverviewStat = ManagementStat<AdminOverviewTone>;
 
 export const adminOverviewStats: AdminOverviewStat[] = [
   {

@@ -1,0 +1,106 @@
+.card {
+  background-color: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 0 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+}
+
+.cardCompact {
+  height: 142.5px;
+}
+
+.cardTall {
+  height: 170.5px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 28px;
+}
+
+/* If no header content (like icon) is present, title can be standalone, 
+   but we'll keep the header wrapper for consistency if needed or handle it in JSX */
+
+.title {
+  font-family: Inter, sans-serif;
+  font-size: 18px;
+  line-height: 28px;
+  font-weight: 700;
+  color: #0a0a0a;
+  letter-spacing: -0.4395px;
+  max-height: 56px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.titleIcon {
+  font-size: 20px;
+  color: #00a63e; /* Default success color */
+  align-self: flex-start;
+}
+
+.meta {
+  position: relative;
+  height: 52.5px;
+}
+
+.badge {
+  position: absolute;
+  top: 2.5px;
+  left: 0;
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  text-transform: capitalize;
+}
+
+/* Color Variants */
+.badgeGreen {
+  background-color: #f0fdf4;
+  border: 1px solid #b9f8cf;
+  color: #00a63e;
+}
+
+.badgeOrange {
+  background-color: #fff7ed;
+  border: 1px solid #ffd6a7;
+  color: #f54900;
+}
+
+.badgeRed {
+  background-color: #fef2f2;
+  border: 1px solid #ffc9c9;
+  color: #e7000b;
+}
+
+.badgeDefault {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  color: #4a5565;
+}
+
+.subMeta {
+  position: absolute;
+  top: 32.5px;
+  left: 0;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  color: #4a5565;
+  letter-spacing: -0.1504px;
+}

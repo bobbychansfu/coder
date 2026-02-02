@@ -1,12 +1,12 @@
 "use client";
 
-import { mockWeeklyStats } from "@/fe/dashboard/data";
+import { mockWeeklyStats } from "@/fe/dashboard/data/weeklyStats";
+import DashboardWidget from "./DashboardWidget";
 import styles from "../styles/ThisWeek.module.css";
 
 export default function ThisWeek() {
   return (
-    <div className={styles.container}>
-      <h3 className={styles.title}>This Week</h3>
+    <DashboardWidget title="This Week">
       <div className={styles.stats}>
         {mockWeeklyStats.map((stat, index) => (
           <div key={index} className={styles.stat}>
@@ -19,6 +19,6 @@ export default function ThisWeek() {
           </div>
         ))}
       </div>
-    </div>
+    </DashboardWidget>
   );
 }

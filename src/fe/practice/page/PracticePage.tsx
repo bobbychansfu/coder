@@ -1,9 +1,11 @@
 "use client";
 
-import { FilterPanel, ListPageLayout, SearchInput } from "@/fe/shared";
+import FilterPanel from "@/fe/shared/components/filters/FilterPanel";
+import ListPageLayout from "@/fe/shared/components/layout/ListPageLayout";
+import SearchInput from "@/fe/shared/components/forms/SearchInput";
 import { practiceProblems } from "@/fe/practice/data/practiceProblems";
 import PracticeCard from "@/fe/practice/components/PracticeCard";
-import styles from "@/fe/practice/styles/PracticePage.module.css";
+import gridStyles from "@/fe/shared/styles/Grid.module.css";
 import layoutStyles from "@/fe/shared/styles/ListPageLayout.module.css";
 
 const filters = [
@@ -50,7 +52,7 @@ export default function PracticePage() {
       <div className={layoutStyles.searchBar}>
         <SearchInput placeholder="Search for ..." />
       </div>
-      <div className={styles.grid}>
+      <div className={gridStyles.grid}>
         {practiceProblems.map((problem) => (
           <PracticeCard
             key={problem.id}

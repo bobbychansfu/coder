@@ -1,12 +1,12 @@
 "use client";
 
 import type { SvgIconComponent } from "@mui/icons-material";
-import type { ToneType } from "@/fe/shared/types";
+import type { ToneType } from "@/fe/shared/types/common";
 
 interface ActivityFeedItemProps {
   description: string;
   timestamp: string;
-  icon: SvgIconComponent;
+  icon?: SvgIconComponent;
   tone: ToneType;
   className?: string;
   iconClassName?: string;
@@ -34,9 +34,11 @@ export default function ActivityFeedItem({
 }: ActivityFeedItemProps) {
   return (
     <div className={className}>
-      <div className={iconClassName} data-tone={tone}>
-        <Icon className={iconGlyphClassName} fontSize="inherit" />
-      </div>
+      {Icon && (
+        <div className={iconClassName} data-tone={tone}>
+          <Icon className={iconGlyphClassName} fontSize="inherit" />
+        </div>
+      )}
       <div className={textClassName}>
         <p className={descriptionClassName}>{description}</p>
         <p className={timestampClassName}>{timestamp}</p>

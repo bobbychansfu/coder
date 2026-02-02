@@ -1,4 +1,4 @@
-import { Badge } from "@/fe/shared/types";
+import { Badge } from "@/fe/shared/types/badge";
 
 export const mockBadges: Badge[] = [
   {

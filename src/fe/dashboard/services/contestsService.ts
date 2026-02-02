@@ -1,5 +1,5 @@
-import { Contest, UpcomingContest, ContestAlert } from "@/fe/shared/types";
-import { mockPastContests, mockUpcomingContests, mockContestAlert } from "@/fe/dashboard/data";
+import { Contest, UpcomingContest, ContestAlert } from "@/fe/shared/types/contest";
+import { mockPastContests, mockUpcomingContests, mockContestAlert } from "@/fe/dashboard/data/contests";
 import { apiFetch, USE_MOCK_DATA } from "@/fe/shared/services/api";
 
 /**

@@ -1,4 +1,4 @@
-import { Statistic } from "@/fe/shared/types";
+import { Statistic } from "@/fe/shared/types/statistics";
 
 export const mockStatistics: Statistic[] = [
   {

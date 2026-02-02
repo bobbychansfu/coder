@@ -1,11 +1,8 @@
+import type { ManagementAction } from "@/fe/shared/types/management";
+
 export type AdminActionTone = "success" | "danger" | "warning" | "info";
 
-export interface AdminAction {
-  id: string;
-  title: string;
-  description: string;
-  tone: AdminActionTone;
-}
+export type AdminAction = ManagementAction<AdminActionTone>;
 
 export const adminActions: AdminAction[] = [
   {
