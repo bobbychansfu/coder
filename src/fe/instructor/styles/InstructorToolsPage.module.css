@@ -6,6 +6,7 @@
   --color-text-secondary: #4a5565;
   --color-text-tertiary: #6a7282;
   --color-icon-muted: #98a2b3;
+  --color-border-muted: rgba(0, 0, 0, 0.1);
   --color-accent-blue-bg: #eff6ff;
   --color-accent-blue: #2563eb;
   --color-accent-purple-bg: #faf5ff;
@@ -36,7 +37,7 @@
 .sectionBlock {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
 }
 
 .title {
@@ -68,19 +69,19 @@
 
 .actionGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 24px;
 }
 
 .actionCard {
   background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  height: 186px;
+  border: 1px solid var(--color-border-muted);
+  border-radius: 12px;
+  min-height: 160px;
   padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
   text-align: left;
   cursor: pointer;
   width: 100%;
@@ -94,45 +95,63 @@
   outline-offset: 2px;
 }
 
+.actionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
 .actionIcon {
-  width: 48px;
-  height: 48px;
+  width: 32px;
+  height: 32px;
+  font-size: 16px;
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.actionIconPrimary {
+.actionIconGlyph {
+  width: 1.5rem;
+  height: 1.5rem;
+  font-size: 1.5rem;
+}
+
+.actionIconSuccess {
+  background-color: var(--color-accent-green-bg);
+  color: var(--color-accent-green);
+}
+
+.actionIconInfo {
   background-color: var(--color-accent-blue-bg);
   color: var(--color-accent-blue);
 }
 
-.actionIconSecondary {
+.actionIconPurple {
   background-color: var(--color-accent-purple-bg);
   color: var(--color-accent-purple);
 }
 
-.actionIconAccent {
+.actionIconWarning {
   background-color: var(--color-accent-orange-bg);
   color: var(--color-accent-orange);
 }
 
 .actionTitle {
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
   color: var(--color-text-primary);
-  letter-spacing: -0.3125px;
+  letter-spacing: -0.1504px;
   margin: 0;
 }
 
 .actionDescription {
-  font-size: 14px;
-  line-height: 20px;
+  font-size: 12px;
+  line-height: 15px;
   font-weight: 400;
   color: var(--color-text-secondary);
-  letter-spacing: -0.1504px;
   margin: 0;
 }
 
@@ -144,13 +163,13 @@
 
 .overviewCard {
   background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  height: 134px;
-  padding: 25px;
+  border: 1px solid var(--color-border-muted);
+  border-radius: 12px;
+  min-height: 164px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  justify-content: space-between;
 }
 
 .overviewHeader {
@@ -162,18 +181,24 @@
 .overviewLabel {
   font-size: 14px;
   line-height: 20px;
-  font-weight: 400;
+  font-weight: 500;
   color: var(--color-text-secondary);
   letter-spacing: -0.1504px;
   margin: 0;
 }
 
+.overviewContent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .overviewValue {
-  font-size: 30px;
-  line-height: 36px;
-  font-weight: 600;
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 700;
   color: var(--color-text-primary);
-  letter-spacing: 0.3955px;
+  letter-spacing: 0.0703px;
   margin: 0;
 }
 
@@ -186,8 +211,9 @@
 }
 
 .overviewIcon {
-  width: 20px;
-  height: 20px;
+  width: 1.5rem;
+  height: 1.5rem;
+  font-size: 1.5rem;
   color: var(--color-icon-muted);
 }
 
@@ -217,6 +243,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.activityIconGlyph {
+  width: 1.5rem;
+  height: 1.5rem;
+  font-size: 1.5rem;
 }
 
 .activityIconSuccess {
@@ -257,14 +289,14 @@
   margin: 0;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 960px) {
   .actionGrid,
   .overviewGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 640px) {
   .page {
     margin: -32px -16px;
     padding: 32px 16px;

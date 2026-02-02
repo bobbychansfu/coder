@@ -28,7 +28,7 @@ export default function ActivityItem({ item }: ActivityItemProps) {
   return (
     <div className={styles.activityItem}>
       <div className={`${styles.activityIcon} ${toneClassMap[item.tone]}`}>
-        <Icon fontSize="small" />
+        <Icon className={styles.activityIconGlyph} fontSize="inherit" />
       </div>
       <div className={styles.activityText}>
         <p className={styles.activityDescription}>{item.description}</p>
