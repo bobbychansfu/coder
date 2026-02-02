@@ -1,4 +1,6 @@
-import { Statistic } from "@/fe/shared/types";
+import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
+import WorkspacePremiumOutlinedIcon from "@mui/icons-material/WorkspacePremiumOutlined";
+import { Statistic } from "@/fe/shared/types/statistics";
 
 export const mockStatistics: Statistic[] = [
   {
@@ -9,18 +11,19 @@ export const mockStatistics: Statistic[] = [
     variant: "success",
   },
   {
-    title: "Current Streak",
-    value: "12 days",
+    title: "Participation",
+    value: "24 contests",
     subtitle: "Keep it up!",
-    icon: "/icons/flame.svg",
+    icon: GroupsOutlinedIcon,
     variant: "neutral",
+    tone: "info",
   },
   {
-    title: "Total XP",
+    title: "Total score",
     value: "8,450",
-    subtitle: "Level 14",
-    icon: "/icons/star.svg",
+    icon: WorkspacePremiumOutlinedIcon,
     variant: "neutral",
+    tone: "highlight",
   },
   {
     title: "Global Rank",

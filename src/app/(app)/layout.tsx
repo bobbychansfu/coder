@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { AppShell } from "@/fe/shared";
+import AppShell from "@/fe/shared/components/layout/AppShell";
 
 interface AppLayoutProps {
   children: ReactNode;

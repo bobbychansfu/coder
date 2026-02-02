@@ -20,11 +20,11 @@
 
 .page {
   background-color: var(--color-page-bg);
-  margin: -32px;
-  padding: 32px;
+  margin: 0 -32px -32px -32px;
+  padding: 16px 32px;
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 24px;
   font-family: Inter, sans-serif;
 }
 
@@ -34,6 +34,19 @@
   gap: 8px;
 }
 
+.headerRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.headerIcon {
+  width: 2rem !important;
+  height: 2rem !important;
+  font-size: 2rem !important;
+  color: var(--color-accent-purple);
+}
+
 .sectionBlock {
   display: flex;
   flex-direction: column;
@@ -41,11 +54,11 @@
 }
 
 .title {
-  font-size: 24px;
+  font-size: 30px;
   line-height: 36px;
-  font-weight: 500;
+  font-weight: 700;
   color: var(--color-text-primary);
-  letter-spacing: 0.0703px;
+  letter-spacing: 0.3955px;
   margin: 0;
 }
 
@@ -67,17 +80,29 @@
   margin: 0;
 }
 
+.toolHubSection {
+  width: 100%;
+}
+
 .actionGrid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 24px;
 }
 
+.actionFlex {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  gap: 24px;
+  width: 100%;
+}
+
 .actionCard {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border-muted);
   border-radius: 12px;
-  min-height: 160px;
+  min-height: 153px;
   padding: 24px;
   display: flex;
   flex-direction: column;
@@ -85,6 +110,8 @@
   text-align: left;
   cursor: pointer;
   width: 100%;
+  flex: 1 1 220px;
+  max-width: 290px;
   font: inherit;
   color: inherit;
   appearance: none;
@@ -103,9 +130,9 @@
 }
 
 .actionIcon {
-  width: 32px;
-  height: 32px;
-  font-size: 16px;
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -113,43 +140,43 @@
 }
 
 .actionIconGlyph {
-  width: 1.5rem;
-  height: 1.5rem;
-  font-size: 1.5rem;
+  width: 1.5rem !important;
+  height: 1.5rem !important;
+  font-size: 1.5rem !important;
 }
 
-.actionIconSuccess {
+.actionIcon[data-tone="success"] {
   background-color: var(--color-accent-green-bg);
   color: var(--color-accent-green);
 }
 
-.actionIconInfo {
+.actionIcon[data-tone="info"] {
   background-color: var(--color-accent-blue-bg);
   color: var(--color-accent-blue);
 }
 
-.actionIconPurple {
+.actionIcon[data-tone="purple"] {
   background-color: var(--color-accent-purple-bg);
   color: var(--color-accent-purple);
 }
 
-.actionIconWarning {
+.actionIcon[data-tone="warning"] {
   background-color: var(--color-accent-orange-bg);
   color: var(--color-accent-orange);
 }
 
 .actionTitle {
-  font-size: 14px;
-  line-height: 20px;
+  font-size: 18px;
+  line-height: 26px;
   font-weight: 600;
   color: var(--color-text-primary);
-  letter-spacing: -0.1504px;
+  letter-spacing: -0.3125px;
   margin: 0;
 }
 
 .actionDescription {
-  font-size: 12px;
-  line-height: 15px;
+  font-size: 15px;
+  line-height: 22px;
   font-weight: 400;
   color: var(--color-text-secondary);
   margin: 0;
@@ -157,15 +184,15 @@
 
 .overviewGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 24px;
 }
 
 .overviewCard {
   background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  height: 134px;
+  border: 1px solid var(--color-border-muted);
+  border-radius: 12px;
+  min-height: 164px;
   padding: 24px;
   display: flex;
   flex-direction: column;
@@ -179,7 +206,7 @@
 }
 
 .overviewLabel {
-  font-size: 14px;
+  font-size: 16px;
   line-height: 20px;
   font-weight: 500;
   color: var(--color-text-secondary);
@@ -211,9 +238,9 @@
 }
 
 .overviewIcon {
-  width: 1.5rem;
-  height: 1.5rem;
-  font-size: 1.5rem;
+  width: 1.5rem !important;
+  height: 1.5rem !important;
+  font-size: 1.5rem !important;
   color: var(--color-icon-muted);
 }
 
@@ -246,22 +273,22 @@
 }
 
 .activityIconGlyph {
-  width: 1.5rem;
-  height: 1.5rem;
-  font-size: 1.5rem;
+  width: 1.5rem !important;
+  height: 1.5rem !important;
+  font-size: 1.5rem !important;
 }
 
-.activityIconSuccess {
+.activityIcon[data-tone="success"] {
   background-color: var(--color-accent-green-bg);
   color: var(--color-accent-green);
 }
 
-.activityIconInfo {
+.activityIcon[data-tone="info"] {
   background-color: var(--color-accent-blue-bg);
   color: var(--color-accent-blue);
 }
 
-.activityIconHighlight {
+.activityIcon[data-tone="highlight"] {
   background-color: var(--color-accent-purple-bg);
   color: var(--color-accent-purple);
 }
@@ -289,17 +316,22 @@
   margin: 0;
 }
 
-@media (max-width: 960px) {
-  .actionGrid,
+@media (max-width: 1200px) {
   .overviewGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 1024px) {
+  .actionGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
   .page {
-    margin: -32px -16px;
-    padding: 32px 16px;
+    margin: 0 -16px -32px -16px;
+    padding: 16px;
   }
 
   .actionGrid,

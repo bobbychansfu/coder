@@ -1,9 +1,11 @@
 "use client";
 
-import { FilterPanel, ListPageLayout, SearchInput } from "@/fe/shared";
-import { contestList } from "../data/contests";
-import ContestCard from "./ContestCard";
-import styles from "../styles/ContestsListPage.module.css";
+import FilterPanel from "@/fe/shared/components/filters/FilterPanel";
+import ListPageLayout from "@/fe/shared/components/layout/ListPageLayout";
+import SearchInput from "@/fe/shared/components/forms/SearchInput";
+import { contestList } from "@/fe/contests/data/contests";
+import ContestSummaryCard from "@/fe/contests/components/ContestSummaryCard";
+import gridStyles from "@/fe/shared/styles/Grid.module.css";
 import layoutStyles from "@/fe/shared/styles/ListPageLayout.module.css";
 
 const filters = [
@@ -36,7 +38,7 @@ const filters = [
   },
 ];
 
-export default function ContestsListPage() {
+export default function ContestsPage() {
   return (
     <ListPageLayout
       title="Contests"
@@ -46,9 +48,9 @@ export default function ContestsListPage() {
       <div className={layoutStyles.searchBar}>
         <SearchInput placeholder="Search for ..." />
       </div>
-      <div className={styles.grid}>
+      <div className={gridStyles.grid}>
         {contestList.map((contest) => (
-          <ContestCard
+          <ContestSummaryCard
             key={contest.id}
             title={contest.title}
             status={contest.status}

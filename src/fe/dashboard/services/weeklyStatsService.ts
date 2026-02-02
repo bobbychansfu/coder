@@ -1,5 +1,5 @@
-import { WeeklyStat, WeeklyStatsResponse } from "@/fe/shared/types";
-import { mockWeeklyStats } from "@/fe/dashboard/data";
+import { WeeklyStat, WeeklyStatsResponse } from "@/fe/shared/types/weeklyStats";
+import { mockWeeklyStats } from "@/fe/dashboard/data/weeklyStats";
 import { apiFetch, USE_MOCK_DATA } from "@/fe/shared/services/api";
 
 /**

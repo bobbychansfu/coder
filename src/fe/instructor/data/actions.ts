@@ -1,15 +1,12 @@
+import type { ManagementAction } from "@/fe/shared/types/management";
+
 export type InstructorActionTone =
   | "success"
   | "info"
   | "purple"
   | "warning";
 
-export interface InstructorAction {
-  id: string;
-  title: string;
-  description: string;
-  tone: InstructorActionTone;
-}
+export type InstructorAction = ManagementAction<InstructorActionTone>;
 
 export const instructorActions: InstructorAction[] = [
   {

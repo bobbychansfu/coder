@@ -1,5 +1,5 @@
-import { PracticeListPage } from "@/fe/practice/page";
+import PracticePage from "@/fe/practice/page/PracticePage";
 
-export default function PracticePage() {
-  return <PracticeListPage />;
+export default function PracticePageRoute() {
+  return <PracticePage />;
 }

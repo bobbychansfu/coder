@@ -1,12 +1,8 @@
+import type { ManagementStat } from "@/fe/shared/types/management";
+
 export type OverviewTone = "contests" | "participants" | "problems";
 
-export interface OverviewStat {
-  id: string;
-  label: string;
-  value: string;
-  caption: string;
-  tone: OverviewTone;
-}
+export type OverviewStat = ManagementStat<OverviewTone>;
 
 export const overviewStats: OverviewStat[] = [
   {

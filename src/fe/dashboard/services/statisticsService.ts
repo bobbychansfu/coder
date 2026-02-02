@@ -1,5 +1,5 @@
-import { Statistic, StatisticsResponse } from "@/fe/shared/types";
-import { mockStatistics } from "@/fe/dashboard/data";
+import { Statistic, StatisticsResponse } from "@/fe/shared/types/statistics";
+import { mockStatistics } from "@/fe/dashboard/data/statistics";
 import { apiFetch, USE_MOCK_DATA } from "@/fe/shared/services/api";
 
 /**
