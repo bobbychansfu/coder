@@ -9,7 +9,7 @@ export default function PastContests() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h2 className={styles.title}>Past Contests</h2>
+        <h2 className={styles.title}>My Contests</h2>
         <Link href="/contests" className={styles.viewAll}>
           View All
         </Link>
@@ -22,6 +22,7 @@ export default function PastContests() {
             date={contest.date}
             participants={contest.participants}
             difficulty={contest.difficulty}
+            status={contest.status}
             rank={contest.rank}
             problemsSolved={contest.problemsSolved}
             score={contest.score}

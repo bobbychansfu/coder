@@ -13,7 +13,7 @@ import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
 import type { SvgIconComponent } from "@mui/icons-material";
 
 import ManagementLayout from "@/fe/shared/components/layout/ManagementLayout";
-import type { DashboardAction, DashboardStat, DashboardActivity } from "@/fe/shared/components/layout/ManagementLayout";
+import type { ActivityItemData, StatCardData, ToolCardData } from "@/fe/shared/types/common";
 import {
   instructorActions,
   overviewStats,
@@ -47,7 +47,7 @@ const activityIconMap: Record<ActivityTone, SvgIconComponent> = {
 
 export default function InstructorPage() {
   // Map instructor data to DashboardPage format
-  const actions: DashboardAction[] = instructorActions.map((action) => ({
+  const actions: ToolCardData[] = instructorActions.map((action) => ({
     id: action.id,
     title: action.title,
     description: action.description,
@@ -55,7 +55,7 @@ export default function InstructorPage() {
     icon: actionIconMap[action.tone],
   }));
 
-  const stats: DashboardStat[] = overviewStats.map((stat) => ({
+  const stats: StatCardData[] = overviewStats.map((stat) => ({
     id: stat.id,
     label: stat.label,
     value: stat.value,
@@ -64,7 +64,7 @@ export default function InstructorPage() {
     icon: overviewIconMap[stat.tone],
   }));
 
-  const activity: DashboardActivity[] = recentActivity.map((item) => ({
+  const activity: ActivityItemData[] = recentActivity.map((item) => ({
     id: item.id,
     description: item.description,
     timestamp: item.timestamp,

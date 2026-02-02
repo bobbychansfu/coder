@@ -3,13 +3,15 @@
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
+import type { ContestStatus } from "@/fe/shared/types/contest";
 import styles from "../styles/ContestResultCard.module.css";
 
-interface ContestCardProps {
+interface ContestResultCardProps {
   title: string;
   date: string;
   participants: number;
   difficulty: "Easy" | "Medium" | "Hard";
+  status: ContestStatus;
   rank: number;
   problemsSolved: string;
   score: string;
@@ -21,11 +23,15 @@ export default function ContestResultCard({
   date,
   participants,
   difficulty,
+  status,
   rank,
   problemsSolved,
   score,
   timeTaken,
-}: ContestCardProps) {
+}: ContestResultCardProps) {
+  const statusClassName =
+    status === "In Progress" ? styles.statusInProgress : styles.statusClosed;
+
   return (
     <div className={styles.card}>
       {/* Rank Badge */}
@@ -46,6 +52,9 @@ export default function ContestResultCard({
               className={`${styles.difficultyBadge} ${styles[`difficulty${difficulty}`]}`}
             >
               {difficulty}
+            </span>
+            <span className={`${styles.statusBadge} ${statusClassName}`}>
+              {status}
             </span>
           </div>
           <div className={styles.metadata}>

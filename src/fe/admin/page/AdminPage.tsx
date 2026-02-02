@@ -13,7 +13,7 @@ import PersonAddOutlinedIcon from "@mui/icons-material/PersonAddOutlined";
 import type { SvgIconComponent } from "@mui/icons-material";
 
 import ManagementLayout from "@/fe/shared/components/layout/ManagementLayout";
-import type { DashboardAction, DashboardStat, DashboardActivity } from "@/fe/shared/components/layout/ManagementLayout";
+import type { ActivityItemData, StatCardData, ToolCardData } from "@/fe/shared/types/common";
 import {
   adminActions,
   adminOverviewStats,
@@ -59,7 +59,7 @@ const quickActionIconMap: Record<AdminQuickActionTone, SvgIconComponent> = {
 
 export default function AdminPage() {
   // Map admin data to DashboardPage format
-  const actions: DashboardAction[] = adminActions.map((action) => ({
+  const actions: ToolCardData[] = adminActions.map((action) => ({
     id: action.id,
     title: action.title,
     description: action.description,
@@ -67,7 +67,7 @@ export default function AdminPage() {
     icon: actionIconMap[action.tone],
   }));
 
-  const stats: DashboardStat[] = adminOverviewStats.map((stat) => ({
+  const stats: StatCardData[] = adminOverviewStats.map((stat) => ({
     id: stat.id,
     label: stat.label,
     value: stat.value,
@@ -78,7 +78,7 @@ export default function AdminPage() {
     icon: overviewIconMap[stat.tone],
   }));
 
-  const activity: DashboardActivity[] = adminRecentActivity.map((item) => ({
+  const activity: ActivityItemData[] = adminRecentActivity.map((item) => ({
     id: item.id,
     description: item.description,
     timestamp: item.timestamp,

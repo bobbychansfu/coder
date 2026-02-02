@@ -33,7 +33,7 @@ export default function StatisticsSection({
               value={stat.value}
               caption={stat.subtitle}
               icon={stat.icon}
-              tone={stat.tone ?? stat.variant}
+              captionAccent={stat.variant === "success" ? "positive" : "neutral"}
               
               // Mapping styles
               className={cardStyles.card}
@@ -42,9 +42,10 @@ export default function StatisticsSection({
               iconClassName={cardStyles.iconWrapper} // Image wrapper style
               contentClassName={cardStyles.content}
               valueClassName={cardStyles.value}
+              captionClassName={cardStyles.subtitle}
               
               // Variant handling
-              captionClassName={`${cardStyles.subtitle} ${cardStyles[stat.variant || "neutral"]}`}
+              captionAccentClassName={cardStyles.success}
             />
           ))}
       </div>
