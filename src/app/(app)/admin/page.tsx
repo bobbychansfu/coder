@@ -1,4 +1,4 @@
-import AdminPage from "@/fe/admin/AdminPage";
+import AdminPage from "@/fe/admin/page/AdminPage";
 
 export default function AdminPageRoute() {
   return <AdminPage />;
