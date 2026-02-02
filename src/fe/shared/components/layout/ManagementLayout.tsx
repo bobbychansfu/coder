@@ -48,11 +48,6 @@ interface ManagementLayoutProps {
   stats: DashboardStat[];
   activity: DashboardActivity[];
   
-  // Icon mappers (optional, if data items don't have icons directly)
-  actionIconMap?: Record<string, SvgIconComponent>;
-  statIconMap?: Record<string, SvgIconComponent>;
-  activityIconMap?: Record<string, SvgIconComponent>;
-
   children?: ReactNode; // For extra sections like Quick Actions
 }
 
@@ -64,9 +59,6 @@ export default function ManagementLayout({
   actions,
   stats,
   activity,
-  actionIconMap,
-  statIconMap,
-  activityIconMap,
   children,
 }: ManagementLayoutProps) {
   return (
@@ -90,13 +82,12 @@ export default function ManagementLayout({
           gridClassName={styles.actionFlex}
         >
           {actions.map((action) => {
-            const Icon = action.icon || (actionIconMap ? actionIconMap[action.tone] : undefined);
             return (
               <ToolCard
                 key={action.id}
                 title={action.title}
                 description={action.description}
-                icon={Icon}
+                icon={action.icon}
                 tone={action.tone}
                 className={styles.actionCard}
                 headerClassName={styles.actionHeader}
@@ -113,14 +104,13 @@ export default function ManagementLayout({
           <h2 className={styles.sectionTitle}>Overview</h2>
           <div className={styles.overviewGrid}>
             {stats.map((stat) => {
-              const Icon = stat.icon || (statIconMap ? statIconMap[stat.tone] : undefined);
               return (
                 <StatCard
                   key={stat.id}
                   label={stat.label}
                   value={stat.value}
                   caption={stat.caption}
-                  icon={Icon}
+                  icon={stat.icon}
                   tone={stat.tone}
                   valueAccent={stat.valueAccent}
                   captionAccent={stat.captionAccent}
@@ -143,13 +133,12 @@ export default function ManagementLayout({
           <h2 className={styles.sectionTitle}>Recent Activity</h2>
           <div className={styles.activityList}>
             {activity.map((item) => {
-               const Icon = item.icon || (activityIconMap ? activityIconMap[item.tone] : undefined);
                return (
                 <ActivityFeedItem
                   key={item.id}
                   description={item.description}
                   timestamp={item.timestamp}
-                  icon={Icon}
+                  icon={item.icon}
                   tone={item.tone}
                   className={styles.activityItem}
                   iconClassName={styles.activityIcon}
