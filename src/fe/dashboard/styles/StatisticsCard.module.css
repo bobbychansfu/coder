@@ -29,6 +29,10 @@
   height: 16px;
   position: relative;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
 }
 
 .icon {
@@ -65,4 +69,12 @@
 
 .neutral {
   color: #4a5565;
+}
+
+.card[data-tone="info"] .iconWrapper {
+  color: #2563eb;
+}
+
+.card[data-tone="highlight"] .iconWrapper {
+  color: #a855f7;
 }
