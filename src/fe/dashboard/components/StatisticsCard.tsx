@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { Box, Paper, Typography } from "@mui/material";
 import styles from "../styles/StatisticsCard.module.css";
 
 interface StatisticsCardProps {
@@ -6,7 +7,7 @@ interface StatisticsCardProps {
   value: string;
   subtitle: string;
   icon: string;
-  subtitleColor?: string;
+  variant?: "success" | "neutral";
 }
 
 export default function StatisticsCard({
@@ -14,13 +15,15 @@ export default function StatisticsCard({
   value,
   subtitle,
   icon,
-  subtitleColor = "#4a5565",
+  variant = "neutral",
 }: StatisticsCardProps) {
   return (
-    <div className={styles.card}>
-      <div className={styles.header}>
-        <h3 className={styles.title}>{title}</h3>
-        <div className={styles.iconWrapper}>
+    <Paper className={styles.card} elevation={0}>
+      <Box className={styles.header}>
+        <Typography variant="h6" component="h3" className={styles.title}>
+          {title}
+        </Typography>
+        <Box className={styles.iconWrapper}>
           <Image
             src={icon}
             alt={title}
@@ -32,10 +35,10 @@ export default function StatisticsCard({
       </div>
       <div className={styles.content}>
         <p className={styles.value}>{value}</p>
-        <p className={styles.subtitle} style={{ color: subtitleColor }}>
+        <p className={`${styles.subtitle} ${styles[variant]}`}>
           {subtitle}
-        </p>
-      </div>
-    </div>
+        </Typography>
+      </Box>
+    </Paper>
   );
 }

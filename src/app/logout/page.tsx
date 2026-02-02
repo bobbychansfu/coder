@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
+import styles from "./page.module.css";
+
 export default function LogoutPage() {
   const router = useRouter();
 
@@ -13,7 +15,7 @@ export default function LogoutPage() {
   }, [router]);
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div className={styles.container}>
       <p>Logging out...</p>
     </div>
   );

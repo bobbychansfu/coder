@@ -163,9 +163,9 @@
 
 .overviewCard {
   background-color: var(--color-surface);
-  border: 1px solid var(--color-border-muted);
-  border-radius: 12px;
-  min-height: 164px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  height: 134px;
   padding: 24px;
   display: flex;
   flex-direction: column;

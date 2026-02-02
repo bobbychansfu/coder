@@ -1,29 +1,32 @@
 "use client";
 
 import EmojiEventsOutlinedIcon from "@mui/icons-material/EmojiEventsOutlined";
+import { Box, Paper, Typography } from "@mui/material";
 import { mockBadges } from "@/fe/dashboard/data";
 import styles from "../styles/RecentBadges.module.css";
 
 export default function RecentBadges() {
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
+    <Paper className={styles.container} elevation={0}>
+      <Box className={styles.header}>
         <EmojiEventsOutlinedIcon className={styles.icon} />
-        <h3 className={styles.title}>Recent Badges</h3>
-      </div>
-      <div className={styles.badges}>
+        <Typography variant="h6" component="h3" className={styles.title}>
+          Recent Badges
+        </Typography>
+      </Box>
+      <Box className={styles.badges}>
         {mockBadges.map((badge) => (
-          <div key={badge.id} className={styles.badge}>
-            <div
+          <Box key={badge.id} className={styles.badge}>
+            <Box
               className={styles.badgeIcon}
-              style={{ backgroundColor: `${badge.color}15` }}
+              style={{ "--badge-color": badge.color } as React.CSSProperties}
             >
               {badge.icon}
-            </div>
-            <div className={styles.badgeName}>{badge.name}</div>
-          </div>
+            </Box>
+            <Typography className={styles.badgeName}>{badge.name}</Typography>
+          </Box>
         ))}
-      </div>
-    </div>
+      </Box>
+    </Paper>
   );
 }
