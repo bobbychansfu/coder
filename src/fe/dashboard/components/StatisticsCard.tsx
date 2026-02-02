@@ -31,11 +31,11 @@ export default function StatisticsCard({
             height={16}
             className={styles.icon}
           />
-        </Box>
-      </Box>
-      <Box className={styles.content}>
-        <Typography className={styles.value}>{value}</Typography>
-        <Typography className={`${styles.subtitle} ${styles[variant]}`}>
+        </div>
+      </div>
+      <div className={styles.content}>
+        <p className={styles.value}>{value}</p>
+        <p className={`${styles.subtitle} ${styles[variant]}`}>
           {subtitle}
         </Typography>
       </Box>
