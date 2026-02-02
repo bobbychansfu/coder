@@ -1,0 +1,431 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  background-color: #f9fafb;
+  font-family: "Inter", sans-serif;
+  color: #0a0a0a;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #0a0a0a;
+  text-decoration: none;
+  width: fit-content;
+}
+
+.backLink:hover {
+  background-color: #f3f4f6;
+}
+
+.backIcon {
+  font-size: 16px;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 389px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.sidebar,
+.mainColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.card {
+  background-color: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.profileCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+}
+
+.avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background-color: #155dfc;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: 0.07px;
+}
+
+.profileName {
+  margin: 0;
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 700;
+}
+
+.profileEmail {
+  margin: 0;
+  font-size: 16px;
+  line-height: 24px;
+  color: #4a5565;
+}
+
+.levelBadge {
+  background-color: #dc2626;
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 6px;
+}
+
+.progressBlock {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.progressHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.progressLabel {
+  color: #4a5565;
+}
+
+.progressValue {
+  font-weight: 500;
+  color: #0a0a0a;
+}
+
+.progressTrack {
+  width: 100%;
+  height: 8px;
+  background-color: rgba(220, 38, 38, 0.2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background-color: #dc2626;
+  border-radius: 999px;
+}
+
+.progressHint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 16px;
+  color: #6a7282;
+}
+
+.primaryButton {
+  width: 100%;
+  height: 36px;
+  border: none;
+  border-radius: 6px;
+  background-color: #dc2626;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.15px;
+  cursor: pointer;
+}
+
+.primaryButton:hover {
+  filter: brightness(0.95);
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 500;
+  color: #0a0a0a;
+}
+
+.cardHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.cardSubtitle {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: #6a7282;
+}
+
+.statList {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.statRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.statLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #4a5565;
+}
+
+.statIcon {
+  font-size: 16px;
+  color: #dc2626;
+}
+
+.statValue {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 700;
+  color: #0a0a0a;
+}
+
+.difficultyList {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.difficultyRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.difficultyHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.difficultyLabel {
+  font-weight: 500;
+}
+
+.difficultyValue {
+  font-weight: 500;
+  color: #0a0a0a;
+}
+
+.easy {
+  color: #00a63e;
+}
+
+.medium {
+  color: #d08700;
+}
+
+.hard {
+  color: #dc2626;
+}
+
+.skillList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.skillRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skillHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  line-height: 20px;
+  color: #0a0a0a;
+}
+
+.skillLabel {
+  font-weight: 500;
+}
+
+.skillValue {
+  color: #6a7282;
+}
+
+.badgeGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.badgeCard {
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 122px;
+}
+
+.badgeCardEarned {
+  background-color: #fff8e1;
+  border: 1px solid #f7e3a1;
+}
+
+.badgeCardLocked {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  opacity: 0.6;
+}
+
+.badgeEmoji {
+  font-size: 32px;
+  line-height: 40px;
+}
+
+.badgeTitle {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  color: #0a0a0a;
+}
+
+.badgeDescription {
+  font-size: 12px;
+  line-height: 16px;
+  color: #4a5565;
+}
+
+.badgeStatus {
+  align-self: center;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background-color: #eceef2;
+  color: #030213;
+}
+
+.cardHeaderRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.sectionIcon {
+  font-size: 20px;
+  color: #dc2626;
+}
+
+.contestList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.contestItem {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.contestHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.contestTitle {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+}
+
+.contestBadge {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.contestBadgePrimary {
+  background-color: #dc2626;
+  color: #ffffff;
+}
+
+.contestBadgeMuted {
+  background-color: #eceef2;
+  color: #030213;
+}
+
+.contestMeta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  line-height: 20px;
+  color: #4a5565;
+}
+
+@media (max-width: 1024px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .badgeGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .card {
+    padding: 20px;
+  }
+
+  .badgeGrid {
+    grid-template-columns: 1fr;
+  }
+}
