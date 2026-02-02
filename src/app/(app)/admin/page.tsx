@@ -1,11 +1,5 @@
-import { AdminToolsPage } from "@/fe/admin/page";
-import { ScrollbarHider } from "@/fe/shared";
+import AdminPage from "@/fe/admin/page/adminPage";
 
-export default function AdminPage() {
-  return (
-    <>
-      <ScrollbarHider />
-      <AdminToolsPage />
-    </>
-  );
+export default function AdminPageRoute() {
+  return <AdminPage />;
 }
