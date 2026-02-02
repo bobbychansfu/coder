@@ -118,22 +118,22 @@
   font-size: 1.5rem;
 }
 
-.actionIconSuccess {
+.actionIcon[data-tone="success"] {
   background-color: var(--color-accent-green-bg);
   color: var(--color-accent-green);
 }
 
-.actionIconInfo {
+.actionIcon[data-tone="info"] {
   background-color: var(--color-accent-blue-bg);
   color: var(--color-accent-blue);
 }
 
-.actionIconPurple {
+.actionIcon[data-tone="purple"] {
   background-color: var(--color-accent-purple-bg);
   color: var(--color-accent-purple);
 }
 
-.actionIconWarning {
+.actionIcon[data-tone="warning"] {
   background-color: var(--color-accent-orange-bg);
   color: var(--color-accent-orange);
 }
@@ -251,17 +251,17 @@
   font-size: 1.5rem;
 }
 
-.activityIconSuccess {
+.activityIcon[data-tone="success"] {
   background-color: var(--color-accent-green-bg);
   color: var(--color-accent-green);
 }
 
-.activityIconInfo {
+.activityIcon[data-tone="info"] {
   background-color: var(--color-accent-blue-bg);
   color: var(--color-accent-blue);
 }
 
-.activityIconHighlight {
+.activityIcon[data-tone="highlight"] {
   background-color: var(--color-accent-purple-bg);
   color: var(--color-accent-purple);
 }

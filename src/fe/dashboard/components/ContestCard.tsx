@@ -40,20 +40,22 @@ export default function ContestCard({
       <Box className={styles.header}>
         <Box className={styles.iconWrapper}>
           <EmojiEventsIcon className={styles.icon} />
-        </div>
-        <div className={styles.headerContent}>
-          <div className={styles.titleRow}>
-            <div className={styles.title}>{title}</div>
+        </Box>
+        <Box className={styles.headerContent}>
+          <Box className={styles.titleRow}>
+            <Typography className={styles.title}>{title}</Typography>
             <span
               className={`${styles.difficultyBadge} ${styles[`difficulty${difficulty}`]}`}
             >
               {difficulty}
-            </Box>
+            </span>
           </Box>
           <Box className={styles.metadata}>
             <Box className={styles.metadataItem}>
               <CalendarTodayIcon className={styles.metadataIcon} />
-              <Typography component="span" className={styles.metadataText}>{date}</Typography>
+              <Typography component="span" className={styles.metadataText}>
+                {date}
+              </Typography>
             </Box>
             <Box className={styles.metadataItem}>
               <PeopleOutlineIcon className={styles.metadataIcon} />
