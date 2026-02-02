@@ -33,6 +33,7 @@ export default function StatisticsSection({
               value={stat.value}
               caption={stat.subtitle}
               icon={stat.icon}
+              tone={stat.tone ?? stat.variant}
               
               // Mapping styles
               className={cardStyles.card}
