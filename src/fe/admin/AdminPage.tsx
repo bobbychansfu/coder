@@ -9,6 +9,7 @@ import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import StorageOutlinedIcon from "@mui/icons-material/StorageOutlined";
 import EmojiEventsOutlinedIcon from "@mui/icons-material/EmojiEventsOutlined";
 import MonitorHeartOutlinedIcon from "@mui/icons-material/MonitorHeartOutlined";
+import PersonAddOutlinedIcon from "@mui/icons-material/PersonAddOutlined";
 import type { SvgIconComponent } from "@mui/icons-material";
 
 import { ScrollbarHider, ToolCard, StatCard, ActivityFeedItem } from "@/fe/shared";
@@ -20,8 +21,8 @@ import {
   type AdminActionTone,
   type AdminOverviewTone,
   type AdminActivityTone,
+  type AdminQuickActionTone,
 } from "@/fe/admin/data";
-import QuickActionButton from "@/fe/admin/components/QuickActionButton";
 import { StatisticsSection } from "@/fe/dashboard/components";
 import styles from "@/fe/admin/styles/AdminPage.module.css";
 
@@ -47,6 +48,13 @@ const activityIconMap: Record<AdminActivityTone, SvgIconComponent> = {
   warning: MenuBookOutlinedIcon,
   info: SettingsOutlinedIcon,
   success: StorageOutlinedIcon,
+};
+
+// Icon mappings for quick action buttons
+const quickActionIconMap: Record<AdminQuickActionTone, SvgIconComponent> = {
+  user: PersonAddOutlinedIcon,
+  settings: SettingsOutlinedIcon,
+  backup: StorageOutlinedIcon,
 };
 
 export default function AdminPage() {
@@ -139,9 +147,19 @@ export default function AdminPage() {
         <section className={styles.sectionBlock}>
           <h2 className={styles.sectionTitle}>Quick Actions</h2>
           <div className={styles.quickActions}>
-            {adminQuickActions.map((action) => (
-              <QuickActionButton key={action.id} action={action} />
-            ))}
+            {adminQuickActions.map((action) => {
+              const Icon = quickActionIconMap[action.tone];
+              return (
+                <button
+                  key={action.id}
+                  className={styles.quickActionButton}
+                  type="button"
+                >
+                  <Icon className={styles.quickActionIcon} fontSize="inherit" />
+                  {action.label}
+                </button>
+              );
+            })}
           </div>
         </section>
       </div>

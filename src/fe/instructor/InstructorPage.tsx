@@ -19,8 +19,8 @@ import {
   type InstructorActionTone,
   type OverviewTone,
   type ActivityTone,
-} from "../data";
-import styles from "../styles/InstructorToolsPage.module.css";
+} from "@/fe/instructor/data";
+import styles from "@/fe/instructor/styles/InstructorPage.module.css";
 
 // Icon mappings for instructor action cards
 const actionIconMap: Record<InstructorActionTone, SvgIconComponent> = {
@@ -44,7 +44,7 @@ const activityIconMap: Record<ActivityTone, SvgIconComponent> = {
   highlight: GroupAddOutlinedIcon,
 };
 
-export default function InstructorToolsPage() {
+export default function InstructorPage() {
   return (
     <div className={styles.page}>
       <header className={styles.header}>
