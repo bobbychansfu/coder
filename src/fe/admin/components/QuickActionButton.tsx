@@ -1,17 +1,15 @@
 "use client";
 
 import PersonAddOutlinedIcon from "@mui/icons-material/PersonAddOutlined";
-import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
-import BackupOutlinedIcon from "@mui/icons-material/BackupOutlined";
+import StorageOutlinedIcon from "@mui/icons-material/StorageOutlined";
 import type { AdminQuickAction } from "../data";
-import styles from "../styles/AdminToolsPage.module.css";
+import styles from "../styles/AdminPage.module.css";
 
 const iconMap = {
   user: PersonAddOutlinedIcon,
-  course: SchoolOutlinedIcon,
   settings: SettingsOutlinedIcon,
-  backup: BackupOutlinedIcon,
+  backup: StorageOutlinedIcon,
 } as const;
 
 interface QuickActionButtonProps {
@@ -23,7 +21,7 @@ export default function QuickActionButton({ action }: QuickActionButtonProps) {
 
   return (
     <button className={styles.quickActionButton} type="button">
-      <Icon className={styles.quickActionIcon} />
+      <Icon className={styles.quickActionIcon} fontSize="inherit" />
       {action.label}
     </button>
   );

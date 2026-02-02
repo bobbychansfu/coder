@@ -1,4 +1,4 @@
-export type AdminActionTone = "danger" | "warning" | "info";
+export type AdminActionTone = "success" | "danger" | "warning" | "info";
 
 export interface AdminAction {
   id: string;
@@ -9,15 +9,21 @@ export interface AdminAction {
 
 export const adminActions: AdminAction[] = [
   {
+    id: "announcements",
+    title: "Announcements",
+    description: "Send and manage platform-wide announcements to all users",
+    tone: "success",
+  },
+  {
     id: "user-management",
     title: "User Management",
     description: "Manage users, roles, permissions, and access control",
     tone: "danger",
   },
   {
-    id: "course-management",
-    title: "Course Management",
-    description: "Oversee all courses, instructors, and course settings",
+    id: "contest-management",
+    title: "Contest Management",
+    description: "Oversee all contests, schedules, and contest settings",
     tone: "warning",
   },
   {
