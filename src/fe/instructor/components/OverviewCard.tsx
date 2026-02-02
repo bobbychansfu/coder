@@ -1,14 +1,14 @@
 "use client";
 
-import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
+import EmojiEventsOutlinedIcon from "@mui/icons-material/EmojiEventsOutlined";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import FactCheckOutlinedIcon from "@mui/icons-material/FactCheckOutlined";
 import type { OverviewStat } from "../data";
 import styles from "../styles/InstructorToolsPage.module.css";
 
 const iconMap = {
-  courses: MenuBookOutlinedIcon,
-  students: GroupOutlinedIcon,
+  contests: EmojiEventsOutlinedIcon,
+  participants: GroupOutlinedIcon,
   problems: FactCheckOutlinedIcon,
 } as const;
 
@@ -23,10 +23,12 @@ export default function OverviewCard({ stat }: OverviewCardProps) {
     <div className={styles.overviewCard}>
       <div className={styles.overviewHeader}>
         <p className={styles.overviewLabel}>{stat.label}</p>
-        <Icon className={styles.overviewIcon} />
+        <Icon className={styles.overviewIcon} fontSize="inherit" />
       </div>
-      <p className={styles.overviewValue}>{stat.value}</p>
-      <p className={styles.overviewCaption}>{stat.caption}</p>
+      <div className={styles.overviewContent}>
+        <p className={styles.overviewValue}>{stat.value}</p>
+        <p className={styles.overviewCaption}>{stat.caption}</p>
+      </div>
     </div>
   );
 }

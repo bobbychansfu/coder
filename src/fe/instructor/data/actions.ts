@@ -1,4 +1,8 @@
-export type InstructorActionTone = "primary" | "secondary" | "accent";
+export type InstructorActionTone =
+  | "success"
+  | "info"
+  | "purple"
+  | "warning";
 
 export interface InstructorAction {
   id: string;
@@ -9,24 +13,31 @@ export interface InstructorAction {
 
 export const instructorActions: InstructorAction[] = [
   {
-    id: "analytics",
-    title: "Analytics Dashboard",
+    id: "announcements",
+    title: "Announcements",
     description:
-      "View student performance, submission statistics, and course analytics",
-    tone: "primary",
+      "Send announcements and clarifications to students in your contests",
+    tone: "success",
+  },
+  {
+    id: "research-analytics",
+    title: "Research Analytics",
+    description:
+      "A/B testing platform for hint timing systems with comprehensive research metrics",
+    tone: "info",
   },
   {
     id: "create-problem",
     title: "Create Problem",
     description:
       "Author new programming problems with test cases and solutions",
-    tone: "secondary",
+    tone: "purple",
   },
   {
     id: "create-contest",
     title: "Create Contest",
     description:
       "Set up a new contest with multiple problems and time constraints",
-    tone: "accent",
+    tone: "warning",
   },
 ];
