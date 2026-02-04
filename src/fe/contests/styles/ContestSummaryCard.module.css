@@ -1,3 +1,9 @@
+.link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
 .card {
   background-color: #ffffff;
   border: 1px solid rgba(0, 0, 0, 0.1);
@@ -7,6 +13,12 @@
   flex-direction: column;
   justify-content: space-evenly;
   height: 170.5px;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.card:hover {
+  border-color: rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
 }
 
 .title {
@@ -24,14 +36,13 @@
 }
 
 .meta {
-  position: relative;
-  height: 52.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .badge {
-  position: absolute;
-  top: 2.5px;
-  left: 0;
   display: inline-flex;
   align-items: center;
   height: 22px;
@@ -47,13 +58,31 @@
 }
 
 .status {
-  position: absolute;
-  top: 32.5px;
-  left: 0;
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 6px;
   font-family: Inter, sans-serif;
-  font-size: 14px;
-  line-height: 20px;
-  font-weight: 400;
-  color: #4a5565;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
   letter-spacing: -0.1504px;
+}
+
+.statusClosed {
+  background-color: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+}
+
+.statusInProgress {
+  background-color: #f97316;
+  color: #ffffff;
+}
+
+.statusUpcoming {
+  background-color: #eceef2;
+  color: #030213;
+  border: 1px solid #e5e7eb;
 }

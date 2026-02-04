@@ -1,5 +1,5 @@
 export type DifficultyLevel = "Easy" | "Medium" | "Hard";
-export type ContestStatus = "Closed" | "In Progress";
+export type ContestStatus = "Closed" | "In Progress" | "Upcoming";
 
 export interface Contest {
   id: string;

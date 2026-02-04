@@ -1,0 +1,81 @@
+.switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.switcherMd {
+  background-color: #eceef2;
+  padding: 4px;
+  height: 40px;
+  border-radius: 22px !important;
+  width: fit-content;
+}
+
+.switcherSm {
+  background-color: #ececf0;
+  padding: 4px;
+  height: 40px;
+  border-radius: 15px !important;
+  width: 100%;
+  max-width: 360px;
+  gap: 0;
+}
+
+.switcherButton {
+  text-transform: none !important;
+  font-family: Inter, sans-serif;
+  border: none;
+  letter-spacing: -0.1504px;
+  transition: all 0.2s ease;
+}
+
+.switcherButtonMd {
+  font-weight: 500;
+  font-size: 15px;
+  height: 32px;
+  border-radius: 22px;
+  color: #6b7280;
+  padding: 6px 14px;
+}
+
+.switcherButtonSm {
+  font-weight: 500;
+  font-size: 15px;
+  height: 32px;
+  border-radius: 12px;
+  color: #0a0a0a;
+  padding: 6px 14px;
+  flex: 1;
+}
+
+.switcherButton:hover {
+  background-color: transparent;
+}
+
+.switcherMd :global(.Mui-selected) {
+  background-color: #ffffff !important;
+  color: #0a0a0a !important;
+  font-weight: 600 !important;
+  border: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  border-radius: 22px !important;
+}
+
+.switcherSm :global(.Mui-selected) {
+  background-color: #ffffff !important;
+  color: #0a0a0a !important;
+  font-weight: 600 !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 12px !important;
+}
+
+.switcher :global(.MuiToggleButtonGroup-grouped) {
+  border: none !important;
+}
+
+.switcher :global(.MuiToggleButtonGroup-grouped:not(:first-of-type)) {
+  border-left: none !important;
+  margin-left: 0 !important;
+}
