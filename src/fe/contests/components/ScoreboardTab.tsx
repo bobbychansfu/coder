@@ -29,7 +29,7 @@ export default function ScoreboardTab({ rows, problemColumns }: ScoreboardTabPro
 
   const displayRows = rows.slice(0, displayCount);
   const hasMore = displayCount < rows.length;
-  const userRank = rows.findIndex((row) => row.name.includes("(You)")) + 1;
+  const userRank = rows.findIndex((row) => row.isCurrentUser) + 1;
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
@@ -119,7 +119,7 @@ export default function ScoreboardTab({ rows, problemColumns }: ScoreboardTabPro
         </Box>
 
         {displayRows.map((row) => {
-          const isUserRow = row.name.includes("(You)");
+          const isUserRow = !!row.isCurrentUser;
           return (
             <Box
               key={row.rank}

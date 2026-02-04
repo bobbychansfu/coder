@@ -15,6 +15,7 @@ export interface ScoreboardRow {
   solved: number;
   score: number;
   problems: Record<string, ScoreboardCell>;
+  isCurrentUser?: boolean;
 }
 
 export interface ClarificationItem {
@@ -42,7 +43,7 @@ export interface ContestDetail {
   status: ContestDetailStatus;
   startTime: string;
   startTimeISO: string;
-  duration: string;
+  durationMinutes: number;
   problemsCount: number;
   participantsLabel: string;
   problems: ContestProblem[];
@@ -102,9 +103,10 @@ const scoreboardRows: ScoreboardRow[] = [
   },
   {
     rank: 5,
-    name: "Ethan Wilson (You)",
+    name: "Ethan Wilson",
     solved: 3,
     score: 580,
+    isCurrentUser: true,
     problems: {
       A: { points: 100, time: "0:09:30" },
       B: { points: 180, time: "0:32:15" },
@@ -239,7 +241,7 @@ const week3LabContest: ContestDetail = {
   status: "upcoming",
   startTime: "1/25/2026, 2:00:00 PM",
   startTimeISO: "2026-01-25T14:00:00",
-  duration: "2 hours",
+  durationMinutes: 120,
   problemsCount: 5,
   participantsLabel: "0 registered",
   problems: [
@@ -327,6 +329,7 @@ const buildContestDetail = (item: ContestListItem): ContestDetail => {
     status,
     startTime: week3LabContest.startTime,
     startTimeISO: week3LabContest.startTimeISO,
+    durationMinutes: week3LabContest.durationMinutes,
     participantsLabel,
   };
 };
@@ -346,7 +349,7 @@ const treesGraphsChallenge: ContestDetail = {
   status: "in progress",
   startTime: "1/23/2026, 1:00:00 PM",
   startTimeISO: "2026-01-23T13:00:00",
-  duration: "3 hours",
+  durationMinutes: 180,
   participantsLabel: "67 registered",
 };
 
@@ -357,7 +360,7 @@ const arraysBasics: ContestDetail = {
   status: "closed",
   startTime: "1/18/2026, 12:00:00 PM",
   startTimeISO: "2026-01-18T12:00:00",
-  duration: "90 minutes",
+  durationMinutes: 90,
   participantsLabel: "118 registered",
 };
 
