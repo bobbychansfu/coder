@@ -121,58 +121,6 @@
   color: #6a7282;
 }
 
-.switcher {
-  background-color: #eceef2;
-  padding: 4px;
-  height: 44px;
-  width: fit-content;
-  border-radius: 25px !important;
-  gap: 4px;
-}
-
-.switcherButton {
-  text-transform: none;
-  font-family: Inter, sans-serif;
-  font-weight: 500;
-  font-size: 16px;
-  height: 36px;
-  border-radius: 25px;
-  color: #6b7280;
-  border: none;
-  padding: 8px 20px;
-  letter-spacing: -0.15px;
-  transition: all 0.2s ease;
-}
-
-.switcherButton:hover {
-  background-color: transparent;
-  color: #6b7280;
-}
-
-.switcher :global(.Mui-selected) {
-  background-color: #ffffff !important;
-  color: #0a0a0a !important;
-  font-weight: 600 !important;
-  border: none !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
-  border-radius: 25px !important;
-}
-
-.switcher :global(.Mui-selected:hover) {
-  background-color: #ffffff !important;
-  color: #0a0a0a !important;
-}
-
-.switcher :global(.MuiToggleButtonGroup-grouped) {
-  border: none !important;
-  border-radius: 25px !important;
-}
-
-.switcher :global(.MuiToggleButtonGroup-grouped:not(:first-of-type)) {
-  border-left: none !important;
-  margin-left: 0 !important;
-}
-
 .problemList {
   display: flex;
   flex-direction: column;
@@ -185,6 +133,18 @@
   border-radius: 12px;
   background-color: #ffffff;
   padding: 20px;
+  cursor: pointer;
+}
+
+.problemLink {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.problemCard:hover {
+  border-color: rgba(0, 0, 0, 0.2);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
 }
 
 .problemRow {

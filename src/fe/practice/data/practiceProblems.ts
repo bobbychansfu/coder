@@ -1,10 +1,11 @@
-export type PracticeDifficulty = "Easy" | "Medium" | "Hard";
+import type { DifficultyLevel } from "@/fe/shared/types/contest";
+
 export type PracticeCardSize = "compact" | "tall";
 
 export interface PracticeProblem {
   id: string;
   title: string;
-  difficulty: PracticeDifficulty;
+  difficulty: DifficultyLevel;
   points: number;
   solved?: boolean;
   size?: PracticeCardSize;

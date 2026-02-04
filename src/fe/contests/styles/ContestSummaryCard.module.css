@@ -80,3 +80,9 @@
   background-color: #f97316;
   color: #ffffff;
 }
+
+.statusUpcoming {
+  background-color: #eceef2;
+  color: #030213;
+  border: 1px solid #e5e7eb;
+}

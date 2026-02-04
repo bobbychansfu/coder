@@ -41,6 +41,7 @@ export interface ContestDetail {
   title: string;
   status: ContestDetailStatus;
   startTime: string;
+  startTimeISO: string;
   duration: string;
   problemsCount: number;
   participantsLabel: string;
@@ -237,6 +238,7 @@ const week3LabContest: ContestDetail = {
   title: "Week 3 Lab Contest",
   status: "upcoming",
   startTime: "1/25/2026, 2:00:00 PM",
+  startTimeISO: "2026-01-25T14:00:00",
   duration: "2 hours",
   problemsCount: 5,
   participantsLabel: "0 registered",
@@ -324,6 +326,7 @@ const buildContestDetail = (item: ContestListItem): ContestDetail => {
     title: item.title,
     status,
     startTime: week3LabContest.startTime,
+    startTimeISO: week3LabContest.startTimeISO,
     participantsLabel,
   };
 };
@@ -342,6 +345,7 @@ const treesGraphsChallenge: ContestDetail = {
   title: "Trees & Graphs Challenge",
   status: "in progress",
   startTime: "1/23/2026, 1:00:00 PM",
+  startTimeISO: "2026-01-23T13:00:00",
   duration: "3 hours",
   participantsLabel: "67 registered",
 };
@@ -352,6 +356,7 @@ const arraysBasics: ContestDetail = {
   title: "Arrays and Strings Basics",
   status: "closed",
   startTime: "1/18/2026, 12:00:00 PM",
+  startTimeISO: "2026-01-18T12:00:00",
   duration: "90 minutes",
   participantsLabel: "118 registered",
 };

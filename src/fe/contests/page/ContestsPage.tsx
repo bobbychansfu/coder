@@ -3,7 +3,7 @@
 import FilterPanel from "@/fe/shared/components/filters/FilterPanel";
 import ListPageLayout from "@/fe/shared/components/layout/ListPageLayout";
 import SearchInput from "@/fe/shared/components/forms/SearchInput";
-import { contestList } from "@/fe/contests/data/contests";
+import type { ContestListItem } from "@/fe/contests/data/contests";
 import ContestSummaryCard from "@/fe/contests/components/ContestSummaryCard";
 import gridStyles from "@/fe/shared/styles/Grid.module.css";
 import layoutStyles from "@/fe/shared/styles/ListPageLayout.module.css";
@@ -23,7 +23,7 @@ const filters = [
     options: [
       { label: "All", active: true },
       { label: "Easy" },
-      { label: "Normal" },
+      { label: "Medium" },
       { label: "Hard" },
     ],
   },
@@ -37,7 +37,11 @@ const filters = [
   },
 ];
 
-export default function ContestsPage() {
+interface ContestsPageProps {
+  initialContests: ContestListItem[];
+}
+
+export default function ContestsPage({ initialContests }: ContestsPageProps) {
   return (
     <ListPageLayout
       title="Contests"
@@ -48,12 +52,12 @@ export default function ContestsPage() {
         <SearchInput placeholder="Search for ..." />
       </div>
       <div className={gridStyles.grid}>
-        {contestList.map((contest) => (
+        {initialContests.map((contest) => (
           <ContestSummaryCard
             key={contest.id}
             title={contest.title}
             status={contest.status}
-            badge={contest.badge}
+            difficulty={contest.difficulty}
             href={`/contests/${contest.id}`}
           />
         ))}

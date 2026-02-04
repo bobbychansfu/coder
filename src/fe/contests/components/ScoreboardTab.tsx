@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as React from "react";
 import { Box, Button, Typography } from "@mui/material";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
@@ -15,7 +15,10 @@ export default function ScoreboardTab({ rows, problemColumns }: ScoreboardTabPro
   const [displayCount, setDisplayCount] = useState(10);
   const [isLoading, setIsLoading] = useState(false);
   const [highlightUser, setHighlightUser] = useState(false);
+  const [pendingScrollRank, setPendingScrollRank] = useState<number | null>(null);
   const tableRef = React.useRef<HTMLDivElement>(null);
+  const loadingTimeoutRef = useRef<number | null>(null);
+  const highlightTimeoutRef = useRef<number | null>(null);
 
   const rankIconColor = (rank: number) => {
     if (rank === 1) return "#f59e0b";
@@ -35,7 +38,10 @@ export default function ScoreboardTab({ rows, problemColumns }: ScoreboardTabPro
 
     if (scrollPosition >= scrollHeight - 50 && hasMore && !isLoading) {
       setIsLoading(true);
-      setTimeout(() => {
+      if (loadingTimeoutRef.current) {
+        window.clearTimeout(loadingTimeoutRef.current);
+      }
+      loadingTimeoutRef.current = window.setTimeout(() => {
         setDisplayCount((prev) => Math.min(prev + 10, rows.length));
         setIsLoading(false);
       }, 500);
@@ -49,23 +55,39 @@ export default function ScoreboardTab({ rows, problemColumns }: ScoreboardTabPro
       }
 
       setHighlightUser(true);
+      setPendingScrollRank(userRank);
 
-      setTimeout(() => {
-        const rowElement = document.querySelector(`[data-rank="${userRank}"]`);
-        if (rowElement && tableRef.current) {
-          const rowTop = (rowElement as HTMLElement).offsetTop;
-          tableRef.current.scrollTo({
-            top: rowTop - 100,
-            behavior: "smooth",
-          });
-        }
-      }, 100);
-
-      setTimeout(() => {
+      if (highlightTimeoutRef.current) {
+        window.clearTimeout(highlightTimeoutRef.current);
+      }
+      highlightTimeoutRef.current = window.setTimeout(() => {
         setHighlightUser(false);
       }, 4000);
     }
   };
+
+  useEffect(() => {
+    if (!pendingScrollRank || !tableRef.current) return;
+    const rowElement = tableRef.current.querySelector(`[data-rank="${pendingScrollRank}"]`);
+    if (!rowElement) return;
+    const rowTop = (rowElement as HTMLElement).offsetTop;
+    tableRef.current.scrollTo({
+      top: rowTop - 100,
+      behavior: "smooth",
+    });
+    setPendingScrollRank(null);
+  }, [pendingScrollRank, displayCount]);
+
+  useEffect(() => {
+    return () => {
+      if (loadingTimeoutRef.current) {
+        window.clearTimeout(loadingTimeoutRef.current);
+      }
+      if (highlightTimeoutRef.current) {
+        window.clearTimeout(highlightTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <Box className={styles.scoreboardCard}>
