@@ -3,7 +3,26 @@
 > ✨ Short project tagline (TBD)
 
 ## 🔎 Introduction (TBD)
-TBD
+
+A research-driven competitive programming and algorithm practice platform.
+
+**cs-coder** is a full-stack competitive programming platform designed for beginner or advanced computing science students to practice algorithmic problem solving, receive intelligent hints, and track their learning progress over time. The platform supports research studies in areas such as learning analytics, human–computer interaction, and computing science education.
+
+Stack: **Next.js**, **Redis**, **PostgreSQL**, and **Flask**
+
+The platform currently supports:
+
+- Algorithmic problem solving with real-time feedback  
+- AI-assisted hint generation and configurable hint-timing logic   
+- Instructor Contest and Problem creation
+
+Future Plans:
+
+- Learning analytics dashboards for tracking performance, attempts, and strategy indicators  
+- Research instrumentation for controlled studies in competitive programming pedagogy  
+- Integration with course workflows, allowing instructors to monitor progress and identify learners who may need additional support  
+
+Coder is actively developed as part of ongoing research in competitive programming education, learning trajectories, and data-driven instructional design. It will be used in pilot studies and upper-division CP courses at Simon Fraser University.
 
 ---
 
