@@ -5,6 +5,7 @@ export const ROUTES = {
   contests: "/contests",
   practice: "/practice",
   instructor: "/instructor",
+  instructorAnnouncements: "/instructor/announcements",
   admin: "/admin",
   profile: "/profile",
 } as const;

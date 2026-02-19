@@ -27,6 +27,7 @@ export interface ToolCardData {
   description: string;
   tone: ToneType;
   icon?: SvgIconComponent;
+  onClick?: () => void;
 }
 
 /**
