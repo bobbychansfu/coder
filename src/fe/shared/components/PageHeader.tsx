@@ -12,26 +12,45 @@ interface PageHeaderProps {
   title?: string;
   status?: StatusConfig;
   onBack: () => void;
+  backLabel?: string;
+  backButtonClassName?: string;
+  headerClassName?: string;
+  titleClassName?: string;
+  statusChipClassName?: string;
 }
 
-export default function PageHeader({ title, status, onBack }: PageHeaderProps) {
+export default function PageHeader({
+  title,
+  status,
+  onBack,
+  backLabel = "Back",
+  backButtonClassName,
+  headerClassName,
+  titleClassName,
+  statusChipClassName,
+}: PageHeaderProps) {
+  const backButtonClasses = [styles.backButton, backButtonClassName].filter(Boolean).join(" ");
+  const headerClasses = [styles.headerRow, headerClassName].filter(Boolean).join(" ");
+  const titleClasses = [styles.title, titleClassName].filter(Boolean).join(" ");
+  const statusChipClasses = [styles.statusChip, statusChipClassName].filter(Boolean).join(" ");
+
   return (
     <>
       <Button
-        className={styles.backButton}
+        className={backButtonClasses}
         startIcon={<ArrowBackRoundedIcon />}
         onClick={onBack}
         color="inherit"
       >
-        Back
+        {backLabel}
       </Button>
 
       {title && (
-        <Box className={styles.headerRow}>
-          <Typography className={styles.title}>{title}</Typography>
+        <Box className={headerClasses}>
+          <Typography className={titleClasses}>{title}</Typography>
           {status && (
             <Chip
-              className={styles.statusChip}
+              className={statusChipClasses}
               label={status.label}
               size="small"
               sx={{

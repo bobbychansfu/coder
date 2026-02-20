@@ -1,7 +1,6 @@
 import CheckCircleOutlineRoundedIcon from "@mui/icons-material/CheckCircleOutlineRounded";
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
-import { COLORS } from "./colors";
 
 export const LANGUAGE_OPTIONS = [
   { value: "cpp", label: "C++" },

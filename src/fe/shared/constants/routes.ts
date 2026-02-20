@@ -5,6 +5,10 @@ export const ROUTES = {
   contests: "/contests",
   practice: "/practice",
   instructor: "/instructor",
+  instructorAnnouncements: "/instructor/announcements",
+  instructorResearchAnalytics: "/instructor/research-analytics",
+  instructorCreateProblem: "/instructor/create-problem",
+  instructorCreateContest: "/instructor/create-contest",
   admin: "/admin",
   profile: "/profile",
 } as const;

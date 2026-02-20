@@ -95,9 +95,8 @@
 }
 
 .actionFlex {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-around;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 24px;
   width: 100%;
 }
@@ -106,7 +105,7 @@
   background-color: var(--dashboard-surface);
   border: 1px solid var(--dashboard-border-muted);
   border-radius: 12px;
-  min-height: 153px;
+  min-height: 160px;
   padding: 24px;
   display: flex;
   flex-direction: column;
@@ -114,8 +113,6 @@
   text-align: left;
   cursor: pointer;
   width: 100%;
-  flex: 1 1 220px;
-  max-width: 290px;
   font: inherit;
   color: inherit;
   appearance: none;
@@ -134,9 +131,9 @@
 }
 
 .actionIcon {
-  width: 40px;
-  height: 40px;
-  font-size: 20px;
+  width: 32px;
+  height: 32px;
+  font-size: 16px;
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -144,9 +141,9 @@
 }
 
 .actionIconGlyph {
-  width: 1.5rem !important;
-  height: 1.5rem !important;
-  font-size: 1.5rem !important;
+  width: 1rem !important;
+  height: 1rem !important;
+  font-size: 1rem !important;
 }
 
 .actionIcon[data-tone="success"] {
@@ -175,17 +172,17 @@
 }
 
 .actionTitle {
-  font-size: 18px;
-  line-height: 26px;
+  font-size: 14px;
+  line-height: 20px;
   font-weight: 600;
   color: var(--dashboard-text-primary);
-  letter-spacing: -0.3125px;
+  letter-spacing: -0.1504px;
   margin: 0;
 }
 
 .actionDescription {
-  font-size: 15px;
-  line-height: 22px;
+  font-size: 12px;
+  line-height: 15px;
   font-weight: 400;
   color: var(--dashboard-text-secondary);
   margin: 0;
@@ -353,8 +350,18 @@
 }
 
 @media (max-width: 768px) {
+  .actionFlex {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .page {
     margin: -32px -16px;
     padding: 32px 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .actionFlex {
+    grid-template-columns: 1fr;
   }
 }

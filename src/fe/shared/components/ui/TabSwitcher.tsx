@@ -12,6 +12,7 @@ interface TabSwitcherProps {
   onChange: (value: string) => void;
   size?: "sm" | "md";
   ariaLabel?: string;
+  className?: string;
 }
 
 export default function TabSwitcher({
@@ -20,8 +21,15 @@ export default function TabSwitcher({
   onChange,
   size = "md",
   ariaLabel = "Tabs",
+  className,
 }: TabSwitcherProps) {
-  const switcherClass = `${styles.switcher} ${size === "sm" ? styles.switcherSm : styles.switcherMd}`;
+  const switcherClass = [
+    styles.switcher,
+    size === "sm" ? styles.switcherSm : styles.switcherMd,
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
   const buttonClass = `${styles.switcherButton} ${size === "sm" ? styles.switcherButtonSm : styles.switcherButtonMd}`;
 
   return (
