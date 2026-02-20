@@ -1,0 +1,195 @@
+.page {
+  background-color: #f9fafb;
+  margin: 0 -32px -32px -32px;
+  padding: 24px 32px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 100%;
+  font-family: Inter, sans-serif;
+}
+
+.sections {
+  width: 100%;
+  max-width: 960px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settingRow {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.settingCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settingLabel {
+  margin: 0;
+  color: #0a0a0a;
+  font-size: 14px !important;
+  line-height: 14px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.1504px !important;
+}
+
+.settingDescription {
+  margin: 0;
+  color: #6a7282;
+  font-size: 14px !important;
+  line-height: 20px !important;
+  font-weight: 400 !important;
+  letter-spacing: -0.1504px !important;
+}
+
+.settingSwitch {
+  width: 32px;
+  height: 18px;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.settingSwitch :global(.MuiSwitch-switchBase) {
+  padding: 1px !important;
+}
+
+.settingSwitch :global(.MuiSwitch-switchBase.Mui-checked) {
+  transform: translateX(14px) !important;
+  color: #ffffff !important;
+}
+
+.settingSwitch :global(.MuiSwitch-thumb) {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.settingSwitch :global(.MuiSwitch-track) {
+  border-radius: 999px !important;
+  background: #dc2626 !important;
+  opacity: 1 !important;
+}
+
+.settingSwitch :global(.MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track) {
+  background: #dc2626 !important;
+  opacity: 1 !important;
+}
+
+.settingSwitch :global(.MuiSwitch-switchBase:not(.Mui-checked) + .MuiSwitch-track) {
+  background: #cbd5e1 !important;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inputLabel {
+  margin: 0;
+  color: #0a0a0a;
+  font-size: 14px !important;
+  line-height: 14px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.1504px !important;
+}
+
+.input :global(.MuiOutlinedInput-root) {
+  min-height: 36px;
+  background: #f3f3f5;
+  border-radius: 6px;
+}
+
+.input :global(.MuiOutlinedInput-notchedOutline) {
+  border-color: transparent !important;
+}
+
+.input :global(.MuiOutlinedInput-input) {
+  padding: 8px 12px !important;
+  color: #0a0a0a;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: -0.1504px;
+}
+
+.noteBox {
+  background: #fefce8;
+  border: 1px solid #fff085;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.noteText {
+  margin: 0;
+  color: #894b00;
+  font-size: 14px !important;
+  line-height: 20px !important;
+  font-weight: 400 !important;
+  letter-spacing: -0.1504px !important;
+}
+
+.noteLabel {
+  font-weight: 700;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.resetButton {
+  text-transform: none !important;
+  border-radius: 6px !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  color: #0a0a0a !important;
+  height: 36px;
+  padding: 8px 16px !important;
+  font-size: 14px !important;
+  line-height: 20px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.1504px !important;
+  background: #ffffff !important;
+}
+
+.saveButton {
+  text-transform: none !important;
+  border-radius: 6px !important;
+  background: #e7000b !important;
+  color: #ffffff !important;
+  height: 36px;
+  padding: 8px 12px !important;
+  font-size: 14px !important;
+  line-height: 20px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.1504px !important;
+}
+
+.saveButton:hover {
+  background: #c9010a !important;
+}
+
+.saveButtonIcon {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+@media (max-width: 768px) {
+  .page {
+    margin: 0 -16px -16px -16px;
+    padding: 16px;
+  }
+
+  .actions {
+    justify-content: stretch;
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

@@ -10,6 +10,10 @@ export const ROUTES = {
   instructorCreateProblem: "/instructor/create-problem",
   instructorCreateContest: "/instructor/create-contest",
   admin: "/admin",
+  adminContests: "/admin/contests",
+  adminAnnouncements: "/admin/announcements",
+  adminUsers: "/admin/users",
+  adminSettings: "/admin/settings",
   profile: "/profile",
 } as const;
 

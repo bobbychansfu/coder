@@ -1,0 +1,142 @@
+.tableCard {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 24px;
+}
+
+.tableScroll {
+  overflow-x: auto;
+}
+
+.table {
+  min-width: 1088px;
+}
+
+.table :global(th),
+.table :global(td) {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.table :global(tr:last-child td) {
+  border-bottom: none;
+}
+
+.headCell,
+.headCellRight {
+  font-size: 14px !important;
+  line-height: 20px !important;
+  font-weight: 500 !important;
+  color: #0a0a0a !important;
+  letter-spacing: -0.1504px !important;
+  padding: 10px 8px !important;
+  white-space: nowrap;
+}
+
+.headCellRight {
+  text-align: right !important;
+}
+
+.bodyRow :global(td) {
+  padding: 13px 8px !important;
+}
+
+.bodyCell,
+.bodyCellTitle,
+.bodyCellRight {
+  font-size: 14px !important;
+  line-height: 20px !important;
+  letter-spacing: -0.1504px !important;
+  color: #0a0a0a !important;
+}
+
+.bodyCell {
+  font-weight: 400 !important;
+}
+
+.bodyCellTitle {
+  font-weight: 500 !important;
+}
+
+.bodyCellRight {
+  text-align: right !important;
+}
+
+.metaInline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.metaIcon {
+  width: 12px !important;
+  height: 12px !important;
+  color: #8f98a8;
+}
+
+.statusChip,
+.visibilityChip {
+  height: 22px !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  line-height: 16px !important;
+  font-weight: 500 !important;
+  border: 1px solid transparent !important;
+  text-transform: lowercase;
+}
+
+.statusChip :global(.MuiChip-label),
+.visibilityChip :global(.MuiChip-label) {
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+}
+
+.statusChipUpcoming {
+  background: #dbeafe !important;
+  color: #193cb8 !important;
+}
+
+.statusChipActive {
+  background: #dcfce7 !important;
+  color: #008236 !important;
+}
+
+.statusChipEnded {
+  background: #f3f4f6 !important;
+  color: #1e2939 !important;
+}
+
+.visibilityChipPublic {
+  background: #ecfdf3 !important;
+  color: #05603a !important;
+  border-color: #b7efcf !important;
+}
+
+.visibilityChipPrivate {
+  background: #ffffff !important;
+  color: #0a0a0a !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+.rowActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.rowActionButton {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 6px !important;
+}
+
+.rowActionIcon {
+  width: 16px !important;
+  height: 16px !important;
+  color: #0a0a0a;
+}
+
+.rowActionDelete {
+  color: #e7000b;
+}

@@ -1,0 +1,177 @@
+.card {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px !important;
+  background: #ffffff;
+  box-shadow: none !important;
+}
+
+.cardHeader {
+  padding: 24px 24px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cardTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cardHeaderIcon {
+  width: 20px !important;
+  height: 20px !important;
+  color: #0a0a0a;
+}
+
+.cardTitle {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 16px !important;
+  line-height: 16px !important;
+  font-weight: 500 !important;
+  color: #0a0a0a;
+  letter-spacing: -0.3125px;
+}
+
+.cardDescription {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 16px !important;
+  line-height: 24px !important;
+  color: #717182;
+  letter-spacing: -0.3125px;
+}
+
+.listContent {
+  padding: 24px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.announcementItem {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.itemTopRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.itemMain {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.itemMetaTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.activeBadge,
+.inactiveBadge {
+  height: 22px !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  line-height: 16px !important;
+  font-weight: 500 !important;
+}
+
+.activeBadge {
+  background: #00a63e !important;
+  color: #ffffff !important;
+}
+
+.inactiveBadge {
+  background: #ffffff !important;
+  color: #0a0a0a !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+.authorText {
+  margin: 0;
+  color: #6a7282;
+  font-size: 12px !important;
+  line-height: 16px !important;
+  white-space: pre-line;
+}
+
+.messageText {
+  margin: 0;
+  color: #101828;
+  font-size: 14px !important;
+  line-height: 20px !important;
+  letter-spacing: -0.1504px;
+}
+
+.itemMetaBottom {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.inlineMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.metaIcon {
+  width: 12px !important;
+  height: 12px !important;
+  color: #6a7282;
+}
+
+.metaText {
+  margin: 0;
+  color: #6a7282;
+  font-size: 12px !important;
+  line-height: 16px !important;
+}
+
+.itemActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.iconButton {
+  min-width: 32px !important;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px !important;
+  padding: 0 !important;
+}
+
+.editIcon,
+.deleteIcon {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.editIcon {
+  color: #0a0a0a;
+}
+
+.deleteIcon {
+  color: #e7000b;
+}
+
+@media (max-width: 768px) {
+  .itemTopRow {
+    flex-direction: column;
+  }
+
+  .itemActions {
+    align-self: flex-end;
+  }
+}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
@@ -24,6 +25,7 @@ import {
   type AdminActivityTone,
   type AdminQuickActionTone,
 } from "@/fe/admin/data";
+import { ROUTES } from "@/fe/shared/constants/routes";
 import styles from "@/fe/admin/styles/AdminPage.module.css";
 
 // Icon mappings for admin action cards
@@ -58,6 +60,8 @@ const quickActionIconMap: Record<AdminQuickActionTone, SvgIconComponent> = {
 };
 
 export default function AdminPage() {
+  const router = useRouter();
+
   // Map admin data to DashboardPage format
   const actions: ToolCardData[] = adminActions.map((action) => ({
     id: action.id,
@@ -65,6 +69,16 @@ export default function AdminPage() {
     description: action.description,
     tone: action.tone,
     icon: actionIconMap[action.tone],
+    onClick:
+      action.id === "announcements"
+        ? () => router.push(ROUTES.adminAnnouncements)
+        : action.id === "user-management"
+          ? () => router.push(ROUTES.adminUsers)
+          : action.id === "contest-management"
+            ? () => router.push(ROUTES.adminContests)
+            : action.id === "system-settings"
+              ? () => router.push(ROUTES.adminSettings)
+        : undefined,
   }));
 
   const stats: StatCardData[] = adminOverviewStats.map((stat) => ({
