@@ -4,7 +4,7 @@ import { contestDetailsById } from "@/fe/contests/data/contestDetails";
 import { buildProblemDetail } from "@/fe/contests/data/problemDetails";
 
 interface ContestProblemRouteProps {
-  params: { id: string; code: string };
+  params: Promise<{ id: string; code: string }>;
 }
 
 export const dynamicParams = true;
@@ -18,8 +18,9 @@ export function generateStaticParams() {
   );
 }
 
-export default function ContestProblemRoute({ params }: ContestProblemRouteProps) {
-  const contestId = params?.id ?? "contest-1";
+export default async function ContestProblemRoute({ params }: ContestProblemRouteProps) {
+  const { id, code } = await params;
+  const contestId = id ?? "contest-1";
   const contest =
     contestDetailsById[contestId] ??
     contestDetailsById["contest-1"] ??
@@ -29,7 +30,7 @@ export default function ContestProblemRoute({ params }: ContestProblemRouteProps
     notFound();
   }
 
-  const problemCode = (params?.code ?? contest.problems[0]?.code ?? "A").toUpperCase();
+  const problemCode = (code ?? contest.problems[0]?.code ?? "A").toUpperCase();
   const problem = contest.problems.find((item) => item.code.toUpperCase() === problemCode);
 
   if (!problem) {

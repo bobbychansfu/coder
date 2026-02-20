@@ -61,6 +61,7 @@ export default function ManagementLayout({
                 description={action.description}
                 icon={action.icon}
                 tone={action.tone}
+                onClick={action.onClick}
                 className={styles.actionCard}
                 headerClassName={styles.actionHeader}
                 titleClassName={styles.actionTitle}

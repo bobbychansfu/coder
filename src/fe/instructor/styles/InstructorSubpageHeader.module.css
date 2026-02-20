@@ -1,0 +1,60 @@
+.backButton {
+  align-self: flex-start;
+  text-transform: none;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  color: #0a0a0a;
+  letter-spacing: -0.1504px;
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
+.headerRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.headerCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.title {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 30px;
+  line-height: 36px;
+  font-weight: 700;
+  color: #0a0a0a;
+  letter-spacing: 0.3955px;
+}
+
+.subtitle {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+  color: #4a5565;
+  letter-spacing: -0.3125px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+  .title {
+    font-size: 26px;
+    line-height: 32px;
+  }
+}

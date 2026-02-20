@@ -1,0 +1,159 @@
+.card {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px !important;
+  background-color: #ffffff;
+  box-shadow: none !important;
+}
+
+.cardHeader {
+  padding: 24px 24px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cardTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cardHeaderIcon {
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  font-size: 1.25rem !important;
+  color: #0a0a0a;
+}
+
+.cardTitle {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 16px;
+  line-height: 16px;
+  font-weight: 500;
+  color: #0a0a0a;
+  letter-spacing: -0.3125px;
+}
+
+.cardDescription {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+  color: #717182;
+  letter-spacing: -0.3125px;
+}
+
+.listContent {
+  padding: 24px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.announcementItem {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 17px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.itemMainRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.itemText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.itemContest {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  color: #101828;
+  letter-spacing: -0.1504px;
+}
+
+.itemMessage {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  color: #4a5565;
+  letter-spacing: -0.1504px;
+}
+
+.sentBadge {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  height: 22px;
+  min-width: 64px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.sentBadgeIcon {
+  width: 0.75rem !important;
+  height: 0.75rem !important;
+  font-size: 0.75rem !important;
+  color: #0a0a0a;
+}
+
+.sentBadgeText {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  color: #0a0a0a;
+}
+
+.itemMetaRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.itemMetaInline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.metaIcon {
+  width: 0.75rem !important;
+  height: 0.75rem !important;
+  font-size: 0.75rem !important;
+  color: #6a7282;
+}
+
+.metaText {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+  color: #6a7282;
+}
+
+@media (max-width: 768px) {
+  .itemMainRow {
+    flex-direction: column;
+    gap: 12px;
+  }
+}

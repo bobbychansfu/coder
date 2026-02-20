@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
@@ -14,6 +15,7 @@ import type { SvgIconComponent } from "@mui/icons-material";
 
 import ManagementLayout from "@/fe/shared/components/layout/ManagementLayout";
 import type { ActivityItemData, StatCardData, ToolCardData } from "@/fe/shared/types/common";
+import { ROUTES } from "@/fe/shared/constants/routes";
 import {
   instructorActions,
   overviewStats,
@@ -46,6 +48,8 @@ const activityIconMap: Record<ActivityTone, SvgIconComponent> = {
 };
 
 export default function InstructorPage() {
+  const router = useRouter();
+
   // Map instructor data to DashboardPage format
   const actions: ToolCardData[] = instructorActions.map((action) => ({
     id: action.id,
@@ -53,6 +57,16 @@ export default function InstructorPage() {
     description: action.description,
     tone: action.tone,
     icon: actionIconMap[action.tone],
+    onClick:
+      action.id === "announcements"
+        ? () => router.push(ROUTES.instructorAnnouncements)
+        : action.id === "research-analytics"
+          ? () => router.push(ROUTES.instructorResearchAnalytics)
+          : action.id === "create-problem"
+            ? () => router.push(ROUTES.instructorCreateProblem)
+            : action.id === "create-contest"
+              ? () => router.push(ROUTES.instructorCreateContest)
+        : undefined,
   }));
 
   const stats: StatCardData[] = overviewStats.map((stat) => ({
