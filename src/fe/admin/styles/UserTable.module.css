@@ -1,0 +1,139 @@
+.tableCard {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 24px;
+}
+
+.table {
+  width: 100%;
+}
+
+.table :global(th),
+.table :global(td) {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.table :global(tr:last-child td) {
+  border-bottom: none;
+}
+
+.headCell,
+.headCellCenter,
+.headCellRight {
+  font-size: 14px !important;
+  line-height: 20px !important;
+  font-weight: 500 !important;
+  color: #0a0a0a !important;
+  letter-spacing: -0.1504px !important;
+  padding: 10px 8px !important;
+}
+
+.headCellCenter {
+  text-align: center !important;
+}
+
+.headCellRight {
+  text-align: right !important;
+}
+
+.bodyRow :global(td) {
+  padding: 13px 8px !important;
+}
+
+.bodyCellName {
+  color: #0a0a0a !important;
+  font-size: 14px !important;
+  line-height: 20px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.1504px;
+}
+
+.bodyCellMuted {
+  color: #4a5565 !important;
+  font-size: 14px !important;
+  line-height: 20px !important;
+  letter-spacing: -0.1504px;
+}
+
+.bodyCellRole {
+  min-width: 130px;
+}
+
+.bodyCellCenter {
+  text-align: center !important;
+  color: #0a0a0a !important;
+  font-size: 14px !important;
+  line-height: 20px !important;
+}
+
+.bodyCellRight {
+  text-align: right !important;
+}
+
+.roleChip {
+  height: 22px !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  line-height: 16px !important;
+  font-weight: 500 !important;
+  border: 1px solid transparent !important;
+}
+
+.roleChip :global(.MuiChip-label) {
+  padding-left: 0 !important;
+  padding-right: 8px !important;
+}
+
+.roleChipIcon {
+  width: 12px !important;
+  height: 12px !important;
+  margin-left: 8px !important;
+  margin-right: 4px !important;
+}
+
+.roleChipStudent {
+  background: #f3f4f6 !important;
+  border-color: #e5e7eb !important;
+  color: #364153 !important;
+}
+
+.roleChipInstructor {
+  background: #dbeafe !important;
+  border-color: #bedbff !important;
+  color: #1447e6 !important;
+}
+
+.roleChipTa {
+  background: #f3e8ff !important;
+  border-color: #e9d4ff !important;
+  color: #8200db !important;
+}
+
+.roleChipAdmin {
+  background: #ffe2e2 !important;
+  border-color: #ffc9c9 !important;
+  color: #c10007 !important;
+}
+
+.rowActionButton {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 6px !important;
+}
+
+.rowActionIcon {
+  width: 16px !important;
+  height: 16px !important;
+  color: #0a0a0a;
+}
+
+@media (max-width: 900px) {
+  .tableCard {
+    overflow-x: auto;
+  }
+
+  .table {
+    min-width: 800px;
+  }
+}

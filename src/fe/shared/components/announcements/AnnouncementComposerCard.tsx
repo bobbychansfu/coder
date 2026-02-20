@@ -3,6 +3,7 @@
 import CampaignOutlinedIcon from "@mui/icons-material/CampaignOutlined";
 import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
+import type { SvgIconComponent } from "@mui/icons-material";
 import {
   Box,
   Button,
@@ -17,11 +18,13 @@ import styles from "@/fe/shared/styles/AnnouncementComposerCard.module.css";
 interface AnnouncementComposerCardProps {
   title: string;
   description: string;
-  contestLabel: string;
-  contestPlaceholder: string;
-  contestOptions: string[];
-  selectedContest: string;
-  onContestChange: (value: string) => void;
+  headerIcon?: SvgIconComponent;
+  showContestSelect?: boolean;
+  contestLabel?: string;
+  contestPlaceholder?: string;
+  contestOptions?: string[];
+  selectedContest?: string;
+  onContestChange?: (value: string) => void;
   messageLabel: string;
   messagePlaceholder: string;
   message: string;
@@ -35,11 +38,13 @@ interface AnnouncementComposerCardProps {
 export default function AnnouncementComposerCard({
   title,
   description,
-  contestLabel,
-  contestPlaceholder,
-  contestOptions,
-  selectedContest,
-  onContestChange,
+  headerIcon: HeaderIcon = CampaignOutlinedIcon,
+  showContestSelect = true,
+  contestLabel = "Select Contest",
+  contestPlaceholder = "Choose a contest",
+  contestOptions = [],
+  selectedContest = "",
+  onContestChange = () => {},
   messageLabel,
   messagePlaceholder,
   message,
@@ -53,37 +58,39 @@ export default function AnnouncementComposerCard({
     <Card className={styles.card} elevation={0}>
       <Box className={styles.cardHeader}>
         <Box className={styles.cardTitleRow}>
-          <CampaignOutlinedIcon className={styles.cardHeaderIcon} />
+          <HeaderIcon className={styles.cardHeaderIcon} />
           <Typography className={styles.cardTitle}>{title}</Typography>
         </Box>
         <Typography className={styles.cardDescription}>{description}</Typography>
       </Box>
 
       <CardContent className={styles.cardBody}>
-        <Box className={styles.fieldGroup}>
-          <Typography className={styles.fieldLabel}>{contestLabel}</Typography>
-          <TextField
-            select
-            size="small"
-            fullWidth
-            value={selectedContest}
-            onChange={(event) => onContestChange(event.target.value)}
-            className={styles.selectField}
-            SelectProps={{
-              displayEmpty: true,
-              IconComponent: KeyboardArrowDownRoundedIcon,
-            }}
-          >
-            <MenuItem value="" disabled>
-              {contestPlaceholder}
-            </MenuItem>
-            {contestOptions.map((contest) => (
-              <MenuItem key={contest} value={contest}>
-                {contest}
+        {showContestSelect ? (
+          <Box className={styles.fieldGroup}>
+            <Typography className={styles.fieldLabel}>{contestLabel}</Typography>
+            <TextField
+              select
+              size="small"
+              fullWidth
+              value={selectedContest}
+              onChange={(event) => onContestChange(event.target.value)}
+              className={styles.selectField}
+              SelectProps={{
+                displayEmpty: true,
+                IconComponent: KeyboardArrowDownRoundedIcon,
+              }}
+            >
+              <MenuItem value="" disabled>
+                {contestPlaceholder}
               </MenuItem>
-            ))}
-          </TextField>
-        </Box>
+              {contestOptions.map((contest) => (
+                <MenuItem key={contest} value={contest}>
+                  {contest}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Box>
+        ) : null}
 
         <Box className={styles.fieldGroup}>
           <Typography className={styles.fieldLabel}>{messageLabel}</Typography>
