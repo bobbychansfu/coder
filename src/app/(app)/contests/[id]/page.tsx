@@ -3,7 +3,7 @@ import ContestDetailPage from "@/fe/contests/page/ContestDetailPage";
 import { contestDetailsById } from "@/fe/contests/data/contestDetails";
 
 interface ContestDetailRouteProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export const dynamicParams = true;
@@ -12,8 +12,9 @@ export function generateStaticParams() {
   return Object.keys(contestDetailsById).map((id) => ({ id }));
 }
 
-export default function ContestDetailRoute({ params }: ContestDetailRouteProps) {
-  const contestId = params?.id ?? "contest-1";
+export default async function ContestDetailRoute({ params }: ContestDetailRouteProps) {
+  const { id } = await params;
+  const contestId = id ?? "contest-1";
   const contest =
     contestDetailsById[contestId] ??
     contestDetailsById["contest-1"] ??

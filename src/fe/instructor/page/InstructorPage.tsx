@@ -60,6 +60,12 @@ export default function InstructorPage() {
     onClick:
       action.id === "announcements"
         ? () => router.push(ROUTES.instructorAnnouncements)
+        : action.id === "research-analytics"
+          ? () => router.push(ROUTES.instructorResearchAnalytics)
+          : action.id === "create-problem"
+            ? () => router.push(ROUTES.instructorCreateProblem)
+            : action.id === "create-contest"
+              ? () => router.push(ROUTES.instructorCreateContest)
         : undefined,
   }));
 

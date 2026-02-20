@@ -15,7 +15,8 @@ export default function ScoreboardTab({ rows, problemColumns }: ScoreboardTabPro
   const [displayCount, setDisplayCount] = useState(10);
   const [isLoading, setIsLoading] = useState(false);
   const [highlightUser, setHighlightUser] = useState(false);
-  const [pendingScrollRank, setPendingScrollRank] = useState<number | null>(null);
+  const [scrollTrigger, setScrollTrigger] = useState(0);
+  const pendingScrollRankRef = useRef<number | null>(null);
   const tableRef = React.useRef<HTMLDivElement>(null);
   const loadingTimeoutRef = useRef<number | null>(null);
   const highlightTimeoutRef = useRef<number | null>(null);
@@ -55,7 +56,8 @@ export default function ScoreboardTab({ rows, problemColumns }: ScoreboardTabPro
       }
 
       setHighlightUser(true);
-      setPendingScrollRank(userRank);
+      pendingScrollRankRef.current = userRank;
+      setScrollTrigger((t) => t + 1);
 
       if (highlightTimeoutRef.current) {
         window.clearTimeout(highlightTimeoutRef.current);
@@ -67,16 +69,16 @@ export default function ScoreboardTab({ rows, problemColumns }: ScoreboardTabPro
   };
 
   useEffect(() => {
-    if (!pendingScrollRank || !tableRef.current) return;
-    const rowElement = tableRef.current.querySelector(`[data-rank="${pendingScrollRank}"]`);
+    if (!pendingScrollRankRef.current || !tableRef.current) return;
+    const rowElement = tableRef.current.querySelector(`[data-rank="${pendingScrollRankRef.current}"]`);
     if (!rowElement) return;
     const rowTop = (rowElement as HTMLElement).offsetTop;
     tableRef.current.scrollTo({
       top: rowTop - 100,
       behavior: "smooth",
     });
-    setPendingScrollRank(null);
-  }, [pendingScrollRank, displayCount]);
+    pendingScrollRankRef.current = null;
+  }, [scrollTrigger, displayCount]);
 
   useEffect(() => {
     return () => {

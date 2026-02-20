@@ -1,0 +1,477 @@
+.page {
+  background-color: #f9fafb;
+  margin: 0 -32px -32px -32px;
+  padding: 24px 32px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 100%;
+  font-family: Inter, sans-serif;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.secondaryAction {
+  text-transform: none !important;
+  border-radius: 6px !important;
+  height: 32px;
+  font-size: 12px !important;
+  line-height: 20px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.15px;
+  color: #0a0a0a !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  background: #ffffff !important;
+  padding: 6px 12px !important;
+}
+
+.secondaryAction:hover {
+  background: #f9fafb !important;
+}
+
+.actionIcon {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+.contentGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.leftColumn,
+.rightColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.card {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px !important;
+  box-shadow: none !important;
+  background: #ffffff;
+}
+
+.cardContent {
+  padding: 14px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sectionHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sectionHeaderRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sectionTitle,
+.sideTitle {
+  margin: 0;
+  color: #0a0a0a;
+  font-size: 16px !important;
+  line-height: 20px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.31px;
+}
+
+.sectionDescription {
+  margin: 0;
+  color: #717182;
+  font-size: 12px !important;
+  line-height: 18px !important;
+}
+
+.fieldBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel,
+.fieldLabelRow {
+  font-size: 13px !important;
+  line-height: 14px !important;
+  font-weight: 500 !important;
+  color: #0a0a0a;
+  letter-spacing: -0.1504px;
+}
+
+.fieldLabelRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.fieldLabelIcon {
+  width: 14px !important;
+  height: 14px !important;
+  color: #0a0a0a;
+}
+
+.inputField {
+  width: 100%;
+}
+
+.inputField :global(.MuiOutlinedInput-root) {
+  background: #f3f3f5;
+  border-radius: 6px;
+  min-height: 36px;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  color: #0a0a0a;
+}
+
+.inputField :global(.MuiOutlinedInput-notchedOutline) {
+  border-color: transparent !important;
+}
+
+.inputField :global(.MuiInputBase-input),
+.inputField :global(.MuiSelect-select) {
+  padding: 8px 12px !important;
+}
+
+.textAreaField :global(.MuiInputBase-root) {
+  align-items: flex-start;
+}
+
+.textAreaField :global(.MuiInputBase-inputMultiline) {
+  padding: 8px 12px !important;
+}
+
+.twoColumnGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.dividerRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dividerLine {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.1);
+  flex: 1;
+}
+
+.dividerText {
+  margin: 0;
+  color: #99a1af;
+  font-size: 11px !important;
+  line-height: 16px !important;
+}
+
+.helperRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.helperIcon {
+  width: 12px !important;
+  height: 12px !important;
+  color: #6a7282;
+}
+
+.helperText {
+  margin: 0;
+  color: #6a7282;
+  font-size: 11px !important;
+  line-height: 16px !important;
+}
+
+.addProblemsButton {
+  text-transform: none !important;
+  border-radius: 6px !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  color: #0a0a0a !important;
+  background: #ffffff !important;
+  height: 30px;
+  font-size: 12px !important;
+  line-height: 18px !important;
+  font-weight: 500 !important;
+  white-space: nowrap;
+  padding: 6px 10px !important;
+}
+
+.addProblemsButton:hover {
+  background: #f9fafb !important;
+}
+
+.emptyState {
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  min-height: 104px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 4px;
+  padding: 16px;
+}
+
+.emptyStateIcon {
+  width: 34px !important;
+  height: 34px !important;
+  color: #9ca3af;
+}
+
+.emptyStateTitle {
+  margin: 0;
+  color: #4b5563;
+  font-size: 18px !important;
+  line-height: 20px !important;
+  letter-spacing: -0.2px;
+}
+
+.emptyStateBody {
+  margin: 0;
+  color: #6b7280;
+  font-size: 12px !important;
+  line-height: 16px !important;
+}
+
+.draftsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.draftItem {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  padding: 10px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.draftMain {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.draftTitle {
+  margin: 0;
+  color: #0a0a0a;
+  font-size: 14px !important;
+  line-height: 20px !important;
+  font-weight: 500 !important;
+}
+
+.draftMetaTop {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.draftStatusChip {
+  height: 16px !important;
+  border-radius: 6px !important;
+  background: #fefce8 !important;
+  color: #a65f00 !important;
+  border: 1px solid #ffdf20 !important;
+  font-size: 10px !important;
+  line-height: 14px !important;
+}
+
+.draftDate {
+  margin: 0;
+  color: #9ca3af;
+  font-size: 10px !important;
+  line-height: 14px !important;
+}
+
+.draftMetaBottom {
+  margin: 0;
+  color: #6a7282;
+  font-size: 10px !important;
+  line-height: 14px !important;
+}
+
+.draftActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.draftIconButton {
+  min-width: 20px !important;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px !important;
+  padding: 0 !important;
+}
+
+.draftActionIcon {
+  width: 12px !important;
+  height: 12px !important;
+  color: #4a5565;
+}
+
+.draftActionIconDanger {
+  width: 12px !important;
+  height: 12px !important;
+  color: #e7000b;
+}
+
+.statusRows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.statusLabel {
+  margin: 0;
+  color: #4a5565;
+  font-size: 13px !important;
+  line-height: 18px !important;
+}
+
+.statusValue,
+.statusValueSmall {
+  margin: 0;
+  color: #0a0a0a;
+  font-size: 13px !important;
+  line-height: 18px !important;
+  font-weight: 500 !important;
+  text-align: right;
+}
+
+.statusValueSmall {
+  font-size: 11px !important;
+  line-height: 14px !important;
+  max-width: 165px;
+}
+
+.statusChip {
+  border-radius: 6px !important;
+  height: 22px !important;
+  font-size: 12px !important;
+  line-height: 16px !important;
+  font-weight: 500 !important;
+}
+
+.statusDivider {
+  width: 100%;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.rulesList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ruleItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.ruleCheckIcon {
+  width: 12px !important;
+  height: 12px !important;
+  color: #00a63e;
+  margin-top: 3px;
+}
+
+.ruleText {
+  margin: 0;
+  color: #4a5565;
+  font-size: 13px !important;
+  line-height: 20px !important;
+}
+
+.actionStack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.publishButton,
+.scheduleButton {
+  width: 100%;
+  height: 36px;
+  text-transform: none !important;
+  border-radius: 6px !important;
+  font-size: 14px !important;
+  line-height: 20px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.1504px;
+}
+
+.publishButton {
+  background: #e7000b !important;
+  color: #ffffff !important;
+}
+
+.publishButton:hover {
+  background: #c80009 !important;
+}
+
+.scheduleButton {
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  color: #0a0a0a !important;
+  background: #ffffff !important;
+}
+
+.scheduleButton:hover {
+  background: #f9fafb !important;
+}
+
+@media (max-width: 1200px) {
+  .contentGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    margin: 0 -16px -16px -16px;
+    padding: 16px;
+  }
+
+  .twoColumnGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sectionHeaderRow {
+    flex-direction: column;
+  }
+
+  .addProblemsButton {
+    width: 100%;
+  }
+}

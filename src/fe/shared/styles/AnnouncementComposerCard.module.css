@@ -1,0 +1,147 @@
+.card {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px !important;
+  background-color: #ffffff;
+  box-shadow: none !important;
+}
+
+.cardHeader {
+  padding: 24px 24px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cardTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cardHeaderIcon {
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  font-size: 1.25rem !important;
+  color: #0a0a0a;
+}
+
+.cardTitle {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 16px;
+  line-height: 16px;
+  font-weight: 500;
+  color: #0a0a0a;
+  letter-spacing: -0.3125px;
+}
+
+.cardDescription {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+  color: #717182;
+  letter-spacing: -0.3125px;
+}
+
+.cardBody {
+  padding: 24px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fieldLabel {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  line-height: 14px;
+  font-weight: 500;
+  color: #0a0a0a;
+  letter-spacing: -0.1504px;
+}
+
+.selectField :global(.MuiOutlinedInput-root),
+.messageField :global(.MuiOutlinedInput-root) {
+  border-radius: 6px;
+  background-color: #f3f3f5;
+}
+
+.selectField :global(.MuiOutlinedInput-notchedOutline),
+.messageField :global(.MuiOutlinedInput-notchedOutline) {
+  border-color: transparent;
+}
+
+.selectField :global(.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline),
+.messageField :global(.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline),
+.selectField :global(.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline),
+.messageField :global(.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
+  border-color: transparent;
+}
+
+.selectField :global(.MuiSelect-select),
+.messageField :global(.MuiInputBase-input) {
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  color: #717182;
+  letter-spacing: -0.1504px;
+}
+
+.messageField :global(.MuiInputBase-input::placeholder) {
+  color: #717182;
+  opacity: 1;
+}
+
+.messageField :global(.MuiInputBase-inputMultiline) {
+  min-height: 104px !important;
+  padding: 0;
+}
+
+.helperText {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+  color: #6a7282;
+}
+
+.sendButton {
+  align-self: flex-start;
+  min-height: 36px;
+  padding: 8px 12px;
+  border-radius: 6px !important;
+  text-transform: none !important;
+  font-family: Inter, sans-serif !important;
+  font-size: 14px !important;
+  line-height: 20px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.1504px !important;
+  color: #ffffff !important;
+  background-color: #e7000b !important;
+}
+
+.sendButton:hover {
+  background-color: #c9010a !important;
+}
+
+.sendButton:disabled {
+  opacity: 0.5;
+  color: #ffffff !important;
+  background-color: #e7000b !important;
+}
+
+.sendIcon {
+  width: 1rem !important;
+  height: 1rem !important;
+  font-size: 1rem !important;
+}
