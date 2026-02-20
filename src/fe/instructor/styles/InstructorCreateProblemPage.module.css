@@ -1,0 +1,963 @@
+.page {
+  background-color: #f9fafb;
+  margin: 0 -32px -32px -32px;
+  padding: 24px 32px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-height: 100%;
+  font-family: Inter, sans-serif;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.secondaryAction,
+.primaryAction {
+  text-transform: none !important;
+  border-radius: 6px !important;
+  height: 32px;
+  font-family: Inter, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  line-height: 20px !important;
+  letter-spacing: -0.15px;
+}
+
+.secondaryAction {
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  color: #0a0a0a !important;
+  background: #ffffff !important;
+  padding: 6px 12px !important;
+}
+
+.secondaryAction:hover {
+  background: #f9fafb !important;
+}
+
+.primaryAction {
+  background: #e7000b !important;
+  color: #ffffff !important;
+  padding: 8px 14px !important;
+}
+
+.primaryAction:hover {
+  background: #c80009 !important;
+}
+
+.actionIcon {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+.contentGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.leftColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.formCard,
+.sideCard,
+.draftsCard {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px !important;
+  box-shadow: none !important;
+  background: #ffffff;
+}
+
+.formCardContent {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 14px !important;
+}
+
+.stepperTabs {
+  width: 100%;
+  background: #ececf0;
+  border-radius: 12px !important;
+  padding: 2px;
+  gap: 0;
+}
+
+.stepperTabs :global(.MuiToggleButtonGroup-grouped) {
+  border: 0 !important;
+}
+
+.stepperTabs :global(.MuiToggleButtonGroup-grouped:not(:first-of-type)) {
+  margin-left: 0 !important;
+}
+
+.stepperTabButton {
+  flex: 1;
+  min-height: 24px !important;
+  border-radius: 10px !important;
+  text-transform: none !important;
+  color: #0a0a0a !important;
+  font-family: Inter, sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  line-height: 16px !important;
+  letter-spacing: -0.11px;
+  border: none !important;
+  padding: 4px 8px !important;
+}
+
+.stepperTabs :global(.Mui-selected) {
+  background: #ffffff !important;
+}
+
+.stepperTabInner {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stepperBadge {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  color: #4a5565;
+  font-size: 9px;
+  line-height: 14px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stepperCheckIcon {
+  width: 10px !important;
+  height: 10px !important;
+  color: #16a34a;
+}
+
+.stepperCountBadge {
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #16a34a;
+  color: #ffffff;
+  font-size: 10px;
+  line-height: 15px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.nextStepRow,
+.stepActionsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.nextStepRow {
+  justify-content: flex-end;
+}
+
+.stepSecondaryButton,
+.nextStepButton {
+  text-transform: none !important;
+  border-radius: 6px !important;
+  height: 32px;
+  font-size: 12px !important;
+  line-height: 20px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.12px;
+  padding: 6px 12px !important;
+}
+
+.stepSecondaryButton {
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  color: #0a0a0a !important;
+  background: #ffffff !important;
+}
+
+.stepSecondaryButton:hover {
+  background: #f9fafb !important;
+}
+
+.nextStepButton {
+  background: #e7000b !important;
+  color: #ffffff !important;
+}
+
+.nextStepButton:hover {
+  background: #c80009 !important;
+}
+
+.formFields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.fieldBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.twoColumnGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.fieldLabel,
+.fieldLabelRow {
+  font-family: Inter, sans-serif;
+  font-size: 12px !important;
+  line-height: 14px !important;
+  font-weight: 500 !important;
+  color: #0a0a0a;
+  letter-spacing: -0.12px;
+}
+
+.fieldLabelRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.fieldHint {
+  margin: 0;
+  color: #6a7282;
+  font-size: 11px !important;
+  line-height: 16px !important;
+}
+
+.fieldLabelIcon {
+  width: 14px !important;
+  height: 14px !important;
+  color: #0a0a0a;
+}
+
+.inputField,
+.selectField {
+  width: 100%;
+}
+
+.inputField :global(.MuiOutlinedInput-root),
+.selectField :global(.MuiOutlinedInput-root) {
+  background: #f3f3f5;
+  border-radius: 6px;
+  min-height: 34px;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  color: #0a0a0a;
+}
+
+.inputField :global(.MuiOutlinedInput-notchedOutline),
+.selectField :global(.MuiOutlinedInput-notchedOutline) {
+  border-color: transparent !important;
+}
+
+.inputField :global(.MuiInputBase-input),
+.selectField :global(.MuiSelect-select) {
+  padding: 7px 10px !important;
+}
+
+.textAreaField :global(.MuiInputBase-root) {
+  align-items: flex-start;
+}
+
+.textAreaField :global(.MuiInputBase-inputMultiline) {
+  padding: 8px 10px !important;
+}
+
+.monoTextArea :global(.MuiInputBase-inputMultiline) {
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace !important;
+  line-height: 18px !important;
+  font-size: 12px !important;
+}
+
+.tagsRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.addTagButton {
+  min-width: 34px !important;
+  width: 34px;
+  height: 32px;
+  border-radius: 6px !important;
+  background: #dc2626 !important;
+  color: #ffffff !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+.addTagButton:hover {
+  background: #b91c1c !important;
+}
+
+.addTagButtonIcon {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+.infoBanner,
+.optionalBanner {
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.infoBanner {
+  border: 1px solid #bedbff;
+  background: #eff6ff;
+}
+
+.infoBannerText {
+  margin: 0;
+  color: #193cb8;
+  font-size: 12px !important;
+  line-height: 18px !important;
+  letter-spacing: -0.12px;
+}
+
+.examplesStack,
+.testCasesStack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.exampleCard,
+.testCaseCard {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.exampleCardTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.exampleCardTitle,
+.testCaseTitle {
+  margin: 0;
+  color: #0a0a0a;
+  font-size: 13px !important;
+  line-height: 18px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.15px;
+}
+
+.addExampleButton,
+.emptyStateButton {
+  width: 100%;
+  height: 30px;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  border-radius: 6px !important;
+  text-transform: none !important;
+  color: #0a0a0a !important;
+  background: #ffffff !important;
+  font-size: 12px !important;
+  line-height: 18px !important;
+  font-weight: 500 !important;
+}
+
+.addExampleButton:hover,
+.emptyStateButton:hover {
+  background: #f9fafb !important;
+}
+
+.optionalBanner {
+  border: 1px solid #f7d98f;
+  background: #fff9eb;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.optionalBannerIcon {
+  width: 14px !important;
+  height: 14px !important;
+  color: #ca8a04;
+  margin-top: 2px;
+}
+
+.optionalBannerTitle {
+  margin: 0;
+  color: #9a3412;
+  font-size: 12px !important;
+  line-height: 14px !important;
+  font-weight: 500 !important;
+}
+
+.optionalBannerText {
+  margin: 4px 0 0;
+  color: #b45309;
+  font-size: 12px !important;
+  line-height: 16px !important;
+}
+
+.testCaseEmptyState {
+  min-height: 188px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 8px;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  padding: 20px;
+}
+
+.testCaseEmptyIcon {
+  width: 24px !important;
+  height: 24px !important;
+  color: #9ca3af;
+}
+
+.testCaseEmptyTitle {
+  margin: 0;
+  color: #4b5563;
+  font-size: 16px !important;
+  line-height: 20px !important;
+}
+
+.testCaseEmptyBody {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 11px !important;
+  line-height: 16px !important;
+}
+
+.emptyStateButton {
+  width: auto;
+  min-width: 138px;
+}
+
+.testCaseHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.testCaseHeaderLeft {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.testCaseIcon {
+  width: 14px !important;
+  height: 14px !important;
+  color: #9ca3af;
+}
+
+.testCaseDeleteButton {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.testCaseDeleteIcon {
+  width: 13px !important;
+  height: 13px !important;
+  color: #ef4444;
+}
+
+.testCaseProgressRow {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #f3f4f6;
+  border-radius: 6px;
+  height: 28px;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.testCaseProgressText {
+  margin: 0;
+  color: #6b7280;
+  font-size: 11px !important;
+  line-height: 16px !important;
+}
+
+.testCaseOptionalChip {
+  height: 16px !important;
+  border-radius: 999px !important;
+  background: #e5e7eb !important;
+  color: #111827 !important;
+  font-size: 10px !important;
+  line-height: 14px !important;
+}
+
+.draftsCardContent {
+  padding: 14px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.draftsHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.draftsHeaderIcon {
+  width: 13px !important;
+  height: 13px !important;
+  color: #0a0a0a;
+  margin-top: 2px;
+}
+
+.draftsTitle {
+  margin: 0;
+  color: #0a0a0a;
+  font-size: 16px !important;
+  line-height: 20px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.31px;
+}
+
+.draftsSubtitle {
+  margin: 4px 0 0;
+  color: #717182;
+  font-size: 12px !important;
+  line-height: 16px !important;
+}
+
+.draftsList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.draftItem {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.draftMain {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.draftTitle {
+  margin: 0;
+  color: #0a0a0a;
+  font-size: 12px !important;
+  line-height: 16px !important;
+  font-weight: 500 !important;
+}
+
+.draftMetaRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.draftDifficultyChip {
+  border-radius: 6px !important;
+  height: 14px !important;
+  text-transform: lowercase;
+  font-size: 8px !important;
+  line-height: 12px !important;
+}
+
+.draftDate {
+  margin: 0;
+  color: #99a1af;
+  font-size: 10px !important;
+  line-height: 12px !important;
+}
+
+.draftCounts {
+  margin: 0;
+  color: #6a7282;
+  font-size: 10px !important;
+  line-height: 14px !important;
+}
+
+.draftActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.draftIconButton {
+  min-width: 18px !important;
+  width: 18px;
+  height: 18px;
+  padding: 0 !important;
+  border-radius: 4px !important;
+}
+
+.draftActionIcon {
+  width: 11px !important;
+  height: 11px !important;
+  color: #4a5565;
+}
+
+.draftActionIconDanger {
+  width: 11px !important;
+  height: 11px !important;
+  color: #e7000b;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sideCardContent {
+  padding: 14px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sideCardTitleSmall {
+  margin: 0;
+  color: #0a0a0a;
+  font-size: 16px !important;
+  line-height: 20px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.31px;
+}
+
+.sideCardDescription {
+  margin: 0;
+  color: #717182;
+  font-size: 12px !important;
+  line-height: 16px !important;
+}
+
+.statusRows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.statusRow,
+.statusRowCompact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.statusLabel {
+  color: #4a5565;
+  font-size: 12px !important;
+  line-height: 16px !important;
+}
+
+.statusValue {
+  color: #0a0a0a;
+  font-size: 12px !important;
+  line-height: 16px !important;
+  font-weight: 500 !important;
+}
+
+.statusDivider {
+  width: 100%;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.1);
+  margin: 1px 0;
+}
+
+.statusChip {
+  border-radius: 6px !important;
+  font-size: 10px !important;
+  line-height: 14px !important;
+  font-weight: 500 !important;
+  height: 18px !important;
+  text-transform: none;
+}
+
+.guidelineList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.guidelineItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.guidelineCheck {
+  color: #00a63e;
+  width: 12px !important;
+  height: 12px !important;
+  margin-top: 2px;
+}
+
+.guidelineText {
+  margin: 0;
+  color: #4a5565;
+  font-size: 12px !important;
+  line-height: 16px !important;
+}
+
+.footerActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.publishButton {
+  width: 100%;
+  height: 32px;
+  text-transform: none !important;
+  border-radius: 6px !important;
+  font-family: Inter, sans-serif !important;
+  font-size: 14px !important;
+  line-height: 20px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.15px;
+  background: #e7000b !important;
+  color: #ffffff !important;
+}
+
+.publishButton:hover {
+  background: #c80009 !important;
+}
+
+.previewDialog :global(.MuiDialog-paper) {
+  border-radius: 12px;
+  max-width: 700px;
+}
+
+.previewDialogContent {
+  padding: 14px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.previewHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.previewDialogTitle {
+  margin: 0;
+  color: #111827;
+  font-size: 20px !important;
+  line-height: 24px !important;
+  font-weight: 500 !important;
+}
+
+.previewCloseButton {
+  width: 24px !important;
+  height: 24px !important;
+}
+
+.previewCloseIcon {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.previewDialogSubtitle {
+  margin: 0;
+  color: #6b7280;
+  font-size: 12px !important;
+  line-height: 18px !important;
+}
+
+.previewProblemTitle {
+  margin: 0;
+  color: #0f172a;
+  font-size: 18px !important;
+  line-height: 24px !important;
+  font-weight: 600 !important;
+}
+
+.previewMetaRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.previewDifficultyChip {
+  height: 18px !important;
+  border-radius: 999px !important;
+  background: #dc2626 !important;
+  color: #ffffff !important;
+  font-size: 10px !important;
+  line-height: 14px !important;
+}
+
+.previewMetaChip {
+  height: 18px !important;
+  border-radius: 999px !important;
+  background: #f3f4f6 !important;
+  color: #374151 !important;
+  border: 1px solid #e5e7eb !important;
+  font-size: 10px !important;
+  line-height: 14px !important;
+}
+
+.previewSectionBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.previewSectionTitle {
+  margin: 0;
+  color: #111827;
+  font-size: 12px !important;
+  line-height: 16px !important;
+  font-weight: 500 !important;
+}
+
+.previewSurface {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 8px;
+  background: #fafafa;
+}
+
+.previewBodyText {
+  margin: 0;
+  color: #374151;
+  font-size: 12px !important;
+  line-height: 16px !important;
+  white-space: pre-wrap;
+}
+
+.previewTwoColumnGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.previewExamplesWrap {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fafafa;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.previewExampleCard {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #ffffff;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.previewExampleTitle {
+  margin: 0;
+  color: #111827;
+  font-size: 12px !important;
+  line-height: 16px !important;
+  font-weight: 500 !important;
+}
+
+.previewExampleGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.previewExampleCell {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #f9fafb;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.previewExampleLabel {
+  margin: 0;
+  color: #6b7280;
+  font-size: 10px !important;
+  line-height: 14px !important;
+}
+
+.previewExplanationText {
+  margin: 0;
+  color: #1d4ed8;
+  font-size: 11px !important;
+  line-height: 16px !important;
+}
+
+@media (max-width: 1200px) {
+  .contentGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    margin: 0 -16px -16px -16px;
+    padding: 16px;
+  }
+
+  .twoColumnGrid,
+  .previewTwoColumnGrid,
+  .previewExampleGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .headerActions {
+    width: 100%;
+  }
+
+  .secondaryAction,
+  .primaryAction {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .stepActionsRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .stepSecondaryButton,
+  .nextStepButton {
+    width: 100%;
+  }
+}
