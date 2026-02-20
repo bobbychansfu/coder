@@ -1,0 +1,89 @@
+.page {
+  background-color: #f9fafb;
+  margin: 0 -32px -32px -32px;
+  padding: 24px 32px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 100%;
+  font-family: Inter, sans-serif;
+}
+
+.addButton {
+  text-transform: none !important;
+  border-radius: 6px !important;
+  height: 36px;
+  padding: 8px 12px !important;
+  background: #e7000b !important;
+  color: #ffffff !important;
+  font-size: 14px !important;
+  line-height: 20px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.1504px;
+}
+
+.addButton:hover {
+  background: #c9010a !important;
+}
+
+.addButtonIcon {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.statCard {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  background: #ffffff;
+  min-height: 144px;
+  padding: 25px;
+}
+
+.statHeader {
+  margin-bottom: 42px;
+}
+
+.statLabel {
+  margin: 0;
+  color: #4a5565;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: -0.1504px;
+}
+
+.statContent {
+  display: flex;
+  flex-direction: column;
+}
+
+.statValue {
+  margin: 0;
+  color: #0a0a0a;
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 700;
+  letter-spacing: 0.0703px;
+}
+
+@media (max-width: 1200px) {
+  .statsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    margin: 0 -16px -16px -16px;
+    padding: 16px;
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+}
