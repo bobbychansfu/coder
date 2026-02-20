@@ -1,0 +1,979 @@
+openapi: 3.0.3
+info:
+  title: Judge System API
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+
+tags:
+  - name: Authentication
+    description: Authentication & basics endpoints
+  - name: Student
+    description: Student endpoints (/s/*)
+  - name: Instructor
+    description: Instructor endpoints (/i/*)
+  - name: Exam System
+    description: Exam system endpoints (/a/*)
+  - name: System & Judging
+    description: System & judging endpoints (/m/*)
+
+paths:
+  /:
+    get:
+      tags: [Authentication]
+      summary: CAS Login entry point or redirect to frontend
+      description: CAS Login entry point or redirect to frontend.
+      parameters:
+        - in: query
+          name: ticket
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            text/html:
+              schema:
+                type: string
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /login/:
+    get:
+      tags: [Authentication]
+      summary: Render password login page (or redirect)
+      responses:
+        "200":
+          description: OK
+          content:
+            text/html:
+              schema:
+                type: string
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+    post:
+      tags: [Authentication]
+      summary: Process password-based login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /logout/:
+    get:
+      tags: [Authentication]
+      summary: Logout the current user
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /s/info:
+    get:
+      tags: [Student]
+      summary: Get summary info for student contests
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /s/profile:
+    get:
+      tags: [Student]
+      summary: Get current user profile details
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /s/update_profile:
+    post:
+      tags: [Student]
+      summary: Update user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /s/achievements:
+    get:
+      tags: [Student]
+      summary: Get list of user achievements
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /s/achievements/{id}/icon:
+    get:
+      tags: [Student]
+      summary: Get the icon image for a specific achievement
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/*:
+              schema:
+                type: string
+                format: binary
+
+  /s/contest/register/{cid}:
+    post:
+      tags: [Student]
+      summary: Register for a specific contest
+      parameters:
+        - in: path
+          name: cid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /s/contest/unregister/{cid}:
+    get:
+      tags: [Student]
+      summary: Unregister from a contest
+      parameters:
+        - in: path
+          name: cid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /s/entercontest/{cid}:
+    get:
+      tags: [Student]
+      summary: Enter contest lobby (checks registration status)
+      parameters:
+        - in: path
+          name: cid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /s/contest/{cid}:
+    get:
+      tags: [Student]
+      summary: Get contest details and problem statuses
+      parameters:
+        - in: path
+          name: cid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /s/closed/{cid}:
+    get:
+      tags: [Student]
+      summary: Get info for a closed contest
+      parameters:
+        - in: path
+          name: cid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /s/problem/{cid}/{pid}:
+    get:
+      tags: [Student]
+      summary: Get details for a specific problem
+      parameters:
+        - in: path
+          name: cid
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: pid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /s/submit/{cid}/{pid}:
+    post:
+      tags: [Student]
+      summary: Submit code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudentSubmitRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/StudentSubmitRequest"
+      parameters:
+        - in: path
+          name: cid
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: pid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /s/submissions/{cid}/{pid}:
+    get:
+      tags: [Student]
+      summary: Get submission history for a specific problem
+      parameters:
+        - in: path
+          name: cid
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: pid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /s/allsubmissions:
+    get:
+      tags: [Student]
+      summary: Get all submissions for the current user
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /s/request_hint:
+    post:
+      tags: [Student]
+      summary: Request an AI-generated hint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HintRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/HintRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /s/hints:
+    get:
+      tags: [Student]
+      summary: Retrieve hint history for a problem
+      parameters:
+        - in: query
+          name: computing_id
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: pid
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /i/info:
+    get:
+      tags: [Instructor]
+      summary: Get instructor dashboard summary
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /i/contests:
+    get:
+      tags: [Instructor]
+      summary: Get list of all contests (Admin/Instructor view)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /i/contest/create:
+    get:
+      tags: [Instructor]
+      summary: Get data required to render the create contest form
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+    post:
+      tags: [Instructor]
+      summary: Create or update a contest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContestCreateRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/ContestCreateRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /i/contest/{cid}:
+    get:
+      tags: [Instructor]
+      summary: Get contest details for editing
+      parameters:
+        - in: path
+          name: cid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /i/adduser:
+    get:
+      tags: [Instructor]
+      summary: Get form data for adding a new user
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+    post:
+      tags: [Instructor]
+      summary: Add a new user manually
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddUserRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/AddUserRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /i/problem/{cid}/{pid}:
+    get:
+      tags: [Instructor]
+      summary: Get problem details (Instructor view)
+      parameters:
+        - in: path
+          name: cid
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: pid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /i/submit/{cid}/{pid}:
+    post:
+      tags: [Instructor]
+      summary: Submit code (Instructor test run)
+      parameters:
+        - in: path
+          name: cid
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: pid
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstructorSubmitRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/InstructorSubmitRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /i/submissions/{cid}/{pid}:
+    get:
+      tags: [Instructor]
+      summary: View all student submissions for a problem
+      parameters:
+        - in: path
+          name: cid
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: pid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /i/allsubmissions:
+    get:
+      tags: [Instructor]
+      summary: View all submissions globally
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /a/:
+    get:
+      tags: [Exam System]
+      summary: List all exams
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /a/exam/create:
+    post:
+      tags: [Exam System]
+      summary: Create or update an exam
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExamCreateRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/ExamCreateRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /a/exam/{examId}:
+    get:
+      tags: [Exam System]
+      summary: Get details for a specific exam
+      parameters:
+        - in: path
+          name: examId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /a/publish/{examId}:
+    get:
+      tags: [Exam System]
+      summary: Publish an exam
+      parameters:
+        - in: path
+          name: examId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /a/requestslot/{examId}:
+    get:
+      tags: [Exam System]
+      summary: Get data for exam slot requests
+      parameters:
+        - in: path
+          name: examId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /a/examslots/create:
+    post:
+      tags: [Exam System]
+      summary: Create slots for an exam
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExamSlotsCreateRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/ExamSlotsCreateRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /a/examslot/{examslotId}:
+    delete:
+      tags: [Exam System]
+      summary: Delete a specific exam slot
+      parameters:
+        - in: path
+          name: examslotId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /m/judge_result:
+    post:
+      tags: [System & Judging]
+      summary: Webhook to receive results from the Judge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JudgeResultRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /m/scoreboard/{cid}:
+    get:
+      tags: [System & Judging]
+      summary: Get scoreboard data for a contest
+      parameters:
+        - in: path
+          name: cid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /m/submissions:
+    get:
+      tags: [System & Judging]
+      summary: Retrieve status for multiple submissions (polling)
+      parameters:
+        - in: query
+          name: sids
+          required: false
+          description: Submission IDs (often provided as CSV in a single query param)
+          schema:
+            type: string
+            example: "123,124,125"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /m/report_ai_hint:
+    post:
+      tags: [System & Judging]
+      summary: Callback to report the result of AI hint generation job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportAiHintRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+components:
+  schemas:
+    OkResponse:
+      type: object
+      description: Generic OK response wrapper (placeholder)
+      properties:
+        ok:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: OK
+        data:
+          description: Endpoint-specific payload
+          nullable: true
+          oneOf:
+            - type: object
+              additionalProperties: true
+            - type: array
+              items: {}
+            - type: string
+            - type: number
+            - type: boolean
+      required: [ok]
+
+    LoginRequest:
+      type: object
+      properties:
+        uname:
+          type: string
+        password:
+          type: string
+      required: [uname, password]
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        fname:
+          type: string
+        lname:
+          type: string
+        nickname:
+          type: string
+      required: [fname, lname, nickname]
+
+    StudentSubmitRequest:
+      type: object
+      description: Submit code using either filecode or textcode.
+      properties:
+        filecode:
+          type: string
+          description: Code contents (file upload represented as string in this spec)
+        textcode:
+          type: string
+          description: Code contents as plain text
+        language:
+          type: string
+        connection_id:
+          type: string
+      required: [language, connection_id]
+      oneOf:
+        - required: [filecode]
+        - required: [textcode]
+
+    HintRequest:
+      type: object
+      properties:
+        pid:
+          type: string
+      required: [pid]
+
+    ContestCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        published:
+          type: boolean
+        type:
+          type: string
+        location:
+          type: string
+        newProblems:
+          description: Problems to add/update (shape not specified in source doc)
+          oneOf:
+            - type: array
+              items:
+                type: object
+                additionalProperties: true
+            - type: object
+              additionalProperties: true
+      required:
+        [name, starts_at, ends_at, published, type, location, newProblems]
+
+    AddUserRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required: [username, password]
+
+    InstructorSubmitRequest:
+      type: object
+      properties:
+        filecode:
+          type: string
+        textcode:
+          type: string
+        language:
+          type: string
+        connection_id:
+          type: string
+      required: [language]
+      oneOf:
+        - required: [filecode]
+        - required: [textcode]
+
+    ExamCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        course_id:
+          type: string
+        capacity:
+          type: integer
+          format: int32
+        duration:
+          type: integer
+          format: int32
+          description: Duration (units not specified)
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type: string
+          format: date-time
+      required: [name, course_id, capacity, duration, start_date, end_date]
+
+    ExamSlotsCreateRequest:
+      type: object
+      properties:
+        exam_id:
+          type: string
+        start:
+          type: array
+          items:
+            type: string
+            format: date-time
+          description: start[] from source doc
+        capacity:
+          type: array
+          items:
+            type: integer
+            format: int32
+          description: capacity[] from source doc
+      required: [exam_id, start, capacity]
+
+    JudgeResultRequest:
+      type: object
+      properties:
+        sid:
+          type: string
+        status:
+          type: string
+        judge_output:
+          type: string
+        score:
+          type: number
+      required: [sid, status, judge_output, score]
+
+    ReportAiHintRequest:
+      type: object
+      properties:
+        code:
+          type: string
+        feedback:
+          type: string
+        validation:
+          type: string
+        connection_id:
+          type: string
+        is_job_successful:
+          type: boolean
+      required: [code, feedback, validation, connection_id, is_job_successful]
