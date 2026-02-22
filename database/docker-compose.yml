@@ -4,14 +4,36 @@ services:
     container_name: judge-db
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     environment:
-      POSTGRES_DB: judge
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: wrdd
+      POSTGRES_DB: ${POSTGRES_DB:-judge}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wrdd}
     volumes:
       - judge_db_data:/var/lib/postgresql/data
-      - ./initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-judge}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  swagger:
+    image: swaggerapi/swagger-ui:latest
+    container_name: judge-swagger
+    restart: unless-stopped
+    ports:
+      - "${SWAGGER_PORT:-8081}:8080"
+    environment:
+      SWAGGER_JSON: /openapi/backendAPI.yaml
+    volumes:
+      - ../docs:/openapi:ro
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
   judge_db_data:
