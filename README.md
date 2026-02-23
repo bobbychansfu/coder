@@ -1,8 +1,8 @@
-# 🚀 eTech Platform (TBD)
+# 🚀 eTech Platform
 
 > ✨ Short project tagline (TBD)
 
-## 🔎 Introduction (TBD)
+## 🔎 Introduction
 
 A research-driven competitive programming and algorithm practice platform.
 
