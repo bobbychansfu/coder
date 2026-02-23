@@ -1,5 +1,19 @@
 # API Endpoints Documentation
 
+## Local Swagger/OpenAPI Preview
+
+1. Start local infrastructure:
+
+```bash
+npm run db:up
+```
+
+2. Open Swagger UI:
+- `http://localhost:${SWAGGER_PORT}` (default `8081`)
+
+3. Source OpenAPI file:
+- `docs/backendAPI.yaml`
+
 ## 🔐 Authentication & Basics
 
 - `GET /`
