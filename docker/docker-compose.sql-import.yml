@@ -1,0 +1,8 @@
+services:
+  db:
+    volumes:
+      - judge_db_data:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+
+volumes:
+  judge_db_data:

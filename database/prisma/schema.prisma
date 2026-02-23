@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  INSTRUCTOR
+  TA
+  STUDENT
+}
+
+enum ContestStatus {
+  DRAFT
+  UPCOMING
+  ACTIVE
+  ENDED
+}
+
+enum Visibility {
+  PUBLIC
+  PRIVATE
+  COURSE_ONLY
+}
+
+enum AnnouncementScope {
+  PLATFORM
+  CONTEST
+}
+
+enum SubmissionStatus {
+  PENDING
+  ACCEPTED
+  WRONG_ANSWER
+  TIME_LIMIT_EXCEEDED
+  RUNTIME_ERROR
+}
+
+model User {
+  id          String   @id @default(cuid())
+  computingId String   @unique
+  email       String   @unique
+  firstName   String
+  lastName    String
+  role        UserRole
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  contestsCreated Contest[]      @relation("ContestCreator")
+  announcements   Announcement[] @relation("AnnouncementAuthor")
+  submissions     Submission[]
+}
+
+model Contest {
+  id              String        @id @default(cuid())
+  slug            String        @unique
+  name            String
+  classSection    String
+  status          ContestStatus
+  visibility      Visibility    @default(PRIVATE)
+  startsAt        DateTime
+  durationMinutes Int
+  participants    Int           @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  instructorId String?
+  instructor   User?   @relation("ContestCreator", fields: [instructorId], references: [id], onDelete: SetNull)
+
+  contestProblems ContestProblem[]
+  announcements   Announcement[]
+  submissions     Submission[]
+}
+
+model Problem {
+  id         String   @id @default(cuid())
+  code       String   @unique
+  title      String
+  statement  String
+  difficulty String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  contestLinks ContestProblem[]
+  submissions  Submission[]
+}
+
+model ContestProblem {
+  contestId String
+  problemId String
+  ordering  Int
+
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@id([contestId, problemId])
+  @@unique([contestId, ordering])
+}
+
+model Announcement {
+  id        String            @id @default(cuid())
+  title     String
+  message   String
+  scope     AnnouncementScope
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  authorId String?
+  author   User?   @relation("AnnouncementAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  contestId String?
+  contest   Contest? @relation(fields: [contestId], references: [id], onDelete: Cascade)
+}
+
+model Submission {
+  id        String           @id @default(cuid())
+  language  String
+  status    SubmissionStatus
+  score     Int              @default(0)
+  createdAt DateTime         @default(now())
+
+  userId    String
+  contestId String
+  problemId String
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@index([contestId, problemId])
+  @@index([userId, createdAt])
+}
