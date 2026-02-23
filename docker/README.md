@@ -31,7 +31,12 @@ Database credentials:
 
 Configure these values in root `.env` (see `.env.example`).
 
-If `5432` is already in use locally, set `DB_PORT` and `DATABASE_URL` to `5433`.
+`DATABASE_URL` is optional. If omitted, backend/Prisma derives it from `POSTGRES_USER`, `POSTGRES_PASSWORD`, `DB_PORT`, and `POSTGRES_DB`.
+
+Use a strong `POSTGRES_PASSWORD` in `.env`.
+
+If `5432` is already in use locally, set `DB_PORT` to `5433`.
+If `DATABASE_URL` is explicitly set, update it to use port `5433` as well.
 
 After services are up, from repository root initialize schema + mock data:
 
@@ -65,7 +70,6 @@ curl -I http://127.0.0.1:8081
 If you need to bootstrap from `initdb/judge_full_latest.sql` instead of Prisma seed:
 
 ```bash
-cd database
-docker compose --env-file ../.env -f docker-compose.yml -f docker-compose.sql-import.yml down -v
-docker compose --env-file ../.env -f docker-compose.yml -f docker-compose.sql-import.yml up -d
+docker compose --env-file .env -f docker/docker-compose.yml -f docker/docker-compose.sql-import.yml down -v
+docker compose --env-file .env -f docker/docker-compose.yml -f docker/docker-compose.sql-import.yml up -d
 ```

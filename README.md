@@ -66,7 +66,7 @@ Quick links:
 - `src/lib`: Shared utilities and services
 - `src/middlewares`: Request/response middleware
 - `src/types`: Shared types and interfaces
-- `database`: Database scripts, seeds, and init files
+- `docker`: Docker stack files (compose, init SQL, local infra docs)
 - `docs`: Project documentation and onboarding notes
 
 ---

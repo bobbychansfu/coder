@@ -10,7 +10,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-judge}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     volumes:
       - judge_db_data:/var/lib/postgresql/data
     healthcheck:
@@ -39,5 +39,3 @@ services:
 
 volumes:
   judge_db_data:
-    external: true
-    name: database_judge_db_data
