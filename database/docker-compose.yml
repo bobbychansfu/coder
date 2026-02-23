@@ -1,7 +1,9 @@
+name: coder-dev
+
 services:
   db:
     image: postgres:16
-    container_name: judge-db
+    container_name: coder-dev-db
     restart: unless-stopped
     ports:
       - "${DB_PORT:-5432}:5432"
@@ -23,7 +25,7 @@ services:
 
   swagger:
     image: swaggerapi/swagger-ui:latest
-    container_name: judge-swagger
+    container_name: coder-dev-swagger
     restart: unless-stopped
     ports:
       - "${SWAGGER_PORT:-8081}:8080"
@@ -37,3 +39,5 @@ services:
 
 volumes:
   judge_db_data:
+    external: true
+    name: database_judge_db_data
