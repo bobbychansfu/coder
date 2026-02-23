@@ -3,13 +3,30 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
+function getDatabaseUrl(): string {
+  if (process.env["DATABASE_URL"]) {
+    return process.env["DATABASE_URL"];
+  }
+
+  const user = process.env["POSTGRES_USER"] ?? "postgres";
+  const password = process.env["POSTGRES_PASSWORD"];
+  const db = process.env["POSTGRES_DB"] ?? "judge";
+  const port = process.env["DB_PORT"] ?? "5432";
+
+  if (!password) {
+    throw new Error("Missing POSTGRES_PASSWORD. Set it in .env or set DATABASE_URL explicitly.");
+  }
+
+  return `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@localhost:${port}/${db}?schema=public`;
+}
+
 export default defineConfig({
-  schema: "prisma/schema.prisma",
+  schema: "database/prisma/schema.prisma",
   migrations: {
-    path: "prisma/migrations",
-    seed: "node prisma/seed.mjs",
+    path: "database/prisma/migrations",
+    seed: "node database/prisma/seed.mjs",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    url: getDatabaseUrl(),
   },
 });

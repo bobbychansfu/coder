@@ -7,10 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:up": "docker compose --env-file .env -f database/docker-compose.yml up -d",
-    "db:down": "docker compose --env-file .env -f database/docker-compose.yml down",
-    "db:reset": "docker compose --env-file .env -f database/docker-compose.yml down -v && docker compose --env-file .env -f database/docker-compose.yml up -d",
-    "db:logs": "docker compose --env-file .env -f database/docker-compose.yml logs -f",
+    "db:up": "docker compose --env-file .env -f docker/docker-compose.yml up -d",
+    "db:down": "docker compose --env-file .env -f docker/docker-compose.yml down",
+    "db:reset": "docker compose --env-file .env -f docker/docker-compose.yml down -v && docker compose --env-file .env -f docker/docker-compose.yml up -d",
+    "db:logs": "docker compose --env-file .env -f docker/docker-compose.yml logs -f",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
@@ -18,8 +18,8 @@
     "prisma:seed": "prisma db seed",
     "prisma:studio": "prisma studio",
     "prisma:reset": "prisma migrate reset --force",
-    "openapi:up": "docker compose --env-file .env -f database/docker-compose.yml up -d swagger",
-    "openapi:down": "docker compose --env-file .env -f database/docker-compose.yml stop swagger"
+    "openapi:up": "docker compose --env-file .env -f docker/docker-compose.yml up -d swagger",
+    "openapi:down": "docker compose --env-file .env -f docker/docker-compose.yml stop swagger"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

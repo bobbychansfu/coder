@@ -7,7 +7,7 @@ This project uses a Prisma-first backend workflow:
 
 ## 1. Docker Stack Overview
 
-Compose stack name: `coder-dev` (see `database/docker-compose.yml`).
+Compose stack name: `coder-dev` (see `docker/docker-compose.yml`).
 
 Services:
 - `coder-dev-db` (`postgres:16`): local database
@@ -38,15 +38,17 @@ cp .env.example .env
 ```env
 POSTGRES_DB="judge"
 POSTGRES_USER="postgres"
-POSTGRES_PASSWORD="change_me"
+POSTGRES_PASSWORD="REPLACE_WITH_A_STRONG_PASSWORD"
 DB_PORT="5432"
 SWAGGER_PORT="8081"
-DATABASE_URL="postgresql://postgres:change_me@localhost:5432/judge?schema=public"
 ```
 
-If port `5432` is already used on your machine, change both values to `5433`:
+`DATABASE_URL` is optional. If omitted, backend/Prisma derives it from `POSTGRES_USER`, `POSTGRES_PASSWORD`, `DB_PORT`, and `POSTGRES_DB`.
+
+If port `5432` is already used on your machine, change:
 - `DB_PORT="5433"`
-- `DATABASE_URL=...@localhost:5433/...`
+
+If you explicitly set `DATABASE_URL`, keep it consistent with the values above.
 
 ## 4. Start Docker Infrastructure
 
@@ -59,7 +61,7 @@ npm run db:up
 Check status:
 
 ```bash
-docker compose --env-file .env -f database/docker-compose.yml ps
+docker compose --env-file .env -f docker/docker-compose.yml ps
 ```
 
 Expected:
@@ -125,12 +127,11 @@ npm run dev
 
 ## 8. Legacy SQL Import (Optional)
 
-If you need to bootstrap from `database/initdb/judge_full_latest.sql`:
+If you need to bootstrap from `docker/initdb/judge_full_latest.sql`:
 
 ```bash
-cd database
-docker compose --env-file ../.env -f docker-compose.yml -f docker-compose.sql-import.yml down -v
-docker compose --env-file ../.env -f docker-compose.yml -f docker-compose.sql-import.yml up -d
+docker compose --env-file .env -f docker/docker-compose.yml -f docker/docker-compose.sql-import.yml down -v
+docker compose --env-file .env -f docker/docker-compose.yml -f docker/docker-compose.sql-import.yml up -d
 ```
 
 This bypasses Prisma seed and is only for legacy compatibility checks.
@@ -138,11 +139,12 @@ This bypasses Prisma seed and is only for legacy compatibility checks.
 ## 9. File Map
 
 - Prisma config: `prisma.config.ts`
-- Prisma schema: `prisma/schema.prisma`
-- Prisma seed: `prisma/seed.mjs`
+- Prisma schema: `database/prisma/schema.prisma`
+- Prisma migrations: `database/prisma/migrations`
+- Prisma seed: `database/prisma/seed.mjs`
 - Prisma client singleton: `src/lib/prisma.ts`
-- Docker stack: `database/docker-compose.yml`
-- Optional SQL overlay: `database/docker-compose.sql-import.yml`
+- Docker stack: `docker/docker-compose.yml`
+- Optional SQL overlay: `docker/docker-compose.sql-import.yml`
 - OpenAPI spec: `docs/backendAPI.yaml`
 
 ## 10. Troubleshooting
@@ -150,8 +152,9 @@ This bypasses Prisma seed and is only for legacy compatibility checks.
 - `Cannot connect to the Docker daemon`
   - Start Docker Desktop, then rerun `npm run db:up`.
 - Prisma `P1010`/access denied during deploy or seed
-  - Confirm `.env` credentials match `DATABASE_URL`.
-  - Confirm the DB port in `DATABASE_URL` matches `DB_PORT`.
+  - Confirm `.env` credentials are correct.
+  - If you set `DATABASE_URL`, ensure it matches your `POSTGRES_*` and `DB_PORT` values.
   - Check Docker service health with `docker compose ... ps`.
 - Local Postgres conflict on `5432`
-  - Change to `5433` in both `DB_PORT` and `DATABASE_URL`, then run `npm run db:down && npm run db:up`.
+  - Change `DB_PORT` to `5433`, then run `npm run db:down && npm run db:up`.
+  - If `DATABASE_URL` is set, update it to port `5433` too.
