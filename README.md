@@ -66,6 +66,7 @@ Quick links:
 - `src/lib`: Shared utilities and services
 - `src/middlewares`: Request/response middleware
 - `src/types`: Shared types and interfaces
+- `database/prisma`: Database schema, migrations, and seed data
 - `docker`: Docker stack files (compose, init SQL, local infra docs)
 - `docs`: Project documentation and onboarding notes
 

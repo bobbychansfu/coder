@@ -21,10 +21,10 @@ function getDatabaseUrl(): string {
 }
 
 export default defineConfig({
-  schema: "prisma/schema.prisma",
+  schema: "database/prisma/schema.prisma",
   migrations: {
-    path: "prisma/migrations",
-    seed: "node prisma/seed.mjs",
+    path: "database/prisma/migrations",
+    seed: "node database/prisma/seed.mjs",
   },
   datasource: {
     url: getDatabaseUrl(),

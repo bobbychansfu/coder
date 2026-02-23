@@ -139,8 +139,9 @@ This bypasses Prisma seed and is only for legacy compatibility checks.
 ## 9. File Map
 
 - Prisma config: `prisma.config.ts`
-- Prisma schema: `prisma/schema.prisma`
-- Prisma seed: `prisma/seed.mjs`
+- Prisma schema: `database/prisma/schema.prisma`
+- Prisma migrations: `database/prisma/migrations`
+- Prisma seed: `database/prisma/seed.mjs`
 - Prisma client singleton: `src/lib/prisma.ts`
 - Docker stack: `docker/docker-compose.yml`
 - Optional SQL overlay: `docker/docker-compose.sql-import.yml`
