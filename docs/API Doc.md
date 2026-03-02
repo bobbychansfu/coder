@@ -118,27 +118,6 @@ npm run db:up
 
 ---
 
-## 📝 Exam System Endpoints (`/a/`)
-
-- `GET /a/`
-  - [cite_start]**Description:** List all exams. [cite: 46]
-- `POST /a/exam/create`
-  - [cite_start]**Description:** Create or update an exam. [cite: 50]
-  - **Body:** `name`, `course_id`, `capacity`, `duration`, `start_date`, `end_date`
-- `GET /a/exam/:examId`
-  - [cite_start]**Description:** Get details for a specific exam. [cite: 46]
-- `GET /a/publish/:examId`
-  - [cite_start]**Description:** Publish an exam. [cite: 47]
-- `GET /a/requestslot/:examId`
-  - [cite_start]**Description:** Get data for exam slot requests. [cite: 48]
-- `POST /a/examslots/create`
-  - [cite_start]**Description:** Create slots for an exam. [cite: 49]
-  - **Body:** `exam_id`, `start[]`, `capacity[]`
-- `DELETE /a/examslot/:examslotId`
-  - [cite_start]**Description:** Delete a specific exam slot. [cite: 50]
-
----
-
 ## 🤖 System & Judging (`/m/`)
 
 - `POST /m/judge_result`
