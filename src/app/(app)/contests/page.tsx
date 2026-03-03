@@ -1,6 +1,5 @@
-import ContestsPage from "@/fe/contests/page/ContestsPage";
-import { contestList } from "@/fe/contests/data/contests";
+import ContestsRoutePage from "@/fe/contests/page/ContestsRoutePage";
 
-export default async function ContestsPageRoute() {
-  return <ContestsPage initialContests={contestList} />;
+export default function ContestsPageRoute() {
+  return <ContestsRoutePage />;
 }
