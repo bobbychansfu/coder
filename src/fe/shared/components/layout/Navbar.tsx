@@ -1,19 +1,36 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import MailOutlineIcon from "@mui/icons-material/MailOutline";
 import { AppBar, Toolbar, Box, ButtonBase } from "@mui/material";
 import styles from "../../styles/Navbar.module.css";
+import { can, type Role } from "@/lib/authz";
 
-export default function Navbar() {
+interface NavbarProps {
+  role: Role;
+}
+
+export default function Navbar({ role }: NavbarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    setIsLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      router.push("/login");
+    }
+  }
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
   const profileButtonRef = useRef<HTMLButtonElement | null>(null);
+  const permissions = can(role);
 
   const isActive = (href: string) =>
     href === "/"
@@ -60,29 +77,39 @@ export default function Navbar() {
     <AppBar position="sticky" className={styles.navbar} elevation={0} color="transparent">
       <Toolbar className={styles.toolbar}>
         <Box className={styles.leftGroup}>
-          <Link href="/" className={styles.logo}>
+          <Link href="/dashboard" className={styles.logo}>
             CODER
           </Link>
           <Box className={styles.navLinks}>
-            <Link href="/" className={getLinkClass("/")}>
-              Dashboard
-            </Link>
-            <Link href="/contests" className={getLinkClass("/contests")}>
-              Contests
-            </Link>
-            <Link href="/practice" className={getLinkClass("/practice")}>
-              Practice
-            </Link>
-            <Link href="/instructor" className={getLinkClass("/instructor")}>
-              Instructor
-            </Link>
-            <Link
-              href="/admin"
-              className={getLinkClass("/admin", styles.navLinkAdmin)}
-            >
-              <ShieldOutlinedIcon className={styles.icon} />
-              Admin
-            </Link>
+            {permissions.showDashboardTab ? (
+              <Link href="/dashboard" className={getLinkClass("/dashboard")}>
+                Dashboard
+              </Link>
+            ) : null}
+            {permissions.showContestsTab ? (
+              <Link href="/contests" className={getLinkClass("/contests")}>
+                Contests
+              </Link>
+            ) : null}
+            {permissions.showPracticeTab ? (
+              <Link href="/practice" className={getLinkClass("/practice")}>
+                Practice
+              </Link>
+            ) : null}
+            {permissions.showInstructorTab ? (
+              <Link href="/instructor" className={getLinkClass("/instructor")}>
+                Instructor
+              </Link>
+            ) : null}
+            {permissions.showAdminTab ? (
+              <Link
+                href="/admin"
+                className={getLinkClass("/admin", styles.navLinkAdmin)}
+              >
+                <ShieldOutlinedIcon className={styles.icon} />
+                Admin
+              </Link>
+            ) : null}
           </Box>
         </Box>
 
@@ -110,7 +137,7 @@ export default function Navbar() {
             >
               <Box className={styles.profileMenuHeader}>
                 <Box className={styles.profileMetaRow}>
-                  <Box component="span" className={styles.profileRole}>admin</Box>
+                  <Box component="span" className={styles.profileRole}>{role}</Box>
                   <Box component="span" className={styles.profileName}>Alex Chen</Box>
                 </Box>
                 <Box className={styles.profileEmailRow}>
@@ -132,8 +159,10 @@ export default function Navbar() {
               <Box className={styles.profileDivider} />
               <ButtonBase
                 className={`${styles.profileMenuItem} ${styles.profileLogout}`}
+                onClick={handleLogout}
+                disabled={isLoggingOut}
               >
-                Log out
+                {isLoggingOut ? "Logging out…" : "Log out"}
               </ButtonBase>
             </Box>
           ) : null}
