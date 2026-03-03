@@ -1,18 +1,12 @@
 import Link from "next/link";
+import styles from "./page.module.css";
 
 export default function ForbiddenPage() {
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        display: "grid",
-        placeItems: "center",
-        padding: "24px",
-      }}
-    >
-      <section style={{ textAlign: "center", maxWidth: "480px" }}>
-        <h1 style={{ marginBottom: "12px" }}>403 Forbidden</h1>
-        <p style={{ marginBottom: "20px" }}>
+    <main className={styles.main}>
+      <section className={styles.section}>
+        <h1 className={styles.title}>403 Forbidden</h1>
+        <p className={styles.description}>
           You do not have permission to access this page.
         </p>
         <Link href="/dashboard">Go to Dashboard</Link>
