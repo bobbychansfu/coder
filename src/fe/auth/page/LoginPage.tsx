@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import CasLoginCard from "@/fe/auth/components/CasLoginCard";
 import DevQuickAccessCard from "@/fe/auth/components/DevQuickAccessCard";
 import { demoUsers, type DemoRole } from "@/fe/auth/constants/demoUsers";
@@ -13,10 +13,37 @@ interface LoginPageProps {
 
 export default function LoginPage({ showDevQuickAccess }: LoginPageProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [loadingEmail, setLoadingEmail] = useState<string | null>(null);
   const [casError, setCasError] = useState<string | null>(null);
   const [devError, setDevError] = useState<string | null>(null);
+  const casErrorCode = searchParams.get("error");
+
+  useEffect(() => {
+    if (!casErrorCode) {
+      return;
+    }
+
+    if (casErrorCode === "missing_ticket") {
+      setCasError("CAS did not return a ticket. Please try again.");
+      return;
+    }
+
+    if (casErrorCode === "cas_denied") {
+      setCasError("CAS authentication failed. Please try again.");
+      return;
+    }
+
+    if (casErrorCode === "cas_backend_unreachable") {
+      setCasError("CAS backend is unreachable. Please try again later.");
+      return;
+    }
+
+    if (casErrorCode === "cas_config_missing") {
+      setCasError("CAS is not configured in environment variables.");
+    }
+  }, [casErrorCode]);
 
   const handleCasLogin = async () => {
     setIsLoading(true);
@@ -29,6 +56,7 @@ export default function LoginPage({ showDevQuickAccess }: LoginPageProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
+        body: JSON.stringify({ next: searchParams.get("next") || "/dashboard" }),
       });
 
       const data = (await response.json().catch(() => null)) as
@@ -36,7 +64,7 @@ export default function LoginPage({ showDevQuickAccess }: LoginPageProps) {
         | null;
 
       if (response.ok && data?.redirectUrl) {
-        router.push(data.redirectUrl);
+        window.location.assign(data.redirectUrl);
         return;
       }
 
