@@ -1,8 +1,8 @@
-import type { NextRequest } from "next/server";
-import { authMiddleware } from "./middlewares/middleware";
+import { type NextRequest } from "next/server";
+import { authGuard } from "@/middlewares/authGuard";
 
 export function middleware(request: NextRequest) {
-  return authMiddleware(request);
+  return authGuard(request);
 }
 
 export const config = {

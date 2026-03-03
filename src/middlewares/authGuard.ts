@@ -7,7 +7,7 @@ function hasValidSessionCookie(request: NextRequest): boolean {
   return Boolean(cookieValue && cookieValue !== "null" && cookieValue !== "undefined");
 }
 
-export function authMiddleware(request: NextRequest) {
+export function authGuard(request: NextRequest): NextResponse {
   const { pathname, search } = request.nextUrl;
 
   if (
