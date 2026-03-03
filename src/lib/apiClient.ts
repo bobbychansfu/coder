@@ -1,7 +1,7 @@
 import type { Role } from "@/lib/authz";
 import { handleForbidden, redirectToLogin, type ForbiddenMode } from "@/lib/navigation";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
 type ApiPrefix = "/s" | "/i" | "/a";
@@ -56,6 +56,14 @@ function ensureAllowedPath(path: string): void {
 }
 
 function buildUrl(path: string): string {
+  if (!API_BASE_URL) {
+    throw new ApiClientError("NEXT_PUBLIC_BACKEND_URL is not configured.", {
+      status: 500,
+      url: path,
+      details: "Set NEXT_PUBLIC_BACKEND_URL in .env.",
+    });
+  }
+
   return `${API_BASE_URL}${path}`;
 }
 

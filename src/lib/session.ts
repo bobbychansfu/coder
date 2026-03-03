@@ -7,7 +7,7 @@ export interface CurrentUser {
   role: Role;
 }
 
-const AUTH_BACKEND_BASE_URL = process.env.AUTH_BACKEND_BASE_URL || "http://localhost:5000";
+const AUTH_BACKEND_BASE_URL = process.env.AUTH_BACKEND_BASE_URL;
 const AUTH_ME_PATH = process.env.AUTH_ME_PATH || "/me";
 const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "session";
 const AUTH_MODE = process.env.AUTH_MODE;
@@ -53,6 +53,10 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     return null;
   }
   const forwardedCookieHeader = allCookies.map((c) => `${c.name}=${c.value}`).join("; ");
+
+  if (!AUTH_BACKEND_BASE_URL) {
+    return null;
+  }
 
   const endpoint = new URL(AUTH_ME_PATH, AUTH_BACKEND_BASE_URL).toString();
 

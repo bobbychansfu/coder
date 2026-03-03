@@ -1,8 +1,12 @@
-import { NextResponse } from "next/server";
-import { handleCasLogin } from "@/server/api/auth/casLogin";
+import { NextRequest, NextResponse } from "next/server";
+import { handleCasLoginStart } from "@/server/api/auth/casLogin";
 
 export const runtime = "nodejs";
 
-export async function POST(): Promise<NextResponse> {
-  return handleCasLogin();
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  return handleCasLoginStart(request, "redirect");
+}
+
+export async function POST(request: NextRequest): Promise<NextResponse> {
+  return handleCasLoginStart(request, "json");
 }
