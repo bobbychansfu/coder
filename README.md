@@ -64,7 +64,7 @@ Quick links:
 - `src/fe`: Front-end modules, components, and feature code
 - `src/server/api`: Backend API entry points
 - `src/lib`: Shared utilities and services
-- `src/middlewares`: Request/response middleware
+- `middlewares`: Request/response middleware
 - `src/types`: Shared types and interfaces
 - `database/prisma`: Database schema, migrations, and seed data
 - `docker`: Docker stack files (compose, init SQL, local infra docs)
@@ -76,18 +76,18 @@ Quick links:
 
 "data seed xxxx (admin)"
 
-| Username        | Password     | Role                  |
+| Email        | Password     | Role                  |
 |----------------|--------------|-----------------------|
-| example@sfu.ca | password | ADMIN  |
+| admin@sfu.ca | password | ADMIN  |
 
 "data seed xxxx (other roles)"
 
 | Username        | Password     | Role                      |
 |----------------|--------------|---------------------------|
-| example@sfu.ca   | password   | ADMIN  |
-| example@sfu.ca   | password   | tbd    |
-| example@sfu.ca   | password   | tbd    |
-| example@sfu.ca   | password   | tbd    |
+| sarah.johnson@sfu.ca   | password   | INSTRUCTOR  |
+| dev.patel@sfu.ca   | password   |   TA    |
+| amy.01@sfu.ca   | password   | STUDENT    |
+
 
 ---
 

@@ -113,7 +113,76 @@ curl -I http://127.0.0.1:3000
 curl -I http://127.0.0.1:8081
 ```
 
-## 7. Fresh Machine Bootstrap
+## 7. Local Dev Login (Temporary, Pre-CAS)
+
+Until CAS is integrated, use a dev-only login flow so RBAC, middleware, and page guards can be tested locally.
+
+### 7.1 Suggested Dev Auth Endpoints
+
+Implement these backend endpoints in dev mode only (for example, behind `DEV_AUTH_ENABLED=true`):
+
+- `POST /auth/dev/login`
+  - Body: `{ "computingId": "admin" }`
+  - Behavior:
+    - Find `User` by `computingId`
+    - Create session
+    - Set `HttpOnly` session cookie
+    - Return current user profile (`id`, `computingId`, `role`)
+- `GET /me`
+  - Reads session cookie
+  - Returns current user (`id`, `role`, etc.) or `401`
+- `POST /auth/dev/logout`
+  - Clears session cookie
+
+Important:
+- Never enable these endpoints in production.
+- Keep `/auth/dev/*` disabled when CAS is live.
+
+### 7.2 Seeded Test Users
+
+From `database/prisma/seed.mjs`, useful local identities are:
+
+- `admin` -> `ADMIN`
+- `sjohnson` -> `INSTRUCTOR`
+- `mchen` -> `INSTRUCTOR`
+- `ewong` -> `INSTRUCTOR`
+- `dpatel` -> `TA`
+- `student01` (through `student24`) -> `STUDENT`
+
+Note:
+- DB roles are uppercase (`ADMIN`, `INSTRUCTOR`, `TA`, `STUDENT`).
+- Frontend auth normalizes them to lowercase (`admin`, `instructor`, `ta`, `student`).
+
+### 7.3 Quick CLI Login Test
+
+Use a cookie jar to simulate browser session:
+
+```bash
+# Login as admin (dev-only endpoint)
+curl -i -c /tmp/coder-dev.cookies \
+  -X POST http://localhost:5000/auth/dev/login \
+  -H "Content-Type: application/json" \
+  -d '{"computingId":"admin"}'
+
+# Verify current session user
+curl -i -b /tmp/coder-dev.cookies http://localhost:5000/me
+```
+
+Then open:
+
+- `http://localhost:3000/dashboard`
+- `http://localhost:3000/contests/create` (should pass for instructor/admin; TA depends on flags)
+- `http://localhost:3000/admin/users` (admin only)
+
+### 7.4 Replace With CAS Later
+
+When CAS integration is ready:
+
+1. Disable/remove `/auth/dev/*` endpoints.
+2. Keep `GET /me` contract stable (frontend already depends on it).
+3. Keep session cookie behavior unchanged (HttpOnly + SameSite + Secure in prod).
+
+## 8. Fresh Machine Bootstrap
 
 ```bash
 npm install
@@ -125,7 +194,7 @@ npm run prisma:seed
 npm run dev
 ```
 
-## 8. Legacy SQL Import (Optional)
+## 9. Legacy SQL Import (Optional)
 
 If you need to bootstrap from `docker/initdb/judge_full_latest.sql`:
 
@@ -136,7 +205,7 @@ docker compose --env-file .env -f docker/docker-compose.yml -f docker/docker-com
 
 This bypasses Prisma seed and is only for legacy compatibility checks.
 
-## 9. File Map
+## 10. File Map
 
 - Prisma config: `prisma.config.ts`
 - Prisma schema: `database/prisma/schema.prisma`
@@ -147,7 +216,7 @@ This bypasses Prisma seed and is only for legacy compatibility checks.
 - Optional SQL overlay: `docker/docker-compose.sql-import.yml`
 - OpenAPI spec: `docs/backendAPI.yaml`
 
-## 10. Troubleshooting
+## 11. Troubleshooting
 
 - `Cannot connect to the Docker daemon`
   - Start Docker Desktop, then rerun `npm run db:up`.
