@@ -83,10 +83,24 @@ async function parseErrorBody(response: Response): Promise<unknown> {
 
 function rolePrefix(role: Role, intent: RoleIntent = "general"): ApiPrefix {
   if (role === "student") {
+    if (intent !== "general") {
+      throw new ApiClientError("Students can only call /s/* endpoints.", {
+        status: 403,
+        url: intent,
+        details: "Use student/general endpoints only.",
+      });
+    }
     return "/s";
   }
 
   if (role === "ta" || role === "instructor") {
+    if (intent === "admin") {
+      throw new ApiClientError("TA/Instructor cannot call /a/* endpoints.", {
+        status: 403,
+        url: intent,
+        details: "Use general (/s) or privileged (/i) endpoints.",
+      });
+    }
     return intent === "privileged" ? "/i" : "/s";
   }
 
@@ -99,6 +113,27 @@ function rolePrefix(role: Role, intent: RoleIntent = "general"): ApiPrefix {
   }
 
   return "/s";
+}
+
+function validateRoleRoute(route: string): void {
+  const normalized = normalizePath(route);
+
+  if (
+    normalized === "/m" ||
+    normalized.startsWith("/m/") ||
+    normalized === "/s" ||
+    normalized === "/i" ||
+    normalized === "/a" ||
+    normalized.startsWith("/s/") ||
+    normalized.startsWith("/i/") ||
+    normalized.startsWith("/a/")
+  ) {
+    throw new ApiClientError("Route must not include a role/system prefix.", {
+      status: 400,
+      url: normalized,
+      details: "Pass route like '/submissions', not '/s/submissions' or '/m/*'.",
+    });
+  }
 }
 
 export async function apiRequest<TResponse, TBody = unknown>(
@@ -129,6 +164,7 @@ export async function apiRequest<TResponse, TBody = unknown>(
 
   if (response.status === 401) {
     redirectToLogin(options.nextPath);
+    return undefined as TResponse;
   }
 
   if (response.status === 403) {
@@ -136,6 +172,7 @@ export async function apiRequest<TResponse, TBody = unknown>(
       mode: options.forbiddenMode ?? "redirect",
       onToast: options.onForbiddenToast,
     });
+    return undefined as TResponse;
   }
 
   if (!response.ok) {
@@ -164,6 +201,7 @@ export async function callAsRole<TResponse, TBody = unknown>(
   route: string,
   options: ApiRequestOptions<TBody> & { intent?: RoleIntent } = {},
 ): Promise<TResponse> {
+  validateRoleRoute(route);
   const prefix = rolePrefix(role, options.intent);
   const normalizedRoute = normalizePath(route);
   return apiRequest<TResponse, TBody>(`${prefix}${normalizedRoute}`, options);
@@ -203,5 +241,6 @@ export function createRoleApi(role: Role) {
 }
 
 export const studentApi = createRoleApi("student");
+export const taApi = createRoleApi("ta");
 export const instructorApi = createRoleApi("instructor");
 export const adminApi = createRoleApi("admin");
