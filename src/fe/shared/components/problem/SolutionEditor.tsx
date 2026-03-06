@@ -1,8 +1,15 @@
-import { Box, Button, MenuItem, Select, TextField, Typography } from "@mui/material";
+"use client";
+
+import dynamic from "next/dynamic";
+import { Box, Button, MenuItem, Select, Typography } from "@mui/material";
 import PlayArrowRoundedIcon from "@mui/icons-material/PlayArrowRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import { LANGUAGE_OPTIONS } from "@/fe/shared/constants/options";
 import styles from "@/fe/contests/styles/ProblemSubmissionPage.module.css";
+
+const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
+  ssr: false,
+});
 
 interface SolutionEditorProps {
   language: string;
@@ -40,14 +47,26 @@ export default function SolutionEditor({
           ))}
         </Select>
       </Box>
-      <TextField
-        className={styles.codeEditor}
-        placeholder="Write your solution here..."
-        value={code}
-        onChange={(event) => onCodeChange(event.target.value)}
-        multiline
-        fullWidth
-      />
+
+      <Box className={styles.codeEditorWrapper}>
+        <MonacoEditor
+          height="100%"
+          language={language}
+          value={code}
+          onChange={(value) => onCodeChange(value ?? "")}
+          theme="vs-light"
+          options={{
+            minimap: { enabled: false },
+            fontSize: 14,
+            wordWrap: "on",
+            automaticLayout: true,
+            scrollBeyondLastLine: false,
+            tabSize: 2,
+            padding: { top: 16, bottom: 16 },
+          }}
+        />
+      </Box>
+
       <Box className={styles.buttonRow}>
         <Button
           className={styles.runButton}
