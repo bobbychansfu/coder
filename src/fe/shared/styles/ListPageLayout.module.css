@@ -1,9 +1,9 @@
 .page {
   --nav-height: 64px;
-  --page-padding: 32px;
+  --page-padding: 24px;
   background-color: #f9fafb;
   margin: 0 -32px -32px -32px;
-  padding: 16px 32px;
+  padding: 24px 32px;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -18,7 +18,7 @@
 
 .title {
   font-family: Inter, sans-serif;
-  font-size: 28px;
+  font-size: 30px;
   line-height: 36px;
   font-weight: 700;
   color: #0a0a0a;
@@ -69,8 +69,8 @@
 }
 
 .searchBar {
-  background-color: #f9fafb;
-  padding-bottom: 16px;
+  background-color: transparent;
+  padding-bottom: 0;
 }
 
 
