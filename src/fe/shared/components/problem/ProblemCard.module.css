@@ -22,6 +22,7 @@
   text-decoration: none;
   color: inherit;
   display: block;
+  height: 100%;
 }
 
 /* ==========================================================================
@@ -186,11 +187,13 @@
   background-color: #ffffff;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 12px;
-  padding: 24px;
+  padding: 20px 24px 16px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   transition: all 0.2s ease-in-out;
+  height: 100%;
+  box-sizing: border-box;
 }
 
 .cardTile:hover {
@@ -199,11 +202,11 @@
 }
 
 .cardCompact {
-  min-height: 114px;
+  min-height: 135px;
 }
 
 .cardTall {
-  min-height: 142px;
+  min-height: 135px;
 }
 
 .tileHeader {
