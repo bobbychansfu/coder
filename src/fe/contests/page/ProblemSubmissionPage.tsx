@@ -15,10 +15,16 @@ interface ProblemSubmissionPageProps {
   detail: ProblemDetail;
 }
 
+const DEFAULT_LANGUAGE = "cpp";
+
 export default function ProblemSubmissionPage({ detail }: ProblemSubmissionPageProps) {
+  return <ProblemSubmissionPageContent key={detail.code} detail={detail} />;
+}
+
+function ProblemSubmissionPageContent({ detail }: ProblemSubmissionPageProps) {
   const router = useRouter();
   const [tab, setTab] = useState("description");
-  const [language, setLanguage] = useState("cpp");
+  const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
   const [code, setCode] = useState("");
 
   return (

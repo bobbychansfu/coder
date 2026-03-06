@@ -15,12 +15,20 @@ interface PracticeProblemSubmissionPageProps {
   detail: ProblemDetail;
 }
 
+const DEFAULT_LANGUAGE = "cpp";
+
 export default function PracticeProblemSubmissionPage({
+  detail,
+}: PracticeProblemSubmissionPageProps) {
+  return <PracticeProblemSubmissionPageContent key={detail.code} detail={detail} />;
+}
+
+function PracticeProblemSubmissionPageContent({
   detail,
 }: PracticeProblemSubmissionPageProps) {
   const router = useRouter();
   const [tab, setTab] = useState("description");
-  const [language, setLanguage] = useState("cpp");
+  const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
   const [code, setCode] = useState("");
   const [hasRun, setHasRun] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
