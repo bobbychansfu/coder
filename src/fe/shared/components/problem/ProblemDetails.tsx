@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { Box, Typography } from "@mui/material";
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
 import MemoryOutlinedIcon from "@mui/icons-material/MemoryOutlined";
@@ -11,6 +11,10 @@ interface ProblemDetailsProps {
   detail: ProblemDetail;
   tab: string;
   onTabChange: (tab: string) => void;
+  hideEditorial?: boolean;
+  hideStats?: boolean;
+  compactSubmissions?: boolean;
+  outputSection?: ReactNode;
 }
 
 const renderInlineCode = (text: string) => {
@@ -26,16 +30,35 @@ const renderInlineCode = (text: string) => {
   );
 };
 
-export default function ProblemDetails({ detail, tab, onTabChange }: ProblemDetailsProps) {
+export default function ProblemDetails({
+  detail,
+  tab,
+  onTabChange,
+  hideEditorial = false,
+  hideStats = false,
+  compactSubmissions = false,
+  outputSection,
+}: ProblemDetailsProps) {
   const tabContent = useMemo(() => {
     if (tab === "submissions") {
+      const headerClass = compactSubmissions
+        ? `${styles.submissionsHeader} ${styles.submissionsHeaderCompact}`
+        : styles.submissionsHeader;
+      const rowClass = compactSubmissions
+        ? `${styles.submissionsRow} ${styles.submissionsRowCompact}`
+        : styles.submissionsRow;
+
       return (
         <Box className={styles.submissionsTable}>
-          <Box className={styles.submissionsHeader}>
+          <Box className={headerClass}>
             <Typography className={styles.submissionsHeaderCell}>Status</Typography>
             <Typography className={styles.submissionsHeaderCell}>Language</Typography>
-            <Typography className={styles.submissionsHeaderCell}>Runtime</Typography>
-            <Typography className={styles.submissionsHeaderCell}>Memory</Typography>
+            {!compactSubmissions && (
+              <>
+                <Typography className={styles.submissionsHeaderCell}>Runtime</Typography>
+                <Typography className={styles.submissionsHeaderCell}>Memory</Typography>
+              </>
+            )}
             <Typography className={styles.submissionsHeaderCell}>Submitted</Typography>
           </Box>
           {detail.submissions.length === 0 ? (
@@ -45,7 +68,7 @@ export default function ProblemDetails({ detail, tab, onTabChange }: ProblemDeta
               const config = SUBMISSION_STATUS_CONFIG[submission.status];
               const StatusIcon = config.icon;
               return (
-                <Box key={submission.id} className={styles.submissionsRow}>
+                <Box key={submission.id} className={rowClass}>
                   <Box className={styles.submissionStatusCell}>
                     <StatusIcon sx={{ fontSize: 16, color: config.color }} />
                     <Typography className={styles.submissionStatusText} sx={{ color: config.color }}>
@@ -53,8 +76,12 @@ export default function ProblemDetails({ detail, tab, onTabChange }: ProblemDeta
                     </Typography>
                   </Box>
                   <Typography className={styles.submissionsCell}>{submission.language}</Typography>
-                  <Typography className={styles.submissionsCell}>{submission.runtime}</Typography>
-                  <Typography className={styles.submissionsCell}>{submission.memory}</Typography>
+                  {!compactSubmissions && (
+                    <>
+                      <Typography className={styles.submissionsCell}>{submission.runtime}</Typography>
+                      <Typography className={styles.submissionsCell}>{submission.memory}</Typography>
+                    </>
+                  )}
                   <Typography className={styles.submissionsCellMuted}>{submission.submitted}</Typography>
                 </Box>
               );
@@ -64,7 +91,7 @@ export default function ProblemDetails({ detail, tab, onTabChange }: ProblemDeta
       );
     }
 
-    if (tab === "editorial") {
+    if (tab === "editorial" && !hideEditorial) {
       return (
         <Box display="flex" flexDirection="column" gap="16px">
           <Box display="flex" flexDirection="column" gap="8px">
@@ -89,18 +116,20 @@ export default function ProblemDetails({ detail, tab, onTabChange }: ProblemDeta
 
     return (
       <Box display="flex" flexDirection="column" gap="24px">
-        <Box className={styles.statsRow}>
-          <Box className={styles.statItem}>
-            <AccessTimeOutlinedIcon fontSize="inherit" />
-            <span>Time Limit:</span>
-            <span className={styles.statValue}>{detail.timeLimit}</span>
+        {!hideStats && (
+          <Box className={styles.statsRow}>
+            <Box className={styles.statItem}>
+              <AccessTimeOutlinedIcon fontSize="inherit" />
+              <span>Time Limit:</span>
+              <span className={styles.statValue}>{detail.timeLimit}</span>
+            </Box>
+            <Box className={styles.statItem}>
+              <MemoryOutlinedIcon fontSize="inherit" />
+              <span>Memory:</span>
+              <span className={styles.statValue}>{detail.memory}</span>
+            </Box>
           </Box>
-          <Box className={styles.statItem}>
-            <MemoryOutlinedIcon fontSize="inherit" />
-            <span>Memory:</span>
-            <span className={styles.statValue}>{detail.memory}</span>
-          </Box>
-        </Box>
+        )}
 
         <Box display="flex" flexDirection="column" gap="12px">
           <Typography className={styles.sectionTitle}>Problem Statement</Typography>
@@ -166,30 +195,32 @@ export default function ProblemDetails({ detail, tab, onTabChange }: ProblemDeta
         </Box>
       </Box>
     );
-  }, [detail, tab]);
+  }, [detail, tab, hideEditorial, hideStats, compactSubmissions]);
+
+  const tabOptions = [
+    { value: "description", label: "Description" },
+    { value: "submissions", label: "Submissions" },
+    ...(!hideEditorial ? [{ value: "editorial", label: "Editorial" }] : []),
+  ];
+
+  const cardSizeClass =
+    tab === "description"
+      ? styles.detailsCardLarge
+      : tab === "submissions"
+        ? styles.detailsCardCompact
+        : styles.detailsCardEditorial;
 
   return (
-    <Box
-      className={`${styles.card} ${styles.detailsCard} ${
-        tab === "description"
-          ? styles.detailsCardLarge
-          : tab === "submissions"
-            ? styles.detailsCardCompact
-            : styles.detailsCardEditorial
-      }`}
-    >
+    <Box className={`${styles.card} ${styles.detailsCard} ${cardSizeClass}`}>
       <TabSwitcher
         size="sm"
         value={tab}
         onChange={onTabChange}
-        options={[
-          { value: "description", label: "Description" },
-          { value: "submissions", label: "Submissions" },
-          { value: "editorial", label: "Editorial" },
-        ]}
+        options={tabOptions}
         ariaLabel="Problem detail tabs"
       />
       {tabContent}
+      {outputSection}
     </Box>
   );
 }

@@ -3,6 +3,7 @@
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 8px;
   padding: 24px;
+  box-sizing: border-box;
 }
 
 .panelTitle {
@@ -40,15 +41,15 @@
 .options {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .option {
   height: 32px;
-  border-radius: 4px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
-  padding: 0 8px;
+  padding: 0 10px;
   font-family: Inter, sans-serif;
   font-size: 14px;
   line-height: 20px;

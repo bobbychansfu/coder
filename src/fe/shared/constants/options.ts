@@ -6,6 +6,7 @@ export const LANGUAGE_OPTIONS = [
   { value: "cpp", label: "C++" },
   { value: "python", label: "Python" },
   { value: "java", label: "Java" },
+  { value: "javascript", label: "JavaScript" },
 ];
 
 export const SUBMISSION_STATUS_CONFIG = {
@@ -50,8 +51,16 @@ export const PRACTICE_FILTERS = [
     options: [
       { label: "All", active: true },
       { label: "Easy" },
-      { label: "Normal" },
+      { label: "Medium" },
       { label: "Hard" },
+    ],
+  },
+  {
+    label: "Status",
+    options: [
+      { label: "All" },
+      { label: "Completed" },
+      { label: "Not Started" },
     ],
   },
 ];

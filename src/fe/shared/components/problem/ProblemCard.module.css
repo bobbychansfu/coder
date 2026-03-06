@@ -186,10 +186,10 @@
   background-color: #ffffff;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 12px;
-  padding: 6px 24px 0;
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  justify-content: space-evenly;
+  justify-content: space-between;
   transition: all 0.2s ease-in-out;
 }
 
@@ -199,11 +199,11 @@
 }
 
 .cardCompact {
-  height: 142.5px;
+  min-height: 114px;
 }
 
 .cardTall {
-  height: 170.5px;
+  min-height: 142px;
 }
 
 .tileHeader {
@@ -235,14 +235,11 @@
 }
 
 .tileMeta {
-  position: relative;
-  height: 52.5px;
+  display: flex;
+  align-items: center;
 }
 
 .tileBadge {
-  position: absolute;
-  top: 2.5px;
-  left: 0;
   display: inline-flex;
   align-items: center;
   height: 22px;
@@ -275,7 +272,7 @@
 
 .tilePoints {
   position: absolute;
-  top: 32.5px;
+  top: 30px;
   left: 0;
   font-family: Inter, sans-serif;
   font-size: 14px;

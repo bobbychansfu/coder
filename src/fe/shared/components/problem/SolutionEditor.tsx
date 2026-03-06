@@ -9,6 +9,9 @@ interface SolutionEditorProps {
   code: string;
   onLanguageChange: (language: string) => void;
   onCodeChange: (code: string) => void;
+  onRunCode?: () => void;
+  runButtonDisabled?: boolean;
+  runButtonLabel?: string;
 }
 
 export default function SolutionEditor({
@@ -16,6 +19,9 @@ export default function SolutionEditor({
   code,
   onLanguageChange,
   onCodeChange,
+  onRunCode,
+  runButtonDisabled = false,
+  runButtonLabel = "Run Code",
 }: SolutionEditorProps) {
   return (
     <Box className={`${styles.card} ${styles.solutionCard}`}>
@@ -43,8 +49,13 @@ export default function SolutionEditor({
         fullWidth
       />
       <Box className={styles.buttonRow}>
-        <Button className={styles.runButton} startIcon={<PlayArrowRoundedIcon fontSize="small" />}>
-          Run Code
+        <Button
+          className={styles.runButton}
+          startIcon={<PlayArrowRoundedIcon fontSize="small" />}
+          onClick={onRunCode}
+          disabled={runButtonDisabled}
+        >
+          {runButtonLabel}
         </Button>
         <Button
           className={styles.submitButton}
