@@ -45,3 +45,7 @@ next-env.d.ts
 claude/
 CLAUDE.md
 CLAUDE.local.md 
+
+#gemini 
+gemini/
+GEMINI.md
