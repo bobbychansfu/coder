@@ -394,6 +394,21 @@ async function main() {
     data: submissionRows,
   });
 
+  const participationRows = [];
+  for (const [contestId, studentIds] of participantSetByContestId.entries()) {
+    for (const userId of studentIds) {
+      participationRows.push({
+        userId,
+        contestId,
+        role: "contestant",
+      });
+    }
+  }
+
+  await prisma.participation.createMany({
+    data: participationRows,
+  });
+
   for (const contest of contests) {
     const participants = participantSetByContestId.get(contest.id)?.size ?? 0;
     await prisma.contest.update({
