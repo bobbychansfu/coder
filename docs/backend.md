@@ -1,112 +1,229 @@
-# Backend Guide
+# Backend Local Dev Guide
 
-## 1. Project Description
+This project uses a Prisma-first backend workflow:
+- Docker for infrastructure (`PostgreSQL` + `Swagger UI`)
+- Prisma for schema, migrations, and seeding
+- Local app server (`npm run dev`) for backend routes
 
-The SFU Judge Codeserver is a **monolithic Node.js/Express backend** designed to orchestrate a coding contest platform. It serves as the central hub connecting:
+## 1. Docker Stack Overview
 
-1.  **Users** (Students, Instructors, Admins) via a web interface.
-2.  **Judge Server** (External microservice) for executing and validating user code.
-3.  **Database** (PostgreSQL) for persistent storage of users, problems, contests, and results.
+Compose stack name: `coder-dev` (see `docker/docker-compose.yml`).
 
-The system handles user authentication (CAS/Local), contest lifecycle management, problem curation, submission queuing, and real-time result broadcasting.
+Services:
+- `coder-dev-db` (`postgres:16`): local database
+- `coder-dev-swagger` (`swaggerapi/swagger-ui`): API docs UI
 
-## 2. Core Tech Stack
+Important: the backend API itself is not a Docker service in this repo. It runs from the local Next.js dev server (`npm run dev`) at `http://localhost:3000`.
 
-- **Runtime Environment:** Node.js
-- **Web Framework:** Express.js (v4.18+)
-- **Database:** PostgreSQL
-  - **Driver/ORM:** `pg-promise` (Low-level SQL abstraction)
-  - **Migrations:** `node-pg-migrate`
-- **Real-time Communication:** `socket.io` (v4.5+)
-  - Used for pushing submission status updates and AI hints to clients.
-- **Authentication:**
-  - Primary: CAS (Central Authentication Service) - _assumed based on file names_.
-  - Development: Local Password strategy (Session-based).
-- **View Engine:** EJS (embedded JavaScript templates) - _Legacy/Server-side rendering, shifting towards JSON API_.
+## 2. Prerequisites
 
-## 3. Project Structure Tree (Core Logic)
+1. Install Docker Desktop and make sure the daemon is running.
+2. Install Node.js 20+ and npm.
+3. From repository root:
 
-This tree highlights the architectural components, excluding dependencies and static assets.
-
-```text
-backend/codeserver/
-├── index.js                  # Entry Point: Server setup, Socket.io init, Route binding
-├── routes/                   # HTTP Request Handlers (Controllers)
-│   ├── auth/                 # Authentication logic
-│   │   ├── cas-login.js      # CAS specific login flow
-│   │   ├── password-login.js # Local dev login flow
-│   │   └── logout.js         # Session destruction
-│   ├── admin.js              # Admin-specific endpoints
-│   ├── instructor.js         # Instructor: Create contests, upload problems
-│   ├── student.js            # Student: Join contests, submit code, view status
-│   ├── main.js               # Shared/Public: Scoreboards, Judge callbacks
-│   ├── middlewares.js        # Auth guards (isStudent, isInstructor, etc.)
-│   └── ejs-helpers.js        # View rendering utilities
-├── models/                   # Data Access Layer
-│   ├── db.js                 # GOD OBJECT: Centralized SQL queries for ALL entities
-│   └── enums.js              # Shared constants (User Roles, etc.)
-└── migrations/               # Database Schema Version Control
+```bash
+npm install
 ```
 
-## 4. API Routing Overview
+## 3. Environment Setup
 
-The API is segmented by user role, enforced via middleware in `index.js`.
+1. Copy env template:
 
-### 4.1 Authentication (`/`, `/login`, `/logout`)
+```bash
+cp .env.example .env
+```
 
-- Manages user sessions.
-- Supports dual strategies (CAS for prod, Password for dev).
+2. Set database and ports in `.env`:
 
-### 4.2 Student Routes (`/s`)
+```env
+POSTGRES_DB="judge"
+POSTGRES_USER="postgres"
+POSTGRES_PASSWORD="REPLACE_WITH_A_STRONG_PASSWORD"
+DB_PORT="5432"
+SWAGGER_PORT="8081"
+```
 
-- **Prefix:** `/s` (Guarded by `isStudent`)
-- **Key Endpoints:**
-  - `GET /info`: Dashboard data (Enrolled contests, Open contests).
-  - `POST /contest/register/:cid`: Enroll in a contest.
-  - `GET /contest/unregister/:cid`: Withdraw from a contest.
-  - `POST /submit`: (Inferred) Handle code submission to the Judge queue.
+`DATABASE_URL` is optional. If omitted, backend/Prisma derives it from `POSTGRES_USER`, `POSTGRES_PASSWORD`, `DB_PORT`, and `POSTGRES_DB`.
 
-### 4.3 Instructor Routes (`/i`)
+If port `5432` is already used on your machine, change:
+- `DB_PORT="5433"`
 
-- **Prefix:** `/i` (Guarded by `isInstructor`)
-- **Key Endpoints:**
-  - `GET /info`: Instructor dashboard.
-  - `GET /contest/create`: Fetch form data for contest creation (problems list).
-  - _Note:_ Heavily relies on `models/db.js` for complex joins.
+If you explicitly set `DATABASE_URL`, keep it consistent with the values above.
 
-### 4.4 Main / System Routes (`/m`)
+## 4. Start Docker Infrastructure
 
-- **Prefix:** `/m`
-- **Key Functions:**
-  - **Scoreboard:** `GET /scoreboard/:cid` - Complex logic calculating ranks, penalties, and scores on-the-fly.
-  - **Judge Callbacks:** Endpoints for the external Judge Server to report results back (e.g., `POST /judge_result`).
+From repo root:
 
-## 5. Architectural Observations & Logic Analysis
+```bash
+npm run db:up
+```
 
-- **Data Access Pattern:** The project uses a **Table Gateway / DAO** pattern implemented in `models/db.js`.
-  - _Critique:_ This file acts as a "God Object," containing queries for Users, Problems, Contests, Submissions, and Hints. It creates high coupling and makes maintenance difficult.
-- **Business Logic Placement:** Logic is split between `routes/` (Controllers) and `models/db.js`.
-  - _Example:_ Scoreboard calculation sits directly in the `routes/main.js` handler, making it hard to test or reuse.
-- **Real-time Integration:** Socket.io is initialized in `index.js` but business logic for emitting events (like `io.sockets.emit`) is scattered or passed down via `app.get('socketio')`.
+Check status:
 
-## 6. Roadmap / Development Plan
+```bash
+docker compose --env-file .env -f docker/docker-compose.yml ps
+```
 
-### Phase 1: Stabilization & Security (Immediate)
+Expected:
+- Postgres on `localhost:${DB_PORT}`
+- Swagger UI on `http://localhost:${SWAGGER_PORT}`
 
-- [ ] **Security Audit:** Re-enable and enforce `isJudgeAuthorized` middleware on all Judge Server callback routes (currently flagged as TODO).
-- [ ] **Input Validation:** Implement a schema validation library (e.g., `Joi` or `zod`) for all POST bodies, especially contest creation and code submissions.
+Stop services:
 
-### Phase 2: Refactoring (Technical Debt)
+```bash
+npm run db:down
+```
 
-- [ ] **Decompose `models/db.js`:** Split the massive `helpers` object into domain-specific services:
-  - `services/UserService.js`
-  - `services/ContestService.js`
-  - `services/SubmissionService.js`
-- [ ] **Extract Business Logic:** Move heavy logic (like Scoreboard calculation in `routes/main.js`) into `services/ScoreboardService.js`.
+Reset stack services:
 
-### Phase 3: Modernization
+```bash
+npm run db:reset
+```
 
-- [ ] **API Decoupling:** Fully migrate from EJS rendering to a strict RESTful JSON API to support the standalone Frontend application.
-- [ ] **Testing Strategy:** Introduce a testing framework (Jest/Mocha).
-  - Unit tests for the new Service layer.
-  - Integration tests for API endpoints.
+## 5. Initialize Prisma Schema + Seed
+
+```bash
+npm run prisma:generate
+npm run prisma:deploy
+npm run prisma:seed
+```
+
+Useful optional commands:
+
+```bash
+npm run prisma:migrate -- --name <change_name>
+npm run prisma:push
+npm run prisma:studio
+```
+
+## 6. Start Local Backend Dev Server
+
+```bash
+npm run dev
+```
+
+Endpoints:
+- App/backend routes: `http://localhost:3000`
+- Swagger UI: `http://localhost:${SWAGGER_PORT}` (default `8081`)
+
+Quick health checks:
+
+```bash
+curl -I http://127.0.0.1:3000
+curl -I http://127.0.0.1:8081
+```
+
+## 7. Local Dev Login (Temporary, Pre-CAS)
+
+Until CAS is integrated, use a dev-only login flow so RBAC, middleware, and page guards can be tested locally.
+
+### 7.1 Suggested Dev Auth Endpoints
+
+Implement these backend endpoints in dev mode only (for example, behind `DEV_AUTH_ENABLED=true`):
+
+- `POST /auth/dev/login`
+  - Body: `{ "computingId": "admin" }`
+  - Behavior:
+    - Find `User` by `computingId`
+    - Create session
+    - Set `HttpOnly` session cookie
+    - Return current user profile (`id`, `computingId`, `role`)
+- `GET /me`
+  - Reads session cookie
+  - Returns current user (`id`, `role`, etc.) or `401`
+- `POST /auth/dev/logout`
+  - Clears session cookie
+
+Important:
+- Never enable these endpoints in production.
+- Keep `/auth/dev/*` disabled when CAS is live.
+
+### 7.2 Seeded Test Users
+
+From `database/prisma/seed.mjs`, useful local identities are:
+
+- `admin` -> `ADMIN`
+- `sjohnson` -> `INSTRUCTOR`
+- `mchen` -> `INSTRUCTOR`
+- `ewong` -> `INSTRUCTOR`
+- `dpatel` -> `TA`
+- `student01` (through `student24`) -> `STUDENT`
+
+Note:
+- DB roles are uppercase (`ADMIN`, `INSTRUCTOR`, `TA`, `STUDENT`).
+- Frontend auth normalizes them to lowercase (`admin`, `instructor`, `ta`, `student`).
+
+### 7.3 Quick CLI Login Test
+
+Use a cookie jar to simulate browser session:
+
+```bash
+# Login as admin (dev-only endpoint)
+curl -i -c /tmp/coder-dev.cookies \
+  -X POST http://localhost:5000/auth/dev/login \
+  -H "Content-Type: application/json" \
+  -d '{"computingId":"admin"}'
+
+# Verify current session user
+curl -i -b /tmp/coder-dev.cookies http://localhost:5000/me
+```
+
+Then open:
+
+- `http://localhost:3000/dashboard`
+- `http://localhost:3000/contests/create` (should pass for instructor/admin; TA depends on flags)
+- `http://localhost:3000/admin/users` (admin only)
+
+### 7.4 Replace With CAS Later
+
+When CAS integration is ready:
+
+1. Disable/remove `/auth/dev/*` endpoints.
+2. Keep `GET /me` contract stable (frontend already depends on it).
+3. Keep session cookie behavior unchanged (HttpOnly + SameSite + Secure in prod).
+
+## 8. Fresh Machine Bootstrap
+
+```bash
+npm install
+cp .env.example .env
+npm run db:up
+npm run prisma:generate
+npm run prisma:deploy
+npm run prisma:seed
+npm run dev
+```
+
+## 9. Legacy SQL Import (Optional)
+
+If you need to bootstrap from `docker/initdb/judge_full_latest.sql`:
+
+```bash
+docker compose --env-file .env -f docker/docker-compose.yml -f docker/docker-compose.sql-import.yml down -v
+docker compose --env-file .env -f docker/docker-compose.yml -f docker/docker-compose.sql-import.yml up -d
+```
+
+This bypasses Prisma seed and is only for legacy compatibility checks.
+
+## 10. File Map
+
+- Prisma config: `prisma.config.ts`
+- Prisma schema: `database/prisma/schema.prisma`
+- Prisma migrations: `database/prisma/migrations`
+- Prisma seed: `database/prisma/seed.mjs`
+- Prisma client singleton: `src/lib/prisma.ts`
+- Docker stack: `docker/docker-compose.yml`
+- Optional SQL overlay: `docker/docker-compose.sql-import.yml`
+- OpenAPI spec: `docs/backendAPI.yaml`
+
+## 11. Troubleshooting
+
+- `Cannot connect to the Docker daemon`
+  - Start Docker Desktop, then rerun `npm run db:up`.
+- Prisma `P1010`/access denied during deploy or seed
+  - Confirm `.env` credentials are correct.
+  - If you set `DATABASE_URL`, ensure it matches your `POSTGRES_*` and `DB_PORT` values.
+  - Check Docker service health with `docker compose ... ps`.
+- Local Postgres conflict on `5432`
+  - Change `DB_PORT` to `5433`, then run `npm run db:down && npm run db:up`.
+  - If `DATABASE_URL` is set, update it to port `5433` too.

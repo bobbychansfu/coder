@@ -9,11 +9,16 @@ import { PRACTICE_FILTERS } from "@/fe/shared/constants/options";
 import gridStyles from "@/fe/shared/styles/Grid.module.css";
 import layoutStyles from "@/fe/shared/styles/ListPageLayout.module.css";
 
-export default function PracticePage() {
+interface PracticePageProps {
+  showCreateProblem: boolean;
+}
+
+export default function PracticePage({ showCreateProblem }: PracticePageProps) {
   return (
     <ListPageLayout
       title="Practice Problems"
-      actionLabel="Create Problem"
+      actionLabel={showCreateProblem ? "Create Problem" : undefined}
+      actionHref={showCreateProblem ? "/problems/create" : undefined}
       sidebar={<FilterPanel groups={PRACTICE_FILTERS} />}
     >
       <div className={layoutStyles.searchBar}>

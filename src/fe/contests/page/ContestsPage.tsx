@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import FilterPanel from "@/fe/shared/components/filters/FilterPanel";
 import ListPageLayout from "@/fe/shared/components/layout/ListPageLayout";
 import SearchInput from "@/fe/shared/components/forms/SearchInput";
@@ -39,15 +40,34 @@ const filters = [
 
 interface ContestsPageProps {
   initialContests: ContestListItem[];
+  showCreateContest: boolean;
+  showManageContest: boolean;
+  showViewAllSubmissions: boolean;
 }
 
-export default function ContestsPage({ initialContests }: ContestsPageProps) {
+export default function ContestsPage({
+  initialContests,
+  showCreateContest,
+  showManageContest,
+  showViewAllSubmissions,
+}: ContestsPageProps) {
   return (
     <ListPageLayout
       title="Contests"
-      actionLabel="Create Contest"
+      actionLabel={showCreateContest ? "Create Contest" : undefined}
+      actionHref={showCreateContest ? "/contests/create" : undefined}
       sidebar={<FilterPanel groups={filters} />}
     >
+      {showManageContest || showViewAllSubmissions ? (
+        <div style={{ display: "flex", gap: 12 }}>
+          {showManageContest ? (
+            <Link href="/instructor/create-contest">Manage Contest</Link>
+          ) : null}
+          {showViewAllSubmissions ? (
+            <Link href="/instructor/research-analytics">View All Submissions</Link>
+          ) : null}
+        </div>
+      ) : null}
       <div className={layoutStyles.searchBar}>
         <SearchInput placeholder="Search for ..." />
       </div>

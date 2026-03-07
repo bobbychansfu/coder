@@ -1,8 +1,8 @@
-# 🚀 eTech Platform (TBD)
+# 🚀 eTech Platform
 
 > ✨ Short project tagline (TBD)
 
-## 🔎 Introduction (TBD)
+## 🔎 Introduction
 
 A research-driven competitive programming and algorithm practice platform.
 
@@ -64,9 +64,10 @@ Quick links:
 - `src/fe`: Front-end modules, components, and feature code
 - `src/server/api`: Backend API entry points
 - `src/lib`: Shared utilities and services
-- `src/middlewares`: Request/response middleware
+- `middlewares`: Request/response middleware
 - `src/types`: Shared types and interfaces
-- `database`: Database scripts, seeds, and init files
+- `database/prisma`: Database schema, migrations, and seed data
+- `docker`: Docker stack files (compose, init SQL, local infra docs)
 - `docs`: Project documentation and onboarding notes
 
 ---
@@ -75,18 +76,18 @@ Quick links:
 
 "data seed xxxx (admin)"
 
-| Username        | Password     | Role                  |
+| Email        | Password     | Role                  |
 |----------------|--------------|-----------------------|
-| example@sfu.ca | password | ADMIN  |
+| admin@sfu.ca | password | ADMIN  |
 
 "data seed xxxx (other roles)"
 
 | Username        | Password     | Role                      |
 |----------------|--------------|---------------------------|
-| example@sfu.ca   | password   | ADMIN  |
-| example@sfu.ca   | password   | tbd    |
-| example@sfu.ca   | password   | tbd    |
-| example@sfu.ca   | password   | tbd    |
+| sarah.johnson@sfu.ca   | password   | INSTRUCTOR  |
+| dev.patel@sfu.ca   | password   |   TA    |
+| amy.01@sfu.ca   | password   | STUDENT    |
+
 
 ---
 

@@ -1,5 +1,19 @@
 # API Endpoints Documentation
 
+## Local Swagger/OpenAPI Preview
+
+1. Start local infrastructure:
+
+```bash
+npm run db:up
+```
+
+2. Open Swagger UI:
+- `http://localhost:${SWAGGER_PORT}` (default `8081`)
+
+3. Source OpenAPI file:
+- `docs/backendAPI.yaml`
+
 ## 🔐 Authentication & Basics
 
 - `GET /`
@@ -101,27 +115,6 @@
   - [cite_start]**Description:** View all student submissions for a problem. [cite: 44]
 - `GET /i/allsubmissions`
   - [cite_start]**Description:** View all submissions globally. [cite: 45]
-
----
-
-## 📝 Exam System Endpoints (`/a/`)
-
-- `GET /a/`
-  - [cite_start]**Description:** List all exams. [cite: 46]
-- `POST /a/exam/create`
-  - [cite_start]**Description:** Create or update an exam. [cite: 50]
-  - **Body:** `name`, `course_id`, `capacity`, `duration`, `start_date`, `end_date`
-- `GET /a/exam/:examId`
-  - [cite_start]**Description:** Get details for a specific exam. [cite: 46]
-- `GET /a/publish/:examId`
-  - [cite_start]**Description:** Publish an exam. [cite: 47]
-- `GET /a/requestslot/:examId`
-  - [cite_start]**Description:** Get data for exam slot requests. [cite: 48]
-- `POST /a/examslots/create`
-  - [cite_start]**Description:** Create slots for an exam. [cite: 49]
-  - **Body:** `exam_id`, `start[]`, `capacity[]`
-- `DELETE /a/examslot/:examslotId`
-  - [cite_start]**Description:** Delete a specific exam slot. [cite: 50]
 
 ---
 

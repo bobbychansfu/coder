@@ -1,7 +1,7 @@
 // Application Routes
 export const ROUTES = {
   home: "/",
-  dashboard: "/",
+  dashboard: "/dashboard",
   contests: "/contests",
   practice: "/practice",
   instructor: "/instructor",

@@ -1,0 +1,247 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  INSTRUCTOR
+  TA
+  STUDENT
+}
+
+enum ContestStatus {
+  DRAFT
+  UPCOMING
+  ACTIVE
+  ENDED
+}
+
+enum Visibility {
+  PUBLIC
+  PRIVATE
+  COURSE_ONLY
+}
+
+enum AnnouncementScope {
+  PLATFORM
+  CONTEST
+}
+
+enum SubmissionStatus {
+  PENDING
+  ACCEPTED
+  WRONG_ANSWER
+  TIME_LIMIT_EXCEEDED
+  RUNTIME_ERROR
+}
+
+model User {
+  id                        String   @id @default(cuid())
+  computingId               String   @unique
+  email                     String   @unique
+  firstName                 String
+  lastName                  String
+  nickname                  String?
+  studentNumber             String?
+  role                      UserRole
+  pointsAcquired            Int      @default(0)
+  problemsSolved            Int      @default(0)
+  competitionsParticipated  Int      @default(0)
+  rank                      String?  @default("Beginner")
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  contestsCreated  Contest[]         @relation("ContestCreator")
+  announcements    Announcement[]    @relation("AnnouncementAuthor")
+  submissions      Submission[]
+  problemStatuses  ProblemStatus[]
+  activities       UserActivity[]
+  achievements     UserAchievement[]
+  hints            Hint[]
+  participations   Participation[]
+}
+
+model Contest {
+  id              String        @id @default(cuid())
+  slug            String        @unique
+  name            String
+  classSection    String?
+  type            String?
+  location        String?
+  status          ContestStatus @default(DRAFT)
+  visibility      Visibility    @default(PRIVATE)
+  startsAt        DateTime
+  endsAt          DateTime?
+  durationMinutes Int?
+  participants    Int           @default(0)
+  published       Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  instructorId String?
+  instructor   User?   @relation("ContestCreator", fields: [instructorId], references: [id], onDelete: SetNull)
+
+  contestProblems ContestProblem[]
+  announcements   Announcement[]
+  submissions     Submission[]
+  problemStatuses ProblemStatus[]
+  participations  Participation[]
+}
+
+model Problem {
+  id             String   @id @default(cuid())
+  code           String   @unique
+  title          String
+  statement      String
+  difficulty     String
+  visible        String?
+  ap             Int?
+  author         String?
+  timeConstraint Int?
+  memConstraint  Int?
+  points         Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  contestLinks    ContestProblem[]
+  submissions     Submission[]
+  problemStatuses ProblemStatus[]
+  topics          Topic[]
+  hints           Hint[]
+}
+
+model ContestProblem {
+  contestId String
+  problemId String
+  ordering  Int
+
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@id([contestId, problemId])
+  @@unique([contestId, ordering])
+}
+
+model ProblemStatus {
+  userId      String
+  contestId   String
+  problemId   String
+  status      String @default("not started")
+  tries       Int    @default(0)
+  timePenalty Int    @default(0)
+  score       Int    @default(0)
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@id([userId, contestId, problemId])
+}
+
+model UserActivity {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String
+  name        String
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  icon        Bytes?
+  xpReward    Int      @default(0)
+  topicId     String?
+
+  userAchievements UserAchievement[]
+}
+
+model UserAchievement {
+  userId        String
+  achievementId String
+  earnedAt      DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@id([userId, achievementId])
+}
+
+model Topic {
+  id        String @id @default(cuid())
+  name      String
+  problemId String
+
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@unique([name, problemId])
+}
+
+model Hint {
+  id          String   @id @default(cuid())
+  userId      String
+  problemId   String
+  code        String?
+  feedback    String?
+  validation  String?
+  hintNum     Int
+  createdAt   DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+}
+
+model Participation {
+  userId    String
+  contestId String
+  role      String @default("contestant")
+  rank      Int?
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+
+  @@id([userId, contestId])
+}
+
+model Announcement {
+  id        String            @id @default(cuid())
+  title     String
+  message   String
+  scope     AnnouncementScope
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  authorId String?
+  author   User?   @relation("AnnouncementAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  contestId String?
+  contest   Contest? @relation(fields: [contestId], references: [id], onDelete: Cascade)
+}
+
+model Submission {
+  id          String           @id @default(cuid())
+  language    String
+  submission  String?
+  status      SubmissionStatus
+  score       Int              @default(0)
+  judgeOutput String?
+  createdAt   DateTime         @default(now())
+
+  userId    String
+  contestId String
+  problemId String
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@index([contestId, problemId])
+  @@index([userId, createdAt])
+}
