@@ -1,51 +1,117 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Box, CircularProgress, Typography } from "@mui/material";
 import PageHeader from "@/fe/shared/components/PageHeader";
 import ProblemHeader from "@/fe/shared/components/problem/ProblemHeader";
 import ProblemDetails from "@/fe/shared/components/problem/ProblemDetails";
 import SolutionEditor from "@/fe/shared/components/problem/SolutionEditor";
-import type { ProblemDetail } from "@/fe/contests/data/problemDetails";
-import { runPracticeCode, type PracticeJudgeResult } from "@/fe/practice/services/problemService";
+import { trpc } from "@/lib/trpc/client";
 import styles from "@/fe/contests/styles/ProblemSubmissionPage.module.css";
 
 interface PracticeProblemSubmissionPageProps {
-  detail: ProblemDetail;
+  problemCode: string;
 }
 
 const DEFAULT_LANGUAGE = "cpp";
 
+interface RunResult {
+  verdict: string;
+  stdout: string | null;
+  stderr: string | null;
+  runtimeMs: number | null;
+}
+
 export default function PracticeProblemSubmissionPage({
-  detail,
+  problemCode,
 }: PracticeProblemSubmissionPageProps) {
-  return <PracticeProblemSubmissionPageContent key={detail.code} detail={detail} />;
+  return <PracticeProblemSubmissionPageContent key={problemCode} problemCode={problemCode} />;
 }
 
 function PracticeProblemSubmissionPageContent({
-  detail,
+  problemCode,
 }: PracticeProblemSubmissionPageProps) {
   const router = useRouter();
   const [tab, setTab] = useState("description");
   const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
   const [code, setCode] = useState("");
   const [hasRun, setHasRun] = useState(false);
-  const [isRunning, setIsRunning] = useState(false);
-  const [runResult, setRunResult] = useState<PracticeJudgeResult | null>(null);
+  const [runResult, setRunResult] = useState<RunResult | null>(null);
+  const sessionOpened = useRef(false);
+  const utils = trpc.useUtils();
 
-  const handleRunCode = async () => {
-    setHasRun(true);
-    setIsRunning(true);
-    setTab("submissions");
+  const { data: detail, isLoading: detailLoading, error: detailError } =
+    trpc.practice.getProblemDetail.useQuery({ problemCode }, { retry: false });
 
-    try {
-      const result = await runPracticeCode(detail, code, language);
-      setRunResult(result);
-    } finally {
-      setIsRunning(false);
+  const { data: runHistory, refetch: refetchHistory } = trpc.practice.getRunHistory.useQuery(
+    { problemCode },
+    { enabled: !!detail },
+  );
+
+  const openSession = trpc.practice.openSession.useMutation();
+  const runCodeMutation = trpc.practice.runCode.useMutation();
+  const submitCodeMutation = trpc.practice.submitCode.useMutation();
+
+  useEffect(() => {
+    if (!sessionOpened.current) {
+      sessionOpened.current = true;
+      openSession.mutate({ problemCode });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [problemCode]);
+
+  const isRunning = runCodeMutation.isPending;
+  const isSubmitting = submitCodeMutation.isPending;
+
+  const handleRunCode = () => {
+    setHasRun(true);
+    setTab("submissions");
+    runCodeMutation.mutate(
+      { problemCode, language, code },
+      {
+        onSuccess: async (result) => {
+          setRunResult({
+            verdict: result.verdict,
+            stdout: result.stdout,
+            stderr: result.stderr,
+            runtimeMs: result.runtimeMs,
+          });
+          await refetchHistory();
+        },
+      },
+    );
   };
+
+  const handleSubmitCode = () => {
+    setTab("submissions");
+    submitCodeMutation.mutate(
+      { problemCode },
+      {
+        onSuccess: async () => {
+          await utils.practice.getRunHistory.invalidate({ problemCode });
+        },
+      },
+    );
+  };
+
+  if (detailLoading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (detailError || !detail) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+        <Typography color="text.secondary">Problem not found.</Typography>
+      </Box>
+    );
+  }
+
+  const detailWithHistory = { ...detail, submissions: runHistory ?? [] };
 
   const outputSection = hasRun ? (
     <div className={styles.outputSection}>
@@ -58,7 +124,7 @@ function PracticeProblemSubmissionPageContent({
           </Box>
         ) : (
           <span className={styles.outputText}>
-            {runResult?.cases[0]?.output ?? "Code executed successfully (no output)"}
+            {runResult?.stdout ?? runResult?.verdict ?? "Code executed (no output)"}
           </span>
         )}
       </div>
@@ -79,7 +145,7 @@ function PracticeProblemSubmissionPageContent({
             showPoints={false}
           />
           <ProblemDetails
-            detail={detail}
+            detail={detailWithHistory}
             tab={tab}
             onTabChange={setTab}
             hideEditorial
@@ -96,8 +162,11 @@ function PracticeProblemSubmissionPageContent({
             onLanguageChange={setLanguage}
             onCodeChange={setCode}
             onRunCode={handleRunCode}
-            runButtonDisabled={isRunning}
+            onSubmitCode={handleSubmitCode}
+            runButtonDisabled={isRunning || isSubmitting}
             runButtonLabel={isRunning ? "Running..." : "Run Code"}
+            submitButtonDisabled={!hasRun || isRunning || isSubmitting}
+            submitButtonLabel={isSubmitting ? "Submitting..." : "Submit"}
           />
         </Box>
       </Box>
