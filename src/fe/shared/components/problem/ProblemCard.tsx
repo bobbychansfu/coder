@@ -58,7 +58,6 @@ export default function ProblemCard({
           <span className={`${styles.tileBadge} ${tileDifficultyClass}`}>
             {difficulty}
           </span>
-          <span className={styles.tilePoints}>{points} points</span>
         </div>
       </div>
     );

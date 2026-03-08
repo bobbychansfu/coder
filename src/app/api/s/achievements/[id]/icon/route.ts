@@ -3,8 +3,8 @@ import { handleGetAchievementIcon } from "@/server/api/s/achievement";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await params;
+  const { id } = params;
   return handleGetAchievementIcon(request, id);
 }
