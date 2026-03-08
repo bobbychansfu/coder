@@ -17,8 +17,13 @@ export async function handleGetProblemDetails(
 
     const computingId = user.computingId;
     const role = user.role;
-    const problem = await dbHelpers.findProblem(pid);
 
+    if (!/^[a-zA-Z0-9_-]+$/.test(pid)) {
+      return NextResponse.json({ error: "Invalid problem ID" }, { status: 400 });
+    }
+
+    const problem = await dbHelpers.findProblem(pid);
+    
     const basePath = path.join(process.cwd(), "src", "server", "sfu_judge_problems", pid);
     const htmlPath = path.join(basePath, "problem.html");
     const downloadPath = path.join(basePath, "downloads");
