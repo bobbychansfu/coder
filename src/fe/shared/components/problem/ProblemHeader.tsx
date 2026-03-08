@@ -7,9 +7,10 @@ interface ProblemHeaderProps {
   difficulty: string;
   tags: string[];
   points: number;
+  showPoints?: boolean;
 }
 
-export default function ProblemHeader({ title, difficulty, tags, points }: ProblemHeaderProps) {
+export default function ProblemHeader({ title, difficulty, tags, points, showPoints = true }: ProblemHeaderProps) {
   return (
     <Box className={`${styles.card} ${styles.problemHeaderCard}`}>
       <Box className={styles.problemHeaderLeft}>
@@ -26,10 +27,12 @@ export default function ProblemHeader({ title, difficulty, tags, points }: Probl
           ))}
         </Box>
       </Box>
-      <Box className={styles.pointsBlock}>
-        <span className={styles.pointsValue}>{points}</span>
-        <span className={styles.pointsLabel}>points</span>
-      </Box>
+      {showPoints && (
+        <Box className={styles.pointsBlock}>
+          <span className={styles.pointsValue}>{points}</span>
+          <span className={styles.pointsLabel}>points</span>
+        </Box>
+      )}
     </Box>
   );
 }
