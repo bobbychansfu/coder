@@ -63,6 +63,38 @@ model User {
   achievements     UserAchievement[]
   hints            Hint[]
   participations   Participation[]
+  practiceSessions PracticeSession[]
+}
+
+model PracticeSession {
+  id            String    @id @default(cuid())
+  userId        String
+  problemCode   String
+  startedAt     DateTime  @default(now())
+  firstRunAt    DateTime?
+  firstSubmitAt DateTime?
+  runCount      Int       @default(0)
+
+  user User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  runs PracticeRunRecord[]
+
+  @@unique([userId, problemCode])
+}
+
+model PracticeRunRecord {
+  id            String   @id @default(cuid())
+  sessionId     String
+  isSubmit      Boolean  @default(false)
+  language      String
+  code          String
+  verdict       String
+  compilePassed Boolean  @default(false)
+  stdout        String?
+  stderr        String?
+  runtimeMs     Int?
+  createdAt     DateTime @default(now())
+
+  session PracticeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
 
 model Contest {
@@ -93,19 +125,25 @@ model Contest {
 }
 
 model Problem {
-  id             String   @id @default(cuid())
-  code           String   @unique
-  title          String
-  statement      String
-  difficulty     String
-  visible        String?
-  ap             Int?
-  author         String?
-  timeConstraint Int?
-  memConstraint  Int?
-  points         Int?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  code                String   @unique
+  title               String
+  statement           String
+  inputFormat         String?
+  outputFormat        String?
+  constraints         String?
+  exampleInput        String?
+  exampleOutput       String?
+  exampleExplanation  String?
+  difficulty          String
+  visible             String?
+  ap                  Int?
+  author              String?
+  timeConstraint      Int?
+  memConstraint       Int?
+  points              Int?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   contestLinks    ContestProblem[]
   submissions     Submission[]

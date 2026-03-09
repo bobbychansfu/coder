@@ -14,9 +14,11 @@ interface FilterGroup {
 
 interface FilterPanelProps {
   groups: FilterGroup[];
+  activeFilters?: Record<string, string>;
+  onFilterChange?: (group: string, option: string) => void;
 }
 
-export default function FilterPanel({ groups }: FilterPanelProps) {
+export default function FilterPanel({ groups, activeFilters, onFilterChange }: FilterPanelProps) {
   return (
     <div className={styles.panel}>
       <h2 className={styles.panelTitle}>Filters</h2>
@@ -25,17 +27,21 @@ export default function FilterPanel({ groups }: FilterPanelProps) {
           <div key={group.label} className={styles.group}>
             <h3 className={styles.groupTitle}>{group.label}</h3>
             <div className={styles.options}>
-              {group.options.map((option) => (
-                <button
-                  key={option.label}
-                  type="button"
-                  className={`${styles.option} ${
-                    option.active ? styles.optionActive : ""
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
+              {group.options.map((option) => {
+                const isActive = activeFilters
+                  ? activeFilters[group.label] === option.label
+                  : option.active;
+                return (
+                  <button
+                    key={option.label}
+                    type="button"
+                    className={`${styles.option} ${isActive ? styles.optionActive : ""}`}
+                    onClick={() => onFilterChange?.(group.label, option.label)}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
         ))}
