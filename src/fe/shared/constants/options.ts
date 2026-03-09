@@ -3,9 +3,13 @@ import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
 
 export const LANGUAGE_OPTIONS = [
-  { value: "cpp", label: "C++" },
-  { value: "python", label: "Python" },
-  { value: "java", label: "Java" },
+  { value: "cpp", label: "C++", monacoLanguage: "cpp" },
+  { value: "java", label: "Java", monacoLanguage: "java" },
+  { value: "python", label: "Python", monacoLanguage: "python" },
+  { value: "python3", label: "Python3", monacoLanguage: "python" },
+  { value: "typescript", label: "TypeScript", monacoLanguage: "typescript" },
+  { value: "javascript", label: "JavaScript", monacoLanguage: "javascript" },
+  { value: "c", label: "C", monacoLanguage: "c" },
 ];
 
 export const SUBMISSION_STATUS_CONFIG = {
@@ -50,8 +54,16 @@ export const PRACTICE_FILTERS = [
     options: [
       { label: "All", active: true },
       { label: "Easy" },
-      { label: "Normal" },
+      { label: "Medium" },
       { label: "Hard" },
+    ],
+  },
+  {
+    label: "Status",
+    options: [
+      { label: "All" },
+      { label: "Completed" },
+      { label: "Not Started" },
     ],
   },
 ];

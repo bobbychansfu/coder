@@ -40,3 +40,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+#claude 
+claude/
+CLAUDE.md
+CLAUDE.local.md 
+
+#gemini 
+gemini/
+GEMINI.md
