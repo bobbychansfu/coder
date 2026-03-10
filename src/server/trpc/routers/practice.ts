@@ -4,6 +4,16 @@ import { router, studentProcedure } from "../init";
 
 const JUDGE_URL = process.env.JUDGE_URL ?? "http://127.0.0.1:8000";
 
+// Map frontend language values → judge's langs.json keys
+const JUDGE_LANG: Record<string, string> = {
+  cpp: "C++17",
+  java: "Java17",
+  python: "py3",
+  python3: "py3",
+  javascript: "NodeJS",
+  ruby: "Ruby",
+};
+
 function formatTimeAgo(date: Date): string {
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
   if (seconds < 60) return "just now";
@@ -189,67 +199,82 @@ export const practiceRouter = router({
         },
       });
 
-      let verdict = "Wrong Answer";
-      let compilePassed = false;
-      let stdout: string | null = null;
-      let stderr: string | null = null;
-      let runtimeMs: number | null = null;
-
-      try {
-        const response = await fetch(`${JUDGE_URL}/judge_submission`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            sid: dbUser.id,
-            pid: input.problemCode,
-            language: input.language,
-            connection_id: session.id,
-            submission: input.code,
-          }),
-        });
-
-        if (response.ok) {
-          const data = (await response.json()) as Record<string, unknown>;
-          verdict = typeof data.verdict === "string" ? data.verdict : "Wrong Answer";
-          compilePassed = verdict === "Accepted";
-          stdout = typeof data.stdout === "string" ? data.stdout : null;
-          stderr = typeof data.stderr === "string" ? data.stderr : null;
-          runtimeMs = typeof data.runtimeMs === "number" ? data.runtimeMs : null;
-        }
-      } catch {
-        // Judge unreachable — fall through with defaults
-      }
-
       // Keep only the latest run record (delete previous non-submit records)
       await ctx.prisma.practiceRunRecord.deleteMany({
         where: { sessionId: session.id, isSubmit: false },
       });
+
+      // Create a pending record — its ID becomes the connection_id sent to the judge
       const record = await ctx.prisma.practiceRunRecord.create({
         data: {
           sessionId: session.id,
           isSubmit: false,
           language: input.language,
           code: input.code,
-          verdict,
-          compilePassed,
-          stdout,
-          stderr,
-          runtimeMs,
+          verdict: "Pending",
+          compilePassed: false,
         },
       });
 
+      // Submit to judge — result comes back asynchronously to /api/judge-callback
+      const judgeLanguage = JUDGE_LANG[input.language] ?? input.language;
+      let judgeReachable = true;
+      try {
+        await fetch(`${JUDGE_URL}/judge_submission`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sid: dbUser.id,
+            pid: input.problemCode,
+            language: judgeLanguage,
+            connection_id: record.id,
+            submission: input.code,
+          }),
+        });
+      } catch {
+        judgeReachable = false;
+        await ctx.prisma.practiceRunRecord.update({
+          where: { id: record.id },
+          data: { verdict: "Judge Unreachable" },
+        });
+      }
+
+      // Poll DB for the verdict (callback from judge updates the record)
+      let finalRecord = record;
+      if (judgeReachable) {
+        const MAX_POLLS = 30;
+        for (let i = 0; i < MAX_POLLS; i++) {
+          await new Promise((r) => setTimeout(r, 1000));
+          const updated = await ctx.prisma.practiceRunRecord.findUnique({
+            where: { id: record.id },
+          });
+          if (updated && updated.verdict !== "Pending") {
+            finalRecord = updated;
+            break;
+          }
+        }
+        // Timed out — mark as such
+        if (finalRecord.verdict === "Pending") {
+          await ctx.prisma.practiceRunRecord.update({
+            where: { id: record.id },
+            data: { verdict: "Timed Out" },
+          });
+          finalRecord = { ...finalRecord, verdict: "Timed Out" };
+        }
+      }
+
       return {
-        verdict,
-        compilePassed,
-        stdout,
-        stderr,
-        runtimeMs,
+        verdict: finalRecord.verdict,
+        compilePassed: finalRecord.compilePassed,
+        stdout: finalRecord.stdout,
+        stderr: finalRecord.stderr,
+        runtimeMs: finalRecord.runtimeMs,
         runCount: updatedSession.runCount,
         firstRunAt: updatedSession.firstRunAt,
         record: {
-          id: record.id,
-          verdict: record.verdict,
-          createdAt: record.createdAt,
+          id: finalRecord.id,
+          verdict: finalRecord.verdict,
+          createdAt: finalRecord.createdAt,
         },
       };
     }),
