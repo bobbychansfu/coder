@@ -192,6 +192,7 @@ model UserActivity {
 
 model Achievement {
   id          String   @id @default(cuid())
+  code        String?  @unique
   name        String
   description String?
   icon        Bytes?
