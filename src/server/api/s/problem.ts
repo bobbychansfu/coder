@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
 import { dbHelpers } from "@/lib/db-helpers";
+import { syncStudentGamification } from "@/server/api/auth/metadata/student";
 import path from "path";
 import { promises as fs } from "fs";
 
@@ -148,7 +149,6 @@ export async function handleSubmitCode(
       return NextResponse.json({ error: "Failed to reach judge", details: err.message }, { status: 500 });
     }
 
-    const dbUser = await dbHelpers.findUserByComputingId(computingId);
     const problem = await dbHelpers.findProblem(pid);
     const score = judgeResponse.score || 0;
 
@@ -156,21 +156,7 @@ export async function handleSubmitCode(
     if (problem) {
       await dbHelpers.addNewActivity(computingId, "submission", `Submitted a solution for ${problem.title} and received ${score} points`);
     }
-
-    if (dbUser) {
-      const newPoints = (dbUser.pointsAcquired || 0) + score;
-      let newRank = dbUser.rank;
-
-      if (newPoints > 1000) newRank = "Expert";
-      else if (newPoints > 500) newRank = "Advanced";
-      else if (newPoints > 200) newRank = "Intermediate";
-      else if (newPoints > 100) newRank = "Beginner";
-
-      if (newRank !== dbUser.rank) {
-        await dbHelpers.updateUserRank(computingId, newRank!);
-        await dbHelpers.addNewActivity(computingId, "rank_up", `Achieved the rank of ${newRank}`);
-      }
-    }
+    await syncStudentGamification(computingId);
 
     if (endsAt && endsAt < now) {
       return NextResponse.json({ message: "Contest has ended, submission recorded", sid: submission.id });
