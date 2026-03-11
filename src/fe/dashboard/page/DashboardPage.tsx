@@ -10,15 +10,13 @@ import RecentBadges from "@/fe/dashboard/components/RecentBadges";
 import { mockContestAlert } from "@/fe/dashboard/data/contests";
 import {
   EMPTY_STUDENT_DASHBOARD_METADATA,
-  getStudentDashboardMetadata,
   useStudentDashboardMetadata,
 } from "@/fe/dashboard/services/dashboardMetadata";
 import styles from "../styles/DashboardPage.module.css";
 
 export default function DashboardPage() {
   const { metadata, isLoading, isError } = useStudentDashboardMetadata();
-  const resolvedMetadata = metadata
-    ?? (isError ? getStudentDashboardMetadata() : EMPTY_STUDENT_DASHBOARD_METADATA);
+  const resolvedMetadata = metadata ?? EMPTY_STUDENT_DASHBOARD_METADATA;
   const showContestAlert = !isLoading && mockContestAlert.isActive;
 
   return (
@@ -27,6 +25,12 @@ export default function DashboardPage() {
       <div className={styles.page}>
         {/* Main Content */}
         <div className={styles.mainContent}>
+          {isError && (
+            <div className={styles.errorBanner}>
+              Unable to load student dashboard metadata right now.
+            </div>
+          )}
+
           {/* Statistics Section */}
           <StatisticsSection stats={resolvedMetadata.statistics} />
 

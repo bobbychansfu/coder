@@ -110,10 +110,6 @@ export const dashboardMetadataRouter = router({
         pointsAcquired: true,
         problemsSolved: true,
         competitionsParticipated: true,
-        participations: {
-          where: { role: "contestant" },
-          select: { contestId: true },
-        },
         submissions: {
           where: { createdAt: { gte: threshold } },
           select: {
@@ -155,7 +151,7 @@ export const dashboardMetadataRouter = router({
     });
 
     const studentIds = rankingStudents.map((student) => student.id);
-    const [loginGroups, submissionGroups] = await Promise.all([
+    const [loginGroups, submissionGroups, participationGroups] = await Promise.all([
       ctx.prisma.userActivity.groupBy({
         by: ["userId"],
         where: {
@@ -173,26 +169,44 @@ export const dashboardMetadataRouter = router({
         },
         _count: { _all: true },
       }),
+      ctx.prisma.participation.groupBy({
+        by: ["userId"],
+        where: {
+          userId: { in: studentIds },
+          role: "contestant",
+        },
+        _count: { _all: true },
+      }),
     ]);
 
     const loginCountByUser = new Map(loginGroups.map((group) => [group.userId, group._count._all]));
     const submissionCountByUser = new Map(
       submissionGroups.map((group) => [group.userId, group._count._all]),
     );
+    const participationCountByUser = new Map(
+      participationGroups.map((group) => [group.userId, group._count._all]),
+    );
 
     const pointRanks = rankingStudents
       .map((student) => student.pointsAcquired)
       .sort((left, right) => right - left);
     const participationRanks = rankingStudents
-      .map((student) =>
+      .map((student) => {
+        const contestsParticipated = Math.max(
+          student.competitionsParticipated,
+          participationCountByUser.get(student.id) ?? 0,
+        );
+
+        return (
         participationScore({
           pointsAcquired: student.pointsAcquired,
-          contestsParticipated: student.competitionsParticipated,
+          contestsParticipated,
           problemsSolved: student.problemsSolved,
           logins7d: loginCountByUser.get(student.id) ?? 0,
           submissions7d: submissionCountByUser.get(student.id) ?? 0,
-        }),
-      )
+        })
+        );
+      })
       .sort((left, right) => right - left);
 
     const recentLogins = currentStudent.activities.map((activity) => activity.createdAt);
@@ -214,9 +228,10 @@ export const dashboardMetadataRouter = router({
       ...loginDayKeys,
       ...recentSubmissions.map((submission) => dayKey(submission.createdAt)),
     ]);
-    const contestsParticipated =
-      currentStudent.competitionsParticipated ||
-      new Set(currentStudent.participations.map((item) => item.contestId)).size;
+    const contestsParticipated = Math.max(
+      currentStudent.competitionsParticipated,
+      participationCountByUser.get(currentStudent.id) ?? 0,
+    );
 
     return {
       role: "student",
