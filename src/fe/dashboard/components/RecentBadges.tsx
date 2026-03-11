@@ -2,26 +2,36 @@
 
 import EmojiEventsOutlinedIcon from "@mui/icons-material/EmojiEventsOutlined";
 import { Box, Typography } from "@mui/material";
-import { mockBadges } from "@/fe/dashboard/data/badges";
+import type { Badge } from "@/fe/shared/types/badge";
 import DashboardWidget from "./DashboardWidget";
 import styles from "../styles/RecentBadges.module.css";
 
-export default function RecentBadges() {
+interface RecentBadgesProps {
+  badges?: Badge[];
+}
+
+export default function RecentBadges({ badges = [] }: RecentBadgesProps) {
+  const visibleBadges = badges.slice(0, 3);
+
   return (
     <DashboardWidget title="Recent Badges" icon={EmojiEventsOutlinedIcon}>
-      <Box className={styles.badges}>
-        {mockBadges.map((badge) => (
-          <Box key={badge.id} className={styles.badge}>
-            <Box
-              className={styles.badgeIcon}
-              style={{ "--badge-color": badge.color } as React.CSSProperties}
-            >
-              {badge.icon}
+      {visibleBadges.length === 0 ? (
+        <Typography className={styles.empty}>No badges yet. Keep going.</Typography>
+      ) : (
+        <Box className={styles.badges}>
+          {visibleBadges.map((badge) => (
+            <Box key={badge.id} className={styles.badge}>
+              <Box
+                className={styles.badgeIcon}
+                style={{ "--badge-color": badge.color } as React.CSSProperties}
+              >
+                {badge.icon}
+              </Box>
+              <Typography className={styles.badgeName}>{badge.name}</Typography>
             </Box>
-            <Typography className={styles.badgeName}>{badge.name}</Typography>
-          </Box>
-        ))}
-      </Box>
+          ))}
+        </Box>
+      )}
     </DashboardWidget>
   );
 }
