@@ -23,17 +23,13 @@ export const EMPTY_STUDENT_DASHBOARD_METADATA: StudentDashboardMetadata = {
   badges: [],
 };
 
-export function getStudentDashboardMetadata(): StudentDashboardMetadata {
-  return STUDENT_DASHBOARD_METADATA;
-}
-
 const BADGE_VISUALS: Record<string, { icon: string; color: string }> = {
   "first-submission": { icon: "🚀", color: "#2563eb" },
   "first-accepted": { icon: "✅", color: "#059669" },
   "active-learner": { icon: "🧠", color: "#7c3aed" },
   "consistent-week": { icon: "📅", color: "#0891b2" },
-  "3-day-login-streak": { icon: "☀️", color: "#f59e0b" },
-  "7-day-login-streak": { icon: "🔥", color: "#ea580c" },
+  "login-streak-3": { icon: "☀️", color: "#f59e0b" },
+  "login-streak-7": { icon: "🔥", color: "#ea580c" },
 };
 
 function mapMetadata(payload: StudentDashboardMetadataResponse): StudentDashboardMetadata {
