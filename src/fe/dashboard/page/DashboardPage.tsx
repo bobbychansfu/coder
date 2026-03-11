@@ -8,11 +8,11 @@ import UpcomingContests from "@/fe/dashboard/components/UpcomingContests";
 import ThisWeek from "@/fe/dashboard/components/ThisWeek";
 import RecentBadges from "@/fe/dashboard/components/RecentBadges";
 import { mockContestAlert } from "@/fe/dashboard/data/contests";
-import { getStudentDashboardMetadata } from "@/fe/dashboard/services/dashboardMetadata";
+import { useStudentDashboardMetadata } from "@/fe/dashboard/services/dashboardMetadata";
 import styles from "../styles/DashboardPage.module.css";
 
 export default function DashboardPage() {
-  const metadata = getStudentDashboardMetadata();
+  const metadata = useStudentDashboardMetadata();
 
   return (
     <>
