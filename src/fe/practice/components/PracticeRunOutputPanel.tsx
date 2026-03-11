@@ -1,5 +1,5 @@
 import { Box, Chip, CircularProgress, Typography } from "@mui/material";
-import type { PracticeJudgeResult } from "@/fe/practice/services/problemService";
+import type { PracticeJudgeCaseResult, PracticeJudgeResult } from "@/fe/practice/services/problemService";
 import styles from "@/fe/practice/styles/PracticeRunOutputPanel.module.css";
 
 interface PracticeRunOutputPanelProps {
@@ -49,7 +49,7 @@ export default function PracticeRunOutputPanel({
           </Box>
 
           <Box className={styles.caseList}>
-            {result.cases.map((caseItem) => (
+            {result.cases.map((caseItem: PracticeJudgeCaseResult) => (
               <Box key={caseItem.id} className={styles.caseCard}>
                 <Box className={styles.caseHeader}>
                   <Typography className={styles.caseTitle}>{caseItem.id}</Typography>

@@ -19,6 +19,9 @@ interface SolutionEditorProps {
   onRunCode?: () => void;
   runButtonDisabled?: boolean;
   runButtonLabel?: string;
+  onSubmitCode?: () => void;
+  submitButtonDisabled?: boolean;
+  submitButtonLabel?: string;
 }
 
 export default function SolutionEditor({
@@ -29,6 +32,9 @@ export default function SolutionEditor({
   onRunCode,
   runButtonDisabled = false,
   runButtonLabel = "Run Code",
+  onSubmitCode,
+  submitButtonDisabled = false,
+  submitButtonLabel = "Submit",
 }: SolutionEditorProps) {
   const editorLanguage = LANGUAGE_OPTIONS.find((o) => o.value === language)?.monacoLanguage ?? "plaintext";
 
@@ -108,9 +114,11 @@ export default function SolutionEditor({
           variant="contained"
           disableElevation
           startIcon={<SendRoundedIcon fontSize="small" />}
+          onClick={onSubmitCode}
+          disabled={submitButtonDisabled}
           sx={{ backgroundColor: "#dc2626", "&:hover": { backgroundColor: "#b91c1c" } }}
         >
-          Submit
+          {submitButtonLabel}
         </Button>
       </Box>
     </Box>
