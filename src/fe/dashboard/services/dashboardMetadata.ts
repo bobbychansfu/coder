@@ -17,6 +17,12 @@ export const STUDENT_DASHBOARD_METADATA: StudentDashboardMetadata = {
   badges: mockBadges,
 };
 
+export const EMPTY_STUDENT_DASHBOARD_METADATA: StudentDashboardMetadata = {
+  statistics: [],
+  weeklyStats: [],
+  badges: [],
+};
+
 export function getStudentDashboardMetadata(): StudentDashboardMetadata {
   return STUDENT_DASHBOARD_METADATA;
 }
@@ -87,10 +93,18 @@ function mapMetadata(payload: StudentDashboardMetadataResponse): StudentDashboar
   };
 }
 
-export function useStudentDashboardMetadata(): StudentDashboardMetadata {
-  const { data } = trpc.dashboardMetadata.getStudent.useQuery(undefined, {
+export function useStudentDashboardMetadata(): {
+  metadata: StudentDashboardMetadata | undefined;
+  isLoading: boolean;
+  isError: boolean;
+} {
+  const { data, isLoading, isError } = trpc.dashboardMetadata.getStudent.useQuery(undefined, {
     staleTime: 30000,
   });
 
-  return data ? mapMetadata(data) : STUDENT_DASHBOARD_METADATA;
+  return {
+    metadata: data ? mapMetadata(data) : undefined,
+    isLoading,
+    isError,
+  };
 }
