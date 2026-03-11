@@ -10,8 +10,10 @@ interface RecentBadgesProps {
   badges?: Badge[];
 }
 
+const MAX_VISIBLE_BADGES = 3;
+
 export default function RecentBadges({ badges = [] }: RecentBadgesProps) {
-  const visibleBadges = badges.slice(0, 3);
+  const visibleBadges = badges.slice(0, MAX_VISIBLE_BADGES);
 
   return (
     <DashboardWidget title="Recent Badges" icon={EmojiEventsOutlinedIcon}>
