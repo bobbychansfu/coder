@@ -1,8 +1,8 @@
 import { TRPCError } from "@trpc/server";
 import { router, studentProcedure } from "../init";
 import type { StudentDashboardMetadataResponse } from "@/lib/trpc/types/dashboardMetadata";
+import { SEVEN_DAYS_MS } from "@/server/gamification/shared";
 
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 const MINIMUM_SESSION_MINUTES = 15;
 const MAXIMUM_GAP_MINUTES = 45;
 const SOLVED_WEIGHT = 10;
@@ -134,7 +134,7 @@ export const dashboardMetadataRouter = router({
         achievements: {
           select: {
             earnedAt: true,
-            achievement: { select: { name: true } },
+            achievement: { select: { code: true, name: true } },
           },
         },
       },
@@ -252,7 +252,7 @@ export const dashboardMetadataRouter = router({
           .slice()
           .sort((left, right) => right.earnedAt.getTime() - left.earnedAt.getTime())
           .map((achievement) => ({
-            code: slugifyBadgeName(achievement.achievement.name),
+            code: achievement.achievement.code ?? slugifyBadgeName(achievement.achievement.name),
             name: achievement.achievement.name,
             earnedAt: achievement.earnedAt.toISOString(),
           })),
