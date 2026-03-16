@@ -76,7 +76,7 @@ function mapMetadata(payload: StudentDashboardMetadataResponse): StudentDashboar
       },
       { label: "Time Spent", value: `${(payload.weekly.timeSpentMinutes7d / 60).toFixed(1)}h` },
     ],
-    badges: payload.badges.earned.slice(0, 3).map((badge) => {
+    badges: payload.badges.earned.map((badge) => {
       const visuals = BADGE_VISUALS[badge.code] ?? { icon: "🏅", color: "#475467" };
       return {
         id: badge.code,
