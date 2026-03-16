@@ -14,7 +14,9 @@ interface PracticeProblemSubmissionPageProps {
   problemCode: string;
 }
 
-const DEFAULT_LANGUAGE = "cpp";
+type SupportedLanguage = "cplusplus" | "java" | "typescript" | "javascript" | "python";
+
+const DEFAULT_LANGUAGE: SupportedLanguage = "cplusplus";
 
 interface RunResult {
   verdict: string;
@@ -34,7 +36,7 @@ function PracticeProblemSubmissionPageContent({
 }: PracticeProblemSubmissionPageProps) {
   const router = useRouter();
   const [tab, setTab] = useState("description");
-  const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
+  const [language, setLanguage] = useState<SupportedLanguage>(DEFAULT_LANGUAGE);
   const [code, setCode] = useState("");
   const [hasRun, setHasRun] = useState(false);
   const [runResult, setRunResult] = useState<RunResult | null>(null);
@@ -159,7 +161,7 @@ function PracticeProblemSubmissionPageContent({
           <SolutionEditor
             language={language}
             code={code}
-            onLanguageChange={setLanguage}
+            onLanguageChange={(nextLanguage) => setLanguage(nextLanguage as SupportedLanguage)}
             onCodeChange={setCode}
             onRunCode={handleRunCode}
             onSubmitCode={handleSubmitCode}

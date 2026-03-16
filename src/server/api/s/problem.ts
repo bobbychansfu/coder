@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/session";
 import { dbHelpers } from "@/lib/db-helpers";
 import path from "path";
 import { promises as fs } from "fs";
+import { appLanguageToCodingLanguage, appLanguageToJudgeLanguage } from "@/server/coding-language";
 
 export async function handleGetProblemDetails(
   request: NextRequest,
@@ -107,12 +108,19 @@ export async function handleSubmitCode(
       return NextResponse.json({ error: "Not registered for contest" }, { status: 403 });
     }
 
+    const codingLanguage = appLanguageToCodingLanguage(language);
+    const judgeLanguage = appLanguageToJudgeLanguage(language);
+
+    if (!codingLanguage || !judgeLanguage) {
+      return NextResponse.json({ error: "Unsupported language" }, { status: 400 });
+    }
+
     const submission = await dbHelpers.createSubmission({
       computingId,
       contestId: cid,
       problemId: pid,
       submission: code,
-      language,
+      language: codingLanguage,
     });
 
     const ps = await dbHelpers.findProblemStatus(computingId, cid, pid);
@@ -137,7 +145,7 @@ export async function handleSubmitCode(
         body: JSON.stringify({
           sid: submission.id,
           pid,
-          language,
+          language: judgeLanguage,
           connection_id,
           submission: code,
         }),
