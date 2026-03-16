@@ -15,7 +15,7 @@ interface ProblemSubmissionPageProps {
   detail: ProblemDetail;
 }
 
-const DEFAULT_LANGUAGE = "cpp";
+const DEFAULT_LANGUAGE = "cplusplus";
 
 export default function ProblemSubmissionPage({ detail }: ProblemSubmissionPageProps) {
   return <ProblemSubmissionPageContent key={detail.code} detail={detail} />;
