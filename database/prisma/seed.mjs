@@ -39,6 +39,7 @@ function computeSubmissionStatus(attemptIndex, participantIndex, problemIndex) {
     "WRONG_ANSWER",
     "TIME_LIMIT_EXCEEDED",
     "RUNTIME_ERROR",
+    "COMPILE_ERROR",
     "ACCEPTED",
   ];
 
@@ -51,15 +52,173 @@ function scoreForStatus(status) {
     WRONG_ANSWER: 35,
     TIME_LIMIT_EXCEEDED: 45,
     RUNTIME_ERROR: 20,
+    COMPILE_ERROR: 0,
     PENDING: 0,
   };
 
   return scoreMap[status] ?? 0;
 }
 
+function toCodingLanguage(language) {
+  const normalized = String(language).trim().toLowerCase();
+
+  switch (normalized) {
+    case "cpp":
+    case "cplusplus":
+    case "c++":
+    case "c++17":
+      return "CPLUSPLUS";
+    case "java":
+      return "JAVA";
+    case "typescript":
+      return "TYPESCRIPT";
+    case "javascript":
+      return "JAVASCRIPT";
+    case "python":
+    case "python3":
+      return "PYTHON";
+    case "c":
+      return "CPLUSPLUS";
+    default:
+      return "PYTHON";
+  }
+}
+
+function toFunctionName(problemCode) {
+  return problemCode
+    .split("-")
+    .map((segment, index) =>
+      index === 0 ? segment : `${segment[0].toUpperCase()}${segment.slice(1)}`,
+    )
+    .join("");
+}
+
+function buildStarterCodes(problemCode, title) {
+  const functionName = toFunctionName(problemCode);
+  const prompt = `Implement ${title}.`;
+
+  return [
+    {
+      language: "CPLUSPLUS",
+      code: [
+        "#include <bits/stdc++.h>",
+        "using namespace std;",
+        "",
+        `string ${functionName}(const string& input) {`,
+        `  // ${prompt}`,
+        '  return "";',
+        "}",
+        "",
+        "int main() {",
+        "  ios::sync_with_stdio(false);",
+        "  cin.tie(nullptr);",
+        "",
+        "  string input;",
+        "  string line;",
+        "  bool first = true;",
+        "  while (getline(cin, line)) {",
+        "    if (!first) input += '\\n';",
+        "    input += line;",
+        "    first = false;",
+        "  }",
+        `  cout << ${functionName}(input);`,
+        "  return 0;",
+        "}",
+      ].join("\n"),
+      isAiGenerated: false,
+      generatedFrom: null,
+    },
+    {
+      language: "JAVA",
+      code: [
+        "import java.io.BufferedReader;",
+        "import java.io.IOException;",
+        "import java.io.InputStreamReader;",
+        "",
+        "public class Main {",
+        `  private static String ${functionName}(String input) {`,
+        `    // ${prompt}`,
+        '    return "";',
+        "  }",
+        "",
+        "  public static void main(String[] args) throws Exception {",
+        "    BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));",
+        "    StringBuilder input = new StringBuilder();",
+        "    String line;",
+        "    while ((line = reader.readLine()) != null) {",
+        "      if (input.length() > 0) input.append('\\n');",
+        "      input.append(line);",
+        "    }",
+        `    System.out.print(${functionName}(input.toString()));`,
+        "  }",
+        "}",
+      ].join("\n"),
+      isAiGenerated: true,
+      generatedFrom: "CPLUSPLUS",
+    },
+    {
+      language: "TYPESCRIPT",
+      code: [
+        `function ${functionName}(input: string): string {`,
+        `  // ${prompt}`,
+        '  return "";',
+        "}",
+        "",
+        "import * as fs from 'fs';",
+        "",
+        "const input = fs.readFileSync(0, 'utf8').trimEnd();",
+        `process.stdout.write(${functionName}(input));`,
+      ].join("\n"),
+      isAiGenerated: true,
+      generatedFrom: "CPLUSPLUS",
+    },
+    {
+      language: "JAVASCRIPT",
+      code: [
+        `function ${functionName}(input) {`,
+        `  // ${prompt}`,
+        '  return "";',
+        "}",
+        "",
+        "const fs = require('fs');",
+        "const input = fs.readFileSync(0, 'utf8').trimEnd();",
+        `process.stdout.write(${functionName}(input));`,
+      ].join("\n"),
+      isAiGenerated: true,
+      generatedFrom: "CPLUSPLUS",
+    },
+    {
+      language: "PYTHON",
+      code: [
+        `def ${functionName}(raw_input: str) -> str:`,
+        `    # ${prompt}`,
+        '    return ""',
+        "",
+        'if __name__ == "__main__":',
+        "    import sys",
+        "    print(",
+        `        ${functionName}(sys.stdin.read().rstrip("\\n")),`,
+        '        end="",',
+        "    )",
+      ].join("\n"),
+      isAiGenerated: true,
+      generatedFrom: "CPLUSPLUS",
+    },
+  ];
+}
+
 async function main() {
+  await prisma.contestProblemSession.deleteMany();
+  await prisma.contestExperimentGroup.deleteMany();
+  await prisma.problemStarterCode.deleteMany();
   await prisma.practiceRunRecord.deleteMany();
   await prisma.practiceSession.deleteMany();
+  await prisma.problemStatus.deleteMany();
+  await prisma.hint.deleteMany();
+  await prisma.participation.deleteMany();
+  await prisma.topic.deleteMany();
+  await prisma.userActivity.deleteMany();
+  await prisma.userAchievement.deleteMany();
   await prisma.submission.deleteMany();
   await prisma.announcement.deleteMany();
   await prisma.contestProblem.deleteMany();
@@ -426,10 +585,24 @@ async function main() {
     { code: "alien-dictionary", title: "Alien Dictionary", statement: "You are given a list of words from an alien language's dictionary, sorted lexicographically by the rules of this language. Derive the order of characters in the alien alphabet using topological sort. Return an empty string if no valid ordering exists.", difficulty: "Hard", points: 450, ...problemDetails["alien-dictionary"] },
   ];
 
-  await prisma.problem.createMany({ data: problemRecords });
+  await prisma.problem.createMany({
+    data: problemRecords.map((problem) => ({
+      ...problem,
+      source: "BOTH",
+    })),
+  });
 
   const problems = await prisma.problem.findMany();
   const problemByCode = new Map(problems.map((problem) => [problem.code, problem]));
+
+  await prisma.problemStarterCode.createMany({
+    data: problems.flatMap((problem) =>
+      buildStarterCodes(problem.code, problem.title).map((starterCode) => ({
+        problemId: problem.id,
+        ...starterCode,
+      })),
+    ),
+  });
 
   const topicsByCode = {
     "two-sum": ["arrays", "hash-table"],
@@ -482,6 +655,7 @@ async function main() {
       startsAt: new Date("2026-01-25T09:00:00.000Z"),
       durationMinutes: 120,
       participants: 0,
+      aiHintEnabled: true,
       instructorId: userByComputingId.get("sjohnson")?.id ?? null,
     },
     {
@@ -493,6 +667,7 @@ async function main() {
       startsAt: new Date("2026-01-23T09:00:00.000Z"),
       durationMinutes: 180,
       participants: 0,
+      aiHintEnabled: true,
       instructorId: userByComputingId.get("mchen")?.id ?? null,
     },
     {
@@ -504,6 +679,7 @@ async function main() {
       startsAt: new Date("2026-01-18T09:00:00.000Z"),
       durationMinutes: 120,
       participants: 0,
+      aiHintEnabled: true,
       instructorId: userByComputingId.get("sjohnson")?.id ?? null,
     },
     {
@@ -580,6 +756,33 @@ async function main() {
     data: contestProblems,
   });
 
+  const experimentGroupRows = contests
+    .filter((contest) => contest.aiHintEnabled)
+    .flatMap((contest) => [
+      {
+        contestId: contest.id,
+        groupName: "A",
+        aiHintEnabled: true,
+        hintDelayMinutes: 10,
+      },
+      {
+        contestId: contest.id,
+        groupName: "B",
+        aiHintEnabled: true,
+        hintDelayMinutes: 20,
+      },
+      {
+        contestId: contest.id,
+        groupName: "C",
+        aiHintEnabled: false,
+        hintDelayMinutes: null,
+      },
+    ]);
+
+  await prisma.contestExperimentGroup.createMany({
+    data: experimentGroupRows,
+  });
+
   await prisma.announcement.createMany({
     data: [
       {
@@ -616,9 +819,18 @@ async function main() {
     (contest) => contest.status === "ACTIVE" || contest.status === "ENDED",
   );
 
-  const languagePool = ["cpp", "python", "java", "javascript"];
+  const contestExperimentGroups = await prisma.contestExperimentGroup.findMany();
+  const hintDelayByContestGroup = new Map(
+    contestExperimentGroups.map((group) => [
+      `${group.contestId}:${group.groupName}`,
+      group.aiHintEnabled ? group.hintDelayMinutes : null,
+    ]),
+  );
+
+  const languagePool = ["CPLUSPLUS", "JAVA", "PYTHON", "JAVASCRIPT", "TYPESCRIPT"];
   const submissionRows = [];
   const participantSetByContestId = new Map();
+  const participantMetaByContestUser = new Map();
 
   contestsWithProblems.forEach((contest, contestIndex) => {
     const problemLinks = contestProblems.filter((link) => link.contestId === contest.id);
@@ -634,6 +846,18 @@ async function main() {
         participantSetByContestId.set(contest.id, new Set());
       }
       participantSetByContestId.get(contest.id).add(student.id);
+
+      const experimentGroup = contest.aiHintEnabled ? pick(["A", "B", "C"], participantIndex) : null;
+      const assignmentMethod = contest.aiHintEnabled
+        ? contestIndex % 2 === 0
+          ? "RATIO_RANDOM"
+          : "RANDOM"
+        : "MANUAL";
+
+      participantMetaByContestUser.set(`${contest.id}:${student.id}`, {
+        experimentGroup,
+        assignmentMethod,
+      });
 
       problemLinks.forEach((problemLink, problemIndex) => {
         const attempts = 1 + ((contestIndex + participantIndex + problemIndex) % 2);
@@ -651,6 +875,7 @@ async function main() {
             language: pick(languagePool, participantIndex + problemIndex + attemptIndex),
             status,
             score,
+            judgeOutput: status === "ACCEPTED" ? "All hidden test cases passed." : `${status} on contest seed data`,
             createdAt,
           });
         }
@@ -665,16 +890,89 @@ async function main() {
   const participationRows = [];
   for (const [contestId, studentIds] of participantSetByContestId.entries()) {
     for (const userId of studentIds) {
+      const participantMeta = participantMetaByContestUser.get(`${contestId}:${userId}`) ?? {};
       participationRows.push({
         userId,
         contestId,
         role: "contestant",
+        experimentGroup: participantMeta.experimentGroup ?? null,
+        assignmentMethod: participantMeta.assignmentMethod ?? null,
       });
     }
   }
 
   await prisma.participation.createMany({
     data: participationRows,
+  });
+
+  const contestById = new Map(contests.map((contest) => [contest.id, contest]));
+  const groupedContestSubmissions = new Map();
+  for (const row of submissionRows) {
+    const key = `${row.userId}:${row.contestId}:${row.problemId}`;
+    if (!groupedContestSubmissions.has(key)) {
+      groupedContestSubmissions.set(key, []);
+    }
+    groupedContestSubmissions.get(key).push(row);
+  }
+
+  const contestProblemSessionRows = [];
+  const hintRows = [];
+
+  for (const [key, rows] of groupedContestSubmissions.entries()) {
+    const [userId, contestId, problemId] = key.split(":");
+    const sortedRows = [...rows].sort((left, right) => left.createdAt - right.createdAt);
+    const firstSubmission = sortedRows[0];
+    const solvedSubmission = sortedRows.find((row) => row.status === "ACCEPTED") ?? null;
+    const participantMeta = participantMetaByContestUser.get(`${contestId}:${userId}`) ?? {};
+    const contest = contestById.get(contestId);
+    const hintDelayMinutes =
+      participantMeta.experimentGroup == null
+        ? null
+        : hintDelayByContestGroup.get(`${contestId}:${participantMeta.experimentGroup}`) ?? null;
+
+    const hintEligibleAt =
+      contest && hintDelayMinutes != null
+        ? new Date(contest.startsAt.getTime() + hintDelayMinutes * 60_000)
+        : null;
+    const hintTriggeredAt =
+      hintEligibleAt &&
+      (!solvedSubmission || solvedSubmission.createdAt >= hintEligibleAt)
+        ? new Date(hintEligibleAt.getTime() + 60_000)
+        : null;
+
+    contestProblemSessionRows.push({
+      userId,
+      contestId,
+      problemId,
+      startedAt: new Date(firstSubmission.createdAt.getTime() - 5 * 60_000),
+      firstRunAt: new Date(firstSubmission.createdAt.getTime() - 2 * 60_000),
+      firstSubmitAt: firstSubmission.createdAt,
+      hintEligibleAt,
+      hintTriggeredAt,
+      solvedAt: solvedSubmission?.createdAt ?? null,
+      selectedLang: firstSubmission.language,
+      solved: Boolean(solvedSubmission),
+    });
+
+    if (hintTriggeredAt) {
+      hintRows.push({
+        userId,
+        problemId,
+        code: "// contest hint context",
+        feedback: "Break the problem into smaller invariants before refining the full solution.",
+        validation: "Seeded experiment hint",
+        hintNum: 1,
+        createdAt: hintTriggeredAt,
+      });
+    }
+  }
+
+  await prisma.contestProblemSession.createMany({
+    data: contestProblemSessionRows,
+  });
+
+  await prisma.hint.createMany({
+    data: hintRows,
   });
 
   for (const contest of contests) {
@@ -903,75 +1201,85 @@ async function main() {
 
   // Build a sample snippet per verdict/language for the code column
   function sampleCode(language, verdict) {
+    const codingLanguage = toCodingLanguage(language);
     const snippets = {
-      cpp: verdict === "Accepted"
-        ? "#include<bits/stdc++.h>\nusing namespace std;\nint main(){/* accepted solution */\nreturn 0;}"
-        : "#include<bits/stdc++.h>\nusing namespace std;\nint main(){/* attempt */\nreturn 0;}",
-      python: verdict === "Accepted"
+      CPLUSPLUS: verdict === "Accepted"
+        ? "#include <bits/stdc++.h>\nusing namespace std;\nint main() { /* accepted */ return 0; }"
+        : "#include <bits/stdc++.h>\nusing namespace std;\nint main() { /* attempt */ return 0; }",
+      PYTHON: verdict === "Accepted"
         ? "# accepted\ndef solve():\n    pass"
         : "# attempt\ndef solve():\n    pass",
-      java: verdict === "Accepted"
+      JAVA: verdict === "Accepted"
         ? "class Solution { public void solve() { /* accepted */ } }"
         : "class Solution { public void solve() { /* attempt */ } }",
-      javascript: verdict === "Accepted"
+      JAVASCRIPT: verdict === "Accepted"
         ? "function solve() { /* accepted */ }"
         : "function solve() { /* attempt */ }",
+      TYPESCRIPT: verdict === "Accepted"
+        ? "function solve(input: string): string { /* accepted */ return input; }"
+        : "function solve(input: string): string { /* attempt */ return input; }",
     };
-    return snippets[language] ?? "// code";
+    return snippets[codingLanguage] ?? "# starter";
   }
 
   for (const plan of practicePlan) {
     const student = userByComputingId.get(plan.computingId);
     if (!student) continue;
+    const problem = problemByCode.get(plan.problemCode);
+    if (!problem) continue;
 
     const sortedRuns = [...plan.runs].sort((a, b) => a.at - b.at);
     const firstRunAt = sortedRuns[0]?.at ?? null;
-    const acceptedRuns = sortedRuns.filter((r) => r.verdict === "Accepted");
-    const firstSubmitAt = acceptedRuns[0]?.at ?? null;
+    const firstSubmitAt = sortedRuns[0] ? new Date(sortedRuns[0].at.getTime() + 60_000) : null;
+    const firstAccepted = sortedRuns.find((run) => run.verdict === "Accepted");
+    const solvedAt = firstAccepted ? new Date(firstAccepted.at.getTime() + 60_000) : null;
+    const selectedLang = sortedRuns[sortedRuns.length - 1]
+      ? toCodingLanguage(sortedRuns[sortedRuns.length - 1].language)
+      : null;
 
     const session = await prisma.practiceSession.create({
       data: {
         userId: student.id,
-        problemCode: plan.problemCode,
+        problemId: problem.id,
         startedAt: new Date(sortedRuns[0].at.getTime() - 60_000),
         firstRunAt,
         firstSubmitAt,
+        solvedAt,
+        selectedLang,
         runCount: plan.runs.length,
+        submitCount: plan.runs.length,
       },
     });
 
-    // Latest run code record (isSubmit: false)
-    const latestRun = sortedRuns[sortedRuns.length - 1];
-    await prisma.practiceRunRecord.create({
-      data: {
-        sessionId: session.id,
-        isSubmit: false,
-        language: latestRun.language,
-        code: sampleCode(latestRun.language, latestRun.verdict),
-        verdict: latestRun.verdict,
-        compilePassed: latestRun.verdict === "Accepted",
-        stdout: latestRun.verdict === "Accepted" ? "All test cases passed." : null,
-        stderr: latestRun.verdict === "Runtime Error" ? "Segmentation fault (core dumped)" : null,
-        runtimeMs: latestRun.runtimeMs ?? null,
-        createdAt: latestRun.at,
-      },
-    });
+    for (const run of sortedRuns) {
+      const codingLanguage = toCodingLanguage(run.language);
+      await prisma.practiceRunRecord.create({
+        data: {
+          sessionId: session.id,
+          isSubmit: false,
+          language: codingLanguage,
+          code: sampleCode(run.language, run.verdict),
+          verdict: run.verdict,
+          compilePassed: run.verdict !== "Compile Error",
+          stdout: run.verdict === "Accepted" ? "All test cases passed." : null,
+          stderr: run.verdict === "Runtime Error" ? "Segmentation fault (core dumped)" : null,
+          runtimeMs: run.runtimeMs ?? null,
+          createdAt: run.at,
+        },
+      });
 
-    // First submit record (isSubmit: true) — only if there was an accepted run
-    const firstAccepted = sortedRuns.find((r) => r.verdict === "Accepted");
-    if (firstAccepted) {
       await prisma.practiceRunRecord.create({
         data: {
           sessionId: session.id,
           isSubmit: true,
-          language: firstAccepted.language,
-          code: sampleCode(firstAccepted.language, firstAccepted.verdict),
-          verdict: firstAccepted.verdict,
-          compilePassed: true,
-          stdout: "All test cases passed.",
-          stderr: null,
-          runtimeMs: firstAccepted.runtimeMs ?? null,
-          createdAt: new Date(firstAccepted.at.getTime() + 60_000),
+          language: codingLanguage,
+          code: sampleCode(run.language, run.verdict),
+          verdict: run.verdict,
+          compilePassed: run.verdict !== "Compile Error",
+          stdout: run.verdict === "Accepted" ? "All test cases passed." : null,
+          stderr: run.verdict === "Runtime Error" ? "Segmentation fault (core dumped)" : null,
+          runtimeMs: run.runtimeMs ?? null,
+          createdAt: new Date(run.at.getTime() + 60_000),
         },
       });
     }
@@ -982,8 +1290,13 @@ async function main() {
     prisma.contest.count(),
     prisma.problem.count(),
     prisma.contestProblem.count(),
+    prisma.contestExperimentGroup.count(),
+    prisma.contestProblemSession.count(),
     prisma.announcement.count(),
     prisma.submission.count(),
+    prisma.problemStarterCode.count(),
+    prisma.participation.count(),
+    prisma.hint.count(),
     prisma.practiceSession.count(),
     prisma.practiceRunRecord.count(),
   ]);
@@ -993,10 +1306,15 @@ async function main() {
   console.log(`Contests: ${counts[1]}`);
   console.log(`Problems: ${counts[2]}`);
   console.log(`ContestProblems: ${counts[3]}`);
-  console.log(`Announcements: ${counts[4]}`);
-  console.log(`Submissions: ${counts[5]}`);
-  console.log(`PracticeSessions: ${counts[6]}`);
-  console.log(`PracticeRunRecords: ${counts[7]}`);
+  console.log(`ContestExperimentGroups: ${counts[4]}`);
+  console.log(`ContestProblemSessions: ${counts[5]}`);
+  console.log(`Announcements: ${counts[6]}`);
+  console.log(`Submissions: ${counts[7]}`);
+  console.log(`ProblemStarterCodes: ${counts[8]}`);
+  console.log(`Participations: ${counts[9]}`);
+  console.log(`Hints: ${counts[10]}`);
+  console.log(`PracticeSessions: ${counts[11]}`);
+  console.log(`PracticeRunRecords: ${counts[12]}`);
 }
 
 main()

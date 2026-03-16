@@ -1,18 +1,14 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, studentProcedure } from "../init";
+import {
+  APP_LANGUAGES,
+  appLanguageToCodingLanguage,
+  appLanguageToJudgeLanguage,
+  codingLanguageToLabel,
+} from "../../coding-language";
 
 const JUDGE_URL = process.env.JUDGE_URL ?? "http://127.0.0.1:8000";
-
-// Map frontend language values → judge's langs.json keys
-const JUDGE_LANG: Record<string, string> = {
-  cpp: "C++17",
-  java: "Java17",
-  python: "py3",
-  python3: "py3",
-  javascript: "NodeJS",
-  ruby: "Ruby",
-};
 
 function formatTimeAgo(date: Date): string {
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
@@ -32,6 +28,31 @@ async function getDbUser(ctx: { prisma: { user: { findUnique: (args: { where: { 
   });
   if (!dbUser) throw new TRPCError({ code: "UNAUTHORIZED" });
   return dbUser;
+}
+
+async function getProblemByCode(
+  ctx: {
+    prisma: {
+      problem: {
+        findUnique: (args: {
+          where: { code: string };
+          select: { id: true; code: true };
+        }) => Promise<{ id: string; code: string } | null>;
+      };
+    };
+  },
+  problemCode: string,
+) {
+  const problem = await ctx.prisma.problem.findUnique({
+    where: { code: problemCode },
+    select: { id: true, code: true },
+  });
+
+  if (!problem) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Problem not found" });
+  }
+
+  return problem;
 }
 
 export const practiceRouter = router({
@@ -64,7 +85,10 @@ export const practiceRouter = router({
       }
 
       const problems = await ctx.prisma.problem.findMany({
-        where: andClauses.length > 0 ? { AND: andClauses } : {},
+        where: {
+          source: { in: ["PRACTICE", "BOTH"] },
+          ...(andClauses.length > 0 ? { AND: andClauses } : {}),
+        },
         include: { topics: true },
         orderBy: { title: "asc" },
       });
@@ -72,12 +96,19 @@ export const practiceRouter = router({
       // Fetch solved status for the current user
       const sessions = await ctx.prisma.practiceSession.findMany({
         where: { userId: dbUser.id },
-        include: { runs: { where: { verdict: "Accepted" }, take: 1 } },
+        select: {
+          solvedAt: true,
+          problem: {
+            select: {
+              code: true,
+            },
+          },
+        },
       });
       const solvedCodes = new Set(
-        sessions.filter((s) => s.runs.length > 0).map((s) => s.problemCode),
+        sessions.filter((session) => session.solvedAt != null).map((session) => session.problem.code),
       );
-      const startedCodes = new Set(sessions.map((s) => s.problemCode));
+      const startedCodes = new Set(sessions.map((session) => session.problem.code));
 
       let filtered = problems;
       if (input.status === "completed") {
@@ -143,9 +174,10 @@ export const practiceRouter = router({
     .input(z.object({ problemCode: z.string() }))
     .query(async ({ ctx, input }) => {
       const dbUser = await getDbUser(ctx);
+      const problem = await getProblemByCode(ctx, input.problemCode);
 
       const session = await ctx.prisma.practiceSession.findUnique({
-        where: { userId_problemCode: { userId: dbUser.id, problemCode: input.problemCode } },
+        where: { userId_problemId: { userId: dbUser.id, problemId: problem.id } },
         include: { runs: { orderBy: { createdAt: "desc" }, take: 20 } },
       });
 
@@ -154,7 +186,7 @@ export const practiceRouter = router({
       return session.runs.map((run) => ({
         id: run.id,
         status: (run.verdict === "Accepted" ? "accepted" : "wrong") as "accepted" | "wrong" | "tle",
-        language: run.language,
+        language: codingLanguageToLabel(run.language),
         runtime: run.runtimeMs ? `${run.runtimeMs}ms` : "-",
         memory: "-",
         submitted: formatTimeAgo(run.createdAt),
@@ -165,10 +197,11 @@ export const practiceRouter = router({
     .input(z.object({ problemCode: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const dbUser = await getDbUser(ctx);
+      const problem = await getProblemByCode(ctx, input.problemCode);
 
       const session = await ctx.prisma.practiceSession.upsert({
-        where: { userId_problemCode: { userId: dbUser.id, problemCode: input.problemCode } },
-        create: { userId: dbUser.id, problemCode: input.problemCode },
+        where: { userId_problemId: { userId: dbUser.id, problemId: problem.id } },
+        create: { userId: dbUser.id, problemId: problem.id },
         update: {},
       });
 
@@ -181,12 +214,19 @@ export const practiceRouter = router({
     }),
 
   runCode: studentProcedure
-    .input(z.object({ problemCode: z.string(), language: z.string(), code: z.string() }))
+    .input(z.object({ problemCode: z.string(), language: z.enum(APP_LANGUAGES), code: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const dbUser = await getDbUser(ctx);
+      const problem = await getProblemByCode(ctx, input.problemCode);
+      const codingLanguage = appLanguageToCodingLanguage(input.language);
+      const judgeLanguage = appLanguageToJudgeLanguage(input.language);
+
+      if (!codingLanguage || !judgeLanguage) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Unsupported language" });
+      }
 
       const session = await ctx.prisma.practiceSession.findUnique({
-        where: { userId_problemCode: { userId: dbUser.id, problemCode: input.problemCode } },
+        where: { userId_problemId: { userId: dbUser.id, problemId: problem.id } },
       });
       if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "Session not found" });
 
@@ -195,6 +235,7 @@ export const practiceRouter = router({
         where: { id: session.id },
         data: {
           firstRunAt: session.firstRunAt ?? now,
+          selectedLang: codingLanguage,
           runCount: { increment: 1 },
         },
       });
@@ -209,7 +250,7 @@ export const practiceRouter = router({
         data: {
           sessionId: session.id,
           isSubmit: false,
-          language: input.language,
+          language: codingLanguage,
           code: input.code,
           verdict: "Pending",
           compilePassed: false,
@@ -217,7 +258,6 @@ export const practiceRouter = router({
       });
 
       // Submit to judge — result comes back asynchronously to /api/judge-callback
-      const judgeLanguage = JUDGE_LANG[input.language] ?? input.language;
       let judgeReachable = true;
       try {
         await fetch(`${JUDGE_URL}/judge_submission`, {
@@ -283,43 +323,50 @@ export const practiceRouter = router({
     .input(z.object({ problemCode: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const dbUser = await getDbUser(ctx);
+      const problem = await getProblemByCode(ctx, input.problemCode);
 
       const session = await ctx.prisma.practiceSession.findUnique({
-        where: { userId_problemCode: { userId: dbUser.id, problemCode: input.problemCode } },
+        where: { userId_problemId: { userId: dbUser.id, problemId: problem.id } },
       });
       if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "Session not found" });
 
-      const isFirstSubmit = !session.firstSubmitAt;
-      const now = new Date();
-      const updatedSession = await ctx.prisma.practiceSession.update({
-        where: { id: session.id },
-        data: { firstSubmitAt: session.firstSubmitAt ?? now },
+      const lastRun = await ctx.prisma.practiceRunRecord.findFirst({
+        where: { sessionId: session.id, isSubmit: false },
+        orderBy: { createdAt: "desc" },
       });
 
-      if (isFirstSubmit) {
-        // Copy metrics from the latest run record
-        const lastRun = await ctx.prisma.practiceRunRecord.findFirst({
-          where: { sessionId: session.id, isSubmit: false },
-          orderBy: { createdAt: "desc" },
-        });
+      const now = new Date();
+      const solvedAt = !session.solvedAt && lastRun?.verdict === "Accepted" ? now : session.solvedAt;
+      const updatedSession = await ctx.prisma.practiceSession.update({
+        where: { id: session.id },
+        data: {
+          firstSubmitAt: session.firstSubmitAt ?? now,
+          solvedAt,
+          submitCount: { increment: 1 },
+          selectedLang: lastRun?.language ?? session.selectedLang,
+        },
+      });
 
-        if (lastRun) {
-          await ctx.prisma.practiceRunRecord.create({
-            data: {
-              sessionId: session.id,
-              isSubmit: true,
-              language: lastRun.language,
-              code: lastRun.code,
-              verdict: lastRun.verdict,
-              compilePassed: lastRun.compilePassed,
-              stdout: lastRun.stdout,
-              stderr: lastRun.stderr,
-              runtimeMs: lastRun.runtimeMs,
-            },
-          });
-        }
+      if (lastRun) {
+        await ctx.prisma.practiceRunRecord.create({
+          data: {
+            sessionId: session.id,
+            isSubmit: true,
+            language: lastRun.language,
+            code: lastRun.code,
+            verdict: lastRun.verdict,
+            compilePassed: lastRun.compilePassed,
+            stdout: lastRun.stdout,
+            stderr: lastRun.stderr,
+            runtimeMs: lastRun.runtimeMs,
+          },
+        });
       }
 
-      return { firstSubmitAt: updatedSession.firstSubmitAt };
+      return {
+        firstSubmitAt: updatedSession.firstSubmitAt,
+        solvedAt: updatedSession.solvedAt,
+        submitCount: updatedSession.submitCount,
+      };
     }),
 });
