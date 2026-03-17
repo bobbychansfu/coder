@@ -19,6 +19,7 @@ type SupportedLanguage = "cplusplus" | "java" | "typescript" | "javascript" | "p
 const DEFAULT_LANGUAGE: SupportedLanguage = "cplusplus";
 
 interface RunResult {
+  id: string;
   verdict: string;
   stdout: string | null;
   stderr: string | null;
@@ -40,6 +41,7 @@ function PracticeProblemSubmissionPageContent({
   const [code, setCode] = useState("");
   const [hasRun, setHasRun] = useState(false);
   const [runResult, setRunResult] = useState<RunResult | null>(null);
+  const [activeRecordId, setActiveRecordId] = useState<string | null>(null);
   const sessionOpened = useRef(false);
   const utils = trpc.useUtils();
 
@@ -49,6 +51,13 @@ function PracticeProblemSubmissionPageContent({
   const { data: runHistory, refetch: refetchHistory } = trpc.practice.getRunHistory.useQuery(
     { problemCode },
     { enabled: !!detail },
+  );
+  const runRecordQuery = trpc.practice.getRunRecord.useQuery(
+    { problemCode, recordId: activeRecordId ?? "" },
+    {
+      enabled: !!activeRecordId,
+      refetchInterval: (query) => (query.state.data?.verdict === "Pending" ? 1000 : false),
+    },
   );
 
   const openSession = trpc.practice.openSession.useMutation();
@@ -63,6 +72,24 @@ function PracticeProblemSubmissionPageContent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [problemCode]);
 
+  useEffect(() => {
+    if (!runRecordQuery.data) {
+      return;
+    }
+
+    setRunResult({
+      id: runRecordQuery.data.id,
+      verdict: runRecordQuery.data.verdict,
+      stdout: runRecordQuery.data.stdout,
+      stderr: runRecordQuery.data.stderr,
+      runtimeMs: runRecordQuery.data.runtimeMs,
+    });
+
+    if (runRecordQuery.data.verdict !== "Pending") {
+      void refetchHistory();
+    }
+  }, [refetchHistory, runRecordQuery.data]);
+
   const isRunning = runCodeMutation.isPending;
   const isSubmitting = submitCodeMutation.isPending;
 
@@ -73,7 +100,9 @@ function PracticeProblemSubmissionPageContent({
       { problemCode, language, code },
       {
         onSuccess: async (result) => {
+          setActiveRecordId(result.record.id);
           setRunResult({
+            id: result.record.id,
             verdict: result.verdict,
             stdout: result.stdout,
             stderr: result.stderr,
@@ -86,11 +115,20 @@ function PracticeProblemSubmissionPageContent({
   };
 
   const handleSubmitCode = () => {
+    setHasRun(true);
     setTab("submissions");
     submitCodeMutation.mutate(
-      { problemCode },
+      { problemCode, language, code },
       {
-        onSuccess: async () => {
+        onSuccess: async (result) => {
+          setActiveRecordId(result.record.id);
+          setRunResult({
+            id: result.record.id,
+            verdict: result.verdict,
+            stdout: result.stdout,
+            stderr: result.stderr,
+            runtimeMs: result.runtimeMs,
+          });
           await utils.practice.getRunHistory.invalidate({ problemCode });
         },
       },
@@ -114,12 +152,17 @@ function PracticeProblemSubmissionPageContent({
   }
 
   const detailWithHistory = { ...detail, submissions: runHistory ?? [] };
+  const isJudging = isRunning || isSubmitting;
 
   const outputSection = hasRun ? (
     <div className={styles.outputSection}>
       <Typography className={styles.outputTitle}>Output</Typography>
       <div className={styles.outputBlock}>
-        {isRunning ? (
+        {isJudging && runResult && runResult.verdict !== "Pending" ? (
+          <span className={styles.outputText}>
+            {runResult.stdout ?? runResult.verdict ?? "Code executed (no output)"}
+          </span>
+        ) : isJudging || runResult?.verdict === "Pending" ? (
           <Box display="flex" alignItems="center" gap="10px">
             <CircularProgress size={14} sx={{ color: "#f3f4f6" }} />
             <span className={styles.outputText}>Judging your code...</span>
@@ -167,7 +210,7 @@ function PracticeProblemSubmissionPageContent({
             onSubmitCode={handleSubmitCode}
             runButtonDisabled={isRunning || isSubmitting}
             runButtonLabel={isRunning ? "Running..." : "Run Code"}
-            submitButtonDisabled={!hasRun || isRunning || isSubmitting}
+            submitButtonDisabled={isRunning || isSubmitting}
             submitButtonLabel={isSubmitting ? "Submitting..." : "Submit"}
           />
         </Box>

@@ -4,6 +4,7 @@ import { dbHelpers } from "@/lib/db-helpers";
 import path from "path";
 import { promises as fs } from "fs";
 import { appLanguageToCodingLanguage, appLanguageToJudgeLanguage } from "@/server/coding-language";
+import { getJudgeUrl } from "@/server/judge-url";
 
 export async function handleGetProblemDetails(
   request: NextRequest,
@@ -136,7 +137,7 @@ export async function handleSubmitCode(
       });
     }
 
-    const JUDGE_URL = process.env.JUDGE_URL || "http://127.0.0.1:8000";
+    const JUDGE_URL = getJudgeUrl();
     let judgeResponse;
     try {
       const response = await fetch(`${JUDGE_URL}/judge_submission`, {
