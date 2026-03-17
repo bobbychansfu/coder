@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { normalizeRole } from "@/lib/authz";
 import { createDevSessionToken } from "@/lib/devAuthSession";
 import { demoUsers } from "@/fe/auth/constants/demoUsers";
+import { prisma } from "@/lib/prisma";
+import { recordDailyLogin, syncStudentGamification } from "@/server/gamification/persistence";
 
 const DEV_SESSION_TTL_SECONDS = 60 * 60 * 6;
 const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "session";
@@ -58,6 +60,16 @@ export async function handleDevLogin(request: NextRequest): Promise<NextResponse
   const expectedRole = normalizeRole(matchedUser.role);
   if (!role || !expectedRole || role !== expectedRole) {
     return NextResponse.json({ message: "No access" }, { status: 401 });
+  }
+
+  const dbUser = await prisma.user.findUnique({
+    where: { computingId: matchedUser.computingId },
+    select: { id: true },
+  });
+
+  if (dbUser) {
+    await recordDailyLogin(dbUser.id);
+    await syncStudentGamification(matchedUser.computingId);
   }
 
   const { token } = createDevSessionToken(
