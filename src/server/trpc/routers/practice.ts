@@ -8,9 +8,8 @@ import {
   appLanguageToJudgeLanguage,
   codingLanguageToLabel,
 } from "../../coding-language";
-import { getJudgeUrl } from "../../judge-url";
 
-const JUDGE_URL = getJudgeUrl();
+const JUDGE_URL = process.env.JUDGE_URL ?? "http://127.0.0.1:8000";
 
 function formatTimeAgo(date: Date): string {
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
