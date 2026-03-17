@@ -1,3 +1,4 @@
+import type { CodingLanguage, PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, studentProcedure } from "../init";
@@ -21,7 +22,23 @@ function formatTimeAgo(date: Date): string {
   return `${days} day${days !== 1 ? "s" : ""} ago`;
 }
 
-async function getDbUser(ctx: { prisma: { user: { findUnique: (args: { where: { computingId: string }; select: { id: true } }) => Promise<{ id: string } | null> } }; user: { computingId: string } }) {
+function mapRunVerdictToStatus(verdict: string): "accepted" | "wrong" | "tle" {
+  if (verdict === "Accepted") return "accepted";
+  if (verdict === "Time Limit Exceeded") return "tle";
+  return "wrong";
+}
+
+async function getDbUser(ctx: {
+  prisma: {
+    user: {
+      findUnique: (args: {
+        where: { computingId: string };
+        select: { id: true };
+      }) => Promise<{ id: string } | null>;
+    };
+  };
+  user: { computingId: string };
+}) {
   const dbUser = await ctx.prisma.user.findUnique({
     where: { computingId: ctx.user.computingId },
     select: { id: true },
@@ -53,6 +70,78 @@ async function getProblemByCode(
   }
 
   return problem;
+}
+
+async function judgePracticeAttempt(args: {
+  ctx: {
+    prisma: Pick<PrismaClient, "practiceRunRecord">;
+  };
+  userId: string;
+  problemCode: string;
+  sessionId: string;
+  codingLanguage: CodingLanguage;
+  judgeLanguage: string;
+  code: string;
+  isSubmit: boolean;
+}) {
+  const { ctx, userId, problemCode, sessionId, codingLanguage, judgeLanguage, code, isSubmit } = args;
+
+  const record = await ctx.prisma.practiceRunRecord.create({
+    data: {
+      sessionId,
+      isSubmit,
+      language: codingLanguage,
+      code,
+      verdict: "Pending",
+      compilePassed: false,
+    },
+  });
+
+  let judgeReachable = true;
+  try {
+    await fetch(`${JUDGE_URL}/judge_submission`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sid: userId,
+        pid: problemCode,
+        language: judgeLanguage,
+        connection_id: record.id,
+        submission: code,
+      }),
+    });
+  } catch {
+    judgeReachable = false;
+    await ctx.prisma.practiceRunRecord.update({
+      where: { id: record.id },
+      data: { verdict: "Judge Unreachable" },
+    });
+  }
+
+  let finalRecord = record;
+  if (judgeReachable) {
+    const MAX_POLLS = 30;
+    for (let i = 0; i < MAX_POLLS; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const updated = await ctx.prisma.practiceRunRecord.findUnique({
+        where: { id: record.id },
+      });
+      if (updated && updated.verdict !== "Pending") {
+        finalRecord = updated;
+        break;
+      }
+    }
+
+    if (finalRecord.verdict === "Pending") {
+      await ctx.prisma.practiceRunRecord.update({
+        where: { id: record.id },
+        data: { verdict: "Timed Out" },
+      });
+      finalRecord = { ...finalRecord, verdict: "Timed Out" };
+    }
+  }
+
+  return finalRecord;
 }
 
 export const practiceRouter = router({
@@ -93,7 +182,6 @@ export const practiceRouter = router({
         orderBy: { title: "asc" },
       });
 
-      // Fetch solved status for the current user
       const sessions = await ctx.prisma.practiceSession.findMany({
         where: { userId: dbUser.id },
         select: {
@@ -145,7 +233,9 @@ export const practiceRouter = router({
         spaceComplexity: "",
         solvedBy: 0,
         points: problem.points ?? 0,
-        timeLimit: problem.timeConstraint ? `${problem.timeConstraint} second${problem.timeConstraint !== 1 ? "s" : ""}` : "1 second",
+        timeLimit: problem.timeConstraint
+          ? `${problem.timeConstraint} second${problem.timeConstraint !== 1 ? "s" : ""}`
+          : "1 second",
         memory: problem.memConstraint ? `${problem.memConstraint} MB` : "256 MB",
         statement: [problem.statement],
         inputFormat: problem.inputFormat ? [problem.inputFormat] : ([] as string[]),
@@ -185,12 +275,44 @@ export const practiceRouter = router({
 
       return session.runs.map((run) => ({
         id: run.id,
-        status: (run.verdict === "Accepted" ? "accepted" : "wrong") as "accepted" | "wrong" | "tle",
+        status: mapRunVerdictToStatus(run.verdict),
         language: codingLanguageToLabel(run.language),
         runtime: run.runtimeMs ? `${run.runtimeMs}ms` : "-",
         memory: "-",
         submitted: formatTimeAgo(run.createdAt),
       }));
+    }),
+
+  getRunRecord: studentProcedure
+    .input(z.object({ problemCode: z.string(), recordId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const dbUser = await getDbUser(ctx);
+      const problem = await getProblemByCode(ctx, input.problemCode);
+
+      const record = await ctx.prisma.practiceRunRecord.findFirst({
+        where: {
+          id: input.recordId,
+          session: {
+            userId: dbUser.id,
+            problemId: problem.id,
+          },
+        },
+      });
+
+      if (!record) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Run record not found" });
+      }
+
+      return {
+        id: record.id,
+        isSubmit: record.isSubmit,
+        verdict: record.verdict,
+        compilePassed: record.compilePassed,
+        stdout: record.stdout,
+        stderr: record.stderr,
+        runtimeMs: record.runtimeMs,
+        createdAt: record.createdAt,
+      };
     }),
 
   openSession: studentProcedure
@@ -230,78 +352,25 @@ export const practiceRouter = router({
       });
       if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "Session not found" });
 
-      const now = new Date();
+      const finalRecord = await judgePracticeAttempt({
+        ctx,
+        userId: dbUser.id,
+        problemCode: input.problemCode,
+        sessionId: session.id,
+        codingLanguage,
+        judgeLanguage,
+        code: input.code,
+        isSubmit: false,
+      });
+
       const updatedSession = await ctx.prisma.practiceSession.update({
         where: { id: session.id },
         data: {
-          firstRunAt: session.firstRunAt ?? now,
+          firstRunAt: session.firstRunAt ?? finalRecord.createdAt,
           selectedLang: codingLanguage,
           runCount: { increment: 1 },
         },
       });
-
-      // Keep only the latest run record (delete previous non-submit records)
-      await ctx.prisma.practiceRunRecord.deleteMany({
-        where: { sessionId: session.id, isSubmit: false },
-      });
-
-      // Create a pending record — its ID becomes the connection_id sent to the judge
-      const record = await ctx.prisma.practiceRunRecord.create({
-        data: {
-          sessionId: session.id,
-          isSubmit: false,
-          language: codingLanguage,
-          code: input.code,
-          verdict: "Pending",
-          compilePassed: false,
-        },
-      });
-
-      // Submit to judge — result comes back asynchronously to /api/judge-callback
-      let judgeReachable = true;
-      try {
-        await fetch(`${JUDGE_URL}/judge_submission`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            sid: dbUser.id,
-            pid: input.problemCode,
-            language: judgeLanguage,
-            connection_id: record.id,
-            submission: input.code,
-          }),
-        });
-      } catch {
-        judgeReachable = false;
-        await ctx.prisma.practiceRunRecord.update({
-          where: { id: record.id },
-          data: { verdict: "Judge Unreachable" },
-        });
-      }
-
-      // Poll DB for the verdict (callback from judge updates the record)
-      let finalRecord = record;
-      if (judgeReachable) {
-        const MAX_POLLS = 30;
-        for (let i = 0; i < MAX_POLLS; i++) {
-          await new Promise((r) => setTimeout(r, 1000));
-          const updated = await ctx.prisma.practiceRunRecord.findUnique({
-            where: { id: record.id },
-          });
-          if (updated && updated.verdict !== "Pending") {
-            finalRecord = updated;
-            break;
-          }
-        }
-        // Timed out — mark as such
-        if (finalRecord.verdict === "Pending") {
-          await ctx.prisma.practiceRunRecord.update({
-            where: { id: record.id },
-            data: { verdict: "Timed Out" },
-          });
-          finalRecord = { ...finalRecord, verdict: "Timed Out" };
-        }
-      }
 
       return {
         verdict: finalRecord.verdict,
@@ -320,53 +389,59 @@ export const practiceRouter = router({
     }),
 
   submitCode: studentProcedure
-    .input(z.object({ problemCode: z.string() }))
+    .input(z.object({ problemCode: z.string(), language: z.enum(APP_LANGUAGES), code: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const dbUser = await getDbUser(ctx);
       const problem = await getProblemByCode(ctx, input.problemCode);
+      const codingLanguage = appLanguageToCodingLanguage(input.language);
+      const judgeLanguage = appLanguageToJudgeLanguage(input.language);
+
+      if (!codingLanguage || !judgeLanguage) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Unsupported language" });
+      }
 
       const session = await ctx.prisma.practiceSession.findUnique({
         where: { userId_problemId: { userId: dbUser.id, problemId: problem.id } },
       });
       if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "Session not found" });
 
-      const lastRun = await ctx.prisma.practiceRunRecord.findFirst({
-        where: { sessionId: session.id, isSubmit: false },
-        orderBy: { createdAt: "desc" },
+      const finalRecord = await judgePracticeAttempt({
+        ctx,
+        userId: dbUser.id,
+        problemCode: input.problemCode,
+        sessionId: session.id,
+        codingLanguage,
+        judgeLanguage,
+        code: input.code,
+        isSubmit: true,
       });
 
-      const now = new Date();
-      const solvedAt = !session.solvedAt && lastRun?.verdict === "Accepted" ? now : session.solvedAt;
+      const solvedAt =
+        !session.solvedAt && finalRecord.verdict === "Accepted" ? finalRecord.createdAt : session.solvedAt;
       const updatedSession = await ctx.prisma.practiceSession.update({
         where: { id: session.id },
         data: {
-          firstSubmitAt: session.firstSubmitAt ?? now,
+          firstSubmitAt: session.firstSubmitAt ?? finalRecord.createdAt,
           solvedAt,
           submitCount: { increment: 1 },
-          selectedLang: lastRun?.language ?? session.selectedLang,
+          selectedLang: codingLanguage,
         },
       });
 
-      if (lastRun) {
-        await ctx.prisma.practiceRunRecord.create({
-          data: {
-            sessionId: session.id,
-            isSubmit: true,
-            language: lastRun.language,
-            code: lastRun.code,
-            verdict: lastRun.verdict,
-            compilePassed: lastRun.compilePassed,
-            stdout: lastRun.stdout,
-            stderr: lastRun.stderr,
-            runtimeMs: lastRun.runtimeMs,
-          },
-        });
-      }
-
       return {
+        verdict: finalRecord.verdict,
+        compilePassed: finalRecord.compilePassed,
+        stdout: finalRecord.stdout,
+        stderr: finalRecord.stderr,
+        runtimeMs: finalRecord.runtimeMs,
         firstSubmitAt: updatedSession.firstSubmitAt,
         solvedAt: updatedSession.solvedAt,
         submitCount: updatedSession.submitCount,
+        record: {
+          id: finalRecord.id,
+          verdict: finalRecord.verdict,
+          createdAt: finalRecord.createdAt,
+        },
       };
     }),
 });
