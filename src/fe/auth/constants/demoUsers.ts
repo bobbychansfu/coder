@@ -22,9 +22,9 @@ export const demoUsers: DemoUser[] = [
   },
   {
     label: "Demo Student",
-    email: "amy.01@sfu.ca",
+    email: "dylan.04@sfu.ca",
     role: "STUDENT",
-    computingId: "student01",
+    computingId: "student04",
   },
   {
     label: "Demo Admin",

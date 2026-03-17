@@ -1,5 +1,5 @@
 import { prisma } from "./prisma";
-import { UserRole, SubmissionStatus, ContestStatus } from "@prisma/client";
+import { UserRole, SubmissionStatus, ContestStatus, CodingLanguage } from "@prisma/client";
 
 export const dbHelpers = {
   // ********************
@@ -312,7 +312,7 @@ export const dbHelpers = {
     contestId: string;
     problemId: string;
     submission: string;
-    language: string;
+    language: CodingLanguage;
   }) => {
     const user = await dbHelpers.findUserByComputingId(data.computingId);
     if (!user) throw new Error("User not found");
