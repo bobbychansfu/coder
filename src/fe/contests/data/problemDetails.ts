@@ -14,6 +14,7 @@ export interface ProblemExample {
 }
 
 export interface ProblemNarrative {
+  id?: string;
   timeLimit: string;
   memory: string;
   statement: string[];
@@ -23,6 +24,7 @@ export interface ProblemNarrative {
   example: ProblemExample;
   testCases: ProblemTestCase[];
   hiddenCount: number;
+  starterCodes?: Partial<Record<"cplusplus" | "java" | "typescript" | "javascript" | "python", string>>;
   submissions: SubmissionRecord[];
   editorial: EditorialDetail;
 }

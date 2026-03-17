@@ -19,7 +19,9 @@
     "prisma:studio": "prisma studio",
     "prisma:reset": "prisma migrate reset --force",
     "openapi:up": "docker compose --env-file .env -f docker/docker-compose.yml up -d swagger",
-    "openapi:down": "docker compose --env-file .env -f docker/docker-compose.yml stop swagger"
+    "openapi:down": "docker compose --env-file .env -f docker/docker-compose.yml stop swagger",
+    "test:e2e": "playwright test",
+    "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -43,6 +45,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pg": "^8.16.0",
