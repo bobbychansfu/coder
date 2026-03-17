@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Box, CircularProgress, Typography } from "@mui/material";
 import PageHeader from "@/fe/shared/components/PageHeader";
@@ -19,6 +19,7 @@ type SupportedLanguage = "cplusplus" | "java" | "typescript" | "javascript" | "p
 const DEFAULT_LANGUAGE: SupportedLanguage = "cplusplus";
 
 interface RunResult {
+  id: string;
   verdict: string;
   stdout: string | null;
   stderr: string | null;
@@ -43,7 +44,11 @@ function PracticeProblemSubmissionPageContent({
   );
   const [hasRun, setHasRun] = useState(false);
   const [runResult, setRunResult] = useState<RunResult | null>(null);
+  const [activeRecordId, setActiveRecordId] = useState<string | null>(null);
   const sessionOpened = useRef(false);
+  const pendingSessionRequest = useRef<
+    Promise<{ sessionId: string; problemId: string } | null> | null
+  >(null);
   const utils = trpc.useUtils();
 
   const { data: detail, isLoading: detailLoading, error: detailError } =
@@ -53,41 +58,94 @@ function PracticeProblemSubmissionPageContent({
     { problemCode },
     { enabled: !!detail },
   );
+  const runRecordQuery = trpc.practice.getRunRecord.useQuery(
+    { problemCode, recordId: activeRecordId ?? "" },
+    {
+      enabled: !!activeRecordId,
+      refetchInterval: (query) => (query.state.data?.verdict === "Pending" ? 1000 : false),
+    },
+  );
 
-  const { mutate: openSessionMutate } = trpc.practiceExecution.openSession.useMutation();
+  const { mutateAsync: openSessionMutateAsync } = trpc.practiceExecution.openSession.useMutation();
   const runCodeMutation = trpc.practiceExecution.runCode.useMutation();
   const submitCodeMutation = trpc.practiceExecution.submitCode.useMutation();
 
-  // Fire once per mount (key={problemCode} remounts on problem change).
-  // The ref guards against React StrictMode's double-invocation in dev.
   useEffect(() => {
-    if (sessionOpened.current) return;
-    sessionOpened.current = true;
-    openSessionMutate(
-      { problemCode },
-      {
-        onSuccess: (session) => {
-          setSessionInfo({ sessionId: session.sessionId, problemId: session.problemId });
-        },
-      },
-    );
-  }, [problemCode, openSessionMutate]);
+    if (!runRecordQuery.data) {
+      return;
+    }
+
+    if (runRecordQuery.data.verdict !== "Pending") {
+      void refetchHistory();
+    }
+  }, [refetchHistory, runRecordQuery.data]);
 
   const isRunning = runCodeMutation.isPending;
   const isSubmitting = submitCodeMutation.isPending;
   const isJudging = isRunning || isSubmitting;
-  const isSessionReady = sessionInfo !== null;
   const code = drafts[language] ?? detail?.starterCodes?.[language] ?? "";
+  const hasCode = code.trim().length > 0;
+  const displayedRunResult = runRecordQuery.data
+    ? {
+        id: runRecordQuery.data.id,
+        verdict: runRecordQuery.data.verdict,
+        stdout: runRecordQuery.data.stdout,
+        stderr: runRecordQuery.data.stderr,
+        runtimeMs: runRecordQuery.data.runtimeMs,
+      }
+    : runResult;
 
-  const handleRunCode = () => {
-    if (!sessionInfo) return;
+  const ensureSessionInfo = useCallback(async () => {
+    if (sessionInfo) {
+      return sessionInfo;
+    }
+
+    if (pendingSessionRequest.current) {
+      return pendingSessionRequest.current;
+    }
+
+    const sessionRequest = openSessionMutateAsync({ problemCode })
+      .then((session) => {
+        const nextSessionInfo = { sessionId: session.sessionId, problemId: session.problemId };
+        setSessionInfo(nextSessionInfo);
+        sessionOpened.current = true;
+        return nextSessionInfo;
+      })
+      .catch(() => {
+        sessionOpened.current = false;
+        return null;
+      })
+      .finally(() => {
+        pendingSessionRequest.current = null;
+      });
+
+    pendingSessionRequest.current = sessionRequest;
+
+    return sessionRequest;
+  }, [openSessionMutateAsync, problemCode, sessionInfo]);
+
+  useEffect(() => {
+    if (sessionOpened.current || pendingSessionRequest.current) {
+      return;
+    }
+
+    sessionOpened.current = true;
+    void ensureSessionInfo();
+  }, [ensureSessionInfo]);
+
+  const handleRunCode = async () => {
+    if (!hasCode) return;
+
+    const currentSession = await ensureSessionInfo();
+
+    if (!currentSession) return;
 
     setHasRun(true);
     setTab("submissions");
     runCodeMutation.mutate(
       {
-        sessionId: sessionInfo.sessionId,
-        problemId: sessionInfo.problemId,
+        sessionId: currentSession.sessionId,
+        problemId: currentSession.problemId,
         language,
         code,
         isSubmit: false,
@@ -95,7 +153,9 @@ function PracticeProblemSubmissionPageContent({
       },
       {
         onSuccess: async (result) => {
+          setActiveRecordId(result.record.id);
           setRunResult({
+            id: result.record.id,
             verdict: result.verdict,
             stdout: result.stdout,
             stderr: result.stderr,
@@ -107,15 +167,19 @@ function PracticeProblemSubmissionPageContent({
     );
   };
 
-  const handleSubmitCode = () => {
-    if (!sessionInfo) return;
+  const handleSubmitCode = async () => {
+    if (!hasCode) return;
+
+    const currentSession = await ensureSessionInfo();
+
+    if (!currentSession) return;
 
     setHasRun(true);
     setTab("submissions");
     submitCodeMutation.mutate(
       {
-        sessionId: sessionInfo.sessionId,
-        problemId: sessionInfo.problemId,
+        sessionId: currentSession.sessionId,
+        problemId: currentSession.problemId,
         language,
         code,
         isSubmit: true,
@@ -123,7 +187,9 @@ function PracticeProblemSubmissionPageContent({
       },
       {
         onSuccess: async (result) => {
+          setActiveRecordId(result.record.id);
           setRunResult({
+            id: result.record.id,
             verdict: result.verdict,
             stdout: result.stdout,
             stderr: result.stderr,
@@ -154,17 +220,23 @@ function PracticeProblemSubmissionPageContent({
   const detailWithHistory = { ...detail, submissions: runHistory ?? [] };
 
   const outputSection = hasRun ? (
-      <div className={styles.outputSection}>
-        <Typography className={styles.outputTitle}>Output</Typography>
-        <div className={styles.outputBlock}>
-        {isJudging ? (
+    <div className={styles.outputSection}>
+      <Typography className={styles.outputTitle}>Output</Typography>
+      <div className={styles.outputBlock}>
+        {isJudging && displayedRunResult && displayedRunResult.verdict !== "Pending" ? (
+          <span className={styles.outputText}>
+            {displayedRunResult?.stdout ?? displayedRunResult?.verdict ?? "Code executed (no output)"}
+          </span>
+        ) : isJudging || displayedRunResult?.verdict === "Pending" ? (
           <Box display="flex" alignItems="center" gap="10px">
             <CircularProgress size={14} sx={{ color: "#f3f4f6" }} />
             <span className={styles.outputText}>Judging your code...</span>
           </Box>
         ) : (
           <span className={styles.outputText}>
-            {runResult?.stdout ?? runResult?.verdict ?? "Code executed (no output)"}
+            {displayedRunResult?.stdout ??
+              displayedRunResult?.verdict ??
+              "Code executed (no output)"}
           </span>
         )}
       </div>
@@ -208,9 +280,9 @@ function PracticeProblemSubmissionPageContent({
             }
             onRunCode={handleRunCode}
             onSubmitCode={handleSubmitCode}
-            runButtonDisabled={!isSessionReady || isJudging}
+            runButtonDisabled={!hasCode || isJudging}
             runButtonLabel={isRunning ? "Running..." : "Run Code"}
-            submitButtonDisabled={!isSessionReady || isJudging}
+            submitButtonDisabled={!hasCode || isJudging}
             submitButtonLabel={isSubmitting ? "Submitting..." : "Submit"}
           />
         </Box>

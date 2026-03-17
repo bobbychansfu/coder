@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
 import { dbHelpers } from "@/lib/db-helpers";
+import { getJudgeUrl } from "@/server/judge-url";
 
 export async function handleRequestHint(request: NextRequest) {
   try {
@@ -22,7 +23,7 @@ export async function handleRequestHint(request: NextRequest) {
     request_data.user_rank = userData?.rank || "Beginner";
     request_data.topic = topics;
 
-    const JUDGE_URL = process.env.JUDGE_URL || "http://127.0.0.1:8000";
+    const JUDGE_URL = getJudgeUrl();
 
     const response = await fetch(`${JUDGE_URL}/request_hint`, {
       method: "POST",
