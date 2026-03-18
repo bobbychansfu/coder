@@ -1,218 +1,125 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Box, Button } from "@mui/material";
+import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
 import EmojiEventsOutlinedIcon from "@mui/icons-material/EmojiEventsOutlined";
-import TableViewOutlinedIcon from "@mui/icons-material/TableViewOutlined";
-import QueryStatsOutlinedIcon from "@mui/icons-material/QueryStatsOutlined";
-import TimerOutlinedIcon from "@mui/icons-material/TimerOutlined";
 import Groups2OutlinedIcon from "@mui/icons-material/Groups2Outlined";
+import QueryStatsOutlinedIcon from "@mui/icons-material/QueryStatsOutlined";
+import TableViewOutlinedIcon from "@mui/icons-material/TableViewOutlined";
+import TimerOutlinedIcon from "@mui/icons-material/TimerOutlined";
+import {
+  MOCK_INSTRUCTOR_ANALYTICS,
+  type ContestCatalogRow,
+  type ViewMode,
+} from "@/fe/instructor/data/liveInstructorAnalytics";
 import styles from "@/fe/instructor/styles/LiveInstructorAnalyticsCard.module.css";
 
-interface ContestMetricRow {
-  contest_id: string;
-  contest_name: string;
-  solve_rate: number;
-  mean_solve_time_minutes: number | null;
-  median_solve_time_minutes: number | null;
-  attempts_to_solve: number | null;
-}
-
-interface ProblemMetricRow {
-  contest_id: string;
-  contest_name: string;
-  problem_id: string;
-  problem_code: string;
-  problem_title: string;
-  time_to_first_submission_minutes: number | null;
-  time_to_first_correct_submission_minutes: number | null;
-  post_hint_solve_probability: number | null;
-  attempts_before_hint: number | null;
-  attempts_after_hint: number | null;
-  time_to_solve_after_hint_minutes: number | null;
-}
-
-type SegmentKey = "all" | "groupA" | "groupB";
-type ViewMode = "all" | "groupA" | "groupB" | "student";
-
-interface MetricBundle {
-  contest_metrics: ContestMetricRow[];
-  problem_metrics: ProblemMetricRow[];
-}
-
-interface StudentCatalogRow {
-  computingId: string;
-  name: string;
-  segment: "groupA" | "groupB";
-}
-
-interface InstructorMetadataPayload {
-  segmented_metrics?: Record<SegmentKey, MetricBundle>;
-  student_views?: Record<string, MetricBundle>;
-  students_catalog?: StudentCatalogRow[];
-  analytics_notes?: string[];
-}
-
 function formatNumber(value: number | null): string {
-  if (value === null || Number.isNaN(value)) {
-    return "N/A";
-  }
+  if (value === null || Number.isNaN(value)) return "N/A";
   return `${value}`;
 }
 
 function formatPercent(value: number | null): string {
-  if (value === null || Number.isNaN(value)) {
-    return "N/A";
-  }
+  if (value === null || Number.isNaN(value)) return "N/A";
   return `${value}%`;
 }
 
 export default function LiveInstructorAnalyticsCard() {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [payload, setPayload] = useState<InstructorMetadataPayload | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("all");
-  const [selectedStudent, setSelectedStudent] = useState("student01");
   const [selectedContestId, setSelectedContestId] = useState("all");
+  const [showAllContestRows, setShowAllContestRows] = useState(false);
+  const [showAllProblemRows, setShowAllProblemRows] = useState(false);
 
-  async function fetchInstructorMetadata(): Promise<void> {
+  async function refreshDemo(): Promise<void> {
     setLoading(true);
-    setError(null);
     try {
-      const response = await fetch("/api/auth/metadata", { method: "GET", cache: "no-store" });
-      const json = (await response.json()) as InstructorMetadataPayload & { error?: string };
-      if (!response.ok) {
-        setError(json.error || `Request failed (${response.status})`);
-        setPayload(null);
-      } else {
-        setPayload(json);
-        const firstStudent = json.students_catalog?.[0]?.computingId;
-        if (firstStudent && !json.student_views?.[selectedStudent]) {
-          setSelectedStudent(firstStudent);
-        }
-      }
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Unknown request error");
+      await Promise.resolve();
     } finally {
       setLoading(false);
     }
   }
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-    (async () => {
-      try {
-        const response = await fetch("/api/auth/metadata", {
-          method: "GET",
-          cache: "no-store",
-        });
-        const json = (await response.json()) as InstructorMetadataPayload & { error?: string };
-        if (cancelled) {
-          return;
-        }
-        if (!response.ok) {
-          setError(json.error || `Request failed (${response.status})`);
-          setPayload(null);
-          return;
-        }
-        setPayload(json);
-        const firstStudent = json.students_catalog?.[0]?.computingId;
-        if (firstStudent) {
-          setSelectedStudent(firstStudent);
-        }
-      } catch (requestError) {
-        if (!cancelled) {
-          setError(requestError instanceof Error ? requestError.message : "Unknown request error");
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
+  const activeBundle = useMemo(() => {
+    return MOCK_INSTRUCTOR_ANALYTICS.segmented_metrics[viewMode] || {
+      contest_metrics: [],
+      problem_metrics: [],
     };
+  }, [viewMode]);
+
+  const contestOptions = useMemo(() => {
+    const catalog = MOCK_INSTRUCTOR_ANALYTICS.contests_catalog;
+    return [{ id: "all", name: "All Contests" }, ...catalog];
   }, []);
 
-  const activeBundle = useMemo(() => {
-    if (!payload) {
-      return { contest_metrics: [], problem_metrics: [] } as MetricBundle;
-    }
-    if (viewMode === "student") {
-      return payload.student_views?.[selectedStudent] || { contest_metrics: [], problem_metrics: [] };
-    }
-    return payload.segmented_metrics?.[viewMode] || { contest_metrics: [], problem_metrics: [] };
-  }, [payload, viewMode, selectedStudent]);
+  const activeContest: ContestCatalogRow | null = useMemo(() => {
+    if (selectedContestId === "all") return null;
+    return (
+      MOCK_INSTRUCTOR_ANALYTICS.contests_catalog.find((contest) => contest.id === selectedContestId) ||
+      null
+    );
+  }, [selectedContestId]);
 
-  const contestRows = activeBundle.contest_metrics;
-  const contestOptions = useMemo(() => {
-    const rows = activeBundle.contest_metrics;
-    return [
-      { id: "all", name: "All Contests" },
-      ...rows.map((row) => ({ id: row.contest_id, name: row.contest_name })),
-    ];
-  }, [activeBundle.contest_metrics]);
-
-  const filteredContestRows =
+  const contestRows =
     selectedContestId === "all"
-      ? contestRows
-      : contestRows.filter((row) => row.contest_id === selectedContestId);
+      ? activeBundle.contest_metrics
+      : activeBundle.contest_metrics.filter((row) => row.contest_id === selectedContestId);
 
-  const filteredProblemRows =
+  const problemRows =
     selectedContestId === "all"
       ? activeBundle.problem_metrics
       : activeBundle.problem_metrics.filter((row) => row.contest_id === selectedContestId);
+  const orderedProblemRows = useMemo(
+    () =>
+      [...problemRows].sort((left, right) => {
+        const contestCompare = left.contest_name.localeCompare(right.contest_name);
+        if (contestCompare !== 0) return contestCompare;
+        return left.problem_code.localeCompare(right.problem_code);
+      }),
+    [problemRows],
+  );
 
   const avgSolveRate =
-    filteredContestRows.length === 0
+    contestRows.length === 0
       ? null
-      : filteredContestRows.reduce((sum, row) => sum + row.solve_rate, 0) / filteredContestRows.length;
+      : contestRows.reduce((sum, row) => sum + row.solve_rate, 0) / contestRows.length;
   const avgMedianTime =
-    filteredContestRows.length === 0
+    contestRows.length === 0
       ? null
-      : filteredContestRows.reduce((sum, row) => sum + (row.median_solve_time_minutes || 0), 0) /
-        filteredContestRows.length;
+      : contestRows.reduce((sum, row) => sum + (row.median_solve_time_minutes || 0), 0) /
+        contestRows.length;
+  const avgHintSolve =
+    problemRows.length === 0
+      ? null
+      : problemRows.reduce((sum, row) => sum + (row.post_hint_solve_probability || 0), 0) /
+        problemRows.length;
+  const visibleContestRows = showAllContestRows ? contestRows : contestRows.slice(0, 10);
+  const visibleProblemRows = showAllProblemRows ? orderedProblemRows : orderedProblemRows.slice(0, 10);
 
   return (
     <Box className={styles.card}>
       <Box className={styles.headerRow}>
         <Box>
           <h3 className={styles.title}>Live Contest & Problem Metrics</h3>
-          <p className={styles.subtitle}>Simple instructor view: all students, Group A/B, or one student.</p>
         </Box>
         <Box className={styles.actions}>
-          <Button variant="outlined" size="small" onClick={() => void fetchInstructorMetadata()}>
+          <Button
+            className={styles.secondaryButton}
+            variant="outlined"
+            size="small"
+            onClick={() => void refreshDemo()}
+          >
             Refresh
           </Button>
         </Box>
       </Box>
 
-      <Box className={styles.filterRow}>
-        <label className={styles.filterField}>
-          <span>View</span>
-          <select
-            value={viewMode}
-            onChange={(e) => {
-              setViewMode(e.target.value as ViewMode);
-              setSelectedContestId("all");
-            }}
-          >
-            <option value="all">All Students</option>
-            <option value="groupA">Group A</option>
-            <option value="groupB">Group B</option>
-            <option value="student">Single Student</option>
-          </select>
-        </label>
-
+      <Box className={styles.filterBar}>
+        <Box className={styles.filterRow}>
         <label className={styles.filterField}>
           <span>Contest</span>
-          <select
-            value={selectedContestId}
-            onChange={(e) => setSelectedContestId(e.target.value)}
-          >
+          <select value={selectedContestId} onChange={(e) => setSelectedContestId(e.target.value)}>
             {contestOptions.map((contest) => (
               <option key={contest.id} value={contest.id}>
                 {contest.name}
@@ -221,53 +128,79 @@ export default function LiveInstructorAnalyticsCard() {
           </select>
         </label>
 
-        {viewMode === "student" && (
-          <label className={styles.filterField}>
-            <span>Student</span>
-            <input
-              className={styles.studentInput}
-              list="student-catalog"
-              value={selectedStudent}
-              onChange={(e) => {
-                setSelectedStudent(e.target.value);
-                setSelectedContestId("all");
-              }}
-              placeholder="e.g. student01"
-            />
-            <datalist id="student-catalog">
-              {(payload?.students_catalog || []).map((student) => (
-                <option key={student.computingId} value={student.computingId}>
-                  {student.name} ({student.segment})
-                </option>
-              ))}
-            </datalist>
-          </label>
-        )}
+        <label className={styles.filterField}>
+          <span>View</span>
+          <select
+            value={viewMode}
+            onChange={(e) => {
+              setViewMode(e.target.value as ViewMode);
+            }}
+          >
+            <option value="all">All Students</option>
+            <option value="groupA">Group A</option>
+            <option value="groupB">Group B</option>
+            <option value="groupC">Group C</option>
+          </select>
+        </label>
+        </Box>
       </Box>
 
-      {loading && <p className={styles.info}>Loading...</p>}
-      {error && <p className={styles.error}>{error}</p>}
+      {loading && <p className={styles.info}>Refreshing UI demo metrics...</p>}
+      {MOCK_INSTRUCTOR_ANALYTICS.analytics_notes[0] ? (
+        <p className={styles.info}>{MOCK_INSTRUCTOR_ANALYTICS.analytics_notes[0]}</p>
+      ) : null}
+
+      <Box className={styles.focusGrid}>
+        <Box className={styles.focusCard}>
+          <Box className={styles.focusHeader}>
+            <EmojiEventsOutlinedIcon className={styles.focusIcon} />
+            <span className={styles.focusLabel}>Gamification Note</span>
+          </Box>
+          <p className={styles.focusTitle}>
+            {activeContest?.gamificationNote ||
+              "A group members already know each other. B group is randomly assigned and fully unfamiliar. C group members know each other through the platform friend list."}
+          </p>
+        </Box>
+
+        <Box className={styles.focusCard}>
+          <Box className={styles.focusHeader}>
+            <AutoAwesomeOutlinedIcon className={styles.focusIcon} />
+            <span className={styles.focusLabel}>AI Hint Note</span>
+          </Box>
+          <p className={styles.focusTitle}>
+            {activeContest?.hintNote ||
+              "A group has no AI hint. B group can access AI hints after 1 minute. C group can access AI hints after 30 minutes."}
+          </p>
+        </Box>
+      </Box>
 
       <Box className={styles.summaryRow}>
         <Box className={styles.summaryItem}>
           <Groups2OutlinedIcon className={styles.summaryIcon} />
           <Box>
-            <p className={styles.summaryLabel}>Contests</p>
+            <p className={styles.summaryLabel}>Contests in view</p>
             <p className={styles.summaryValue}>{contestRows.length}</p>
           </Box>
         </Box>
         <Box className={styles.summaryItem}>
           <QueryStatsOutlinedIcon className={styles.summaryIcon} />
           <Box>
-            <p className={styles.summaryLabel}>Avg Solve Rate</p>
+            <p className={styles.summaryLabel}>Average solve rate</p>
             <p className={styles.summaryValue}>{formatPercent(avgSolveRate)}</p>
           </Box>
         </Box>
         <Box className={styles.summaryItem}>
           <TimerOutlinedIcon className={styles.summaryIcon} />
           <Box>
-            <p className={styles.summaryLabel}>Avg Median Solve Time</p>
+            <p className={styles.summaryLabel}>Median solve time</p>
             <p className={styles.summaryValue}>{formatNumber(avgMedianTime)} min</p>
+          </Box>
+        </Box>
+        <Box className={styles.summaryItem}>
+          <AutoAwesomeOutlinedIcon className={styles.summaryIcon} />
+          <Box>
+            <p className={styles.summaryLabel}>Post-hint solve rate</p>
+            <p className={styles.summaryValue}>{formatPercent(avgHintSolve)}</p>
           </Box>
         </Box>
       </Box>
@@ -288,7 +221,7 @@ export default function LiveInstructorAnalyticsCard() {
             </tr>
           </thead>
           <tbody>
-            {filteredContestRows.map((row) => (
+            {visibleContestRows.map((row) => (
               <tr key={row.contest_id}>
                 <td>{row.contest_name}</td>
                 <td>{formatPercent(row.solve_rate)}</td>
@@ -297,16 +230,24 @@ export default function LiveInstructorAnalyticsCard() {
                 <td>{formatNumber(row.attempts_to_solve)}</td>
               </tr>
             ))}
-            {filteredContestRows.length === 0 && (
-              <tr>
-                <td colSpan={5} className={styles.empty}>
-                  No contest metrics yet.
-                </td>
-              </tr>
-            )}
           </tbody>
         </table>
+        {!showAllContestRows && contestRows.length > 10 ? (
+          <div className={styles.tableFade} />
+        ) : null}
       </div>
+      {contestRows.length > 10 ? (
+        <Box className={styles.tableActions}>
+          <Button
+            className={styles.ghostButton}
+            variant="text"
+            size="small"
+            onClick={() => setShowAllContestRows((current) => !current)}
+          >
+            {showAllContestRows ? "Show Less" : "View All"}
+          </Button>
+        </Box>
+      ) : null}
 
       <h4 className={styles.sectionTitle}>
         <TableViewOutlinedIcon className={styles.sectionIcon} />
@@ -316,9 +257,10 @@ export default function LiveInstructorAnalyticsCard() {
         <table className={styles.table}>
           <thead>
             <tr>
+              <th>Contest</th>
               <th>Problem</th>
-              <th>T1: First Submission</th>
-              <th>T2: First Correct</th>
+              <th>First Submission</th>
+              <th>First Correct</th>
               <th>Post-Hint Solve Prob.</th>
               <th>Attempts Before Hint</th>
               <th>Attempts After Hint</th>
@@ -326,8 +268,9 @@ export default function LiveInstructorAnalyticsCard() {
             </tr>
           </thead>
           <tbody>
-            {filteredProblemRows.map((row) => (
+            {visibleProblemRows.map((row) => (
               <tr key={`${row.contest_id}:${row.problem_id}`}>
+                <td>{row.contest_name}</td>
                 <td>
                   {row.problem_code} - {row.problem_title}
                 </td>
@@ -339,16 +282,24 @@ export default function LiveInstructorAnalyticsCard() {
                 <td>{formatNumber(row.time_to_solve_after_hint_minutes)} min</td>
               </tr>
             ))}
-            {filteredProblemRows.length === 0 && (
-              <tr>
-                <td colSpan={7} className={styles.empty}>
-                  No problem metrics for selected filter.
-                </td>
-              </tr>
-            )}
           </tbody>
         </table>
+        {!showAllProblemRows && orderedProblemRows.length > 10 ? (
+          <div className={styles.tableFade} />
+        ) : null}
       </div>
+      {orderedProblemRows.length > 10 ? (
+        <Box className={styles.tableActions}>
+          <Button
+            className={styles.ghostButton}
+            variant="text"
+            size="small"
+            onClick={() => setShowAllProblemRows((current) => !current)}
+          >
+            {showAllProblemRows ? "Show Less" : "View All"}
+          </Button>
+        </Box>
+      ) : null}
     </Box>
   );
 }

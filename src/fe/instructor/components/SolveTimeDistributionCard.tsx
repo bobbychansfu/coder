@@ -1,35 +1,41 @@
 "use client";
 
 import InsightsOutlinedIcon from "@mui/icons-material/InsightsOutlined";
-import { Box, Card, CardContent, Chip, Typography } from "@mui/material";
-import { BarChart } from "@mui/x-charts/BarChart";
-import type { ConditionDistribution, SolveSummaryStat } from "@/fe/instructor/data";
+import { Box, Card, CardContent, Typography } from "@mui/material";
+import { LineChart } from "@mui/x-charts/LineChart";
+import type { ReactNode } from "react";
+import type { AnalyticsSummaryStat, BarChartSeries } from "@/fe/instructor/data";
 import styles from "@/fe/instructor/styles/ResearchAnalyticsPage.module.css";
 
 interface SolveTimeDistributionCardProps {
   title: string;
   description: string;
-  groups: ConditionDistribution[];
-  summaryStats: SolveSummaryStat[];
+  xLabels: string[];
+  xValues: number[];
+  xGroups?: Array<{
+    label: string;
+    start: number;
+    end: number;
+  }>;
+  series: BarChartSeries[];
+  summaryStats: AnalyticsSummaryStat[];
+  filters?: ReactNode;
 }
 
 export default function SolveTimeDistributionCard({
   title,
   description,
-  groups,
+  xLabels,
+  xValues: _xValues,
+  xGroups: _xGroups,
+  series,
   summaryStats,
+  filters,
 }: SolveTimeDistributionCardProps) {
-  const earlyGroup = groups.find((group) => group.label.toLowerCase().includes("early"));
-  const delayedGroup = groups.find((group) => group.label.toLowerCase().includes("delayed"));
-  const intervals = earlyGroup?.bars.map((bar) => bar.label) ?? [];
-
-  const dataset = intervals.map((interval) => ({
-    interval,
-    early: earlyGroup?.bars.find((bar) => bar.label === interval)?.value ?? 0,
-    delayed: delayedGroup?.bars.find((bar) => bar.label === interval)?.value ?? 0,
-  }));
-  const maxValue = dataset.reduce(
-    (currentMax, row) => Math.max(currentMax, row.early, row.delayed),
+  void _xValues;
+  void _xGroups;
+  const maxValue = series.reduce(
+    (currentMax, item) => Math.max(currentMax, ...item.data),
     0,
   );
   const yAxisMax = Math.max(10, Math.ceil(maxValue / 10) * 10);
@@ -37,38 +43,34 @@ export default function SolveTimeDistributionCard({
   return (
     <Card className={styles.card}>
       <CardContent className={styles.cardContent}>
-        <Box className={styles.cardTitleRow}>
-          <InsightsOutlinedIcon className={styles.cardIcon} />
-          <Typography className={styles.cardTitle}>{title}</Typography>
-        </Box>
-        <Typography className={styles.cardDescription}>{description}</Typography>
-
-        <Box className={styles.chartHeaderRow}>
-          {earlyGroup && (
-            <Chip
-              size="small"
-              label={`${earlyGroup.label} • n=${earlyGroup.sampleSize}`}
-              className={styles.earlySampleChip}
-            />
-          )}
-          {delayedGroup && (
-            <Chip
-              size="small"
-              label={`${delayedGroup.label} • n=${delayedGroup.sampleSize}`}
-              className={styles.delayedSampleChip}
-            />
-          )}
+        <Box className={styles.cardTopBlock}>
+          <Box className={styles.cardTitleRow}>
+            <InsightsOutlinedIcon className={styles.cardIcon} />
+            <Typography className={styles.cardTitle}>{title}</Typography>
+          </Box>
+          {description ? (
+            <Typography className={styles.cardDescription}>{description}</Typography>
+          ) : null}
+          {filters ? <Box className={styles.cardFiltersWrap}>{filters}</Box> : null}
         </Box>
 
         <Box className={styles.muiChartBox}>
-          <BarChart
-            dataset={dataset}
-            xAxis={[{ scaleType: "band", dataKey: "interval" }]}
-            yAxis={[{ min: 0, max: yAxisMax }]}
-            series={[
-              { dataKey: "early", label: earlyGroup?.label ?? "Early", color: "#00c950" },
-              { dataKey: "delayed", label: delayedGroup?.label ?? "Delayed", color: "#ad46ff" },
+          <LineChart
+            xAxis={[
+              {
+                scaleType: "point",
+                data: xLabels,
+                tickPlacement: "middle",
+                tickLabelPlacement: "middle",
+              },
             ]}
+            yAxis={[{ min: 0, max: yAxisMax }]}
+            series={series.map((item) => ({
+              data: item.data,
+              label: item.label,
+              color: item.color,
+              showMark: false,
+            }))}
             grid={{ horizontal: true }}
             margin={{ top: 16, right: 16, bottom: 30, left: 40 }}
             height={260}
@@ -80,21 +82,21 @@ export default function SolveTimeDistributionCard({
             <Box
               key={`${stat.label}-${stat.caption}`}
               className={
-                stat.tone === "early"
+                stat.tone === "primary"
                   ? styles.solveSummaryItem
-                  : stat.tone === "delayed"
+                  : stat.tone === "secondary"
                     ? styles.solveSummaryItem
                     : styles.solveSummaryItemInfo
               }
             >
-              <Typography className={stat.tone === "info" ? styles.solveSummaryLabelInfo : styles.solveSummaryLabel}>
+              <Typography className={stat.tone === "accent" ? styles.solveSummaryLabelInfo : styles.solveSummaryLabel}>
                 {stat.label}
               </Typography>
               <Typography
                 className={
-                  stat.tone === "early"
+                  stat.tone === "primary"
                     ? styles.solveSummaryValueEarly
-                    : stat.tone === "delayed"
+                    : stat.tone === "secondary"
                       ? styles.solveSummaryValueDelayed
                       : styles.solveSummaryValueInfo
                 }
@@ -103,7 +105,7 @@ export default function SolveTimeDistributionCard({
               </Typography>
               <Typography
                 className={
-                  stat.tone === "info" ? styles.solveSummaryCaptionInfo : styles.solveSummaryCaption
+                  stat.tone === "accent" ? styles.solveSummaryCaptionInfo : styles.solveSummaryCaption
                 }
               >
                 {stat.caption}

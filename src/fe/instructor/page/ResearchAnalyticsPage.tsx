@@ -1,31 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import EmojiEventsOutlinedIcon from "@mui/icons-material/EmojiEventsOutlined";
-import LayersOutlinedIcon from "@mui/icons-material/LayersOutlined";
-import PersonAddAltOutlinedIcon from "@mui/icons-material/PersonAddAltOutlined";
 import ScienceOutlinedIcon from "@mui/icons-material/ScienceOutlined";
-import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 import { Box, Button } from "@mui/material";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
-
-import {
-  mockResearchAnalyticsDataset,
-} from "@/fe/instructor/data";
-import BehaviorAnalysisCard from "@/fe/instructor/components/BehaviorAnalysisCard";
-import DataQualityHealthCard from "@/fe/instructor/components/DataQualityHealthCard";
+import { mockResearchAnalyticsDataset } from "@/fe/instructor/data";
+import { MOCK_INSTRUCTOR_ANALYTICS } from "@/fe/instructor/data/liveInstructorAnalytics";
 import HintEngagementTimelineCard from "@/fe/instructor/components/HintEngagementTimelineCard";
 import InstructorSubpageHeader from "@/fe/instructor/components/InstructorSubpageHeader";
+import LiveInstructorAnalyticsCard from "@/fe/instructor/components/LiveInstructorAnalyticsCard";
 import PolicyComparisonCard from "@/fe/instructor/components/PolicyComparisonCard";
-import ProblemAnalysisCard from "@/fe/instructor/components/ProblemAnalysisCard";
 import SectionFiltersBar from "@/fe/instructor/components/SectionFiltersBar";
 import SolveTimeDistributionCard from "@/fe/instructor/components/SolveTimeDistributionCard";
-import LiveInstructorAnalyticsCard from "@/fe/instructor/components/LiveInstructorAnalyticsCard";
 import PageHeader from "@/fe/shared/components/PageHeader";
-import StatCard from "@/fe/shared/components/StatCard";
 import { ROUTES } from "@/fe/shared/constants/routes";
+import ScrollbarHider from "@/fe/shared/components/ui/ScrollbarHider";
 import subpageStyles from "@/fe/instructor/styles/InstructorSubpageHeader.module.css";
 import styles from "@/fe/instructor/styles/ResearchAnalyticsPage.module.css";
 
@@ -33,421 +25,260 @@ export default function ResearchAnalyticsPage() {
   const router = useRouter();
   const {
     copy,
-    contestOptions,
     dateRangeOptions,
     conditionOptions,
-    policyOptions,
-    consentOptions,
-    kpiMetrics,
-    solveDistribution,
-    solveSummaryStats,
-    contestTimelineSeries,
     timelineAxisTicks,
-    policyConditionPanels,
-    policyKeyFindings,
-    hintTimingDistributionRows,
-    hintDepthDistributionRows,
-    engagementMetricCards,
-    contestLiftRows,
-    problemRows,
-    integrityRows,
-    coverageRows,
+    gamificationTrendsByRange,
+    gamificationSummaryStatsByRange,
+    aiHintTrendsByRange,
   } = mockResearchAnalyticsDataset;
 
-  const [solveFilters, setSolveFilters] = useState({
-    contest: "all",
-    dateRange: "30d",
-    condition: "all",
+  const [comparisonFilters, setComparisonFilters] = useState({
+    contest: "week-3-lab",
+    leftGroup: "group-a",
+    rightGroup: "group-b",
   });
-  const [timelineFilters, setTimelineFilters] = useState({
-    contest: "all",
+  const [gamificationFilters, setGamificationFilters] = useState({
+    dateRange: "1m",
   });
-  const [policyFilters, setPolicyFilters] = useState({
-    contest: "all",
-    condition: "all",
-    policy: "all",
+  const [hintFilters, setHintFilters] = useState({
+    dateRange: "1m",
   });
-  const [behaviorFilters, setBehaviorFilters] = useState({
-    contest: "all",
-    dateRange: "30d",
-  });
-  const [contestAnalysisFilters, setContestAnalysisFilters] = useState({
-    contest: "all",
-    dateRange: "30d",
-    condition: "all",
-  });
-  const [problemAnalysisFilters, setProblemAnalysisFilters] = useState({
-    contest: "all",
-    condition: "all",
-  });
-  const [qualityFilters, setQualityFilters] = useState({
-    contest: "all",
-    dateRange: "30d",
-    consent: "all",
-  });
-  const selectedTimelineSeries =
-    timelineFilters.contest === "all"
-      ? contestTimelineSeries
-      : contestTimelineSeries.filter((series) => series.contestId === timelineFilters.contest);
-  const activeTimelineSeries = selectedTimelineSeries.length > 0 ? selectedTimelineSeries : contestTimelineSeries;
-  const timelineLabels = activeTimelineSeries[0]?.points.map((point) => point.label) ?? [];
-  const timelineChartSeries = activeTimelineSeries.map((series) => ({
-    id: series.contestId,
-    label: series.contestLabel,
-    color: series.color,
-    data: series.points.map((point) => point.value),
-  }));
+  const comparisonContestOptions = useMemo(
+    () =>
+      MOCK_INSTRUCTOR_ANALYTICS.contests_catalog.map((contest) => ({
+        label: contest.name,
+        value: contest.id,
+      })),
+    [],
+  );
 
-  const contestSeed =
-    solveFilters.contest === "all"
-      ? 0
-      : solveFilters.contest
-          .split("")
-          .reduce((sum, char) => sum + char.charCodeAt(0), 0) % 7;
-  const earlyDelta = contestSeed - 3;
-  const delayedDelta = Math.max(-4, 2 - contestSeed);
-  const solveDistributionForSelection = solveDistribution.map((group) => ({
-    ...group,
-    bars: group.bars.map((bar, index) => {
-      const adjustment =
-        group.label.toLowerCase().includes("early")
-          ? earlyDelta * (index === 0 ? 1.2 : 0.6)
-          : delayedDelta * (index >= 2 ? 1.1 : 0.5);
-      const value = Math.max(1, Math.round(bar.value + adjustment));
-      return { ...bar, value };
-    }),
-  }));
-  const solveSummaryStatsForSelection = solveSummaryStats.map((item, index) => {
-    if (index > 1) {
-      return item;
-    }
-    const match = item.value.match(/(\d+)m\s*(\d+)s/);
-    if (!match) {
-      return item;
-    }
-    const minutes = Number.parseInt(match[1], 10);
-    const seconds = Number.parseInt(match[2], 10);
-    const delta = index === 0 ? earlyDelta : delayedDelta;
-    const totalSeconds = Math.max(60, minutes * 60 + seconds + delta * 45);
-    const nextMinutes = Math.floor(totalSeconds / 60);
-    const nextSeconds = totalSeconds % 60;
-    return {
-      ...item,
-      value: `${nextMinutes}m ${String(nextSeconds).padStart(2, "0")}s`,
+  const comparisonGroupOptions = useMemo(
+    () => conditionOptions.filter((option) => option.value !== "all"),
+    [conditionOptions],
+  );
+
+  const comparisonRows = useMemo(() => {
+    const toSegmentKey = (value: string): "groupA" | "groupB" | "groupC" => {
+      if (value === "group-a") return "groupA";
+      if (value === "group-b") return "groupB";
+      return "groupC";
     };
-  });
+
+    const leftBundle =
+      MOCK_INSTRUCTOR_ANALYTICS.segmented_metrics[toSegmentKey(comparisonFilters.leftGroup)];
+    const rightBundle =
+      MOCK_INSTRUCTOR_ANALYTICS.segmented_metrics[toSegmentKey(comparisonFilters.rightGroup)];
+
+    if (!leftBundle || !rightBundle) {
+      return [];
+    }
+
+    const leftContest = leftBundle.contest_metrics.find(
+      (row) => row.contest_id === comparisonFilters.contest,
+    );
+    const rightContest = rightBundle.contest_metrics.find(
+      (row) => row.contest_id === comparisonFilters.contest,
+    );
+    const leftProblems = leftBundle.problem_metrics.filter(
+      (row) => row.contest_id === comparisonFilters.contest,
+    );
+    const rightProblems = rightBundle.problem_metrics.filter(
+      (row) => row.contest_id === comparisonFilters.contest,
+    );
+
+    const average = (values: Array<number | null | undefined>): number => {
+      const valid = values.filter((value): value is number => typeof value === "number");
+      if (valid.length === 0) return 0;
+      return valid.reduce((sum, value) => sum + value, 0) / valid.length;
+    };
+
+    const buildMetric = (
+      label: string,
+      left: number,
+      right: number,
+      format: (value: number) => string,
+    ) => {
+      const max = Math.max(left, right, 1);
+      return {
+        label,
+        leftValue: format(left),
+        rightValue: format(right),
+        leftPercent: Math.round((left / max) * 100),
+        rightPercent: Math.round((right / max) * 100),
+      };
+    };
+
+    return [
+      buildMetric("Solve Rate", leftContest?.solve_rate ?? 0, rightContest?.solve_rate ?? 0, (value) => `${Math.round(value)}%`),
+      buildMetric("Mean Solve Time", leftContest?.mean_solve_time_minutes ?? 0, rightContest?.mean_solve_time_minutes ?? 0, (value) => `${Math.round(value)}m`),
+      buildMetric("Median Solve Time", leftContest?.median_solve_time_minutes ?? 0, rightContest?.median_solve_time_minutes ?? 0, (value) => `${Math.round(value)}m`),
+      buildMetric("Attempts to Solve", leftContest?.attempts_to_solve ?? 0, rightContest?.attempts_to_solve ?? 0, (value) => value.toFixed(1)),
+      buildMetric("First Submission", average(leftProblems.map((row) => row.time_to_first_submission_minutes)), average(rightProblems.map((row) => row.time_to_first_submission_minutes)), (value) => `${Math.round(value)}m`),
+      buildMetric("First Correct", average(leftProblems.map((row) => row.time_to_first_correct_submission_minutes)), average(rightProblems.map((row) => row.time_to_first_correct_submission_minutes)), (value) => `${Math.round(value)}m`),
+      buildMetric("Post-Hint Solve", average(leftProblems.map((row) => row.post_hint_solve_probability)), average(rightProblems.map((row) => row.post_hint_solve_probability)), (value) => `${Math.round(value)}%`),
+      buildMetric("Attempts Before Hint", average(leftProblems.map((row) => row.attempts_before_hint)), average(rightProblems.map((row) => row.attempts_before_hint)), (value) => value.toFixed(1)),
+      buildMetric("Attempts After Hint", average(leftProblems.map((row) => row.attempts_after_hint)), average(rightProblems.map((row) => row.attempts_after_hint)), (value) => value.toFixed(1)),
+      buildMetric("Solve Time After Hint", average(leftProblems.map((row) => row.time_to_solve_after_hint_minutes)), average(rightProblems.map((row) => row.time_to_solve_after_hint_minutes)), (value) => `${Math.round(value)}m`),
+    ];
+  }, [comparisonFilters.contest, comparisonFilters.leftGroup, comparisonFilters.rightGroup]);
+  const leftGroupLabel =
+    comparisonGroupOptions.find((option) => option.value === comparisonFilters.leftGroup)?.label ??
+    "Group A";
+  const rightGroupLabel =
+    comparisonGroupOptions.find((option) => option.value === comparisonFilters.rightGroup)?.label ??
+    "Group B";
+  const activeGamificationTrend =
+    gamificationTrendsByRange[gamificationFilters.dateRange] ?? gamificationTrendsByRange.all;
+  const activeGamificationSummary =
+    gamificationSummaryStatsByRange[gamificationFilters.dateRange] ??
+    gamificationSummaryStatsByRange.all;
+  const activeAiHintTrend =
+    aiHintTrendsByRange[hintFilters.dateRange] ?? aiHintTrendsByRange.all;
+  const timelineChartSeries = activeAiHintTrend.series.map((series) => ({
+    id: series.label,
+    label: series.label,
+    color: series.color,
+    data: series.data,
+  }));
 
   return (
-    <Box className={styles.page}>
-      <PageHeader
-        onBack={() => router.push(ROUTES.instructor)}
-        backLabel={copy.backButtonLabel}
-        backButtonClassName={subpageStyles.backButton}
-      />
+    <>
+      <ScrollbarHider />
+      <Box className={styles.page}>
+        <Box className={styles.content}>
+          <PageHeader
+            onBack={() => router.push(ROUTES.instructor)}
+            backLabel={copy.backButtonLabel}
+            backButtonClassName={subpageStyles.backButton}
+          />
 
-      <InstructorSubpageHeader
-        title={copy.pageTitle}
-        subtitle={copy.pageSubtitle}
-        actions={
-          <Button
-            className={styles.exportButton}
-            startIcon={<FileDownloadOutlinedIcon />}
-            variant="outlined"
-          >
-            {copy.exportDataLabel}
-          </Button>
-        }
-      />
-
-      <Box className={styles.kpiGrid}>
-        {kpiMetrics.map((metric) => {
-          const captionLines = metric.caption.split("•").map((line) => line.trim());
-          const isRisk = metric.highlight === "danger";
-          const caption =
-            metric.id === "performance"
-              ? captionLines.join("\n")
-              : isRisk
-                ? (
-                    <>
-                      <WarningAmberRoundedIcon className={styles.kpiRiskIcon} />
-                      <span className={styles.kpiCaptionDanger}>{metric.caption}</span>
-                    </>
-                  )
-                : metric.caption;
-
-          return (
-            <StatCard
-              key={metric.id}
-              label={metric.label}
-              value={metric.value}
-              caption={caption}
-              className={`${styles.card} ${isRisk ? styles.kpiRiskCard : ""}`}
-              labelClassName={isRisk ? styles.kpiLabelRisk : styles.kpiLabel}
-              contentClassName={styles.kpiCardContent}
-              valueClassName={isRisk ? styles.kpiValueRisk : styles.kpiValue}
-              captionClassName={
-                metric.id === "performance"
-                  ? `${styles.kpiCaption} ${styles.kpiCaptionMultiline}`
-                  : isRisk
-                    ? styles.kpiRiskCaptionRow
-                    : styles.kpiCaption
+          <Box className={styles.heroBlock}>
+            <InstructorSubpageHeader
+              title="Instructor Comparison Dashboard"
+              subtitle=""
+              actions={
+                <Button
+                  className={styles.exportButton}
+                  startIcon={<FileDownloadOutlinedIcon />}
+                  variant="outlined"
+                >
+                  {copy.exportDataLabel}
+                </Button>
               }
             />
-          );
-        })}
-      </Box>
+          </Box>
 
-      <Box className={styles.sectionBlock}>
-        <LiveInstructorAnalyticsCard />
-      </Box>
+          <Box className={styles.sectionBlock}>
+            <LiveInstructorAnalyticsCard />
+          </Box>
 
-      <Box className={styles.sectionBlock}>
-        <SectionFiltersBar
-          fields={[
-            {
-              id: "solve-contest",
-              label: copy.filterContestLabel,
-              value: solveFilters.contest,
-              options: contestOptions,
-              onChange: (value) =>
-                setSolveFilters((prev) => ({ ...prev, contest: value })),
-              icon: <EmojiEventsOutlinedIcon className={styles.sectionFilterIcon} />,
-            },
-            {
-              id: "solve-date-range",
-              label: copy.filterDateRangeLabel,
-              value: solveFilters.dateRange,
-              options: dateRangeOptions,
-              onChange: (value) =>
-                setSolveFilters((prev) => ({ ...prev, dateRange: value })),
-              icon: <CalendarMonthOutlinedIcon className={styles.sectionFilterIcon} />,
-            },
-            {
-              id: "solve-condition",
-              label: copy.filterConditionLabel,
-              value: solveFilters.condition,
-              options: conditionOptions,
-              onChange: (value) =>
-                setSolveFilters((prev) => ({ ...prev, condition: value })),
-              icon: <ScienceOutlinedIcon className={styles.sectionFilterIcon} />,
-            },
-          ]}
-        />
-        <SolveTimeDistributionCard
-          title={copy.solveDistributionTitle}
-          description={copy.solveDistributionDescription}
-          groups={solveDistributionForSelection}
-          summaryStats={solveSummaryStatsForSelection}
-        />
-      </Box>
+          <Box className={styles.sectionBlock}>
+            <PolicyComparisonCard
+              title="Group Comparison"
+              description=""
+              leftLabel={leftGroupLabel}
+              rightLabel={rightGroupLabel}
+              rows={comparisonRows}
+              filters={
+                <SectionFiltersBar
+                  fields={[
+                    {
+                      id: "comparison-contest",
+                      label: "Contest",
+                      value: comparisonFilters.contest,
+                      options: comparisonContestOptions,
+                      onChange: (value) =>
+                        setComparisonFilters((prev) => ({ ...prev, contest: value })),
+                      icon: <EmojiEventsOutlinedIcon className={styles.sectionFilterIcon} />,
+                    },
+                    {
+                      id: "comparison-left-group",
+                      label: "Left Group",
+                      value: comparisonFilters.leftGroup,
+                      options: comparisonGroupOptions,
+                      onChange: (value) =>
+                        setComparisonFilters((prev) => ({
+                          ...prev,
+                          leftGroup: value,
+                          rightGroup: value === prev.rightGroup ? prev.leftGroup : prev.rightGroup,
+                        })),
+                      icon: <ScienceOutlinedIcon className={styles.sectionFilterIcon} />,
+                    },
+                    {
+                      id: "comparison-right-group",
+                      label: "Right Group",
+                      value: comparisonFilters.rightGroup,
+                      options: comparisonGroupOptions,
+                      onChange: (value) =>
+                        setComparisonFilters((prev) => ({
+                          ...prev,
+                          rightGroup: value,
+                          leftGroup: value === prev.leftGroup ? prev.rightGroup : prev.leftGroup,
+                        })),
+                      icon: <ScienceOutlinedIcon className={styles.sectionFilterIcon} />,
+                    },
+                  ]}
+                />
+              }
+            />
+          </Box>
 
-      <Box className={styles.sectionBlock}>
-        <SectionFiltersBar
-          fields={[
-            {
-              id: "timeline-contest",
-              label: copy.filterContestLabel,
-              value: timelineFilters.contest,
-              options: contestOptions,
-              onChange: (value) => setTimelineFilters((prev) => ({ ...prev, contest: value })),
-              icon: <EmojiEventsOutlinedIcon className={styles.sectionFilterIcon} />,
-            },
-          ]}
-        />
-        <HintEngagementTimelineCard
-          title={copy.timelineTitle}
-          description={copy.timelineDescription}
-          yAxisLabel={copy.timelineYAxisLabel}
-          yAxisTicks={timelineAxisTicks}
-          xLabels={timelineLabels}
-          series={timelineChartSeries}
-          insightLabel={copy.timelineInsightLabel}
-          insightText={copy.timelineInsightText}
-        />
-      </Box>
+          <Box className={styles.sectionBlock}>
+            <SolveTimeDistributionCard
+              title="Gamification Statistics"
+              description=""
+              xLabels={activeGamificationTrend.xLabels}
+              xValues={activeGamificationTrend.xValues}
+              xGroups={activeGamificationTrend.xGroups}
+              series={activeGamificationTrend.series}
+              summaryStats={activeGamificationSummary}
+              filters={
+                <SectionFiltersBar
+                  fields={[
+                    {
+                      id: "gamification-range",
+                      label: "Time Range",
+                      value: gamificationFilters.dateRange,
+                      options: dateRangeOptions,
+                      onChange: (value) =>
+                        setGamificationFilters((prev) => ({ ...prev, dateRange: value })),
+                      icon: <CalendarMonthOutlinedIcon className={styles.sectionFilterIcon} />,
+                    },
+                  ]}
+                />
+              }
+            />
+          </Box>
 
-      <Box className={styles.sectionBlock}>
-        <SectionFiltersBar
-          fields={[
-            {
-              id: "policy-contest",
-              label: copy.filterContestLabel,
-              value: policyFilters.contest,
-              options: contestOptions,
-              onChange: (value) => setPolicyFilters((prev) => ({ ...prev, contest: value })),
-              icon: <EmojiEventsOutlinedIcon className={styles.sectionFilterIcon} />,
-            },
-            {
-              id: "policy-condition",
-              label: copy.filterConditionLabel,
-              value: policyFilters.condition,
-              options: conditionOptions,
-              onChange: (value) => setPolicyFilters((prev) => ({ ...prev, condition: value })),
-              icon: <ScienceOutlinedIcon className={styles.sectionFilterIcon} />,
-            },
-            {
-              id: "policy-version",
-              label: copy.filterPolicyLabel,
-              value: policyFilters.policy,
-              options: policyOptions,
-              onChange: (value) => setPolicyFilters((prev) => ({ ...prev, policy: value })),
-              icon: <LayersOutlinedIcon className={styles.sectionFilterIcon} />,
-            },
-          ]}
-        />
-        <PolicyComparisonCard
-          title={copy.policyComparisonTitle}
-          description={copy.policyComparisonDescription}
-          keyFindingsTitle={copy.policyKeyFindingsTitle}
-          panels={policyConditionPanels}
-          keyFindings={policyKeyFindings}
-        />
+          <Box className={styles.sectionBlock}>
+            <HintEngagementTimelineCard
+              title="AI Hint Statistics"
+              description=""
+              yAxisLabel="Overall metric value"
+              yAxisTicks={timelineAxisTicks}
+              xLabels={activeAiHintTrend.xLabels}
+              xValues={activeAiHintTrend.xValues}
+              xGroups={activeAiHintTrend.xGroups}
+              series={timelineChartSeries}
+              filters={
+                <SectionFiltersBar
+                  fields={[
+                    {
+                      id: "hint-range",
+                      label: "Time Range",
+                      value: hintFilters.dateRange,
+                      options: dateRangeOptions,
+                      onChange: (value) => setHintFilters((prev) => ({ ...prev, dateRange: value })),
+                      icon: <CalendarMonthOutlinedIcon className={styles.sectionFilterIcon} />,
+                    },
+                  ]}
+                />
+              }
+            />
+          </Box>
+        </Box>
       </Box>
-
-      <Box className={styles.sectionBlock}>
-        <SectionFiltersBar
-          fields={[
-            {
-              id: "behavior-contest",
-              label: copy.filterContestLabel,
-              value: behaviorFilters.contest,
-              options: contestOptions,
-              onChange: (value) => setBehaviorFilters((prev) => ({ ...prev, contest: value })),
-              icon: <EmojiEventsOutlinedIcon className={styles.sectionFilterIcon} />,
-            },
-            {
-              id: "behavior-date-range",
-              label: copy.filterDateRangeLabel,
-              value: behaviorFilters.dateRange,
-              options: dateRangeOptions,
-              onChange: (value) => setBehaviorFilters((prev) => ({ ...prev, dateRange: value })),
-              icon: <CalendarMonthOutlinedIcon className={styles.sectionFilterIcon} />,
-            },
-          ]}
-        />
-        <BehaviorAnalysisCard
-          title={copy.behaviorAnalysisTitle}
-          description={copy.behaviorAnalysisDescription}
-          timingTitle={copy.behaviorTimingTitle}
-          depthTitle={copy.behaviorDepthTitle}
-          engagementTitle={copy.behaviorEngagementTitle}
-          timingRows={hintTimingDistributionRows}
-          depthRows={hintDepthDistributionRows}
-          engagementRows={engagementMetricCards}
-        />
-      </Box>
-
-      <Box className={styles.sectionBlock}>
-        <SectionFiltersBar
-          fields={[
-            {
-              id: "contest-analysis-contest",
-              label: copy.filterContestLabel,
-              value: contestAnalysisFilters.contest,
-              options: contestOptions,
-              onChange: (value) =>
-                setContestAnalysisFilters((prev) => ({ ...prev, contest: value })),
-              icon: <EmojiEventsOutlinedIcon className={styles.sectionFilterIcon} />,
-            },
-            {
-              id: "contest-analysis-date-range",
-              label: copy.filterDateRangeLabel,
-              value: contestAnalysisFilters.dateRange,
-              options: dateRangeOptions,
-              onChange: (value) =>
-                setContestAnalysisFilters((prev) => ({ ...prev, dateRange: value })),
-              icon: <CalendarMonthOutlinedIcon className={styles.sectionFilterIcon} />,
-            },
-            {
-              id: "contest-analysis-condition",
-              label: copy.filterConditionLabel,
-              value: contestAnalysisFilters.condition,
-              options: conditionOptions,
-              onChange: (value) =>
-                setContestAnalysisFilters((prev) => ({ ...prev, condition: value })),
-              icon: <ScienceOutlinedIcon className={styles.sectionFilterIcon} />,
-            },
-          ]}
-        />
-        <ProblemAnalysisCard
-          variant="contest"
-          title={copy.contestAnalysisTitle}
-          description={copy.contestAnalysisDescription}
-          contestRows={contestLiftRows}
-        />
-      </Box>
-
-      <Box className={styles.sectionBlock}>
-        <SectionFiltersBar
-          fields={[
-            {
-              id: "problem-analysis-contest",
-              label: copy.filterContestLabel,
-              value: problemAnalysisFilters.contest,
-              options: contestOptions,
-              onChange: (value) =>
-                setProblemAnalysisFilters((prev) => ({ ...prev, contest: value })),
-              icon: <EmojiEventsOutlinedIcon className={styles.sectionFilterIcon} />,
-            },
-            {
-              id: "problem-analysis-condition",
-              label: copy.filterConditionLabel,
-              value: problemAnalysisFilters.condition,
-              options: conditionOptions,
-              onChange: (value) =>
-                setProblemAnalysisFilters((prev) => ({ ...prev, condition: value })),
-              icon: <ScienceOutlinedIcon className={styles.sectionFilterIcon} />,
-            },
-          ]}
-        />
-        <ProblemAnalysisCard
-          variant="problem"
-          title={copy.problemAnalysisTitle}
-          description={copy.problemAnalysisDescription}
-          problemRows={problemRows}
-        />
-      </Box>
-
-      <Box className={styles.sectionBlock}>
-        <SectionFiltersBar
-          fields={[
-            {
-              id: "quality-contest",
-              label: copy.filterContestLabel,
-              value: qualityFilters.contest,
-              options: contestOptions,
-              onChange: (value) => setQualityFilters((prev) => ({ ...prev, contest: value })),
-              icon: <EmojiEventsOutlinedIcon className={styles.sectionFilterIcon} />,
-            },
-            {
-              id: "quality-date-range",
-              label: copy.filterDateRangeLabel,
-              value: qualityFilters.dateRange,
-              options: dateRangeOptions,
-              onChange: (value) => setQualityFilters((prev) => ({ ...prev, dateRange: value })),
-              icon: <CalendarMonthOutlinedIcon className={styles.sectionFilterIcon} />,
-            },
-            {
-              id: "quality-consent",
-              label: copy.filterConsentLabel,
-              value: qualityFilters.consent,
-              options: consentOptions,
-              onChange: (value) => setQualityFilters((prev) => ({ ...prev, consent: value })),
-              icon: <PersonAddAltOutlinedIcon className={styles.sectionFilterIcon} />,
-            },
-          ]}
-        />
-        <DataQualityHealthCard
-          title={copy.dataQualityTitle}
-          description={copy.dataQualityDescription}
-          integrityTitle={copy.dataIntegrityTitle}
-          coverageTitle={copy.loggingCoverageTitle}
-          goodLabel={copy.coverageGoodLabel}
-          reviewLabel={copy.coverageReviewLabel}
-          integrityRows={integrityRows}
-          coverageRows={coverageRows}
-        />
-      </Box>
-    </Box>
+    </>
   );
 }

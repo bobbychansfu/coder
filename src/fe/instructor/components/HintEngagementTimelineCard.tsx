@@ -3,6 +3,7 @@
 import TimelineOutlinedIcon from "@mui/icons-material/TimelineOutlined";
 import { Box, Card, CardContent, Typography } from "@mui/material";
 import { LineChart } from "@mui/x-charts/LineChart";
+import type { ReactNode } from "react";
 import styles from "@/fe/instructor/styles/ResearchAnalyticsPage.module.css";
 
 interface TimelineChartSeries {
@@ -18,9 +19,14 @@ interface HintEngagementTimelineCardProps {
   yAxisLabel: string;
   yAxisTicks: string[];
   xLabels: string[];
+  xValues: number[];
+  xGroups?: Array<{
+    label: string;
+    start: number;
+    end: number;
+  }>;
   series: TimelineChartSeries[];
-  insightLabel: string;
-  insightText: string;
+  filters?: ReactNode;
 }
 
 export default function HintEngagementTimelineCard({
@@ -29,10 +35,13 @@ export default function HintEngagementTimelineCard({
   yAxisLabel,
   yAxisTicks,
   xLabels,
+  xValues: _xValues,
+  xGroups: _xGroups,
   series,
-  insightLabel,
-  insightText,
+  filters,
 }: HintEngagementTimelineCardProps) {
+  void _xValues;
+  void _xGroups;
   const tickValues = yAxisTicks
     .map((tick) => Number.parseFloat(tick))
     .filter((tick) => Number.isFinite(tick));
@@ -46,15 +55,27 @@ export default function HintEngagementTimelineCard({
   return (
     <Card className={styles.card}>
       <CardContent className={styles.cardContent}>
-        <Box className={styles.cardTitleRow}>
-          <TimelineOutlinedIcon className={styles.cardIcon} />
-          <Typography className={styles.cardTitle}>{title}</Typography>
+        <Box className={styles.cardTopBlock}>
+          <Box className={styles.cardTitleRow}>
+            <TimelineOutlinedIcon className={styles.cardIcon} />
+            <Typography className={styles.cardTitle}>{title}</Typography>
+          </Box>
+          {description ? (
+            <Typography className={styles.cardDescription}>{description}</Typography>
+          ) : null}
+          {filters ? <Box className={styles.cardFiltersWrap}>{filters}</Box> : null}
         </Box>
-        <Typography className={styles.cardDescription}>{description}</Typography>
 
         <Box className={styles.muiChartBox}>
           <LineChart
-            xAxis={[{ scaleType: "point", data: xLabels }]}
+            xAxis={[
+              {
+                scaleType: "point",
+                data: xLabels,
+                tickPlacement: "middle",
+                tickLabelPlacement: "middle",
+              },
+            ]}
             yAxis={[{ min: 0, max: yAxisMax, label: yAxisLabel }]}
             series={series.map((line) => ({
               data: line.data,
@@ -66,20 +87,6 @@ export default function HintEngagementTimelineCard({
             margin={{ top: 16, right: 16, bottom: 30, left: 44 }}
             height={260}
           />
-        </Box>
-
-        <Box className={styles.timelineLegend}>
-          {series.map((line) => (
-            <Box key={line.id} className={styles.legendItem}>
-              <Box className={styles.legendDotDynamic} style={{ backgroundColor: line.color }} />
-              <Typography className={styles.legendText}>{line.label}</Typography>
-            </Box>
-          ))}
-        </Box>
-
-        <Box className={styles.timelineInsightBox}>
-          <Typography className={styles.timelineInsightTitle}>{insightLabel}</Typography>
-          <Typography className={styles.timelineInsightText}>{insightText}</Typography>
         </Box>
       </CardContent>
     </Card>
