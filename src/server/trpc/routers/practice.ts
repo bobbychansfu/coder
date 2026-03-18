@@ -49,6 +49,12 @@ function formatTimeAgo(date: Date): string {
   return `${days} day${days !== 1 ? "s" : ""} ago`;
 }
 
+function mapRunVerdictToStatus(verdict: string): "accepted" | "wrong" | "tle" {
+  if (verdict === "Accepted") return "accepted";
+  if (verdict === "Time Limit Exceeded") return "tle";
+  return "wrong";
+}
+
 // ---------------------------------------------------------------------------
 // Render router — queries for displaying the practice UI
 // ---------------------------------------------------------------------------
@@ -186,11 +192,43 @@ export const practiceRouter = router({
 
       return session.runs.map((run) => ({
         id: run.id,
-        status: (run.verdict === "Accepted" ? "accepted" : "wrong") as "accepted" | "wrong" | "tle",
+        status: mapRunVerdictToStatus(run.verdict),
         language: codingLanguageToLabel(run.language),
         runtime: run.runtimeMs ? `${run.runtimeMs}ms` : "-",
         memory: "-",
         submitted: formatTimeAgo(run.createdAt),
       }));
+    }),
+
+  getRunRecord: studentProcedure
+    .input(z.object({ problemCode: z.string(), recordId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const dbUser = await getDbUser(ctx);
+      const problem = await getProblemByCode(ctx, input.problemCode);
+
+      const record = await ctx.prisma.practiceRunRecord.findFirst({
+        where: {
+          id: input.recordId,
+          session: {
+            userId: dbUser.id,
+            problemId: problem.id,
+          },
+        },
+      });
+
+      if (!record) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Run record not found" });
+      }
+
+      return {
+        id: record.id,
+        isSubmit: record.isSubmit,
+        verdict: record.verdict,
+        compilePassed: record.compilePassed,
+        stdout: record.stdout,
+        stderr: record.stderr,
+        runtimeMs: record.runtimeMs,
+        createdAt: record.createdAt,
+      };
     }),
 });
