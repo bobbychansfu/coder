@@ -2,7 +2,7 @@
 export const COLORS = {
   brand: {
     primary: "#E03E3E",
-    primaryHover: "#C53030",
+    primaryHover: "#EF4444",
     secondary: "#FF6B35",
   },
 

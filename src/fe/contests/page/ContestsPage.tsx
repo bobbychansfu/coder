@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import FilterPanel from "@/fe/shared/components/filters/FilterPanel";
 import ListPageLayout from "@/fe/shared/components/layout/ListPageLayout";
 import SearchInput from "@/fe/shared/components/forms/SearchInput";
@@ -48,8 +47,6 @@ interface ContestsPageProps {
 export default function ContestsPage({
   initialContests,
   showCreateContest,
-  showManageContest,
-  showViewAllSubmissions,
 }: ContestsPageProps) {
   return (
     <ListPageLayout

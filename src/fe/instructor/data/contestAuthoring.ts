@@ -14,35 +14,43 @@ export interface ContestAuthoringCopy {
   scheduleDescription: string;
   startLabel: string;
   endLabel: string;
-  durationLabel: string;
-  durationPlaceholder: string;
-  scheduleDividerLabel: string;
-  scheduleHint: string;
   contestProblemsTitle: string;
   contestProblemsDescription: string;
   addProblemsLabel: string;
   emptyProblemsTitle: string;
   emptyProblemsDescription: string;
+  aiHintTitle: string;
+  aiHintDescription: string;
+  aiHintEnabledLabel: string;
+  aiHintDisabledLabel: string;
+  aiHintDisabledTitle: string;
+  aiHintDisabledDescription: string;
+  groupConfigurationTitle: string;
+  groupAHintLabel: string;
+  groupBHintLabel: string;
+  cooldownLabel: string;
+  assignmentTitle: string;
+  assignmentBadge: string;
+  assignmentDescription: string;
+  assignmentFootnote: string;
   draftsTitle: string;
   draftsDescription: string;
   contestStatusTitle: string;
   visibilityTitle: string;
   visibilityDescription: string;
   visibilityLabel: string;
-  contestRulesTitle: string;
   publishLabel: string;
-  scheduleLaterLabel: string;
-  statusNewLabel: string;
-  statusProblemsLabel: string;
-  statusDurationLabel: string;
-  statusScheduleLabel: string;
-  statusDraftsLabel: string;
+  selectProblemsTitle: string;
+  selectProblemsDescription: string;
+  selectedCountSuffix: string;
+  previewModalTitle: string;
+  previewBadgeLabel: string;
+  previewCloseLabel: string;
+  previewReadonlyCopy: string;
+  previewProblemsTitle: string;
 }
 
-export interface ContestVisibilityOption {
-  value: string;
-  label: string;
-}
+export type ContestDifficulty = "easy" | "medium" | "hard";
 
 export interface ContestDraftRecord {
   id: string;
@@ -53,14 +61,12 @@ export interface ContestDraftRecord {
   durationMinutes: number;
 }
 
-export interface ContestRule {
-  id: string;
-  text: string;
-}
-
 export interface ContestProblemRecord {
   id: string;
   title: string;
+  difficulty: ContestDifficulty;
+  points: number;
+  tags: string[];
 }
 
 export interface ContestFormDraft {
@@ -70,8 +76,24 @@ export interface ContestFormDraft {
   startTime: string;
   endDate: string;
   endTime: string;
-  durationMinutes: string;
   visibility: string;
+}
+
+export interface ContestPreviewFallback {
+  title: string;
+  description: string;
+  start: string;
+  end: string;
+}
+
+export interface ContestAiHintConfig {
+  groupAHintAfterMinutes: number;
+  groupBHintAfterMinutes: number;
+  cooldownMinutes: number;
+  groupsSummary: string;
+  assignmentLabel: string;
+  assignmentDescription: string;
+  assignmentFootnote: string;
 }
 
 export const contestAuthoringCopy: ContestAuthoringCopy = {
@@ -87,49 +109,56 @@ export const contestAuthoringCopy: ContestAuthoringCopy = {
   descriptionLabel: "Description",
   descriptionPlaceholder: "Describe the contest objectives and rules...",
   scheduleTitle: "Schedule",
-  scheduleDescription:
-    "Fill any two of start, end, or duration - the third is auto-calculated",
+  scheduleDescription: "Fill any two of start, end",
   startLabel: "Start",
   endLabel: "End",
-  durationLabel: "Duration (minutes)",
-  durationPlaceholder: "e.g., 120",
-  scheduleDividerLabel: "or just set duration",
-  scheduleHint:
-    "Set start + duration to auto-fill end, or start + end to auto-fill duration.",
   contestProblemsTitle: "Contest Problems",
   contestProblemsDescription: "Select problems to include in this contest",
   addProblemsLabel: "Add Problems",
   emptyProblemsTitle: "No problems added yet",
-  emptyProblemsDescription: "Click \"Add Problems\" to get started",
+  emptyProblemsDescription: 'Click "Add Problems" to get started',
+  aiHintTitle: "AI Hint Experiment",
+  aiHintDescription: "Configure AI hint timing and student group assignment",
+  aiHintEnabledLabel: "Enabled",
+  aiHintDisabledLabel: "Disabled",
+  aiHintDisabledTitle: "AI Hint Experiment is disabled",
+  aiHintDisabledDescription:
+    "Enable the toggle above to configure hint timing and group assignment.",
+  groupConfigurationTitle: "Group Configuration",
+  groupAHintLabel: "Hints available after (min)",
+  groupBHintLabel: "Hints available after (min)",
+  cooldownLabel: "Cooldown between hint requests: 2 minutes",
+  assignmentTitle: "Assignment Method",
+  assignmentBadge: "Only method",
+  assignmentDescription: "Students are evenly and automatically split across groups",
+  assignmentFootnote:
+    "Students will be randomly and evenly assigned to Group A and Group B.",
   draftsTitle: "My Contest Drafts",
   draftsDescription: "Previously saved contest drafts - not yet published",
   contestStatusTitle: "Contest Status",
   visibilityTitle: "Visibility",
   visibilityDescription: "Control who can see this contest",
   visibilityLabel: "Visibility *",
-  contestRulesTitle: "Contest Rules",
   publishLabel: "Publish Contest",
-  scheduleLaterLabel: "Schedule for Later",
-  statusNewLabel: "New",
-  statusProblemsLabel: "Problems",
-  statusDurationLabel: "Duration",
-  statusScheduleLabel: "Schedule",
-  statusDraftsLabel: "Drafts",
+  selectProblemsTitle: "Select Problems",
+  selectProblemsDescription: "Choose problems from your problem bank to include in this contest",
+  selectedCountSuffix: "selected",
+  previewModalTitle: "Contest Preview",
+  previewBadgeLabel: "Student View",
+  previewCloseLabel: "Close Preview",
+  previewReadonlyCopy: "This is a read-only preview of the student-facing contest page.",
+  previewProblemsTitle: "Problems",
 };
 
-export const contestVisibilityOptions: ContestVisibilityOption[] = [
-  { value: "course-only", label: "Course Only" },
-  { value: "public", label: "Public" },
-  { value: "private", label: "Private" },
-];
-
-export const contestRules: ContestRule[] = [
-  { id: "submissions", text: "Students can see their submissions in real-time" },
-  { id: "leaderboard", text: "Leaderboard is visible during contest" },
-  { id: "late", text: "Late submissions accepted with penalty" },
-];
-
 export const contestDrafts: ContestDraftRecord[] = [
+  {
+    id: "draft-week5-lab",
+    title: "Week 5 Lab Contest",
+    date: "2/19/2026",
+    status: "Draft",
+    problemsCount: 4,
+    durationMinutes: 120,
+  },
   {
     id: "draft-recursion-challenge",
     title: "Recursion Challenge",
@@ -140,7 +169,68 @@ export const contestDrafts: ContestDraftRecord[] = [
   },
 ];
 
-export const contestProblemsDraft: ContestProblemRecord[] = [];
+export const contestProblemLibrary: ContestProblemRecord[] = [
+  {
+    id: "two-sum",
+    title: "Two Sum",
+    difficulty: "easy",
+    points: 100,
+    tags: ["arrays", "hash-table"],
+  },
+  {
+    id: "binary-tree-traversal",
+    title: "Binary Tree Traversal",
+    difficulty: "medium",
+    points: 200,
+    tags: ["trees", "recursion"],
+  },
+  {
+    id: "merge-k-sorted-lists",
+    title: "Merge K Sorted Lists",
+    difficulty: "hard",
+    points: 300,
+    tags: ["linked-list", "divide-conquer"],
+  },
+  {
+    id: "valid-palindrome",
+    title: "Valid Palindrome",
+    difficulty: "easy",
+    points: 100,
+    tags: ["strings", "two-pointers"],
+  },
+  {
+    id: "longest-increasing-subsequence",
+    title: "Longest Increasing Subsequence",
+    difficulty: "medium",
+    points: 250,
+    tags: ["dynamic-programming", "binary-search"],
+  },
+  {
+    id: "graph-shortest-path",
+    title: "Graph Shortest Path",
+    difficulty: "medium",
+    points: 200,
+    tags: ["graphs", "bfs"],
+  },
+];
+
+export const contestPreviewFallback: ContestPreviewFallback = {
+  title: "week5 lab",
+  description: "hello",
+  start: "Mar 5, 2026, 1:07 PM",
+  end: "Mar 28, 2026, 5:10 PM",
+};
+
+export const contestAiHintConfig: ContestAiHintConfig = {
+  groupAHintAfterMinutes: 5,
+  groupBHintAfterMinutes: 10,
+  cooldownMinutes: 2,
+  groupsSummary: "A, B",
+  assignmentLabel: "Random",
+  assignmentDescription: "Students are evenly and automatically split across groups",
+  assignmentFootnote:
+    "Students will be randomly and evenly assigned to Group A and Group B.",
+};
 
 export const contestFormDraft: ContestFormDraft = {
   contestName: "",
@@ -149,6 +239,5 @@ export const contestFormDraft: ContestFormDraft = {
   startTime: "",
   endDate: "",
   endTime: "",
-  durationMinutes: "",
-  visibility: "course-only",
+  visibility: "public",
 };
