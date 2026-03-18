@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     // compile passed = made it past compilation (AC / WA / TLE are post-compile)
     const compilePassed = status === "AC" || status === "WA" || status === "TLE";
 
-    const record = await prisma.practiceRunRecord.update({
+    await prisma.practiceRunRecord.update({
       where: { id: connection_id },
       data: {
         verdict,
@@ -38,19 +38,7 @@ export async function POST(req: NextRequest) {
         stdout: judge_output || null,
         runtimeMs: score ?? null,
       },
-      select: {
-        isSubmit: true,
-        createdAt: true,
-        sessionId: true,
-      },
     });
-
-    if (record.isSubmit && verdict === "Accepted") {
-      await prisma.practiceSession.updateMany({
-        where: { id: record.sessionId, solvedAt: null },
-        data: { solvedAt: record.createdAt },
-      });
-    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {
