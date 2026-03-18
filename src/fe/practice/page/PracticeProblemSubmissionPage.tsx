@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Box, CircularProgress, Typography } from "@mui/material";
 import PageHeader from "@/fe/shared/components/PageHeader";
@@ -46,6 +46,9 @@ function PracticeProblemSubmissionPageContent({
   const [runResult, setRunResult] = useState<RunResult | null>(null);
   const [activeRecordId, setActiveRecordId] = useState<string | null>(null);
   const sessionOpened = useRef(false);
+  const pendingSessionRequest = useRef<
+    Promise<{ sessionId: string; problemId: string } | null> | null
+  >(null);
   const utils = trpc.useUtils();
 
   const { data: detail, isLoading: detailLoading, error: detailError } =
@@ -63,22 +66,9 @@ function PracticeProblemSubmissionPageContent({
     },
   );
 
-  const { mutate: openSessionMutate } = trpc.practiceExecution.openSession.useMutation();
+  const { mutateAsync: openSessionMutateAsync } = trpc.practiceExecution.openSession.useMutation();
   const runCodeMutation = trpc.practiceExecution.runCode.useMutation();
   const submitCodeMutation = trpc.practiceExecution.submitCode.useMutation();
-
-  useEffect(() => {
-    if (sessionOpened.current) return;
-    sessionOpened.current = true;
-    openSessionMutate(
-      { problemCode },
-      {
-        onSuccess: (session) => {
-          setSessionInfo({ sessionId: session.sessionId, problemId: session.problemId });
-        },
-      },
-    );
-  }, [problemCode, openSessionMutate]);
 
   useEffect(() => {
     if (!runRecordQuery.data) {
@@ -93,8 +83,8 @@ function PracticeProblemSubmissionPageContent({
   const isRunning = runCodeMutation.isPending;
   const isSubmitting = submitCodeMutation.isPending;
   const isJudging = isRunning || isSubmitting;
-  const isSessionReady = sessionInfo !== null;
   const code = drafts[language] ?? detail?.starterCodes?.[language] ?? "";
+  const hasCode = code.trim().length > 0;
   const displayedRunResult = runRecordQuery.data
     ? {
         id: runRecordQuery.data.id,
@@ -105,15 +95,57 @@ function PracticeProblemSubmissionPageContent({
       }
     : runResult;
 
-  const handleRunCode = () => {
-    if (!sessionInfo) return;
+  const ensureSessionInfo = useCallback(async () => {
+    if (sessionInfo) {
+      return sessionInfo;
+    }
+
+    if (pendingSessionRequest.current) {
+      return pendingSessionRequest.current;
+    }
+
+    const sessionRequest = openSessionMutateAsync({ problemCode })
+      .then((session) => {
+        const nextSessionInfo = { sessionId: session.sessionId, problemId: session.problemId };
+        setSessionInfo(nextSessionInfo);
+        sessionOpened.current = true;
+        return nextSessionInfo;
+      })
+      .catch(() => {
+        sessionOpened.current = false;
+        return null;
+      })
+      .finally(() => {
+        pendingSessionRequest.current = null;
+      });
+
+    pendingSessionRequest.current = sessionRequest;
+
+    return sessionRequest;
+  }, [openSessionMutateAsync, problemCode, sessionInfo]);
+
+  useEffect(() => {
+    if (sessionOpened.current || pendingSessionRequest.current) {
+      return;
+    }
+
+    sessionOpened.current = true;
+    void ensureSessionInfo();
+  }, [ensureSessionInfo]);
+
+  const handleRunCode = async () => {
+    if (!hasCode) return;
+
+    const currentSession = await ensureSessionInfo();
+
+    if (!currentSession) return;
 
     setHasRun(true);
     setTab("submissions");
     runCodeMutation.mutate(
       {
-        sessionId: sessionInfo.sessionId,
-        problemId: sessionInfo.problemId,
+        sessionId: currentSession.sessionId,
+        problemId: currentSession.problemId,
         language,
         code,
         isSubmit: false,
@@ -135,15 +167,19 @@ function PracticeProblemSubmissionPageContent({
     );
   };
 
-  const handleSubmitCode = () => {
-    if (!sessionInfo) return;
+  const handleSubmitCode = async () => {
+    if (!hasCode) return;
+
+    const currentSession = await ensureSessionInfo();
+
+    if (!currentSession) return;
 
     setHasRun(true);
     setTab("submissions");
     submitCodeMutation.mutate(
       {
-        sessionId: sessionInfo.sessionId,
-        problemId: sessionInfo.problemId,
+        sessionId: currentSession.sessionId,
+        problemId: currentSession.problemId,
         language,
         code,
         isSubmit: true,
@@ -244,9 +280,9 @@ function PracticeProblemSubmissionPageContent({
             }
             onRunCode={handleRunCode}
             onSubmitCode={handleSubmitCode}
-            runButtonDisabled={!isSessionReady || isJudging}
+            runButtonDisabled={!hasCode || isJudging}
             runButtonLabel={isRunning ? "Running..." : "Run Code"}
-            submitButtonDisabled={!isSessionReady || isJudging}
+            submitButtonDisabled={!hasCode || isJudging}
             submitButtonLabel={isSubmitting ? "Submitting..." : "Submit"}
           />
         </Box>
