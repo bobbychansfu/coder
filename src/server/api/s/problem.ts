@@ -1,11 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
 import { dbHelpers } from "@/lib/db-helpers";
+import { syncStudentGamification } from "@/server/gamification/persistence";
 import path from "path";
 import { promises as fs } from "fs";
+import { appLanguageToCodingLanguage, appLanguageToJudgeLanguage } from "@/server/coding-language";
+
+interface SubmitCodeBody {
+  language?: string;
+  connection_id?: string;
+  textcode?: string;
+  code?: string;
+}
+
+interface JudgeSubmissionResponse {
+  score?: number;
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "Unknown error";
+}
 
 export async function handleGetProblemDetails(
-  request: NextRequest,
+  _request: NextRequest,
   cid: string,
   pid: string
 ) {
@@ -29,20 +46,20 @@ export async function handleGetProblemDetails(
     const downloadPath = path.join(basePath, "downloads");
 
     let downloadContents: string[] = [];
-    let htmlContents: string | any[] = "";
+    let htmlContents: string | string[] = "";
 
     try {
       htmlContents = await fs.readFile(htmlPath, "utf8");
-    } catch (err: any) {
+    } catch (error: unknown) {
       htmlContents = [];
-      console.warn(`Problem HTML not found: ${err.message}`);
+      console.warn(`Problem HTML not found: ${getErrorMessage(error)}`);
     }
 
     try {
       downloadContents = (await fs.readdir(downloadPath)).filter(
         (string) => string[0] !== "."
       );
-    } catch (err) {
+    } catch {
       downloadContents = [];
     }
 
@@ -57,9 +74,9 @@ export async function handleGetProblemDetails(
       role,
       htmlContents,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(error);
-    return NextResponse.json({ error: "Internal server error", details: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error", details: getErrorMessage(error) }, { status: 500 });
   }
 }
 
@@ -92,7 +109,7 @@ export async function handleSubmitCode(
         code = (formData.get("textcode") as string) || "";
       }
     } else {
-      const body = await request.json();
+      const body = (await request.json()) as SubmitCodeBody;
       language = body.language || "";
       connection_id = body.connection_id || "";
       code = body.textcode || body.code || "";
@@ -107,12 +124,19 @@ export async function handleSubmitCode(
       return NextResponse.json({ error: "Not registered for contest" }, { status: 403 });
     }
 
+    const codingLanguage = appLanguageToCodingLanguage(language);
+    const judgeLanguage = appLanguageToJudgeLanguage(language);
+
+    if (!codingLanguage || !judgeLanguage) {
+      return NextResponse.json({ error: "Unsupported language" }, { status: 400 });
+    }
+
     const submission = await dbHelpers.createSubmission({
       computingId,
       contestId: cid,
       problemId: pid,
       submission: code,
-      language,
+      language: codingLanguage,
     });
 
     const ps = await dbHelpers.findProblemStatus(computingId, cid, pid);
@@ -129,7 +153,7 @@ export async function handleSubmitCode(
     }
 
     const JUDGE_URL = process.env.JUDGE_URL || "http://127.0.0.1:8000";
-    let judgeResponse;
+    let judgeResponse: JudgeSubmissionResponse;
     try {
       const response = await fetch(`${JUDGE_URL}/judge_submission`, {
         method: "POST",
@@ -137,18 +161,17 @@ export async function handleSubmitCode(
         body: JSON.stringify({
           sid: submission.id,
           pid,
-          language,
+          language: judgeLanguage,
           connection_id,
           submission: code,
         }),
       });
       judgeResponse = await response.json();
-    } catch (err: any) {
-      console.error("Judge request failed:", err);
-      return NextResponse.json({ error: "Failed to reach judge", details: err.message }, { status: 500 });
+    } catch (error: unknown) {
+      console.error("Judge request failed:", error);
+      return NextResponse.json({ error: "Failed to reach judge", details: getErrorMessage(error) }, { status: 500 });
     }
 
-    const dbUser = await dbHelpers.findUserByComputingId(computingId);
     const problem = await dbHelpers.findProblem(pid);
     const score = judgeResponse.score || 0;
 
@@ -156,30 +179,16 @@ export async function handleSubmitCode(
     if (problem) {
       await dbHelpers.addNewActivity(computingId, "submission", `Submitted a solution for ${problem.title} and received ${score} points`);
     }
-
-    if (dbUser) {
-      const newPoints = (dbUser.pointsAcquired || 0) + score;
-      let newRank = dbUser.rank;
-
-      if (newPoints > 1000) newRank = "Expert";
-      else if (newPoints > 500) newRank = "Advanced";
-      else if (newPoints > 200) newRank = "Intermediate";
-      else if (newPoints > 100) newRank = "Beginner";
-
-      if (newRank !== dbUser.rank) {
-        await dbHelpers.updateUserRank(computingId, newRank!);
-        await dbHelpers.addNewActivity(computingId, "rank_up", `Achieved the rank of ${newRank}`);
-      }
-    }
+    await syncStudentGamification(computingId);
 
     if (endsAt && endsAt < now) {
       return NextResponse.json({ message: "Contest has ended, submission recorded", sid: submission.id });
     } else {
       return NextResponse.json({ message: "Submission received", sid: submission.id });
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(error);
-    return NextResponse.json({ error: "Internal server error", details: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error", details: getErrorMessage(error) }, { status: 500 });
   }
 }
 
@@ -210,6 +219,7 @@ export async function handleGetSubmissionsForProblem(
 
 export async function handleGetAllSubmissions(request: NextRequest) {
   try {
+    void request;
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

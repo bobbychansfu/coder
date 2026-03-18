@@ -37,32 +37,99 @@ enum SubmissionStatus {
   WRONG_ANSWER
   TIME_LIMIT_EXCEEDED
   RUNTIME_ERROR
+  COMPILE_ERROR
+}
+
+enum CodingLanguage {
+  CPLUSPLUS
+  JAVA
+  TYPESCRIPT
+  JAVASCRIPT
+  PYTHON
+}
+
+enum ProblemSource {
+  PRACTICE
+  CONTEST
+  BOTH
+}
+
+enum ExperimentGroup {
+  A
+  B
+  C
+}
+
+enum AssignmentMethod {
+  MANUAL
+  RANDOM
+  RATIO_RANDOM
 }
 
 model User {
-  id                        String   @id @default(cuid())
-  computingId               String   @unique
-  email                     String   @unique
-  firstName                 String
-  lastName                  String
-  nickname                  String?
-  studentNumber             String?
-  role                      UserRole
-  pointsAcquired            Int      @default(0)
-  problemsSolved            Int      @default(0)
-  competitionsParticipated  Int      @default(0)
-  rank                      String?  @default("Beginner")
-  createdAt                 DateTime @default(now())
-  updatedAt                 DateTime @updatedAt
+  id                       String   @id @default(cuid())
+  computingId              String   @unique
+  email                    String   @unique
+  firstName                String
+  lastName                 String
+  nickname                 String?
+  studentNumber            String?
+  role                     UserRole
+  pointsAcquired           Int      @default(0)
+  problemsSolved           Int      @default(0)
+  competitionsParticipated Int      @default(0)
+  rank                     String?  @default("Beginner")
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
 
-  contestsCreated  Contest[]         @relation("ContestCreator")
-  announcements    Announcement[]    @relation("AnnouncementAuthor")
-  submissions      Submission[]
-  problemStatuses  ProblemStatus[]
-  activities       UserActivity[]
-  achievements     UserAchievement[]
-  hints            Hint[]
-  participations   Participation[]
+  contestsCreated        Contest[]               @relation("ContestCreator")
+  announcements          Announcement[]          @relation("AnnouncementAuthor")
+  submissions            Submission[]
+  problemStatuses        ProblemStatus[]
+  activities             UserActivity[]
+  achievements           UserAchievement[]
+  hints                  Hint[]
+  participations         Participation[]
+  practiceSessions       PracticeSession[]
+  contestProblemSessions ContestProblemSession[]
+}
+
+model PracticeSession {
+  id            String          @id @default(cuid())
+  userId        String
+  problemId     String
+  startedAt     DateTime        @default(now())
+  firstRunAt    DateTime?
+  firstSubmitAt DateTime?
+  solvedAt      DateTime?
+  selectedLang  CodingLanguage?
+  runCount      Int             @default(0)
+  submitCount   Int             @default(0)
+
+  user    User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem Problem           @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  runs    PracticeRunRecord[]
+
+  @@unique([userId, problemId])
+  @@index([problemId])
+}
+
+model PracticeRunRecord {
+  id            String         @id @default(cuid())
+  sessionId     String
+  isSubmit      Boolean        @default(false)
+  language      CodingLanguage
+  code          String
+  verdict       String
+  compilePassed Boolean        @default(false)
+  stdout        String?
+  stderr        String?
+  runtimeMs     Int?
+  createdAt     DateTime       @default(now())
+
+  session PracticeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
 }
 
 model Contest {
@@ -79,39 +146,68 @@ model Contest {
   durationMinutes Int?
   participants    Int           @default(0)
   published       Boolean       @default(false)
+  aiHintEnabled   Boolean       @default(false)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
   instructorId String?
-  instructor   User?   @relation("ContestCreator", fields: [instructorId], references: [id], onDelete: SetNull)
+  instructor   User? @relation("ContestCreator", fields: [instructorId], references: [id], onDelete: SetNull)
 
-  contestProblems ContestProblem[]
-  announcements   Announcement[]
-  submissions     Submission[]
-  problemStatuses ProblemStatus[]
-  participations  Participation[]
+  contestProblems        ContestProblem[]
+  announcements          Announcement[]
+  submissions            Submission[]
+  problemStatuses        ProblemStatus[]
+  participations         Participation[]
+  experimentGroups       ContestExperimentGroup[]
+  contestProblemSessions ContestProblemSession[]
 }
 
 model Problem {
-  id             String   @id @default(cuid())
-  code           String   @unique
-  title          String
-  statement      String
-  difficulty     String
-  visible        String?
-  ap             Int?
-  author         String?
-  timeConstraint Int?
-  memConstraint  Int?
-  points         Int?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                 String        @id @default(cuid())
+  code               String        @unique
+  title              String
+  statement          String
+  inputFormat        String?
+  outputFormat       String?
+  constraints        String?
+  exampleInput       String?
+  exampleOutput      String?
+  exampleExplanation String?
+  difficulty         String
+  visible            String?
+  ap                 Int?
+  author             String?
+  timeConstraint     Int?
+  memConstraint      Int?
+  points             Int?
+  source             ProblemSource @default(BOTH)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
 
-  contestLinks    ContestProblem[]
-  submissions     Submission[]
-  problemStatuses ProblemStatus[]
-  topics          Topic[]
-  hints           Hint[]
+  starterCodes           ProblemStarterCode[]
+  contestLinks           ContestProblem[]
+  submissions            Submission[]
+  problemStatuses        ProblemStatus[]
+  topics                 Topic[]
+  hints                  Hint[]
+  practiceSessions       PracticeSession[]
+  contestProblemSessions ContestProblemSession[]
+}
+
+model ProblemStarterCode {
+  id            String         @id @default(cuid())
+  problemId     String
+  language      CodingLanguage
+  code          String
+  isAiGenerated Boolean        @default(false)
+  generatedFrom CodingLanguage?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@unique([problemId, language])
+  @@index([problemId])
 }
 
 model ContestProblem {
@@ -124,6 +220,44 @@ model ContestProblem {
 
   @@id([contestId, problemId])
   @@unique([contestId, ordering])
+}
+
+model ContestExperimentGroup {
+  id               String          @id @default(cuid())
+  contestId        String
+  groupName        ExperimentGroup
+  aiHintEnabled    Boolean         @default(true)
+  hintDelayMinutes Int?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+
+  @@unique([contestId, groupName])
+  @@index([contestId])
+}
+
+model ContestProblemSession {
+  id              String          @id @default(cuid())
+  userId          String
+  contestId       String
+  problemId       String
+  startedAt       DateTime        @default(now())
+  firstRunAt      DateTime?
+  firstSubmitAt   DateTime?
+  hintEligibleAt  DateTime?
+  hintTriggeredAt DateTime?
+  solvedAt        DateTime?
+  selectedLang    CodingLanguage?
+  solved          Boolean         @default(false)
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contestId, problemId])
+  @@index([contestId, problemId])
+  @@index([userId, contestId])
 }
 
 model ProblemStatus {
@@ -143,17 +277,18 @@ model ProblemStatus {
 }
 
 model UserActivity {
-  id          String   @id @default(cuid())
-  userId      String
-  type        String
-  name        String
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  name      String
+  createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Achievement {
   id          String   @id @default(cuid())
+  code        String?  @unique
   name        String
   description String?
   icon        Bytes?
@@ -185,29 +320,33 @@ model Topic {
 }
 
 model Hint {
-  id          String   @id @default(cuid())
-  userId      String
-  problemId   String
-  code        String?
-  feedback    String?
-  validation  String?
-  hintNum     Int
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  userId     String
+  problemId  String
+  code       String?
+  feedback   String?
+  validation String?
+  hintNum    Int
+  createdAt  DateTime @default(now())
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
 }
 
 model Participation {
-  userId    String
-  contestId String
-  role      String @default("contestant")
-  rank      Int?
+  userId           String
+  contestId        String
+  role             String           @default("contestant")
+  rank             Int?
+  experimentGroup  ExperimentGroup?
+  assignmentMethod AssignmentMethod?
+  assignedAt       DateTime         @default(now())
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
 
   @@id([userId, contestId])
+  @@index([contestId, experimentGroup])
 }
 
 model Announcement {
@@ -219,7 +358,7 @@ model Announcement {
   updatedAt DateTime          @updatedAt
 
   authorId String?
-  author   User?   @relation("AnnouncementAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  author   User? @relation("AnnouncementAuthor", fields: [authorId], references: [id], onDelete: SetNull)
 
   contestId String?
   contest   Contest? @relation(fields: [contestId], references: [id], onDelete: Cascade)
@@ -227,7 +366,7 @@ model Announcement {
 
 model Submission {
   id          String           @id @default(cuid())
-  language    String
+  language    CodingLanguage
   submission  String?
   status      SubmissionStatus
   score       Int              @default(0)
