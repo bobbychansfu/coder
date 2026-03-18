@@ -5,3 +5,4 @@ export * from "./announcements";
 export * from "./researchAnalytics";
 export * from "./problemAuthoring";
 export * from "./contestAuthoring";
+export * from "./liveInstructorAnalytics";
