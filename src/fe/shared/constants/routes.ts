@@ -5,7 +5,7 @@ export const ROUTES = {
   contests: "/contests",
   practice: "/practice",
   instructor: "/instructor",
-  instructorAnnouncements: "/instructor/announcements",
+  instructorManageContests: "/instructor/manage-contests",
   instructorResearchAnalytics: "/instructor/research-analytics",
   instructorCreateProblem: "/instructor/create-problem",
   instructorCreateContest: "/instructor/create-contest",
