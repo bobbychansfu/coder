@@ -18,6 +18,25 @@ export type ToneType =
 export type AccentType = "positive" | "neutral";
 
 /**
+ * Compact stat tile tones
+ * Used in denser management summary rows
+ */
+export type CompactStatTone = "red" | "blue" | "orange" | "gray" | "green";
+
+/**
+ * Shared row action menu item
+ * Used for overflow actions in management tables
+ */
+export interface MenuActionItem {
+  id: string;
+  label: string;
+  icon?: SvgIconComponent;
+  disabled?: boolean;
+  danger?: boolean;
+  onClick: () => void;
+}
+
+/**
  * Tool/Action card data structure
  * Used in admin tool hub and instructor actions sections
  */

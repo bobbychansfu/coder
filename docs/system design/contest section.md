@@ -18,7 +18,7 @@
 12. [Session Keepalive & Eligibility (Two-stage Grace)](#12-session-keepalive--eligibility-two-stage-grace)  
 13. [Judging (Async) — MVP Safety Guardrails](#13-judging-async--mvp-safety-guardrails)  
 14. [Scoreboard (Delayed Publish) + Ranking Rule](#14-scoreboard-delayed-publish--ranking-rule)  
-15. [Clarifications (MVP1: Instructor/TA Announcements)](#15-clarifications-mvp1-instructorta-announcements)  
+15. [fications (MVP1: Instructor/TA Announcements)](#15-clarifications-mvp1-instructorta-announcements)  
 16. [Practice Mode (No Timer, No Judging)](#16-practice-mode-no-timer-no-judging)  
 17. [Matrices Dashboard (Instructor)](#17-matrices-dashboard-instructor)  
 18. [Reliability / Consistency / Scalability](#18-reliability--consistency--scalability)  
@@ -39,7 +39,7 @@ This system provides a **LeetCode-style contest experience**:
   - optional max hints per problem (MVP recommended: `1` or `3`)
 - **Eligibility policy**: leaving/disconnect is allowed, but can **forfeit** after grace windows
 - **Scoreboard**: visible after contest ends (supports **delayed publish**, e.g., +1 hour)
-- **Clarifications**: instructor can post announcements/clarifications per contest
+clarifications per contest
 - **Matrices Dashboard (Instructor)**: included below (high-level) with a link to the full analytics spec
 
 ---

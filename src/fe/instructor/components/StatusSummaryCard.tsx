@@ -12,6 +12,7 @@ interface StatusSummaryCardProps {
   rows: StatusSummaryRow[];
   dividerAfterRowIds?: string[];
   rowsContainerClassName?: string;
+  footer?: ReactNode;
   cardClassName: string;
   contentClassName: string;
   titleClassName: string;
@@ -25,6 +26,7 @@ export default function StatusSummaryCard({
   rows,
   dividerAfterRowIds = [],
   rowsContainerClassName,
+  footer,
   cardClassName,
   contentClassName,
   titleClassName,
@@ -49,6 +51,7 @@ export default function StatusSummaryCard({
             </Fragment>
           ))}
         </Box>
+        {footer}
       </CardContent>
     </Card>
   );

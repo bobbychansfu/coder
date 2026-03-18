@@ -31,11 +31,32 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
   }
 
   const problemCode = (code ?? contest.problems[0]?.code ?? "A").toUpperCase();
-  const problem = contest.problems.find((item) => item.code.toUpperCase() === problemCode);
+  const problemIndex = contest.problems.findIndex((item) => item.code.toUpperCase() === problemCode);
+  const problem = problemIndex >= 0 ? contest.problems[problemIndex] : undefined;
 
   if (!problem) {
     notFound();
   }
 
-  return <ProblemSubmissionPage detail={buildProblemDetail(problem)} />;
+  const previousProblem = problemIndex > 0 ? contest.problems[problemIndex - 1] : undefined;
+  const nextProblem =
+    problemIndex >= 0 && problemIndex < contest.problems.length - 1
+      ? contest.problems[problemIndex + 1]
+      : undefined;
+
+  return (
+    <ProblemSubmissionPage
+      detail={buildProblemDetail(problem)}
+      navigator={{
+        position: problemIndex + 1,
+        total: contest.problems.length,
+        previousHref: previousProblem
+          ? `/contests/${contest.id}/problems/${previousProblem.code.toLowerCase()}`
+          : undefined,
+        nextHref: nextProblem
+          ? `/contests/${contest.id}/problems/${nextProblem.code.toLowerCase()}`
+          : undefined,
+      }}
+    />
+  );
 }

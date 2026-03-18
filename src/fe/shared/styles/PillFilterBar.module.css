@@ -1,0 +1,25 @@
+.wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  min-height: 36px;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #6b7280;
+  padding: 0 13px;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  cursor: pointer;
+}
+
+.pillActive {
+  background: #111827;
+  border-color: #111827;
+  color: #ffffff;
+}

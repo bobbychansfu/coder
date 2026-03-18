@@ -45,6 +45,10 @@
   text-decoration: none;
 }
 
+.actionButton:hover {
+  background-color: #ef4444;
+}
+
 .content {
   display: grid;
   grid-template-columns: 256px 1fr;
