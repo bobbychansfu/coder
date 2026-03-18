@@ -1,0 +1,75 @@
+.card {
+  min-height: 92px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.iconWrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.iconWrap[data-tone="red"] {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+.iconWrap[data-tone="blue"] {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.iconWrap[data-tone="orange"] {
+  background: #fff7ed;
+  color: #f97316;
+}
+
+.iconWrap[data-tone="gray"] {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.iconWrap[data-tone="green"] {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+.icon {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.label {
+  margin: 0;
+  color: #6b7280;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.value {
+  margin: 0;
+  color: #111827;
+  font-family: Inter, sans-serif;
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}

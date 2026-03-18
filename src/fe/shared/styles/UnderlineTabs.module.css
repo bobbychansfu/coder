@@ -1,0 +1,37 @@
+.tabs {
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.tabButton {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px 12px;
+  color: #6b7280;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  cursor: pointer;
+}
+
+.tabButtonActive {
+  color: #e7000b;
+  border-bottom-color: #e7000b;
+  font-weight: 600;
+}
+
+.tabButton[aria-disabled="true"] {
+  cursor: default;
+}
+
+.tabIcon {
+  width: 14px !important;
+  height: 14px !important;
+}

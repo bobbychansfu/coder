@@ -28,3 +28,8 @@
   color: #4a5565;
   text-align: center;
 }
+
+.empty {
+  font-size: 13px;
+  color: #667085;
+}

@@ -37,7 +37,10 @@ function PracticeProblemSubmissionPageContent({
   const router = useRouter();
   const [tab, setTab] = useState("description");
   const [language, setLanguage] = useState<SupportedLanguage>(DEFAULT_LANGUAGE);
-  const [code, setCode] = useState("");
+  const [drafts, setDrafts] = useState<Partial<Record<SupportedLanguage, string>>>({});
+  const [sessionInfo, setSessionInfo] = useState<{ sessionId: string; problemId: string } | null>(
+    null,
+  );
   const [hasRun, setHasRun] = useState(false);
   const [runResult, setRunResult] = useState<RunResult | null>(null);
   const sessionOpened = useRef(false);
@@ -51,26 +54,45 @@ function PracticeProblemSubmissionPageContent({
     { enabled: !!detail },
   );
 
-  const openSession = trpc.practice.openSession.useMutation();
-  const runCodeMutation = trpc.practice.runCode.useMutation();
-  const submitCodeMutation = trpc.practice.submitCode.useMutation();
+  const { mutate: openSessionMutate } = trpc.practiceExecution.openSession.useMutation();
+  const runCodeMutation = trpc.practiceExecution.runCode.useMutation();
+  const submitCodeMutation = trpc.practiceExecution.submitCode.useMutation();
 
+  // Fire once per mount (key={problemCode} remounts on problem change).
+  // The ref guards against React StrictMode's double-invocation in dev.
   useEffect(() => {
-    if (!sessionOpened.current) {
-      sessionOpened.current = true;
-      openSession.mutate({ problemCode });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [problemCode]);
+    if (sessionOpened.current) return;
+    sessionOpened.current = true;
+    openSessionMutate(
+      { problemCode },
+      {
+        onSuccess: (session) => {
+          setSessionInfo({ sessionId: session.sessionId, problemId: session.problemId });
+        },
+      },
+    );
+  }, [problemCode, openSessionMutate]);
 
   const isRunning = runCodeMutation.isPending;
   const isSubmitting = submitCodeMutation.isPending;
+  const isJudging = isRunning || isSubmitting;
+  const isSessionReady = sessionInfo !== null;
+  const code = drafts[language] ?? detail?.starterCodes?.[language] ?? "";
 
   const handleRunCode = () => {
+    if (!sessionInfo) return;
+
     setHasRun(true);
     setTab("submissions");
     runCodeMutation.mutate(
-      { problemCode, language, code },
+      {
+        sessionId: sessionInfo.sessionId,
+        problemId: sessionInfo.problemId,
+        language,
+        code,
+        isSubmit: false,
+        timestamp: new Date().toISOString(),
+      },
       {
         onSuccess: async (result) => {
           setRunResult({
@@ -86,11 +108,27 @@ function PracticeProblemSubmissionPageContent({
   };
 
   const handleSubmitCode = () => {
+    if (!sessionInfo) return;
+
+    setHasRun(true);
     setTab("submissions");
     submitCodeMutation.mutate(
-      { problemCode },
       {
-        onSuccess: async () => {
+        sessionId: sessionInfo.sessionId,
+        problemId: sessionInfo.problemId,
+        language,
+        code,
+        isSubmit: true,
+        timestamp: new Date().toISOString(),
+      },
+      {
+        onSuccess: async (result) => {
+          setRunResult({
+            verdict: result.verdict,
+            stdout: result.stdout,
+            stderr: result.stderr,
+            runtimeMs: result.runtimeMs,
+          });
           await utils.practice.getRunHistory.invalidate({ problemCode });
         },
       },
@@ -116,10 +154,10 @@ function PracticeProblemSubmissionPageContent({
   const detailWithHistory = { ...detail, submissions: runHistory ?? [] };
 
   const outputSection = hasRun ? (
-    <div className={styles.outputSection}>
-      <Typography className={styles.outputTitle}>Output</Typography>
-      <div className={styles.outputBlock}>
-        {isRunning ? (
+      <div className={styles.outputSection}>
+        <Typography className={styles.outputTitle}>Output</Typography>
+        <div className={styles.outputBlock}>
+        {isJudging ? (
           <Box display="flex" alignItems="center" gap="10px">
             <CircularProgress size={14} sx={{ color: "#f3f4f6" }} />
             <span className={styles.outputText}>Judging your code...</span>
@@ -162,12 +200,17 @@ function PracticeProblemSubmissionPageContent({
             language={language}
             code={code}
             onLanguageChange={(nextLanguage) => setLanguage(nextLanguage as SupportedLanguage)}
-            onCodeChange={setCode}
+            onCodeChange={(nextCode) =>
+              setDrafts((currentDrafts) => ({
+                ...currentDrafts,
+                [language]: nextCode,
+              }))
+            }
             onRunCode={handleRunCode}
             onSubmitCode={handleSubmitCode}
-            runButtonDisabled={isRunning || isSubmitting}
+            runButtonDisabled={!isSessionReady || isJudging}
             runButtonLabel={isRunning ? "Running..." : "Run Code"}
-            submitButtonDisabled={!hasRun || isRunning || isSubmitting}
+            submitButtonDisabled={!isSessionReady || isJudging}
             submitButtonLabel={isSubmitting ? "Submitting..." : "Submit"}
           />
         </Box>

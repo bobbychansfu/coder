@@ -58,16 +58,6 @@ export default function ContestsPage({
       actionHref={showCreateContest ? "/contests/create" : undefined}
       sidebar={<FilterPanel groups={filters} />}
     >
-      {showManageContest || showViewAllSubmissions ? (
-        <div style={{ display: "flex", gap: 12 }}>
-          {showManageContest ? (
-            <Link href="/instructor/create-contest">Manage Contest</Link>
-          ) : null}
-          {showViewAllSubmissions ? (
-            <Link href="/instructor/research-analytics">View All Submissions</Link>
-          ) : null}
-        </div>
-      ) : null}
       <div className={layoutStyles.searchBar}>
         <SearchInput placeholder="Search for ..." />
       </div>

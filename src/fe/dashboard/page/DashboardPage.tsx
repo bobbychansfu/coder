@@ -8,20 +8,34 @@ import UpcomingContests from "@/fe/dashboard/components/UpcomingContests";
 import ThisWeek from "@/fe/dashboard/components/ThisWeek";
 import RecentBadges from "@/fe/dashboard/components/RecentBadges";
 import { mockContestAlert } from "@/fe/dashboard/data/contests";
+import {
+  EMPTY_STUDENT_DASHBOARD_METADATA,
+  useStudentDashboardMetadata,
+} from "@/fe/dashboard/services/dashboardMetadata";
 import styles from "../styles/DashboardPage.module.css";
 
 export default function DashboardPage() {
+  const { metadata, isLoading, isError } = useStudentDashboardMetadata();
+  const resolvedMetadata = metadata ?? EMPTY_STUDENT_DASHBOARD_METADATA;
+  const showContestAlert = !isLoading && mockContestAlert.isActive;
+
   return (
     <>
       <ScrollbarHider />
       <div className={styles.page}>
         {/* Main Content */}
         <div className={styles.mainContent}>
+          {isError && (
+            <div className={styles.errorBanner}>
+              Unable to load student dashboard metadata right now.
+            </div>
+          )}
+
           {/* Statistics Section */}
-          <StatisticsSection />
+          <StatisticsSection stats={resolvedMetadata.statistics} />
 
           {/* Contest Alert */}
-          {mockContestAlert.isActive && (
+          {showContestAlert && (
             <ContestAlert
               title={mockContestAlert.title}
               description={mockContestAlert.description}
@@ -35,8 +49,8 @@ export default function DashboardPage() {
         {/* Sidebar */}
         <div className={styles.sidebar}>
           <UpcomingContests />
-          <ThisWeek />
-          <RecentBadges />
+          <ThisWeek stats={resolvedMetadata.weeklyStats} />
+          <RecentBadges badges={resolvedMetadata.badges} />
         </div>
       </div>
     </>
