@@ -116,7 +116,7 @@ export default function SolutionEditor({
           startIcon={<SendRoundedIcon fontSize="small" />}
           onClick={onSubmitCode}
           disabled={submitButtonDisabled}
-          sx={{ backgroundColor: "#dc2626", "&:hover": { backgroundColor: "#b91c1c" } }}
+          sx={{ backgroundColor: "#dc2626", "&:hover": { backgroundColor: "#ef4444" } }}
         >
           {submitButtonLabel}
         </Button>

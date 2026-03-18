@@ -16,7 +16,7 @@ export default function ClarificationsTab({ clarifications }: ClarificationsTabP
           className={styles.askButton}
           sx={{
             backgroundColor: "#dc2626",
-            "&:hover": { backgroundColor: "#b91c1c" },
+            "&:hover": { backgroundColor: "#ef4444" },
           }}
         >
           Ask Question

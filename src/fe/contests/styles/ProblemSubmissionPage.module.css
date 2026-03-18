@@ -432,7 +432,7 @@
 }
 
 .submitButton:hover {
-  background-color: #b91c1c;
+  background-color: #ef4444;
 }
 
 .runButton :global(.MuiButton-startIcon),
