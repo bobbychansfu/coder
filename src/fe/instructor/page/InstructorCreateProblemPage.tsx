@@ -50,6 +50,7 @@ import {
 import AuthoringPageShell from "@/fe/shared/components/authoring/AuthoringPageShell";
 import AuthoringStepTabs from "@/fe/shared/components/authoring/AuthoringStepTabs";
 import { DIFFICULTY_OPTIONS, LANGUAGE_OPTIONS, PROBLEM_TAG_GROUPS, VISIBILITY_OPTIONS } from "@/fe/shared/constants/options";
+import { trpc } from "@/lib/trpc/client";
 import subpageStyles from "@/fe/instructor/styles/InstructorSubpageHeader.module.css";
 import styles from "@/fe/instructor/styles/InstructorCreateProblemPage.module.css";
 
@@ -62,19 +63,6 @@ const difficultyBadgeStyles = {
   medium: { backgroundColor: "#dc2626", color: "#ffffff" },
   hard: { backgroundColor: "#b91c1c", color: "#ffffff" },
 } as const;
-
-const languageCommentTemplates: Record<StarterLanguage, string> = {
-  cplusplus:
-    "// Generated from base starter code\nvector<int> solve(vector<int>& nums) {\n  // Your code here\n  return {};\n}",
-  java:
-    "// Generated from base starter code\nclass Solution {\n  public int[] solve(int[] nums) {\n    // Your code here\n    return new int[]{};\n  }\n}",
-  python:
-    "# Generated from base starter code\ndef solve(nums):\n    # Your code here\n    return []\n",
-  typescript:
-    "// TypeScript starter code\nfunction solve(nums: number[]): number[] {\n  // Your code here\n  return [];\n}",
-  javascript:
-    "// Generated from base starter code\nfunction solve(nums) {\n  // Your code here\n  return [];\n}",
-};
 
 const draftDifficultyChipColors = {
   easy: { background: "#eceef2", color: "#030213" },
@@ -106,6 +94,9 @@ export default function InstructorCreateProblemPage() {
   const [csvOpen, setCsvOpen] = useState(false);
   const [selectedCsvName, setSelectedCsvName] = useState("");
   const [tagAnchorEl, setTagAnchorEl] = useState<HTMLElement | null>(null);
+  const [generationFeedback, setGenerationFeedback] = useState<string | null>(null);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const generateStarterCodesMutation = trpc.problemAuthoring.generateStarterCodes.useMutation();
 
   const headerActions: SubpageActionButtonItem[] = [
     {
@@ -313,24 +304,40 @@ export default function InstructorCreateProblemPage() {
     setSelectedCsvName(nextFile.name);
   };
 
-  const generateOtherLanguages = () => {
+  const generateOtherLanguages = async () => {
     const baseCode = starterCodes[baseLanguage].trim();
 
-    setStarterCodes((prev) => {
-      const nextCodes = { ...prev };
+    if (!baseCode) {
+      setGenerationFeedback(null);
+      setGenerationError("Add starter code in the base language before generating.");
+      return;
+    }
 
-      LANGUAGE_OPTIONS.forEach((option) => {
-        const language = option.value as StarterLanguage;
+    setGenerationFeedback(null);
+    setGenerationError(null);
 
-        if (language === baseLanguage || nextCodes[language].trim()) {
-          return;
-        }
-
-        nextCodes[language] = baseCode || languageCommentTemplates[language];
+    try {
+      const result = await generateStarterCodesMutation.mutateAsync({
+        title: metadataValues.title,
+        statement: statementValues.statement,
+        inputFormat: statementValues.inputFormat,
+        outputFormat: statementValues.outputFormat,
+        constraints: statementValues.constraints,
+        baseLanguage,
+        baseCode,
       });
 
-      return nextCodes;
-    });
+      setStarterCodes((prev) => ({
+        ...prev,
+        ...result.generatedCodes,
+      }));
+      setGenerationFeedback(
+        `Generated ${Object.keys(result.generatedCodes).length} languages with ${result.model}.`,
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to generate starter code.";
+      setGenerationError(message);
+    }
   };
 
   const downloadTemplate = () => {
@@ -703,10 +710,27 @@ export default function InstructorCreateProblemPage() {
                         variant="contained"
                         startIcon={<AutoAwesomeRoundedIcon className={styles.actionIcon} />}
                         onClick={generateOtherLanguages}
+                        disabled={generateStarterCodesMutation.isPending}
                       >
-                        {problemAuthoringCopy.generateOtherLanguagesLabel}
+                        {generateStarterCodesMutation.isPending
+                          ? "Generating..."
+                          : problemAuthoringCopy.generateOtherLanguagesLabel}
                       </Button>
                     </Box>
+
+                    {generationError ? (
+                      <Typography
+                        className={`${styles.generationFeedback} ${styles.generationFeedbackError}`}
+                      >
+                        {generationError}
+                      </Typography>
+                    ) : generationFeedback ? (
+                      <Typography
+                        className={`${styles.generationFeedback} ${styles.generationFeedbackSuccess}`}
+                      >
+                        {generationFeedback}
+                      </Typography>
+                    ) : null}
 
                     <Box className={styles.codeEditorCard}>
                       <Box className={styles.codeTabs}>
