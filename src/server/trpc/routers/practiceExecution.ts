@@ -12,7 +12,7 @@ import { getDbUser, getProblemByCode, type PrismaClient } from "./practice";
 const JUDGE_URL = process.env.JUDGE_URL ?? "http://127.0.0.1:8000";
 
 // ---------------------------------------------------------------------------
-// Input schema shared by runCode and submitCode
+// Input schema for the single practice submit/judge action
 // ---------------------------------------------------------------------------
 
 export const practiceExecutionInput = z.object({
@@ -45,7 +45,6 @@ async function judgePracticeRecord(
   ctx: { prisma: PrismaClient },
   args: {
     sessionId: string;
-    isSubmit: boolean;
     codingLanguage: CodingLanguage;
     judgeLanguage: string;
     problemCode: string;
@@ -57,7 +56,7 @@ async function judgePracticeRecord(
   const record = await ctx.prisma.practiceRunRecord.create({
     data: {
       sessionId: args.sessionId,
-      isSubmit: args.isSubmit,
+      isSubmit: true,
       language: args.codingLanguage,
       code: args.code,
       verdict: "Pending",
@@ -109,7 +108,7 @@ async function judgePracticeRecord(
     }
   }
 
-  if (args.isSubmit && finalRecord.verdict === "Accepted") {
+  if (finalRecord.verdict === "Accepted") {
     await ctx.prisma.practiceSession.updateMany({
       where: { id: args.sessionId, solvedAt: null },
       data: { solvedAt: args.createdAt },
@@ -145,56 +144,8 @@ export const practiceExecutionRouter = router({
       };
     }),
 
-  runCode: studentProcedure
-    .input(practiceExecutionInput.extend({ isSubmit: z.literal(false) }))
-    .mutation(async ({ ctx, input }) => {
-      const dbUser = await getDbUser(ctx);
-      const session = await getPracticeSession(ctx, dbUser.id, input.sessionId, input.problemId);
-      const codingLanguage = appLanguageToCodingLanguage(input.language);
-      const judgeLanguage = appLanguageToJudgeLanguage(input.language);
-
-      if (!codingLanguage || !judgeLanguage) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Unsupported language" });
-      }
-
-      const updatedSession = await ctx.prisma.practiceSession.update({
-        where: { id: session.id },
-        data: {
-          firstRunAt: session.firstRunAt ?? input.timestamp,
-          selectedLang: codingLanguage,
-          runCount: { increment: 1 },
-        },
-      });
-
-      const finalRecord = await judgePracticeRecord(ctx, {
-        sessionId: session.id,
-        isSubmit: false,
-        codingLanguage,
-        judgeLanguage,
-        problemCode: session.problem.code,
-        userId: dbUser.id,
-        code: input.code,
-        createdAt: input.timestamp,
-      });
-
-      return {
-        verdict: finalRecord.verdict,
-        compilePassed: finalRecord.compilePassed,
-        stdout: finalRecord.stdout,
-        stderr: finalRecord.stderr,
-        runtimeMs: finalRecord.runtimeMs,
-        runCount: updatedSession.runCount,
-        firstRunAt: updatedSession.firstRunAt,
-        record: {
-          id: finalRecord.id,
-          verdict: finalRecord.verdict,
-          createdAt: finalRecord.createdAt,
-        },
-      };
-    }),
-
   submitCode: studentProcedure
-    .input(practiceExecutionInput.extend({ isSubmit: z.literal(true) }))
+    .input(practiceExecutionInput)
     .mutation(async ({ ctx, input }) => {
       const dbUser = await getDbUser(ctx);
       const session = await getPracticeSession(ctx, dbUser.id, input.sessionId, input.problemId);
@@ -216,7 +167,6 @@ export const practiceExecutionRouter = router({
 
       const finalRecord = await judgePracticeRecord(ctx, {
         sessionId: session.id,
-        isSubmit: true,
         codingLanguage,
         judgeLanguage,
         problemCode: session.problem.code,

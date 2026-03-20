@@ -67,7 +67,6 @@ function PracticeProblemSubmissionPageContent({
   );
 
   const { mutateAsync: openSessionMutateAsync } = trpc.practiceExecution.openSession.useMutation();
-  const runCodeMutation = trpc.practiceExecution.runCode.useMutation();
   const submitCodeMutation = trpc.practiceExecution.submitCode.useMutation();
 
   useEffect(() => {
@@ -80,11 +79,11 @@ function PracticeProblemSubmissionPageContent({
     }
   }, [refetchHistory, runRecordQuery.data]);
 
-  const isRunning = runCodeMutation.isPending;
   const isSubmitting = submitCodeMutation.isPending;
-  const isJudging = isRunning || isSubmitting;
+  const isJudging = isSubmitting;
+  const typedCode = drafts[language] ?? "";
   const code = drafts[language] ?? detail?.starterCodes?.[language] ?? "";
-  const hasCode = code.trim().length > 0;
+  const hasTypedCode = typedCode.trim().length > 0;
   const displayedRunResult = runRecordQuery.data
     ? {
         id: runRecordQuery.data.id,
@@ -133,42 +132,8 @@ function PracticeProblemSubmissionPageContent({
     void ensureSessionInfo();
   }, [ensureSessionInfo]);
 
-  const handleRunCode = async () => {
-    if (!hasCode) return;
-
-    const currentSession = await ensureSessionInfo();
-
-    if (!currentSession) return;
-
-    setHasRun(true);
-    setTab("submissions");
-    runCodeMutation.mutate(
-      {
-        sessionId: currentSession.sessionId,
-        problemId: currentSession.problemId,
-        language,
-        code,
-        isSubmit: false,
-        timestamp: new Date().toISOString(),
-      },
-      {
-        onSuccess: async (result) => {
-          setActiveRecordId(result.record.id);
-          setRunResult({
-            id: result.record.id,
-            verdict: result.verdict,
-            stdout: result.stdout,
-            stderr: result.stderr,
-            runtimeMs: result.runtimeMs,
-          });
-          await refetchHistory();
-        },
-      },
-    );
-  };
-
   const handleSubmitCode = async () => {
-    if (!hasCode) return;
+    if (!hasTypedCode) return;
 
     const currentSession = await ensureSessionInfo();
 
@@ -182,7 +147,6 @@ function PracticeProblemSubmissionPageContent({
         problemId: currentSession.problemId,
         language,
         code,
-        isSubmit: true,
         timestamp: new Date().toISOString(),
       },
       {
@@ -278,11 +242,8 @@ function PracticeProblemSubmissionPageContent({
                 [language]: nextCode,
               }))
             }
-            onRunCode={handleRunCode}
             onSubmitCode={handleSubmitCode}
-            runButtonDisabled={!hasCode || isJudging}
-            runButtonLabel={isRunning ? "Running..." : "Run Code"}
-            submitButtonDisabled={!hasCode || isJudging}
+            submitButtonDisabled={!hasTypedCode || isJudging}
             submitButtonLabel={isSubmitting ? "Submitting..." : "Submit"}
           />
         </Box>

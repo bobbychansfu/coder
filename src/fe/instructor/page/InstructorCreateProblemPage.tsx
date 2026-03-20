@@ -137,7 +137,7 @@ export default function InstructorCreateProblemPage() {
   const visibilityLabel = useMemo(() => {
     return (
       VISIBILITY_OPTIONS.find((option) => option.value === metadataValues.visibility)?.label ??
-      "course-only"
+      "contest-only"
     );
   }, [metadataValues.visibility]);
 
