@@ -26,6 +26,12 @@ async function getFirstProblemCode(page: Page): Promise<string | null> {
   return href?.replace("/practice/", "") ?? null;
 }
 
+async function typeInMonaco(page: Page, text: string) {
+  const editorInput = page.locator(".monaco-editor textarea").first();
+  await editorInput.click();
+  await page.keyboard.type(text);
+}
+
 // ---------------------------------------------------------------------------
 // Practice list page
 // ---------------------------------------------------------------------------
@@ -167,39 +173,43 @@ test.describe("Practice problem submission page", () => {
     }
   });
 
-  test("Run Code button is visible and enabled after session opens", async ({ page }) => {
+  test("Submit button stays disabled until the user types", async ({ page }) => {
     if (!firstProblemCode) test.skip();
 
     await page.goto(`/practice/${firstProblemCode}`);
     await expect(page.locator(".monaco-editor")).toBeVisible({ timeout: 15000 });
 
-    const runBtn = page.getByRole("button", { name: /run code/i });
-    await expect(runBtn).toBeVisible();
-    // Wait for session → button becomes enabled
-    await expect(runBtn).toBeEnabled({ timeout: 10000 });
+    const submitBtn = page.getByRole("button", { name: /^submit$/i });
+    await expect(submitBtn).toBeVisible();
+    await expect(submitBtn).toBeDisabled();
+
+    await typeInMonaco(page, "\n// typed by e2e");
+    await expect(submitBtn).toBeEnabled({ timeout: 10000 });
   });
 
-  test("clicking Run Code fires tRPC runCode mutation", async ({ page }) => {
+  test("clicking Submit fires the single tRPC submitCode mutation", async ({ page }) => {
     if (!firstProblemCode) test.skip();
 
     await page.goto(`/practice/${firstProblemCode}`);
-    const runBtn = page.getByRole("button", { name: /run code/i });
-    await expect(runBtn).toBeEnabled({ timeout: 10000 });
+    await typeInMonaco(page, "\n// typed by e2e");
+    const submitBtn = page.getByRole("button", { name: /^submit$/i });
+    await expect(submitBtn).toBeEnabled({ timeout: 10000 });
 
-    const runRequest = page.waitForRequest((req) =>
-      req.url().includes("practiceExecution.runCode"),
+    const submitRequest = page.waitForRequest((req) =>
+      req.url().includes("practiceExecution.submitCode"),
     );
-    await runBtn.click();
-    await expect(runRequest).resolves.toBeTruthy();
+    await submitBtn.click();
+    await expect(submitRequest).resolves.toBeTruthy();
   });
 
-  test("Output section appears and shows judging state after Run Code", async ({ page }) => {
+  test("Output section appears and shows judging state after Submit", async ({ page }) => {
     if (!firstProblemCode) test.skip();
 
     await page.goto(`/practice/${firstProblemCode}`);
-    const runBtn = page.getByRole("button", { name: /run code/i });
-    await expect(runBtn).toBeEnabled({ timeout: 10000 });
-    await runBtn.click();
+    await typeInMonaco(page, "\n// typed by e2e");
+    const submitBtn = page.getByRole("button", { name: /^submit$/i });
+    await expect(submitBtn).toBeEnabled({ timeout: 10000 });
+    await submitBtn.click();
 
     // "Output" label renders immediately when hasRun=true
     await expect(page.getByText("Output")).toBeVisible({ timeout: 5000 });
@@ -211,6 +221,7 @@ test.describe("Practice problem submission page", () => {
     if (!firstProblemCode) test.skip();
 
     await page.goto(`/practice/${firstProblemCode}`);
+    await typeInMonaco(page, "\n// typed by e2e");
     const submitBtn = page.getByRole("button", { name: /^submit$/i });
     await expect(submitBtn).toBeEnabled({ timeout: 10000 });
 
@@ -221,38 +232,39 @@ test.describe("Practice problem submission page", () => {
     await expect(submitRequest).resolves.toBeTruthy();
   });
 
-  test("Run Code payload includes sessionId, problemId, language, code, isSubmit=false", async ({
+  test("Submit payload includes sessionId, problemId, language, code, and timestamp", async ({
     page,
   }) => {
     if (!firstProblemCode) test.skip();
 
     await page.goto(`/practice/${firstProblemCode}`);
-    const runBtn = page.getByRole("button", { name: /run code/i });
-    await expect(runBtn).toBeEnabled({ timeout: 10000 });
+    await typeInMonaco(page, "\n// typed by e2e");
+    const submitBtn = page.getByRole("button", { name: /^submit$/i });
+    await expect(submitBtn).toBeEnabled({ timeout: 10000 });
 
     // Capture the request before clicking
-    const runRequestPromise = page.waitForRequest((req) =>
-      req.url().includes("practiceExecution.runCode"),
+    const submitRequestPromise = page.waitForRequest((req) =>
+      req.url().includes("practiceExecution.submitCode"),
     );
-    await runBtn.click();
-    const runRequest = await runRequestPromise;
+    await submitBtn.click();
+    const submitRequest = await submitRequestPromise;
 
     // httpBatchLink sends body as {"0": {input fields}} (object keyed by index)
-    const raw = JSON.parse(runRequest.postData() ?? "{}") as Record<string, unknown>;
+    const raw = JSON.parse(submitRequest.postData() ?? "{}") as Record<string, unknown>;
     const input = raw["0"] as Record<string, unknown>;
 
     expect(input).toHaveProperty("sessionId");
     expect(input).toHaveProperty("problemId");
     expect(input).toHaveProperty("language");
     expect(input).toHaveProperty("code");
-    expect(input).toHaveProperty("isSubmit", false);
     expect(input).toHaveProperty("timestamp");
   });
 
-  test("Submit payload includes isSubmit=true", async ({ page }) => {
+  test("Submit payload no longer includes a separate isSubmit flag", async ({ page }) => {
     if (!firstProblemCode) test.skip();
 
     await page.goto(`/practice/${firstProblemCode}`);
+    await typeInMonaco(page, "\n// typed by e2e");
     const submitBtn = page.getByRole("button", { name: /^submit$/i });
     await expect(submitBtn).toBeEnabled({ timeout: 10000 });
 
@@ -265,6 +277,6 @@ test.describe("Practice problem submission page", () => {
     const raw = JSON.parse(submitRequest.postData() ?? "{}") as Record<string, unknown>;
     const input = raw["0"] as Record<string, unknown>;
 
-    expect(input).toHaveProperty("isSubmit", true);
+    expect(input).not.toHaveProperty("isSubmit");
   });
 });

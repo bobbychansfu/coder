@@ -39,6 +39,7 @@ function ProblemSubmissionPageContent({ detail, navigator }: ProblemSubmissionPa
   const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
   const [code, setCode] = useState("");
   const [hasRun, setHasRun] = useState(false);
+  const hasTypedCode = code.trim().length > 0;
 
   const outputSection =
     tab === "submissions" && hasRun ? (
@@ -105,11 +106,11 @@ function ProblemSubmissionPageContent({ detail, navigator }: ProblemSubmissionPa
             code={code}
             onLanguageChange={setLanguage}
             onCodeChange={setCode}
-            onRunCode={() => {
-              setHasRun(true);
-              setTab("submissions");
-            }}
             onSubmitCode={() => {
+              if (!hasTypedCode) {
+                return;
+              }
+
               if (navigator?.nextHref) {
                 router.push(navigator.nextHref);
                 return;
@@ -118,6 +119,7 @@ function ProblemSubmissionPageContent({ detail, navigator }: ProblemSubmissionPa
               setHasRun(true);
               setTab("submissions");
             }}
+            submitButtonDisabled={!hasTypedCode}
             submitButtonLabel={navigator?.nextHref ? "Submit & Next" : "Submit"}
             showAiHint
             aiHintSource={code}

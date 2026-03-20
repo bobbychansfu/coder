@@ -7,7 +7,6 @@ import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import ExpandLessRoundedIcon from "@mui/icons-material/ExpandLessRounded";
-import PlayArrowRoundedIcon from "@mui/icons-material/PlayArrowRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import { LANGUAGE_OPTIONS } from "@/fe/shared/constants/options";
 import styles from "@/fe/contests/styles/ProblemSubmissionPage.module.css";
@@ -21,9 +20,6 @@ interface SolutionEditorProps {
   code: string;
   onLanguageChange: (language: string) => void;
   onCodeChange: (code: string) => void;
-  onRunCode?: () => void;
-  runButtonDisabled?: boolean;
-  runButtonLabel?: string;
   onSubmitCode?: () => void;
   submitButtonDisabled?: boolean;
   submitButtonLabel?: string;
@@ -55,9 +51,6 @@ export default function SolutionEditor({
   code,
   onLanguageChange,
   onCodeChange,
-  onRunCode,
-  runButtonDisabled = false,
-  runButtonLabel = "Run Code",
   onSubmitCode,
   submitButtonDisabled = false,
   submitButtonLabel = "Submit",
@@ -180,13 +173,6 @@ export default function SolutionEditor({
             language={editorLanguage}
             value={code}
             onChange={(value) => onCodeChange(value ?? "")}
-            onMount={(editor, monaco) => {
-              editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
-                if (!runButtonDisabled) {
-                  onRunCode?.();
-                }
-              });
-            }}
             theme="vs-light"
             options={{
               minimap: { enabled: false },
@@ -220,14 +206,6 @@ export default function SolutionEditor({
       {footerContent ?? aiHintPanel}
 
       <Box className={styles.buttonRow}>
-        <Button
-          className={styles.runButton}
-          startIcon={<PlayArrowRoundedIcon fontSize="small" />}
-          onClick={onRunCode}
-          disabled={runButtonDisabled}
-        >
-          {runButtonLabel}
-        </Button>
         <Button
           className={styles.submitButton}
           variant="contained"
