@@ -1,0 +1,389 @@
+.page {
+  background: #f9fafb;
+  margin: 0 -32px -32px -32px;
+  padding: 24px 32px 32px;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-family: Inter, sans-serif;
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pageTitle {
+  margin: 0;
+  color: #111827;
+  font-size: 30px !important;
+  line-height: 36px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em;
+}
+
+.pageSubtitle {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px !important;
+  line-height: 20px !important;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.surface {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tabs {
+  width: 100%;
+}
+
+.controlsRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.searchWrap {
+  flex: 1;
+  min-width: 260px;
+  max-width: 480px;
+}
+
+.filterPills {
+  justify-content: flex-end;
+}
+
+.tableCard {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.headerCell {
+  padding: 12px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  color: #111827;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.actionsHeader {
+  text-align: right;
+  width: 88px;
+}
+
+.tableRow:last-child .bodyCell {
+  border-bottom: 0;
+}
+
+.bodyCell {
+  padding: 10px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: middle;
+}
+
+.contestCell {
+  width: 43%;
+}
+
+.problemCell {
+  width: 34%;
+}
+
+.contestPrimary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.problemPrimary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.contestTitle {
+  margin: 0;
+  color: #111827;
+  font-size: 14px !important;
+  line-height: 20px !important;
+  font-weight: 600 !important;
+}
+
+.problemTitle {
+  margin: 0;
+  color: #111827;
+  font-size: 14px !important;
+  line-height: 20px !important;
+  font-weight: 600 !important;
+}
+
+.problemPoints {
+  margin: 0;
+  color: #9ca3af;
+  font-size: 12px !important;
+  line-height: 16px !important;
+}
+
+.contestMetaRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.inlineIcon {
+  width: 12px !important;
+  height: 12px !important;
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.contestMeta {
+  margin: 0;
+  color: #9ca3af;
+  font-size: 12px !important;
+  line-height: 16px !important;
+}
+
+.statusChip {
+  height: 20px !important;
+  border-radius: 999px !important;
+  font-size: 11px !important;
+  line-height: 16px !important;
+  font-weight: 500 !important;
+  text-transform: lowercase;
+  width: fit-content;
+}
+
+.statusActive {
+  background: #dcfce7 !important;
+  color: #16a34a !important;
+}
+
+.statusUpcoming {
+  background: #dbeafe !important;
+  color: #2563eb !important;
+}
+
+.statusDraft {
+  background: #fef3c7 !important;
+  color: #b45309 !important;
+}
+
+.statusEnded {
+  background: #f3f4f6 !important;
+  color: #6b7280 !important;
+}
+
+.statusArchived {
+  background: #ffedd5 !important;
+  color: #c2410c !important;
+}
+
+.statusDeleted {
+  background: #fee2e2 !important;
+  color: #dc2626 !important;
+}
+
+.difficultyEasy {
+  background: #dcfce7 !important;
+  color: #16a34a !important;
+}
+
+.difficultyMedium {
+  background: #fef3c7 !important;
+  color: #b45309 !important;
+}
+
+.difficultyHard {
+  background: #fee2e2 !important;
+  color: #dc2626 !important;
+}
+
+.scheduleStack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.scheduleLine {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.scheduleText {
+  margin: 0;
+  color: #4b5563;
+  font-size: 12px !important;
+  line-height: 16px !important;
+}
+
+.scheduleSubtext {
+  margin: 0;
+  padding-left: 16px;
+  color: #9ca3af;
+  font-size: 12px !important;
+  line-height: 16px !important;
+}
+
+.actionsCell {
+  text-align: right;
+}
+
+.tagsRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.tagChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #f3f4f6;
+  color: #4b5563;
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.extraTagsText {
+  margin: 0;
+  color: #9ca3af;
+  font-size: 12px !important;
+  line-height: 16px !important;
+}
+
+.mobileCellLabel {
+  display: none;
+  margin-bottom: 8px !important;
+  color: #6b7280;
+  font-size: 11px !important;
+  line-height: 16px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.emptyState {
+  padding: 48px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.emptyTitle {
+  margin: 0;
+  color: #111827;
+  font-size: 18px !important;
+  line-height: 24px !important;
+  font-weight: 600 !important;
+}
+
+.emptyDescription {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px !important;
+  line-height: 20px !important;
+}
+
+@media (max-width: 960px) {
+  .page {
+    margin: 0 -20px -20px -20px;
+    padding: 20px;
+  }
+
+  .statsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .controlsRow {
+    align-items: stretch;
+  }
+
+  .searchWrap {
+    max-width: none;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .filterPills {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 720px) {
+  .pageTitle {
+    font-size: 26px !important;
+    line-height: 32px !important;
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .table,
+  .table thead,
+  .table tbody,
+  .table tr,
+  .table th,
+  .table td {
+    display: block;
+  }
+
+  .table thead {
+    display: none;
+  }
+
+  .tableRow {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px 18px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .tableRow:last-child {
+    border-bottom: 0;
+  }
+
+  .bodyCell {
+    border-bottom: 0;
+    padding: 0;
+  }
+
+  .mobileCellLabel {
+    display: block;
+  }
+
+  .actionsCell {
+    text-align: left;
+  }
+}

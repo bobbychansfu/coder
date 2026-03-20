@@ -18,8 +18,6 @@ export default function ProblemsTab({ contestId, problems }: ProblemsTabProps) {
           title={problem.title}
           difficulty={problem.difficulty}
           tags={problem.tags}
-          timeComplexity={problem.timeComplexity}
-          spaceComplexity={problem.spaceComplexity}
           solvedBy={problem.solvedBy}
           points={problem.points}
           solved={problem.solved}

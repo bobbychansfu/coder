@@ -1,14 +1,12 @@
 import Link from "next/link";
 import { Box, Chip, Typography } from "@mui/material";
-import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
-import MemoryOutlinedIcon from "@mui/icons-material/MemoryOutlined";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
-import EmojiEventsOutlinedIcon from "@mui/icons-material/EmojiEventsOutlined";
 import styles from "./ProblemCard.module.css";
 
 export interface ProblemCardProps {
   variant?: "row" | "tile";
   size?: "compact" | "tall";
+  density?: "default" | "compact";
   code?: string;
   title: string;
   difficulty: "easy" | "medium" | "hard";
@@ -24,17 +22,18 @@ export interface ProblemCardProps {
 export default function ProblemCard({
   variant = "row",
   size = "compact",
+  density = "default",
   code,
   title,
   difficulty,
   tags = [],
-  timeComplexity,
-  spaceComplexity,
   solvedBy,
   points,
   solved,
   href,
 }: ProblemCardProps) {
+  const difficultyLabel = `${difficulty.charAt(0).toUpperCase()}${difficulty.slice(1)}`;
+
   // Tile Variant
   if (variant === "tile") {
     const tileDifficultyClass =
@@ -52,11 +51,11 @@ export default function ProblemCard({
       >
         <div className={styles.tileHeader}>
           <div className={styles.tileTitle}>{title}</div>
-          {solved ? <EmojiEventsOutlinedIcon className={styles.tileSolved} /> : null}
+          {solved ? <EmojiEventsIcon className={styles.tileSolved} /> : null}
         </div>
         <div className={styles.tileMeta}>
           <span className={`${styles.tileBadge} ${tileDifficultyClass}`}>
-            {difficulty}
+            {difficultyLabel}
           </span>
         </div>
       </div>
@@ -80,10 +79,14 @@ export default function ProblemCard({
         : styles.diffHard;
 
   const content = (
-    <Box className={styles.cardRow}>
+    <Box className={`${styles.cardRow} ${density === "compact" ? styles.cardRowCompact : ""}`}>
       <Box className={styles.problemRow}>
         <Box className={styles.problemLeft}>
-          {code && <Box className={styles.problemCode}>{code}</Box>}
+          {code && (
+            <Box className={`${styles.problemCode} ${density === "compact" ? styles.problemCodeCompact : ""}`}>
+              {code}
+            </Box>
+          )}
           <Box flex={1}>
             <Box className={styles.problemTitleRow}>
               {solved ? (
@@ -91,20 +94,25 @@ export default function ProblemCard({
                   <EmojiEventsIcon sx={{ fontSize: 16, color: "#16a34a" }} />
                 </Box>
               ) : null}
-              <Typography className={styles.problemTitle}>{title}</Typography>
+              <Typography
+                className={`${styles.problemTitle} ${density === "compact" ? styles.problemTitleCompact : ""}`}
+              >
+                {title}
+              </Typography>
               <Chip
-                className={`${styles.difficultyChip} ${rowDifficultyClass}`}
-                label={difficulty}
+                className={`${styles.difficultyChip} ${rowDifficultyClass} ${
+                  density === "compact" ? styles.difficultyChipCompact : ""
+                }`}
+                label={difficultyLabel}
                 size="small"
                 variant="outlined"
-                sx={{ textTransform: "lowercase" }}
               />
             </Box>
             <Box className={styles.problemTitleRow}>
               {tags.map((tag) => (
                 <Chip
                   key={tag}
-                  className={styles.tagChip}
+                  className={`${styles.tagChip} ${density === "compact" ? styles.tagChipCompact : ""}`}
                   label={tag}
                   size="small"
                   variant="outlined"
@@ -112,18 +120,6 @@ export default function ProblemCard({
               ))}
             </Box>
             <Box className={styles.metaRow}>
-              {timeComplexity && (
-                <Box className={styles.metaItem}>
-                  <AccessTimeOutlinedIcon fontSize="inherit" />
-                  <span>Time: {timeComplexity}</span>
-                </Box>
-              )}
-              {spaceComplexity && (
-                <Box className={styles.metaItem}>
-                  <MemoryOutlinedIcon fontSize="inherit" />
-                  <span>Space: {spaceComplexity}</span>
-                </Box>
-              )}
               {solvedBy !== undefined && (
                 <Box className={styles.metaItem}>
                   <EmojiEventsIcon fontSize="inherit" />
@@ -134,7 +130,9 @@ export default function ProblemCard({
           </Box>
         </Box>
         <Box className={styles.pointsBlock}>
-          <span className={styles.pointsValue}>{points}</span>
+          <span className={`${styles.pointsValue} ${density === "compact" ? styles.pointsValueCompact : ""}`}>
+            {points}
+          </span>
           <span className={styles.pointsLabel}>points</span>
         </Box>
       </Box>

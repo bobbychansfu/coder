@@ -58,8 +58,8 @@ export default function InstructorPage() {
     tone: action.tone,
     icon: actionIconMap[action.tone],
     onClick:
-      action.id === "announcements"
-        ? () => router.push(ROUTES.instructorAnnouncements)
+      action.id === "manage-contests"
+        ? () => router.push(ROUTES.instructorManageContests)
         : action.id === "research-analytics"
           ? () => router.push(ROUTES.instructorResearchAnalytics)
           : action.id === "create-problem"

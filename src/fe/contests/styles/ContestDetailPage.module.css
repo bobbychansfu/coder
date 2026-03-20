@@ -1,19 +1,10 @@
-/* Global difficulty colors */
-:root {
-  --difficulty-easy-bg: #22c55e;
-  --difficulty-easy-text: #ffffff;
-  --difficulty-medium-bg: #f97316;
-  --difficulty-medium-text: #ffffff;
-  --difficulty-hard-bg: #dc2626;
-  --difficulty-hard-text: #ffffff;
-}
-
 .page {
   background-color: #f9fafb;
   display: flex;
   flex-direction: column;
   gap: 24px;
-  padding: 32px;
+  margin: 0 -32px -32px -32px;
+  padding: 24px 32px 32px;
   min-height: 100%;
 }
 
@@ -37,9 +28,9 @@
 .title {
   font-family: Inter, sans-serif;
   font-weight: 700;
-  font-size: 32px;
-  line-height: 38px;
-  letter-spacing: -0.4px;
+  font-size: 30px;
+  line-height: 36px;
+  letter-spacing: 0.3955px;
   color: #0a0a0a;
 }
 
@@ -47,9 +38,9 @@
   text-transform: lowercase;
   font-family: Inter, sans-serif;
   font-weight: 500;
-  font-size: 14px;
-  border-radius: 6px;
-  height: 26px;
+  font-size: 12px;
+  border-radius: 999px;
+  height: 24px;
   letter-spacing: -0.1504px;
 }
 
@@ -58,7 +49,7 @@
   flex-direction: column;
   gap: 24px;
   width: 100%;
-  max-width: 1200px;
+  max-width: 1233px;
 }
 
 .statsGrid {
@@ -128,175 +119,11 @@
   width: 100%;
 }
 
-.problemCard {
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
-  background-color: #ffffff;
-  padding: 20px;
-  cursor: pointer;
-}
-
-.problemLink {
-  text-decoration: none;
-  color: inherit;
-  display: block;
-}
-
-.problemCard:hover {
-  border-color: rgba(0, 0, 0, 0.2);
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
-}
-
-.problemRow {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
-}
-
-.problemLeft {
-  display: flex;
-  gap: 16px;
-  flex: 1;
-}
-
-.problemCode {
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
-  background-color: #f3f4f6;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: Inter, sans-serif;
-  font-weight: 700;
-  font-size: 18px;
-  color: #364153;
-  flex-shrink: 0;
-}
-
-.solvedBadge {
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
-  background-color: #dcfce7;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.problemTitleRow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-
-.problemTitleRow:last-child {
-  margin-bottom: 0;
-}
-
-.problemTitle {
-  font-family: Inter, sans-serif;
-  font-weight: 500;
-  font-size: 20px;
-  color: #0a0a0a;
-  letter-spacing: -0.2px;
-  line-height: 28px;
-}
-
-.difficultyChip {
-  height: 24px;
-  border-radius: 8px;
-  font-family: Inter, sans-serif;
-  font-weight: 500;
-  font-size: 14px;
-  text-transform: lowercase;
-  letter-spacing: -0.15px;
-  padding: 0 12px;
-}
-
-.diffEasy {
-  border-color: var(--difficulty-easy-bg) !important;
-  color: var(--difficulty-easy-bg) !important;
-  background-color: transparent !important;
-}
-
-.diffMedium {
-  border-color: var(--difficulty-medium-bg) !important;
-  color: var(--difficulty-medium-bg) !important;
-  background-color: transparent !important;
-}
-
-.diffHard {
-  border-color: var(--difficulty-hard-bg) !important;
-  color: var(--difficulty-hard-bg) !important;
-  background-color: transparent !important;
-}
-
-.tagChip {
-  height: 28px;
-  border-radius: 8px;
-  font-family: Inter, sans-serif;
-  font-weight: 500;
-  font-size: 14px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  color: #0a0a0a;
-  background-color: #ffffff;
-  letter-spacing: -0.15px;
-  padding: 0 12px;
-}
-
-.metaRow {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  margin-top: 12px;
-  flex-wrap: wrap;
-  font-family: Inter, sans-serif;
-  font-size: 14px;
-  color: #6a7282;
-  letter-spacing: -0.1504px;
-}
-
-.metaItem {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.metaItem svg {
-  font-size: 16px;
-  color: #6a7282;
-}
-
-.pointsBlock {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  min-width: 64px;
-}
-
-.pointsValue {
-  font-family: Inter, sans-serif;
-  font-weight: 700;
-  font-size: 20px;
-  color: #0a0a0a;
-  letter-spacing: -0.4492px;
-}
-
-.pointsLabel {
-  font-family: Inter, sans-serif;
-  font-size: 12px;
-  color: #6a7282;
-}
-
 .scoreboardCard {
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 12px;
   background-color: #ffffff;
-  padding: 20px;
+  padding: 24px;
 }
 
 .scoreboardHeader {
@@ -320,6 +147,7 @@
   border-radius: 6px;
   color: #0a0a0a;
   border-color: rgba(0, 0, 0, 0.1);
+  background-color: #ffffff;
 }
 
 .scoreboardTable {
@@ -424,7 +252,7 @@
   min-width: 24px;
   height: 22px;
   padding: 0 6px;
-  border-radius: 6px;
+  border-radius: 999px;
   background-color: #eceef2;
   font-size: 12px;
   font-weight: 500;
@@ -437,15 +265,16 @@
   justify-content: center;
   min-width: 40px;
   height: 22px;
-  border-radius: 6px;
-  background-color: #00a63e;
-  color: #ffffff;
+  border-radius: 999px;
+  background-color: rgba(0, 184, 163, 0.14);
+  color: #00b8a3;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .scorePenalty {
-  background-color: #d4183d;
+  background-color: rgba(255, 55, 95, 0.14);
+  color: #ff375f;
 }
 
 .scoreTime {
@@ -564,7 +393,8 @@
 
 @media (max-width: 900px) {
   .page {
-    padding: 24px;
+    margin: 0 -16px -32px -16px;
+    padding: 24px 16px 32px;
   }
 
   .statsGrid {
@@ -579,14 +409,6 @@
     grid-template-columns: 56px 160px 72px 72px repeat(5, minmax(60px, 1fr));
   }
 
-  .problemRow {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .pointsBlock {
-    align-items: flex-start;
-  }
 }
 
 @media (max-width: 640px) {
