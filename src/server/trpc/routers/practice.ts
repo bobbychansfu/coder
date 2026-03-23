@@ -90,6 +90,7 @@ export const practiceRouter = router({
 
       const problems = await ctx.prisma.problem.findMany({
         where: {
+          manageStatus: "ACTIVE",
           source: { in: ["PRACTICE", "BOTH"] },
           ...(andClauses.length > 0 ? { AND: andClauses } : {}),
         },
@@ -133,7 +134,9 @@ export const practiceRouter = router({
         where: { code: input.problemCode },
         include: { topics: true, starterCodes: true },
       });
-      if (!problem) throw new TRPCError({ code: "NOT_FOUND", message: "Problem not found" });
+      if (!problem || problem.manageStatus !== "ACTIVE") {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Problem not found" });
+      }
 
       return {
         id: problem.id,

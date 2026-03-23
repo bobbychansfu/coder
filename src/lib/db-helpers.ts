@@ -1,5 +1,5 @@
 import { prisma } from "./prisma";
-import { UserRole, SubmissionStatus, ContestStatus, CodingLanguage } from "@prisma/client";
+import { UserRole, SubmissionStatus, CodingLanguage } from "@prisma/client";
 
 export const dbHelpers = {
   // ********************
@@ -12,20 +12,27 @@ export const dbHelpers = {
   },
 
   findProblem: async (problemId: string) => {
-    return prisma.problem.findUnique({
-      where: { id: problemId },
+    return prisma.problem.findFirst({
+      where: {
+        id: problemId,
+        manageStatus: "ACTIVE",
+      },
     });
   },
 
   findProblemByCode: async (code: string) => {
-    return prisma.problem.findUnique({
-      where: { code },
+    return prisma.problem.findFirst({
+      where: {
+        code,
+        manageStatus: "ACTIVE",
+      },
     });
   },
 
   findContestsForUser: async (computingId: string, role: string) => {
     return prisma.contest.findMany({
       where: {
+        manageStatus: "ACTIVE",
         participations: {
           some: {
             user: { computingId },
@@ -41,6 +48,7 @@ export const dbHelpers = {
     return prisma.contest.findFirst({
       where: {
         id: contestId,
+        manageStatus: "ACTIVE",
         participations: {
           some: {
             user: { computingId },
@@ -55,6 +63,7 @@ export const dbHelpers = {
     // Finds published contests where the user is NOT participating
     return prisma.contest.findMany({
       where: {
+        manageStatus: "ACTIVE",
         published: true,
         participations: {
           none: {
@@ -68,15 +77,22 @@ export const dbHelpers = {
   },
 
   findContest: async (contestId: string) => {
-    return prisma.contest.findUnique({
-      where: { id: contestId },
+    return prisma.contest.findFirst({
+      where: {
+        id: contestId,
+        manageStatus: "ACTIVE",
+      },
     });
   },
 
   findContestsProblemsStatusForUser: async (computingId: string, contestId: string) => {
     // This combines multiple tables in the original SQL
     return prisma.contestProblem.findMany({
-      where: { contestId },
+      where: {
+        contestId,
+        contest: { manageStatus: "ACTIVE" },
+        problem: { manageStatus: "ACTIVE" },
+      },
       include: {
         problem: {
           include: {
@@ -95,7 +111,11 @@ export const dbHelpers = {
 
   getProblemsForContest: async (contestId: string) => {
     return prisma.contestProblem.findMany({
-      where: { contestId },
+      where: {
+        contestId,
+        contest: { manageStatus: "ACTIVE" },
+        problem: { manageStatus: "ACTIVE" },
+      },
       include: { problem: true },
       orderBy: { ordering: "asc" },
     });
@@ -231,7 +251,8 @@ export const dbHelpers = {
     });
   },
 
-  removeParticipate: async (computingId: string, contestId: string, role: string) => {
+  removeParticipate: async (computingId: string, contestId: string, _role: string) => {
+    void _role;
     const user = await dbHelpers.findUserByComputingId(computingId);
     if (!user) throw new Error("User not found");
 
