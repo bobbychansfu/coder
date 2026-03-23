@@ -49,7 +49,10 @@ const problemMutationSchema = z.object({
   inputFormat: z.string().trim().min(1, "Input format is required."),
   outputFormat: z.string().trim().min(1, "Output format is required."),
   constraints: z.string().trim().min(1, "Constraints are required."),
-  examples: z.array(problemExampleSchema).default([]),
+  examples: z
+    .array(problemExampleSchema)
+    .max(1, "Only one example is currently supported.")
+    .default([]),
   starterCodes: starterCodesInputSchema,
 });
 

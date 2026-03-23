@@ -72,13 +72,6 @@ const draftDifficultyChipColors = {
   hard: { background: "#b91c1c", color: "#ffffff" },
 } as const;
 
-const createEmptyExample = (index: number): ProblemExampleDraft => ({
-  id: `example-${index}`,
-  input: "",
-  output: "",
-  explanation: "",
-});
-
 export default function InstructorCreateProblemPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -155,9 +148,7 @@ export default function InstructorCreateProblemPage() {
         outputFormat: problemQuery.data.outputFormat,
         constraints: problemQuery.data.constraints,
       });
-      setExamples(
-        problemQuery.data.examples.length > 0 ? problemQuery.data.examples : problemExamplesDraft,
-      );
+      setExamples(problemQuery.data.examples[0] ? [problemQuery.data.examples[0]] : problemExamplesDraft);
       setStarterCodes(problemQuery.data.starterCodes);
 
       const firstFilledLanguage =
@@ -341,10 +332,6 @@ export default function InstructorCreateProblemPage() {
     setStarterCodes((prev) => ({ ...prev, [language]: value }));
   };
 
-  const addExample = () => {
-    setExamples((prev) => [...prev, createEmptyExample(prev.length + 1)]);
-  };
-
   const goToTab = (tab: ProblemTab) => {
     setActiveTab(tab);
   };
@@ -473,7 +460,7 @@ export default function InstructorCreateProblemPage() {
             inputFormat: statementValues.inputFormat,
             outputFormat: statementValues.outputFormat,
             constraints: statementValues.constraints,
-            examples,
+            examples: examples.slice(0, 1),
             starterCodes,
           },
         });
@@ -488,7 +475,7 @@ export default function InstructorCreateProblemPage() {
           inputFormat: statementValues.inputFormat,
           outputFormat: statementValues.outputFormat,
           constraints: statementValues.constraints,
-          examples,
+          examples: examples.slice(0, 1),
           starterCodes,
         });
       }
@@ -805,15 +792,6 @@ export default function InstructorCreateProblemPage() {
                           </Box>
                         </Box>
                       ))}
-
-                      <Button
-                        variant="outlined"
-                        className={styles.outlineBlockButton}
-                        startIcon={<AddRoundedIcon className={styles.actionIcon} />}
-                        onClick={addExample}
-                      >
-                        {problemAuthoringCopy.addAnotherExampleLabel}
-                      </Button>
                     </Box>
 
                     <Box className={styles.stepActionsRow}>
