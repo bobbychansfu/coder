@@ -1,32 +1,22 @@
-.page {
-  background-color: #f9fafb;
-  margin: 0 -32px -32px -32px;
-  padding: 24px 32px 32px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-height: 100%;
-  font-family: Inter, sans-serif;
-}
-
 .headerActions {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .secondaryAction {
-  text-transform: none !important;
+  height: 36px;
   border-radius: 6px !important;
-  height: 32px;
-  font-size: 12px !important;
-  line-height: 20px !important;
-  font-weight: 500 !important;
-  letter-spacing: -0.15px;
-  color: #0a0a0a !important;
   border: 1px solid rgba(0, 0, 0, 0.1) !important;
   background: #ffffff !important;
-  padding: 6px 12px !important;
+  color: #0a0a0a !important;
+  text-transform: none !important;
+  font-family: Inter, sans-serif !important;
+  font-size: 13px !important;
+  line-height: 20px !important;
+  font-weight: 500 !important;
+  padding: 8px 12px !important;
 }
 
 .secondaryAction:hover {
@@ -38,20 +28,6 @@
   height: 14px !important;
 }
 
-.contentGrid {
-  display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-  gap: 14px;
-  align-items: start;
-}
-
-.leftColumn,
-.rightColumn {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
 .card {
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 12px !important;
@@ -59,11 +35,12 @@
   background: #ffffff;
 }
 
-.cardContent {
-  padding: 14px !important;
+.cardContent,
+.sideCardContent {
+  padding: 24px !important;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 
 .sectionHeader {
@@ -72,55 +49,120 @@
   gap: 4px;
 }
 
-.sectionHeaderRow {
+.sectionHeaderRow,
+.aiHeaderRow,
+.dialogHeader,
+.previewDialogHeader,
+.previewTitleRow,
+.previewSectionHeader,
+.previewFooter {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: 16px;
+}
+
+.sectionTitle,
+.sideTitle,
+.emptyStateTitle,
+.draftTitle,
+.dialogTitle,
+.previewContestTitle,
+.previewSectionTitle,
+.previewDialogTitle {
+  margin: 0;
+  color: #0a0a0a;
+  font-family: Inter, sans-serif;
 }
 
 .sectionTitle,
 .sideTitle {
-  margin: 0;
-  color: #0a0a0a;
   font-size: 16px !important;
-  line-height: 20px !important;
-  font-weight: 500 !important;
-  letter-spacing: -0.31px;
+  line-height: 24px !important;
+  font-weight: 600 !important;
+}
+
+.sectionDescription,
+.emptyStateBody,
+.draftMetaBottom,
+.statusLabel,
+.statusValue,
+.statusValueSmall,
+.dialogSubtitle,
+.problemMetaText,
+.cooldownText,
+.assignmentDescription,
+.assignmentFootnote,
+.aiDisabledBody,
+.previewDescriptionText,
+.previewProblemsCount,
+.previewPoints,
+.previewExperimentBody,
+.previewFooterText,
+.draftDate,
+.groupHintLabel {
+  margin: 0;
+  color: #6a7282;
+  font-family: Inter, sans-serif;
 }
 
 .sectionDescription {
-  margin: 0;
-  color: #717182;
-  font-size: 12px !important;
-  line-height: 18px !important;
+  font-size: 14px !important;
+  line-height: 20px !important;
 }
 
 .fieldBlock {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+}
+
+.fieldLabel,
+.fieldLabelRow,
+.subSectionLabel,
+.groupTitle,
+.assignmentTitle,
+.aiDisabledTitle,
+.previewScheduleKey,
+.previewExperimentTitle,
+.modalProblemTitle,
+.previewProblemTitle {
+  margin: 0;
+  color: #0a0a0a;
+  font-family: Inter, sans-serif;
 }
 
 .fieldLabel,
 .fieldLabelRow {
-  font-size: 13px !important;
+  font-size: 14px !important;
   line-height: 14px !important;
   font-weight: 500 !important;
-  color: #0a0a0a;
-  letter-spacing: -0.1504px;
+}
+
+.subSectionLabel {
+  font-size: 12px !important;
+  line-height: 16px !important;
+  font-weight: 600 !important;
 }
 
 .fieldLabelRow {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+}
+
+.fieldLabelIcon,
+.aiIcon,
+.aiDisabledIcon,
+.previewDialogTitleIcon,
+.previewSectionIcon,
+.previewExperimentIcon {
+  color: #6a7282;
 }
 
 .fieldLabelIcon {
   width: 14px !important;
   height: 14px !important;
-  color: #0a0a0a;
 }
 
 .inputField {
@@ -128,12 +170,10 @@
 }
 
 .inputField :global(.MuiOutlinedInput-root) {
-  background: #f3f3f5;
-  border-radius: 6px;
   min-height: 36px;
+  border-radius: 6px;
+  background: #f3f3f5;
   font-family: Inter, sans-serif;
-  font-size: 14px;
-  color: #0a0a0a;
 }
 
 .inputField :global(.MuiOutlinedInput-notchedOutline) {
@@ -143,6 +183,8 @@
 .inputField :global(.MuiInputBase-input),
 .inputField :global(.MuiSelect-select) {
   padding: 8px 12px !important;
+  font-size: 14px;
+  color: #0a0a0a;
 }
 
 .textAreaField :global(.MuiInputBase-root) {
@@ -150,163 +192,537 @@
 }
 
 .textAreaField :global(.MuiInputBase-inputMultiline) {
-  padding: 8px 12px !important;
+  padding: 10px 12px !important;
+}
+
+.twoColumnGrid,
+.groupGrid {
+  display: grid;
+  gap: 12px;
 }
 
 .twoColumnGrid {
-  display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.groupGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.addProblemsButton,
+.publishButton,
+.dialogPrimaryButton,
+.previewCloseButton {
+  text-transform: none !important;
+  border-radius: 6px !important;
+  font-family: Inter, sans-serif !important;
+  font-size: 14px !important;
+  line-height: 20px !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+.addProblemsButton,
+.previewCloseButton {
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  background: #ffffff !important;
+  color: #0a0a0a !important;
+}
+
+.addProblemsButton:hover,
+.previewCloseButton:hover {
+  background: #f9fafb !important;
+}
+
+.addProblemsButton {
+  height: 32px;
+  padding: 6px 10px !important;
+  flex-shrink: 0;
+}
+
+.publishButton,
+.dialogPrimaryButton {
+  background: #e7000b !important;
+  color: #ffffff !important;
+}
+
+.publishButton:hover,
+.dialogPrimaryButton:hover {
+  background: #ef4444 !important;
+}
+
+.publishButton {
+  width: 100%;
+  height: 36px;
+}
+
+.emptyState {
+  min-height: 172px;
+  border: 2px dashed rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  text-align: center;
+}
+
+.emptyStateIcon {
+  width: 40px !important;
+  height: 40px !important;
+  color: #94a3b8;
+}
+
+.emptyStateTitle {
+  font-size: 16px !important;
+  line-height: 24px !important;
+  font-weight: 400 !important;
+}
+
+.emptyStateBody {
+  font-size: 14px !important;
+  line-height: 20px !important;
+}
+
+.problemList,
+.modalProblemList,
+.previewProblemsList,
+.draftsList,
+.statusRows {
+  display: flex;
+  flex-direction: column;
+}
+
+.problemList,
+.modalProblemList,
+.previewProblemsList,
+.draftsList {
   gap: 8px;
 }
 
-.dividerRow {
+.selectedProblemRow,
+.previewProblemRow {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.selectedProblemRow {
+  padding: 12px 13px;
+}
+
+.selectedProblemMain,
+.previewProblemCopy,
+.aiTitleWrap,
+.groupHeader,
+.assignmentTitleRow,
+.previewScheduleLabel,
+.previewDialogTitleWrap {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.dividerLine {
-  height: 1px;
-  background: rgba(0, 0, 0, 0.1);
+.selectedProblemMain {
+  min-width: 0;
   flex: 1;
 }
 
-.dividerText {
+.problemOrder,
+.previewProblemOrder {
   margin: 0;
+  color: #6a7282;
+  font-family: Inter, sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.previewProblemOrder {
+  font-family: Menlo, monospace;
+  font-size: 12px;
+  line-height: 16px;
   color: #99a1af;
-  font-size: 11px !important;
-  line-height: 16px !important;
 }
 
-.helperRow {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.helperIcon {
-  width: 12px !important;
-  height: 12px !important;
-  color: #6a7282;
-}
-
-.helperText {
-  margin: 0;
-  color: #6a7282;
-  font-size: 11px !important;
-  line-height: 16px !important;
-}
-
-.addProblemsButton {
-  text-transform: none !important;
-  border-radius: 6px !important;
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
-  color: #0a0a0a !important;
-  background: #ffffff !important;
-  height: 30px;
-  font-size: 12px !important;
-  line-height: 18px !important;
-  font-weight: 500 !important;
-  white-space: nowrap;
-  padding: 6px 10px !important;
-}
-
-.addProblemsButton:hover {
-  background: #f9fafb !important;
-}
-
-.emptyState {
-  border: 2px solid rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  min-height: 104px;
+.problemCopy {
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
   gap: 4px;
-  padding: 16px;
 }
 
-.emptyStateIcon {
-  width: 34px !important;
-  height: 34px !important;
-  color: #9ca3af;
+.problemTitle,
+.modalProblemTitle,
+.previewProblemTitle,
+.assignmentTitle,
+.draftTitle {
+  font-size: 16px !important;
+  line-height: 24px !important;
+  font-weight: 500 !important;
 }
 
-.emptyStateTitle {
-  margin: 0;
-  color: #4b5563;
-  font-size: 18px !important;
-  line-height: 20px !important;
-  letter-spacing: -0.2px;
+.problemTitle {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.emptyStateBody {
-  margin: 0;
-  color: #6b7280;
+.problemMetaRow,
+.modalProblemMeta,
+.draftMetaTop,
+.previewProblemMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.problemMetaText,
+.previewPoints {
   font-size: 12px !important;
   line-height: 16px !important;
 }
 
-.draftsList {
+.difficultyBadge,
+.statusNewBadge,
+.statusEnabledBadge,
+.statusDisabledBadge,
+.assignmentBadge,
+.previewHeaderBadge,
+.previewVisibilityBadge,
+.draftStatusChip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-family: Inter, sans-serif;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.difficultyBadge {
+  min-height: 22px;
+  padding: 3px 9px;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.difficultyEasy {
+  background: #eceef2;
+  color: #030213;
+}
+
+.difficultyMedium {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.difficultyHard {
+  background: #d4183d;
+  color: #ffffff;
+}
+
+.removeProblemButton {
+  width: 20px;
+  height: 20px;
+  padding: 0 !important;
+  border-radius: 4px !important;
+}
+
+.removeProblemIcon {
+  width: 14px !important;
+  height: 14px !important;
+  color: #4a5565;
+}
+
+.aiTitleWrap {
+  align-items: flex-start;
+}
+
+.aiIcon {
+  width: 16px !important;
+  height: 16px !important;
+  margin-top: 4px;
+}
+
+.aiToggleWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.aiToggleLabel {
+  margin: 0;
+  color: #4a5565;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.aiSwitch {
+  width: 30px !important;
+  height: 18px !important;
+  padding: 0 !important;
+}
+
+.aiSwitch :global(.MuiSwitch-switchBase) {
+  padding: 2px !important;
+}
+
+.aiSwitch :global(.MuiSwitch-switchBase.Mui-checked) {
+  transform: translateX(12px);
+  color: #ffffff !important;
+}
+
+.aiSwitch :global(.MuiSwitch-thumb) {
+  width: 14px;
+  height: 14px;
+  box-shadow: none;
+}
+
+.aiSwitch :global(.MuiSwitch-track) {
+  border-radius: 999px;
+  background: #d1d5dc;
+  opacity: 1 !important;
+}
+
+.aiSwitch :global(.MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track) {
+  background: #e7000b;
+  opacity: 1 !important;
+}
+
+.groupCard,
+.assignmentCard,
+.previewScheduleCard,
+.previewExperimentBanner,
+.aiDisabledPanel {
+  border-radius: 8px;
+}
+
+.groupCard {
+  border: 1px solid;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.draftItem {
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 6px;
-  padding: 10px;
+.groupCardA {
+  background: #eff6ff;
+  border-color: #bedbff;
+}
+
+.groupCardB {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.groupDot {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-family: Inter, sans-serif;
+  font-size: 9px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.groupDotA {
+  background: #2563eb;
+}
+
+.groupDotB {
+  background: #16a34a;
+}
+
+.groupTitle {
+  font-size: 12px !important;
+  line-height: 16px !important;
+  font-weight: 600 !important;
+}
+
+.groupHintLabel {
+  font-size: 10px !important;
+  line-height: 14px !important;
+}
+
+.groupValueSurface {
+  min-height: 28px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+}
+
+.groupValueText {
+  margin: 0;
+  color: #0a0a0a;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.cooldownRow {
+  min-height: 18px;
+  border-radius: 4px;
+  background: #f9fafb;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+}
+
+.cooldownIcon {
+  width: 10px !important;
+  height: 10px !important;
+  color: #9ca3af;
+}
+
+.cooldownText {
+  font-size: 10px !important;
+  line-height: 14px !important;
+}
+
+.assignmentSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.assignmentCard {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  padding: 10px 12px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
 }
 
-.draftMain {
+.assignmentCopy {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
 }
 
-.draftTitle {
-  margin: 0;
-  color: #0a0a0a;
-  font-size: 14px !important;
-  line-height: 20px !important;
+.assignmentTitleRow {
+  gap: 8px;
+}
+
+.assignmentIcon {
+  width: 14px !important;
+  height: 14px !important;
+  color: #ef4444;
+}
+
+.assignmentTitle {
+  font-size: 12px !important;
+  line-height: 16px !important;
   font-weight: 500 !important;
 }
 
-.draftMetaTop {
+.assignmentDescription,
+.assignmentFootnote {
+  font-size: 10px !important;
+  line-height: 14px !important;
+}
+
+.assignmentBadge {
+  min-height: 18px;
+  padding: 1px 7px;
+  background: #fee2e2;
+  color: #ef4444;
+  font-size: 10px;
+  line-height: 14px;
+}
+
+.aiDisabledPanel {
+  min-height: 64px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: #f9fafb;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 12px;
+  padding: 12px 14px;
+}
+
+.aiDisabledIcon {
+  width: 14px !important;
+  height: 14px !important;
+  color: #b6bdc8;
+  flex-shrink: 0;
+}
+
+.aiDisabledTitle {
+  font-size: 12px !important;
+  line-height: 16px !important;
+  font-weight: 400 !important;
+  color: #99a1af;
+}
+
+.aiDisabledBody {
+  font-size: 10px !important;
+  line-height: 14px !important;
+  color: #99a1af;
+}
+
+.draftsList {
+  gap: 8px;
+}
+
+.draftItem {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+.draftMain {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.draftTitle {
+  font-size: 12px !important;
+  line-height: 18px !important;
 }
 
 .draftStatusChip {
-  height: 16px !important;
-  border-radius: 6px !important;
-  background: #fefce8 !important;
-  color: #a65f00 !important;
-  border: 1px solid #ffdf20 !important;
-  font-size: 10px !important;
-  line-height: 14px !important;
+  min-height: 18px;
+  padding: 1px 7px;
+  background: #fefce8;
+  border: 1px solid #ffdf20;
+  color: #a65f00;
+  font-size: 10px;
+  line-height: 14px;
 }
 
-.draftDate {
-  margin: 0;
-  color: #9ca3af;
-  font-size: 10px !important;
-  line-height: 14px !important;
-}
-
+.draftDate,
 .draftMetaBottom {
-  margin: 0;
-  color: #6a7282;
   font-size: 10px !important;
   line-height: 14px !important;
+  color: #99a1af;
 }
 
 .draftActions {
@@ -319,25 +735,29 @@
   min-width: 20px !important;
   width: 20px;
   height: 20px;
-  border-radius: 4px !important;
   padding: 0 !important;
+  border-radius: 4px !important;
+}
+
+.draftActionIcon,
+.draftActionIconDanger {
+  width: 12px !important;
+  height: 12px !important;
 }
 
 .draftActionIcon {
-  width: 12px !important;
-  height: 12px !important;
   color: #4a5565;
 }
 
 .draftActionIconDanger {
-  width: 12px !important;
-  height: 12px !important;
   color: #e7000b;
 }
 
+.sideTitle {
+  margin-bottom: -4px;
+}
+
 .statusRows {
-  display: flex;
-  flex-direction: column;
   gap: 8px;
 }
 
@@ -345,38 +765,57 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 16px;
 }
 
 .statusLabel {
-  margin: 0;
-  color: #4a5565;
-  font-size: 13px !important;
-  line-height: 18px !important;
+  font-size: 14px !important;
+  line-height: 20px !important;
 }
 
 .statusValue,
 .statusValueSmall {
-  margin: 0;
   color: #0a0a0a;
-  font-size: 13px !important;
-  line-height: 18px !important;
+  font-size: 14px !important;
+  line-height: 20px !important;
   font-weight: 500 !important;
   text-align: right;
 }
 
 .statusValueSmall {
-  font-size: 11px !important;
-  line-height: 14px !important;
-  max-width: 165px;
-}
-
-.statusChip {
-  border-radius: 6px !important;
-  height: 22px !important;
+  max-width: 110px;
   font-size: 12px !important;
   line-height: 16px !important;
-  font-weight: 500 !important;
+}
+
+.statusNewBadge {
+  min-height: 22px;
+  padding: 3px 9px;
+  background: #fefce8;
+  border: 1px solid #ffdf20;
+  color: #a65f00;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.statusEnabledBadge,
+.statusDisabledBadge {
+  min-height: 16px;
+  padding: 1px 7px;
+  font-size: 10px;
+  line-height: 14px;
+}
+
+.statusEnabledBadge {
+  background: #f0fdf4;
+  border: 1px solid #7bf1a8;
+  color: #008236;
+}
+
+.statusDisabledBadge {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  color: #6a7282;
 }
 
 .statusDivider {
@@ -385,93 +824,341 @@
   background: rgba(0, 0, 0, 0.1);
 }
 
-.rulesList {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.dialogContent,
+.previewDialogContent {
+  padding: 0 !important;
+}
+
+.selectProblemsDialogPaper {
+  max-width: 760px !important;
+  border-radius: 8px !important;
+}
+
+.previewDialogPaper {
+  max-width: 672px !important;
+  border-radius: 12px !important;
+}
+
+.dialogHeader,
+.previewDialogHeader {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dialogTitle {
+  font-size: 14px !important;
+  line-height: 20px !important;
+  font-weight: 600 !important;
+}
+
+.dialogSubtitle {
+  font-size: 12px !important;
+  line-height: 16px !important;
+}
+
+.dialogCloseButton {
+  width: 20px;
+  height: 20px;
+  padding: 0 !important;
+  border-radius: 4px !important;
+  color: #6a7282 !important;
+}
+
+.dialogCloseIcon {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.modalProblemList {
+  padding: 12px 8px 0;
+}
+
+.modalProblemButton {
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 10px 12px;
+  text-align: left;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  cursor: pointer;
 }
 
-.ruleItem {
-  display: flex;
-  align-items: flex-start;
+.modalProblemButtonSelected {
+  border-color: #fca5a5;
+  background: #fff5f5;
+}
+
+.modalProblemTitle {
+  font-size: 14px !important;
+  line-height: 20px !important;
+  font-weight: 500 !important;
+}
+
+.modalProblemMeta {
   gap: 6px;
 }
 
-.ruleCheckIcon {
-  width: 12px !important;
-  height: 12px !important;
-  color: #00a63e;
-  margin-top: 3px;
+.problemSeparator {
+  margin: 0;
+  color: #6a7282;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  line-height: 16px;
 }
 
-.ruleText {
-  margin: 0;
-  color: #4a5565;
-  font-size: 13px !important;
+.dialogFooter {
+  padding: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dialogPrimaryButton {
+  width: 100%;
+  height: 36px;
+}
+
+.previewDialogHeader {
+  align-items: center;
+}
+
+.previewDialogTitleWrap {
+  gap: 8px;
+}
+
+.previewDialogTitleIcon {
+  width: 16px !important;
+  height: 16px !important;
+  color: #6a7282;
+}
+
+.previewDialogTitle {
+  font-size: 16px !important;
+  line-height: 24px !important;
+  font-weight: 600 !important;
+}
+
+.previewHeaderBadge,
+.previewVisibilityBadge {
+  min-height: 17px;
+  padding: 1px 7px;
+  font-size: 10px;
+  line-height: 15px;
+}
+
+.previewHeaderBadge {
+  background: #fefce8;
+  border: 1px solid #ffdf20;
+  color: #a65f00;
+}
+
+.previewVisibilityBadge {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  color: #6a7282;
+}
+
+.previewBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.previewContestTitle {
+  font-size: 30px !important;
+  line-height: 36px !important;
+  font-weight: 700 !important;
+}
+
+.previewDescriptionText {
+  font-size: 14px !important;
   line-height: 20px !important;
 }
 
-.actionStack {
+.previewScheduleCard {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.previewScheduleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+}
+
+.previewScheduleRow + .previewScheduleRow {
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.previewScheduleLabel {
+  gap: 8px;
+}
+
+.previewScheduleIcon {
+  width: 16px !important;
+  height: 16px !important;
+  color: #6a7282;
+}
+
+.previewScheduleKey {
+  font-size: 14px !important;
+  line-height: 20px !important;
+  font-weight: 400 !important;
+  color: #6a7282;
+}
+
+.previewScheduleValue {
+  margin: 0;
+  color: #1e2939;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+}
+
+.previewSection {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.publishButton,
-.scheduleButton {
-  width: 100%;
-  height: 36px;
-  text-transform: none !important;
-  border-radius: 6px !important;
+.previewSectionTitleWrap {
+  align-items: center;
+  gap: 6px;
+}
+
+.previewSectionIcon {
+  width: 16px !important;
+  height: 16px !important;
+  color: #6a7282;
+}
+
+.previewSectionTitle {
+  font-size: 14px !important;
+  line-height: 20px !important;
+  font-weight: 600 !important;
+  color: #364153;
+}
+
+.previewProblemsCount {
+  font-size: 12px !important;
+  line-height: 16px !important;
+  color: #99a1af;
+}
+
+.previewProblemsList {
+  gap: 8px;
+}
+
+.previewProblemRow {
+  padding: 11px 16px;
+  background: rgba(249, 250, 251, 0.5);
+}
+
+.previewProblemCopy {
+  min-width: 0;
+  gap: 12px;
+}
+
+.previewProblemTitle {
   font-size: 14px !important;
   line-height: 20px !important;
   font-weight: 500 !important;
-  letter-spacing: -0.1504px;
+  color: #1e2939;
 }
 
-.publishButton {
-  background: #e7000b !important;
-  color: #ffffff !important;
+.previewPoints {
+  color: #99a1af;
 }
 
-.publishButton:hover {
-  background: #c80009 !important;
+.previewExperimentBanner {
+  border: 1px solid #bedbff;
+  background: #eff6ff;
+  padding: 12px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
 }
 
-.scheduleButton {
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
-  color: #0a0a0a !important;
-  background: #ffffff !important;
+.previewExperimentIcon {
+  width: 16px !important;
+  height: 16px !important;
+  color: #155dfc;
 }
 
-.scheduleButton:hover {
-  background: #f9fafb !important;
+.previewExperimentTitle {
+  margin: 0;
+  color: #193cb8;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
 }
 
-@media (max-width: 1200px) {
-  .contentGrid {
+.previewExperimentBody {
+  font-size: 12px !important;
+  line-height: 16px !important;
+  color: #155dfc;
+}
+
+.previewFooter {
+  align-items: center;
+  padding: 12px 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  background: #f9fafb;
+}
+
+.previewFooterText {
+  font-size: 12px !important;
+  line-height: 16px !important;
+  color: #99a1af;
+}
+
+.previewCloseButton {
+  height: 32px;
+  padding: 6px 13px !important;
+  flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .twoColumnGrid,
+  .groupGrid {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 768px) {
-  .page {
-    margin: 0 -16px -16px -16px;
-    padding: 16px;
+  .cardContent,
+  .sideCardContent {
+    padding: 16px !important;
   }
 
-  .twoColumnGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .sectionHeaderRow {
+  .sectionHeaderRow,
+  .aiHeaderRow,
+  .previewFooter,
+  .previewTitleRow,
+  .previewSectionHeader {
     flex-direction: column;
+    align-items: stretch;
   }
 
-  .addProblemsButton {
+  .addProblemsButton,
+  .previewCloseButton {
     width: 100%;
+  }
+
+  .selectedProblemRow,
+  .previewProblemRow {
+    align-items: flex-start;
+  }
+
+  .previewScheduleRow {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

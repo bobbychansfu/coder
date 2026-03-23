@@ -1,0 +1,72 @@
+.tabs {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  border-radius: 12px;
+  background: #ececf0;
+  padding: 3px;
+}
+
+.tabButton {
+  border: 0;
+  background: transparent;
+  min-height: 29px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px 12px;
+  color: #0a0a0a;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  line-height: 20px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.tabButtonActive {
+  background: #ffffff;
+}
+
+.tabNumber {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  color: #4a5565;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  line-height: 14px;
+}
+
+.checkIcon {
+  width: 12px !important;
+  height: 12px !important;
+  color: #16a34a;
+}
+
+.countBadge {
+  min-width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #16a34a;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  font-size: 10px;
+  line-height: 14px;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+  }
+}

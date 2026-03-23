@@ -8,7 +8,6 @@ import TabSwitcher from "@/fe/shared/components/ui/TabSwitcher";
 import ContestDataHub from "@/fe/contests/components/ContestDataHub";
 import ProblemsTab from "@/fe/contests/components/ProblemsTab";
 import ScoreboardTab from "@/fe/contests/components/ScoreboardTab";
-import ClarificationsTab from "@/fe/contests/components/ClarificationsTab";
 import { CONTEST_STATUS_CONFIG } from "@/fe/shared/constants/options";
 import type { ContestDetail } from "@/fe/contests/data/contestDetails";
 import styles from "@/fe/contests/styles/ContestDetailPage.module.css";
@@ -28,6 +27,10 @@ export default function ContestDetailPage({ contest }: ContestDetailPageProps) {
         title={contest.title}
         status={CONTEST_STATUS_CONFIG[contest.status]}
         onBack={() => router.back()}
+        backButtonClassName={styles.backButton}
+        headerClassName={styles.headerRow}
+        titleClassName={styles.title}
+        statusChipClassName={styles.statusChip}
       />
 
       <Box className={styles.content}>
@@ -39,17 +42,14 @@ export default function ContestDetailPage({ contest }: ContestDetailPageProps) {
           options={[
             { value: "problems", label: "Problems" },
             { value: "scoreboard", label: "Scoreboard" },
-            { value: "clarifications", label: "Clarifications" },
           ]}
           ariaLabel="Contest detail tabs"
         />
 
         {tab === "problems" ? (
           <ProblemsTab contestId={contest.id} problems={contest.problems} />
-        ) : tab === "scoreboard" ? (
-          <ScoreboardTab rows={contest.scoreboard} problemColumns={problemColumns} />
         ) : (
-          <ClarificationsTab clarifications={contest.clarifications} />
+          <ScoreboardTab rows={contest.scoreboard} problemColumns={problemColumns} />
         )}
       </Box>
     </Box>

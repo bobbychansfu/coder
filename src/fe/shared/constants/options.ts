@@ -10,6 +10,47 @@ export const LANGUAGE_OPTIONS = [
   { value: "javascript", label: "JavaScript", monacoLanguage: "javascript" },
 ];
 
+export const DIFFICULTY_OPTIONS = [
+  { value: "easy", label: "Easy" },
+  { value: "medium", label: "Medium" },
+  { value: "hard", label: "Hard" },
+];
+
+export const VISIBILITY_OPTIONS = [
+  { value: "contest-only", label: "contest-only" },
+  { value: "public", label: "public" },
+  { value: "draft", label: "draft" },
+];
+
+export const PROBLEM_TAG_GROUPS = [
+  {
+    label: "Data Structures",
+    tags: ["arrays", "hash-table", "linked-list", "stack", "queue", "trees", "heap", "trie"],
+  },
+  {
+    label: "Algorithms",
+    tags: [
+      "binary-search",
+      "sorting",
+      "two-pointers",
+      "sliding-window",
+      "recursion",
+      "divide-conquer",
+      "greedy",
+      "backtracking",
+      "dynamic-programming",
+    ],
+  },
+  {
+    label: "Graph",
+    tags: ["graphs", "bfs", "dfs", "shortest-path"],
+  },
+  {
+    label: "Other",
+    tags: ["strings", "bit-manipulation", "math"],
+  },
+] as const;
+
 export const SUBMISSION_STATUS_CONFIG = {
   accepted: {
     label: "Accepted",

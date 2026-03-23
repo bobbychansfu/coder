@@ -1,20 +1,20 @@
 /* Global difficulty colors */
 .diffEasy {
-  border-color: #22c55e !important;
-  color: #22c55e !important;
-  background-color: transparent !important;
+  border-color: transparent !important;
+  color: #00b8a3 !important;
+  background-color: rgba(0, 184, 163, 0.14) !important;
 }
 
 .diffMedium {
-  border-color: #f97316 !important;
-  color: #f97316 !important;
-  background-color: transparent !important;
+  border-color: transparent !important;
+  color: #ffb020 !important;
+  background-color: rgba(255, 176, 32, 0.16) !important;
 }
 
 .diffHard {
-  border-color: #dc2626 !important;
-  color: #dc2626 !important;
-  background-color: transparent !important;
+  border-color: transparent !important;
+  color: #ff375f !important;
+  background-color: rgba(255, 55, 95, 0.14) !important;
 }
 
 /* Base Link */
@@ -40,6 +40,10 @@
 .cardRow:hover {
   border-color: rgba(0, 0, 0, 0.2);
   box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+.cardRowCompact {
+  padding: 16px;
 }
 
 .problemRow {
@@ -68,6 +72,12 @@
   font-size: 18px;
   color: #364153;
   flex-shrink: 0;
+}
+
+.problemCodeCompact {
+  width: 40px;
+  height: 40px;
+  font-size: 16px;
 }
 
 .solvedBadge {
@@ -101,15 +111,28 @@
   line-height: 28px;
 }
 
+.problemTitleCompact {
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: -0.1504px;
+}
+
 .difficultyChip {
   height: 24px;
-  border-radius: 8px;
+  border-radius: 999px;
   font-family: Inter, sans-serif;
-  font-weight: 500;
-  font-size: 14px;
-  text-transform: lowercase;
+  font-weight: 600;
+  font-size: 13px;
   letter-spacing: -0.15px;
-  padding: 0 12px;
+  padding: 0 10px;
+  margin-left: 4px;
+}
+
+.difficultyChipCompact {
+  height: 22px;
+  font-size: 12px;
+  padding: 0 9px;
+  margin-left: 6px;
 }
 
 .tagChip {
@@ -123,6 +146,13 @@
   background-color: #ffffff;
   letter-spacing: -0.15px;
   padding: 0 12px;
+}
+
+.tagChipCompact {
+  height: 22px;
+  font-size: 10px;
+  padding: 0 8px;
+  border-radius: 6px;
 }
 
 .metaRow {
@@ -161,6 +191,12 @@
   font-size: 20px;
   color: #0a0a0a;
   letter-spacing: -0.4492px;
+}
+
+.pointsValueCompact {
+  font-size: 18px;
+  line-height: 24px;
+  letter-spacing: -0.3125px;
 }
 
 .pointsLabel {
@@ -228,6 +264,7 @@
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 
@@ -247,30 +284,30 @@
   align-items: center;
   height: 22px;
   padding: 0 8px;
-  border-radius: 6px;
+  border-radius: 999px;
   font-family: Inter, sans-serif;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 16px;
   text-transform: capitalize;
 }
 
 .tileBadgeEasy {
-  background-color: #f0fdf4;
-  border: 1px solid #b9f8cf;
-  color: #00a63e;
+  background-color: rgba(0, 184, 163, 0.14);
+  border: 1px solid transparent;
+  color: #00b8a3;
 }
 
 .tileBadgeMedium {
-  background-color: #fff7ed;
-  border: 1px solid #ffd6a7;
-  color: #f54900;
+  background-color: rgba(255, 176, 32, 0.16);
+  border: 1px solid transparent;
+  color: #ffb020;
 }
 
 .tileBadgeHard {
-  background-color: #fef2f2;
-  border: 1px solid #ffc9c9;
-  color: #e7000b;
+  background-color: rgba(255, 55, 95, 0.14);
+  border: 1px solid transparent;
+  color: #ff375f;
 }
 
 .tilePoints {

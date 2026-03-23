@@ -10,10 +10,10 @@ export type InstructorAction = ManagementAction<InstructorActionTone>;
 
 export const instructorActions: InstructorAction[] = [
   {
-    id: "announcements",
-    title: "Announcements",
+    id: "manage-contests",
+    title: "Manage Contests",
     description:
-      "Send announcements and clarifications to students in your contests",
+      "Review contest details, monitor activity, and update contest settings",
     tone: "success",
   },
   {
