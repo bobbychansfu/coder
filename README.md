@@ -107,6 +107,7 @@ Local practice submissions now use a temporary Gemini-backed judge instead of th
 | Bobby Chan    | bobbyc@sfu.ca  |
 | Dingsong Zhou | dza68@sfu.ca   |
 | Ran Wang      | rwa122@sfu.ca  |
+| Shilin Mao    | sma382@sfu.ca  |
 
 ---
 

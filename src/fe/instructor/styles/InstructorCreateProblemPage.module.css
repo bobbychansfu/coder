@@ -332,6 +332,21 @@
   padding: 8px 12px !important;
 }
 
+.generationFeedback {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 13px !important;
+  line-height: 18px !important;
+}
+
+.generationFeedbackError {
+  color: #b42318;
+}
+
+.generationFeedbackSuccess {
+  color: #027a48;
+}
+
 .codeEditorCard {
   overflow: hidden;
 }
