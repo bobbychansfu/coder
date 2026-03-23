@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useRef, useState, type ChangeEvent, type DragEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
@@ -18,6 +18,7 @@ import {
   Card,
   CardContent,
   Chip,
+  CircularProgress,
   Dialog,
   DialogContent,
   IconButton,
@@ -49,6 +50,7 @@ import {
 } from "@/fe/instructor/data/problemAuthoring";
 import AuthoringPageShell from "@/fe/shared/components/authoring/AuthoringPageShell";
 import AuthoringStepTabs from "@/fe/shared/components/authoring/AuthoringStepTabs";
+import { ROUTES } from "@/fe/shared/constants/routes";
 import { DIFFICULTY_OPTIONS, LANGUAGE_OPTIONS, PROBLEM_TAG_GROUPS, VISIBILITY_OPTIONS } from "@/fe/shared/constants/options";
 import { trpc } from "@/lib/trpc/client";
 import subpageStyles from "@/fe/instructor/styles/InstructorSubpageHeader.module.css";
@@ -79,7 +81,12 @@ const createEmptyExample = (index: number): ProblemExampleDraft => ({
 
 export default function InstructorCreateProblemPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const initializedProblemIdRef = useRef<string | null>(null);
+  const utils = trpc.useUtils();
+  const problemId = searchParams.get("problemId");
+  const isEditMode = Boolean(problemId);
 
   const [activeTab, setActiveTab] = useState<ProblemTab>("metadata");
   const [metadataValues, setMetadataValues] =
@@ -96,7 +103,14 @@ export default function InstructorCreateProblemPage() {
   const [tagAnchorEl, setTagAnchorEl] = useState<HTMLElement | null>(null);
   const [generationFeedback, setGenerationFeedback] = useState<string | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const generateStarterCodesMutation = trpc.problemAuthoring.generateStarterCodes.useMutation();
+  const problemQuery = trpc.problemAuthoring.getProblemById.useQuery(
+    { problemId: problemId ?? "" },
+    { enabled: isEditMode, retry: false },
+  );
+  const createProblemMutation = trpc.problemAuthoring.createProblem.useMutation();
+  const updateProblemMutation = trpc.problemAuthoring.updateProblem.useMutation();
 
   const headerActions: SubpageActionButtonItem[] = [
     {
@@ -117,6 +131,66 @@ export default function InstructorCreateProblemPage() {
       onClick: () => setPreviewOpen(true),
     },
   ];
+
+  useEffect(() => {
+    if (!problemQuery.data) {
+      return;
+    }
+
+    if (initializedProblemIdRef.current === problemQuery.data.id) {
+      return;
+    }
+
+    queueMicrotask(() => {
+      setMetadataValues({
+        title: problemQuery.data.title,
+        difficulty: problemQuery.data.difficulty,
+        points: String(problemQuery.data.points),
+        tags: problemQuery.data.tags,
+        visibility: problemQuery.data.visibility,
+      });
+      setStatementValues({
+        statement: problemQuery.data.statement,
+        inputFormat: problemQuery.data.inputFormat,
+        outputFormat: problemQuery.data.outputFormat,
+        constraints: problemQuery.data.constraints,
+      });
+      setExamples(
+        problemQuery.data.examples.length > 0 ? problemQuery.data.examples : problemExamplesDraft,
+      );
+      setStarterCodes(problemQuery.data.starterCodes);
+
+      const firstFilledLanguage =
+        (Object.entries(problemQuery.data.starterCodes).find(([, code]) => code.trim())?.[0] as
+          | StarterLanguage
+          | undefined) ?? "typescript";
+
+      setBaseLanguage(firstFilledLanguage);
+      setActiveLanguage(firstFilledLanguage);
+      initializedProblemIdRef.current = problemQuery.data.id;
+    });
+  }, [problemQuery.data]);
+
+  useEffect(() => {
+    if (isEditMode) {
+      return;
+    }
+
+    initializedProblemIdRef.current = null;
+
+    queueMicrotask(() => {
+      setActiveTab("metadata");
+      setMetadataValues(problemMetadataDraft);
+      setStatementValues(problemStatementDraft);
+      setExamples(problemExamplesDraft);
+      setStarterCodes(starterCodeDraft);
+      setBaseLanguage("typescript");
+      setActiveLanguage("typescript");
+      setGenerationFeedback(null);
+      setGenerationError(null);
+      setSaveError(null);
+    });
+  }, [isEditMode]);
 
   const difficultyLabel = useMemo(() => {
     return (
@@ -168,7 +242,19 @@ export default function InstructorCreateProblemPage() {
     {
       id: "status",
       label: "Status",
-      value: <Chip label={problemAuthoringCopy.statusNewLabel} size="small" className={styles.statusChip} />,
+      value: (
+        <Chip
+          label={
+            isEditMode
+              ? problemQuery.data?.manageStatus === "archived"
+                ? "Archived"
+                : "Editing"
+              : problemAuthoringCopy.statusNewLabel
+          }
+          size="small"
+          className={styles.statusChip}
+        />
+      ),
     },
     {
       id: "visibility",
@@ -224,6 +310,14 @@ export default function InstructorCreateProblemPage() {
   const tagSummary = metadataValues.tags.join(", ");
   const tagPopoverOpen = Boolean(tagAnchorEl);
   const starterProgress = `${(filledLanguages.length / LANGUAGE_OPTIONS.length) * 100}%`;
+  const pageTitle = isEditMode ? "Edit Problem" : problemAuthoringCopy.pageTitle;
+  const pageSubtitle = isEditMode
+    ? "Update an existing competitive programming problem"
+    : problemAuthoringCopy.pageSubtitle;
+  const publishLabel = isEditMode ? "Save Changes" : problemAuthoringCopy.publishLabel;
+  const isSaving = createProblemMutation.isPending || updateProblemMutation.isPending;
+  const pageError = saveError ?? problemQuery.error?.message ?? null;
+  const isPageLoading = isEditMode && problemQuery.isLoading && !problemQuery.data;
 
   const updateMetadataField = (field: keyof ProblemMetadataDraft, value: string) => {
     setMetadataValues((prev) => ({ ...prev, [field]: value }));
@@ -355,6 +449,61 @@ export default function InstructorCreateProblemPage() {
     URL.revokeObjectURL(url);
   };
 
+  const handlePublish = async () => {
+    const points = Number.parseInt(metadataValues.points, 10);
+
+    if (!Number.isFinite(points) || points < 0) {
+      setSaveError("Points must be a non-negative integer.");
+      return;
+    }
+
+    setSaveError(null);
+
+    try {
+      if (isEditMode && problemId) {
+        await updateProblemMutation.mutateAsync({
+          problemId,
+          data: {
+            title: metadataValues.title,
+            difficulty: metadataValues.difficulty as "easy" | "medium" | "hard",
+            points,
+            tags: metadataValues.tags,
+            visibility: metadataValues.visibility as "course-only" | "public" | "private",
+            statement: statementValues.statement,
+            inputFormat: statementValues.inputFormat,
+            outputFormat: statementValues.outputFormat,
+            constraints: statementValues.constraints,
+            examples,
+            starterCodes,
+          },
+        });
+      } else {
+        await createProblemMutation.mutateAsync({
+          title: metadataValues.title,
+          difficulty: metadataValues.difficulty as "easy" | "medium" | "hard",
+          points,
+          tags: metadataValues.tags,
+          visibility: metadataValues.visibility as "course-only" | "public" | "private",
+          statement: statementValues.statement,
+          inputFormat: statementValues.inputFormat,
+          outputFormat: statementValues.outputFormat,
+          constraints: statementValues.constraints,
+          examples,
+          starterCodes,
+        });
+      }
+
+      await Promise.all([
+        utils.instructorManageContent.getManageContent.invalidate(),
+        utils.problemAuthoring.getProblemById.invalidate({ problemId: problemId ?? "" }),
+      ]);
+
+      router.push(ROUTES.instructorManageContests);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Unable to save the problem.");
+    }
+  };
+
   const problemStatusFooter = (
     <Box className={styles.supportedLanguagesSection}>
       <Typography className={styles.supportedLanguagesTitle}>
@@ -384,8 +533,8 @@ export default function InstructorCreateProblemPage() {
         onBack={() => router.back()}
         backLabel={problemAuthoringCopy.backButtonLabel}
         backButtonClassName={subpageStyles.backButton}
-        title={problemAuthoringCopy.pageTitle}
-        subtitle={problemAuthoringCopy.pageSubtitle}
+        title={pageTitle}
+        subtitle={pageSubtitle}
         actions={
           <SubpageActionButtons
             items={headerActions}
@@ -396,8 +545,22 @@ export default function InstructorCreateProblemPage() {
         }
         main={
           <>
+            {pageError ? (
+              <Typography
+                className={`${styles.generationFeedback} ${styles.generationFeedbackError}`}
+              >
+                {pageError}
+              </Typography>
+            ) : null}
+
             <Card className={styles.card} elevation={0}>
               <CardContent className={styles.cardContent}>
+                {isPageLoading ? (
+                  <Box display="flex" justifyContent="center" py={6}>
+                    <CircularProgress size={28} />
+                  </Box>
+                ) : null}
+
                 <AuthoringStepTabs
                   value={activeTab}
                   tabs={problemAuthoringTabs.map((tab) => ({
@@ -498,6 +661,7 @@ export default function InstructorCreateProblemPage() {
                         className={styles.primaryStepButton}
                         variant="contained"
                         endIcon={<ArrowForwardRoundedIcon className={styles.actionIcon} />}
+                        disabled={isSaving || isPageLoading}
                         onClick={goToNextTab}
                       >
                         {problemAuthoringCopy.nextStatementLabel}
@@ -573,6 +737,7 @@ export default function InstructorCreateProblemPage() {
                         className={styles.primaryStepButton}
                         variant="contained"
                         endIcon={<ArrowForwardRoundedIcon className={styles.actionIcon} />}
+                        disabled={isSaving || isPageLoading}
                         onClick={goToNextTab}
                       >
                         {problemAuthoringCopy.nextExamplesLabel}
@@ -659,6 +824,7 @@ export default function InstructorCreateProblemPage() {
                         className={styles.primaryStepButton}
                         variant="contained"
                         endIcon={<ArrowForwardRoundedIcon className={styles.actionIcon} />}
+                        disabled={isSaving || isPageLoading}
                         onClick={goToNextTab}
                       >
                         {problemAuthoringCopy.nextStarterCodeLabel}
@@ -795,8 +961,13 @@ export default function InstructorCreateProblemPage() {
                       <Button className={styles.secondaryStepButton} onClick={goToPreviousTab}>
                         {`← ${problemAuthoringCopy.backExamplesLabel}`}
                       </Button>
-                      <Button className={styles.primaryStepButton} variant="contained">
-                        {problemAuthoringCopy.publishLabel}
+                      <Button
+                        className={styles.primaryStepButton}
+                        variant="contained"
+                        disabled={isSaving || isPageLoading}
+                        onClick={() => void handlePublish()}
+                      >
+                        {isSaving ? "Saving..." : publishLabel}
                       </Button>
                     </Box>
                   </Box>
@@ -879,8 +1050,13 @@ export default function InstructorCreateProblemPage() {
             />
 
             <Box className={styles.publishPanel}>
-              <Button className={styles.publishButton} variant="contained">
-                {problemAuthoringCopy.publishLabel}
+              <Button
+                className={styles.publishButton}
+                variant="contained"
+                disabled={isSaving || isPageLoading}
+                onClick={() => void handlePublish()}
+              >
+                {isSaving ? "Saving..." : publishLabel}
               </Button>
               <Typography className={styles.publishHint}>
                 {problemAuthoringCopy.publishHint}
