@@ -974,3 +974,643 @@ export const MOCK_INSTRUCTOR_ANALYTICS: InstructorAnalyticsUiPayload = {
   ],
   analytics_notes: [],
 };
+
+const extraContests: ContestCatalogRow[] = [
+  {
+    id: "contest-7",
+    name: "Recursion Relay",
+    hintNote:
+      "A group has no AI hint. B group can access AI hints after 2 minutes. C group can access AI hints after 20 minutes.",
+    gamificationNote:
+      "A group is a stable friend group. B group is randomly assigned. C group is matched through prior online collaboration.",
+    comparisonNote: "Useful for medium-difficulty recursion problems where persistence patterns diverge clearly.",
+  },
+  {
+    id: "contest-8",
+    name: "Heap and Hash Arena",
+    hintNote:
+      "A group has no AI hint. B group can access AI hints after 3 minutes. C group can access AI hints after 25 minutes.",
+    gamificationNote:
+      "A group members are familiar with each other. B group is fully mixed. C group has lightweight social ties through the platform.",
+    comparisonNote: "Useful for comparing participation and hint reliance in mixed-difficulty data-structure contests.",
+  },
+];
+
+const extraSegmentedMetrics: Record<SegmentKey, MetricBundle> = {
+  all: {
+    contest_metrics: [
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        solve_rate: 53,
+        mean_solve_time_minutes: 47,
+        median_solve_time_minutes: 42,
+        attempts_to_solve: 3.0,
+      },
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        solve_rate: 61,
+        mean_solve_time_minutes: 39,
+        median_solve_time_minutes: 35,
+        attempts_to_solve: 2.6,
+      },
+    ],
+    problem_metrics: [
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        problem_id: "p8",
+        problem_code: "A",
+        problem_title: "Nested Recurrence",
+        time_to_first_submission_minutes: 15,
+        time_to_first_correct_submission_minutes: 29,
+        post_hint_solve_probability: 58,
+        attempts_before_hint: 2.2,
+        attempts_after_hint: 1.1,
+        time_to_solve_after_hint_minutes: 18,
+      },
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        problem_id: "p8b",
+        problem_code: "B",
+        problem_title: "Memoized Paths",
+        time_to_first_submission_minutes: 18,
+        time_to_first_correct_submission_minutes: 33,
+        post_hint_solve_probability: 54,
+        attempts_before_hint: 2.5,
+        attempts_after_hint: 1.2,
+        time_to_solve_after_hint_minutes: 20,
+      },
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        problem_id: "p9",
+        problem_code: "A",
+        problem_title: "Priority Queue Warmup",
+        time_to_first_submission_minutes: 11,
+        time_to_first_correct_submission_minutes: 21,
+        post_hint_solve_probability: 68,
+        attempts_before_hint: 1.7,
+        attempts_after_hint: 0.8,
+        time_to_solve_after_hint_minutes: 14,
+      },
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        problem_id: "p9b",
+        problem_code: "B",
+        problem_title: "Frequency Tracker",
+        time_to_first_submission_minutes: 13,
+        time_to_first_correct_submission_minutes: 24,
+        post_hint_solve_probability: 63,
+        attempts_before_hint: 1.9,
+        attempts_after_hint: 0.9,
+        time_to_solve_after_hint_minutes: 16,
+      },
+    ],
+  },
+  groupA: {
+    contest_metrics: [
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        solve_rate: 57,
+        mean_solve_time_minutes: 43,
+        median_solve_time_minutes: 39,
+        attempts_to_solve: 2.8,
+      },
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        solve_rate: 66,
+        mean_solve_time_minutes: 34,
+        median_solve_time_minutes: 31,
+        attempts_to_solve: 2.3,
+      },
+    ],
+    problem_metrics: [
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        problem_id: "p8",
+        problem_code: "A",
+        problem_title: "Nested Recurrence",
+        time_to_first_submission_minutes: 13,
+        time_to_first_correct_submission_minutes: 26,
+        post_hint_solve_probability: 63,
+        attempts_before_hint: 2.0,
+        attempts_after_hint: 0.9,
+        time_to_solve_after_hint_minutes: 16,
+      },
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        problem_id: "p8b",
+        problem_code: "B",
+        problem_title: "Memoized Paths",
+        time_to_first_submission_minutes: 16,
+        time_to_first_correct_submission_minutes: 30,
+        post_hint_solve_probability: 59,
+        attempts_before_hint: 2.3,
+        attempts_after_hint: 1.0,
+        time_to_solve_after_hint_minutes: 18,
+      },
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        problem_id: "p9",
+        problem_code: "A",
+        problem_title: "Priority Queue Warmup",
+        time_to_first_submission_minutes: 9,
+        time_to_first_correct_submission_minutes: 18,
+        post_hint_solve_probability: 72,
+        attempts_before_hint: 1.5,
+        attempts_after_hint: 0.7,
+        time_to_solve_after_hint_minutes: 12,
+      },
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        problem_id: "p9b",
+        problem_code: "B",
+        problem_title: "Frequency Tracker",
+        time_to_first_submission_minutes: 11,
+        time_to_first_correct_submission_minutes: 21,
+        post_hint_solve_probability: 68,
+        attempts_before_hint: 1.7,
+        attempts_after_hint: 0.8,
+        time_to_solve_after_hint_minutes: 14,
+      },
+    ],
+  },
+  groupB: {
+    contest_metrics: [
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        solve_rate: 51,
+        mean_solve_time_minutes: 48,
+        median_solve_time_minutes: 43,
+        attempts_to_solve: 3.2,
+      },
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        solve_rate: 59,
+        mean_solve_time_minutes: 40,
+        median_solve_time_minutes: 36,
+        attempts_to_solve: 2.8,
+      },
+    ],
+    problem_metrics: [
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        problem_id: "p8",
+        problem_code: "A",
+        problem_title: "Nested Recurrence",
+        time_to_first_submission_minutes: 16,
+        time_to_first_correct_submission_minutes: 31,
+        post_hint_solve_probability: 56,
+        attempts_before_hint: 2.4,
+        attempts_after_hint: 1.2,
+        time_to_solve_after_hint_minutes: 19,
+      },
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        problem_id: "p8b",
+        problem_code: "B",
+        problem_title: "Memoized Paths",
+        time_to_first_submission_minutes: 19,
+        time_to_first_correct_submission_minutes: 35,
+        post_hint_solve_probability: 52,
+        attempts_before_hint: 2.7,
+        attempts_after_hint: 1.4,
+        time_to_solve_after_hint_minutes: 21,
+      },
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        problem_id: "p9",
+        problem_code: "A",
+        problem_title: "Priority Queue Warmup",
+        time_to_first_submission_minutes: 12,
+        time_to_first_correct_submission_minutes: 23,
+        post_hint_solve_probability: 66,
+        attempts_before_hint: 1.8,
+        attempts_after_hint: 0.9,
+        time_to_solve_after_hint_minutes: 15,
+      },
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        problem_id: "p9b",
+        problem_code: "B",
+        problem_title: "Frequency Tracker",
+        time_to_first_submission_minutes: 14,
+        time_to_first_correct_submission_minutes: 26,
+        post_hint_solve_probability: 61,
+        attempts_before_hint: 2.1,
+        attempts_after_hint: 1.1,
+        time_to_solve_after_hint_minutes: 17,
+      },
+    ],
+  },
+  groupC: {
+    contest_metrics: [
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        solve_rate: 46,
+        mean_solve_time_minutes: 54,
+        median_solve_time_minutes: 48,
+        attempts_to_solve: 3.6,
+      },
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        solve_rate: 55,
+        mean_solve_time_minutes: 45,
+        median_solve_time_minutes: 39,
+        attempts_to_solve: 3.0,
+      },
+    ],
+    problem_metrics: [
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        problem_id: "p8",
+        problem_code: "A",
+        problem_title: "Nested Recurrence",
+        time_to_first_submission_minutes: 18,
+        time_to_first_correct_submission_minutes: 34,
+        post_hint_solve_probability: 49,
+        attempts_before_hint: 2.8,
+        attempts_after_hint: 1.5,
+        time_to_solve_after_hint_minutes: 22,
+      },
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        problem_id: "p8b",
+        problem_code: "B",
+        problem_title: "Memoized Paths",
+        time_to_first_submission_minutes: 22,
+        time_to_first_correct_submission_minutes: 39,
+        post_hint_solve_probability: 45,
+        attempts_before_hint: 3.1,
+        attempts_after_hint: 1.6,
+        time_to_solve_after_hint_minutes: 24,
+      },
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        problem_id: "p9",
+        problem_code: "A",
+        problem_title: "Priority Queue Warmup",
+        time_to_first_submission_minutes: 14,
+        time_to_first_correct_submission_minutes: 26,
+        post_hint_solve_probability: 59,
+        attempts_before_hint: 2.1,
+        attempts_after_hint: 1.1,
+        time_to_solve_after_hint_minutes: 18,
+      },
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        problem_id: "p9b",
+        problem_code: "B",
+        problem_title: "Frequency Tracker",
+        time_to_first_submission_minutes: 16,
+        time_to_first_correct_submission_minutes: 29,
+        post_hint_solve_probability: 55,
+        attempts_before_hint: 2.3,
+        attempts_after_hint: 1.2,
+        time_to_solve_after_hint_minutes: 19,
+      },
+    ],
+  },
+};
+
+const extraStudents: StudentCatalogRow[] = [
+  { computingId: "student04", name: "Noah Park", segment: "groupA" },
+  { computingId: "student05", name: "Ivy Nguyen", segment: "groupB" },
+  { computingId: "student06", name: "Sara Lim", segment: "groupC" },
+  { computingId: "student07", name: "Eric Wong", segment: "groupA" },
+  { computingId: "student08", name: "Grace Kim", segment: "groupB" },
+  { computingId: "student09", name: "Daniel Shah", segment: "groupC" },
+];
+
+const extraStudentViews: InstructorAnalyticsUiPayload["student_views"] = {
+  student03: {
+    contest_metrics: [
+      {
+        contest_id: "contest-3",
+        contest_name: "Arrays & Strings Basics",
+        solve_rate: 67,
+        mean_solve_time_minutes: 32,
+        median_solve_time_minutes: 32,
+        attempts_to_solve: 2.9,
+      },
+    ],
+    problem_metrics: [
+      {
+        contest_id: "contest-3",
+        contest_name: "Arrays & Strings Basics",
+        problem_id: "p4",
+        problem_code: "A",
+        problem_title: "Prefix Sums Warmup",
+        time_to_first_submission_minutes: 8,
+        time_to_first_correct_submission_minutes: 17,
+        post_hint_solve_probability: 73,
+        attempts_before_hint: 1.4,
+        attempts_after_hint: 0.6,
+        time_to_solve_after_hint_minutes: 11,
+      },
+    ],
+  },
+  student04: {
+    contest_metrics: [
+      {
+        contest_id: "contest-1",
+        contest_name: "Week 3 Lab Contest",
+        solve_rate: 83,
+        mean_solve_time_minutes: 33,
+        median_solve_time_minutes: 33,
+        attempts_to_solve: 2.2,
+      },
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        solve_rate: 67,
+        mean_solve_time_minutes: 40,
+        median_solve_time_minutes: 40,
+        attempts_to_solve: 2.6,
+      },
+    ],
+    problem_metrics: [
+      {
+        contest_id: "contest-1",
+        contest_name: "Week 3 Lab Contest",
+        problem_id: "p2",
+        problem_code: "B",
+        problem_title: "Sliding Window Lab",
+        time_to_first_submission_minutes: 7,
+        time_to_first_correct_submission_minutes: 15,
+        post_hint_solve_probability: 88,
+        attempts_before_hint: 1.2,
+        attempts_after_hint: 0.3,
+        time_to_solve_after_hint_minutes: 9,
+      },
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        problem_id: "p8",
+        problem_code: "A",
+        problem_title: "Nested Recurrence",
+        time_to_first_submission_minutes: 14,
+        time_to_first_correct_submission_minutes: 24,
+        post_hint_solve_probability: 64,
+        attempts_before_hint: 1.9,
+        attempts_after_hint: 0.8,
+        time_to_solve_after_hint_minutes: 15,
+      },
+    ],
+  },
+  student05: {
+    contest_metrics: [
+      {
+        contest_id: "contest-2",
+        contest_name: "Trees & Graphs Challenge",
+        solve_rate: 58,
+        mean_solve_time_minutes: 44,
+        median_solve_time_minutes: 44,
+        attempts_to_solve: 3.5,
+      },
+    ],
+    problem_metrics: [
+      {
+        contest_id: "contest-2",
+        contest_name: "Trees & Graphs Challenge",
+        problem_id: "p3b",
+        problem_code: "D",
+        problem_title: "Graph Connectivity",
+        time_to_first_submission_minutes: 17,
+        time_to_first_correct_submission_minutes: 31,
+        post_hint_solve_probability: 57,
+        attempts_before_hint: 2.3,
+        attempts_after_hint: 1.1,
+        time_to_solve_after_hint_minutes: 18,
+      },
+    ],
+  },
+  student06: {
+    contest_metrics: [
+      {
+        contest_id: "contest-4",
+        contest_name: "Dynamic Programming Sprint",
+        solve_rate: 42,
+        mean_solve_time_minutes: 61,
+        median_solve_time_minutes: 61,
+        attempts_to_solve: 4.0,
+      },
+    ],
+    problem_metrics: [
+      {
+        contest_id: "contest-4",
+        contest_name: "Dynamic Programming Sprint",
+        problem_id: "p5",
+        problem_code: "D",
+        problem_title: "Knapsack Variants",
+        time_to_first_submission_minutes: 23,
+        time_to_first_correct_submission_minutes: 42,
+        post_hint_solve_probability: 41,
+        attempts_before_hint: 3.2,
+        attempts_after_hint: 1.7,
+        time_to_solve_after_hint_minutes: 25,
+      },
+    ],
+  },
+  student07: {
+    contest_metrics: [
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        solve_rate: 74,
+        mean_solve_time_minutes: 31,
+        median_solve_time_minutes: 31,
+        attempts_to_solve: 2.1,
+      },
+    ],
+    problem_metrics: [
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        problem_id: "p9",
+        problem_code: "A",
+        problem_title: "Priority Queue Warmup",
+        time_to_first_submission_minutes: 8,
+        time_to_first_correct_submission_minutes: 16,
+        post_hint_solve_probability: 79,
+        attempts_before_hint: 1.4,
+        attempts_after_hint: 0.5,
+        time_to_solve_after_hint_minutes: 10,
+      },
+    ],
+  },
+  student08: {
+    contest_metrics: [
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        solve_rate: 61,
+        mean_solve_time_minutes: 39,
+        median_solve_time_minutes: 39,
+        attempts_to_solve: 2.8,
+      },
+    ],
+    problem_metrics: [
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        problem_id: "p9b",
+        problem_code: "B",
+        problem_title: "Frequency Tracker",
+        time_to_first_submission_minutes: 13,
+        time_to_first_correct_submission_minutes: 24,
+        post_hint_solve_probability: 62,
+        attempts_before_hint: 2.0,
+        attempts_after_hint: 1.0,
+        time_to_solve_after_hint_minutes: 16,
+      },
+    ],
+  },
+  student09: {
+    contest_metrics: [
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        solve_rate: 39,
+        mean_solve_time_minutes: 57,
+        median_solve_time_minutes: 57,
+        attempts_to_solve: 4.1,
+      },
+    ],
+    problem_metrics: [
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        problem_id: "p8b",
+        problem_code: "B",
+        problem_title: "Memoized Paths",
+        time_to_first_submission_minutes: 24,
+        time_to_first_correct_submission_minutes: 41,
+        post_hint_solve_probability: 43,
+        attempts_before_hint: 3.4,
+        attempts_after_hint: 1.7,
+        time_to_solve_after_hint_minutes: 26,
+      },
+    ],
+  },
+};
+
+MOCK_INSTRUCTOR_ANALYTICS.contests_catalog.push(...extraContests);
+MOCK_INSTRUCTOR_ANALYTICS.students_catalog.push(...extraStudents);
+
+for (const segment of Object.keys(extraSegmentedMetrics) as SegmentKey[]) {
+  MOCK_INSTRUCTOR_ANALYTICS.segmented_metrics[segment].contest_metrics.push(
+    ...extraSegmentedMetrics[segment].contest_metrics,
+  );
+  MOCK_INSTRUCTOR_ANALYTICS.segmented_metrics[segment].problem_metrics.push(
+    ...extraSegmentedMetrics[segment].problem_metrics,
+  );
+}
+
+Object.assign(MOCK_INSTRUCTOR_ANALYTICS.student_views, extraStudentViews);
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function buildStudentMetricBundle(
+  studentIndex: number,
+  segment: "groupA" | "groupB" | "groupC",
+): MetricBundle {
+  const segmentBundle = MOCK_INSTRUCTOR_ANALYTICS.segmented_metrics[segment];
+  const contestOffset = (studentIndex % 3) - 1;
+  const problemOffset = (studentIndex % 4) - 1.5;
+
+  return {
+    contest_metrics: segmentBundle.contest_metrics.map((row, contestIndex) => ({
+      ...row,
+      solve_rate: clamp(row.solve_rate + contestOffset * 3 + (contestIndex % 2), 18, 100),
+      mean_solve_time_minutes:
+        row.mean_solve_time_minutes == null
+          ? null
+          : clamp(row.mean_solve_time_minutes + contestOffset * 2 + (contestIndex % 3), 8, 120),
+      median_solve_time_minutes:
+        row.median_solve_time_minutes == null
+          ? null
+          : clamp(row.median_solve_time_minutes + contestOffset * 2 + (contestIndex % 2), 6, 110),
+      attempts_to_solve:
+        row.attempts_to_solve == null
+          ? null
+          : Number(
+              clamp(row.attempts_to_solve + contestOffset * 0.2 + (contestIndex % 2) * 0.1, 1, 8).toFixed(1),
+            ),
+    })),
+    problem_metrics: segmentBundle.problem_metrics.map((row, problemIndex) => ({
+      ...row,
+      time_to_first_submission_minutes:
+        row.time_to_first_submission_minutes == null
+          ? null
+          : clamp(
+              row.time_to_first_submission_minutes + problemOffset * 2 + (problemIndex % 2),
+              2,
+              90,
+            ),
+      time_to_first_correct_submission_minutes:
+        row.time_to_first_correct_submission_minutes == null
+          ? null
+          : clamp(
+              row.time_to_first_correct_submission_minutes + problemOffset * 2 + (problemIndex % 3),
+              4,
+              120,
+            ),
+      post_hint_solve_probability:
+        row.post_hint_solve_probability == null
+          ? null
+          : clamp(row.post_hint_solve_probability + contestOffset * 4 + (problemIndex % 2), 12, 100),
+      attempts_before_hint:
+        row.attempts_before_hint == null
+          ? null
+          : Number(
+              clamp(row.attempts_before_hint + problemOffset * 0.2 + (problemIndex % 2) * 0.1, 0.5, 8).toFixed(1),
+            ),
+      attempts_after_hint:
+        row.attempts_after_hint == null
+          ? null
+          : Number(
+              clamp(row.attempts_after_hint + problemOffset * 0.15 + (problemIndex % 2) * 0.1, 0, 6).toFixed(1),
+            ),
+      time_to_solve_after_hint_minutes:
+        row.time_to_solve_after_hint_minutes == null
+          ? null
+          : clamp(
+              row.time_to_solve_after_hint_minutes + problemOffset * 2 + (problemIndex % 2),
+              4,
+              90,
+            ),
+    })),
+  };
+}
+
+MOCK_INSTRUCTOR_ANALYTICS.students_catalog.forEach((student, index) => {
+  MOCK_INSTRUCTOR_ANALYTICS.student_views[student.computingId] = buildStudentMetricBundle(
+    index,
+    student.segment,
+  );
+});

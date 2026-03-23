@@ -11,9 +11,25 @@ import TimerOutlinedIcon from "@mui/icons-material/TimerOutlined";
 import {
   MOCK_INSTRUCTOR_ANALYTICS,
   type ContestCatalogRow,
+  type ContestMetricRow,
+  type ProblemMetricRow,
   type ViewMode,
 } from "@/fe/instructor/data/liveInstructorAnalytics";
 import styles from "@/fe/instructor/styles/LiveInstructorAnalyticsCard.module.css";
+
+interface LiveInstructorAnalyticsCardProps {
+  viewMode?: ViewMode;
+  selectedContestId?: string;
+  onViewModeChange?: (value: ViewMode) => void;
+  onSelectedContestIdChange?: (value: string) => void;
+}
+
+export interface LiveInstructorAnalyticsResolvedData {
+  activeContest: ContestCatalogRow | null;
+  contestRows: ContestMetricRow[];
+  problemRows: ProblemMetricRow[];
+  orderedProblemRows: ProblemMetricRow[];
+}
 
 function formatNumber(value: number | null): string {
   if (value === null || Number.isNaN(value)) return "N/A";
@@ -25,41 +41,20 @@ function formatPercent(value: number | null): string {
   return `${value}%`;
 }
 
-export default function LiveInstructorAnalyticsCard() {
-  const [loading, setLoading] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>("all");
-  const [selectedContestId, setSelectedContestId] = useState("all");
-  const [showAllContestRows, setShowAllContestRows] = useState(false);
-  const [showAllProblemRows, setShowAllProblemRows] = useState(false);
+function resolveLiveInstructorAnalyticsData(
+  viewMode: ViewMode,
+  selectedContestId: string,
+): LiveInstructorAnalyticsResolvedData {
+  const activeBundle = MOCK_INSTRUCTOR_ANALYTICS.segmented_metrics[viewMode] || {
+    contest_metrics: [],
+    problem_metrics: [],
+  };
 
-  async function refreshDemo(): Promise<void> {
-    setLoading(true);
-    try {
-      await Promise.resolve();
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const activeBundle = useMemo(() => {
-    return MOCK_INSTRUCTOR_ANALYTICS.segmented_metrics[viewMode] || {
-      contest_metrics: [],
-      problem_metrics: [],
-    };
-  }, [viewMode]);
-
-  const contestOptions = useMemo(() => {
-    const catalog = MOCK_INSTRUCTOR_ANALYTICS.contests_catalog;
-    return [{ id: "all", name: "All Contests" }, ...catalog];
-  }, []);
-
-  const activeContest: ContestCatalogRow | null = useMemo(() => {
-    if (selectedContestId === "all") return null;
-    return (
-      MOCK_INSTRUCTOR_ANALYTICS.contests_catalog.find((contest) => contest.id === selectedContestId) ||
-      null
-    );
-  }, [selectedContestId]);
+  const activeContest =
+    selectedContestId === "all"
+      ? null
+      : MOCK_INSTRUCTOR_ANALYTICS.contests_catalog.find((contest) => contest.id === selectedContestId) ||
+        null;
 
   const contestRows =
     selectedContestId === "all"
@@ -70,14 +65,55 @@ export default function LiveInstructorAnalyticsCard() {
     selectedContestId === "all"
       ? activeBundle.problem_metrics
       : activeBundle.problem_metrics.filter((row) => row.contest_id === selectedContestId);
-  const orderedProblemRows = useMemo(
-    () =>
-      [...problemRows].sort((left, right) => {
-        const contestCompare = left.contest_name.localeCompare(right.contest_name);
-        if (contestCompare !== 0) return contestCompare;
-        return left.problem_code.localeCompare(right.problem_code);
-      }),
-    [problemRows],
+
+  const orderedProblemRows = [...problemRows].sort((left, right) => {
+    const contestCompare = left.contest_name.localeCompare(right.contest_name);
+    if (contestCompare !== 0) return contestCompare;
+    return left.problem_code.localeCompare(right.problem_code);
+  });
+
+  return {
+    activeContest,
+    contestRows,
+    problemRows,
+    orderedProblemRows,
+  };
+}
+
+export { resolveLiveInstructorAnalyticsData };
+
+export default function LiveInstructorAnalyticsCard({
+  viewMode: controlledViewMode,
+  selectedContestId: controlledSelectedContestId,
+  onViewModeChange,
+  onSelectedContestIdChange,
+}: LiveInstructorAnalyticsCardProps) {
+  const [loading, setLoading] = useState(false);
+  const [uncontrolledViewMode, setUncontrolledViewMode] = useState<ViewMode>("all");
+  const [uncontrolledSelectedContestId, setUncontrolledSelectedContestId] = useState("all");
+  const [showAllContestRows, setShowAllContestRows] = useState(false);
+  const [showAllProblemRows, setShowAllProblemRows] = useState(false);
+
+  const viewMode = controlledViewMode ?? uncontrolledViewMode;
+  const selectedContestId = controlledSelectedContestId ?? uncontrolledSelectedContestId;
+
+  async function refreshDemo(): Promise<void> {
+    setLoading(true);
+    try {
+      await Promise.resolve();
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const contestOptions = useMemo(() => {
+    const catalog = MOCK_INSTRUCTOR_ANALYTICS.contests_catalog;
+    return [{ id: "all", name: "All Contests" }, ...catalog];
+  }, []);
+
+  const { activeContest, contestRows, problemRows, orderedProblemRows } = useMemo(
+    () => resolveLiveInstructorAnalyticsData(viewMode, selectedContestId),
+    [viewMode, selectedContestId],
   );
 
   const avgSolveRate =
@@ -119,7 +155,14 @@ export default function LiveInstructorAnalyticsCard() {
         <Box className={styles.filterRow}>
         <label className={styles.filterField}>
           <span>Contest</span>
-          <select value={selectedContestId} onChange={(e) => setSelectedContestId(e.target.value)}>
+          <select
+            value={selectedContestId}
+            onChange={(e) => {
+              const value = e.target.value;
+              onSelectedContestIdChange?.(value);
+              if (!onSelectedContestIdChange) setUncontrolledSelectedContestId(value);
+            }}
+          >
             {contestOptions.map((contest) => (
               <option key={contest.id} value={contest.id}>
                 {contest.name}
@@ -133,7 +176,9 @@ export default function LiveInstructorAnalyticsCard() {
           <select
             value={viewMode}
             onChange={(e) => {
-              setViewMode(e.target.value as ViewMode);
+              const value = e.target.value as ViewMode;
+              onViewModeChange?.(value);
+              if (!onViewModeChange) setUncontrolledViewMode(value);
             }}
           >
             <option value="all">All Students</option>
@@ -145,7 +190,7 @@ export default function LiveInstructorAnalyticsCard() {
         </Box>
       </Box>
 
-      {loading && <p className={styles.info}>Refreshing UI demo metrics...</p>}
+      {loading && <p className={styles.info}>Refreshing metrics...</p>}
       {MOCK_INSTRUCTOR_ANALYTICS.analytics_notes[0] ? (
         <p className={styles.info}>{MOCK_INSTRUCTOR_ANALYTICS.analytics_notes[0]}</p>
       ) : null}

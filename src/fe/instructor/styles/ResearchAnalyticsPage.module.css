@@ -196,6 +196,80 @@
   border-color: rgba(0, 0, 0, 0.08) !important;
 }
 
+.exportDialogContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 8px !important;
+}
+
+.exportDialogCopy {
+  font-size: 14px !important;
+  line-height: 20px !important;
+  color: #4a5565;
+}
+
+.exportSectionList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 14px;
+}
+
+.exportCheckbox {
+  margin: 0 !important;
+  align-items: center !important;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  background: #f9fafb;
+  padding: 6px 8px;
+}
+
+.exportCheckbox :global(.MuiCheckbox-root) {
+  color: #b42318;
+}
+
+.exportCheckbox :global(.MuiCheckbox-root.Mui-checked) {
+  color: #b42318;
+}
+
+.exportCheckbox :global(.MuiFormControlLabel-label) {
+  font-size: 13px;
+  line-height: 18px;
+  color: #101828;
+}
+
+.exportFormatRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 10px;
+}
+
+.exportFormatLabel {
+  font-size: 13px !important;
+  line-height: 18px !important;
+  font-weight: 600 !important;
+  color: #0a0a0a;
+}
+
+.exportFormatControl {
+  min-width: 160px;
+}
+
+.exportFormatControl :global(.MuiOutlinedInput-root) {
+  background: #ffffff;
+  border-radius: 8px;
+}
+
+.exportFormatControl :global(.MuiOutlinedInput-notchedOutline) {
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
+
 .kpiGrid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -763,6 +837,14 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.groupCompareEmpty {
+  padding: 16px 0 8px;
+  text-align: center;
+  color: #667085;
+  font-size: 14px !important;
+  line-height: 20px !important;
 }
 
 .groupCompareRow {

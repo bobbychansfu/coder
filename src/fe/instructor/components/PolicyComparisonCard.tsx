@@ -45,33 +45,39 @@ export default function PolicyComparisonCard({
           </Box>
 
           <Box className={styles.groupCompareRows}>
-            {rows.map((row) => (
-              <Box key={row.label} className={styles.groupCompareRow}>
-                <Box className={styles.groupCompareSide}>
-                  <Box className={styles.groupCompareTrack}>
-                    <Box
-                      className={styles.groupCompareFillLeft}
-                      style={{ width: `${row.leftPercent}%` }}
-                    />
+            {rows.length === 0 ? (
+              <Typography className={styles.groupCompareEmpty}>
+                No comparison data available for the current selection.
+              </Typography>
+            ) : (
+              rows.map((row) => (
+                <Box key={row.label} className={styles.groupCompareRow}>
+                  <Box className={styles.groupCompareSide}>
+                    <Box className={styles.groupCompareTrack}>
+                      <Box
+                        className={styles.groupCompareFillLeft}
+                        style={{ width: `${row.leftPercent}%` }}
+                      />
+                    </Box>
+                    <Typography className={styles.groupCompareValue}>{row.leftValue}</Typography>
                   </Box>
-                  <Typography className={styles.groupCompareValue}>{row.leftValue}</Typography>
-                </Box>
 
-                <Box className={styles.groupCompareMetricCenter}>
-                  <Typography className={styles.groupCompareMetricLabel}>{row.label}</Typography>
-                </Box>
+                  <Box className={styles.groupCompareMetricCenter}>
+                    <Typography className={styles.groupCompareMetricLabel}>{row.label}</Typography>
+                  </Box>
 
-                <Box className={styles.groupCompareSide}>
-                  <Typography className={styles.groupCompareValue}>{row.rightValue}</Typography>
-                  <Box className={styles.groupCompareTrack}>
-                    <Box
-                      className={styles.groupCompareFillRight}
-                      style={{ width: `${row.rightPercent}%` }}
-                    />
+                  <Box className={styles.groupCompareSide}>
+                    <Typography className={styles.groupCompareValue}>{row.rightValue}</Typography>
+                    <Box className={styles.groupCompareTrack}>
+                      <Box
+                        className={styles.groupCompareFillRight}
+                        style={{ width: `${row.rightPercent}%` }}
+                      />
+                    </Box>
                   </Box>
                 </Box>
-              </Box>
-            ))}
+              ))
+            )}
           </Box>
         </Box>
       </CardContent>
