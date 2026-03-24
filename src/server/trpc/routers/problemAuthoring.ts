@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import type { CodingLanguage, ManageLifecycleStatus } from "@prisma/client";
+import type { CodingLanguage, ManageLifecycleStatus, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { can } from "@/lib/authz";
 import {
@@ -55,6 +55,27 @@ const problemMutationSchema = z.object({
     .default([]),
   starterCodes: starterCodesInputSchema,
 });
+
+const problemPatchSchema = z
+  .object({
+    title: z.string().trim().min(1, "Problem title is required.").optional(),
+    difficulty: difficultySchema.optional(),
+    points: z.number().int().nonnegative().optional(),
+    tags: z.array(z.string()).optional(),
+    visibility: visibilitySchema.optional(),
+    statement: z.string().trim().min(1, "Problem statement is required.").optional(),
+    inputFormat: z.string().trim().min(1, "Input format is required.").optional(),
+    outputFormat: z.string().trim().min(1, "Output format is required.").optional(),
+    constraints: z.string().trim().min(1, "Constraints are required.").optional(),
+    examples: z
+      .array(problemExampleSchema)
+      .max(1, "Only one example is currently supported.")
+      .optional(),
+    starterCodes: starterCodesInputSchema.optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field must be provided.",
+  });
 
 function extractJsonObject(text: string): string {
   const start = text.indexOf("{");
@@ -212,6 +233,13 @@ function buildStarterCodeRows(
 
 function mapProblemManageStatus(status: ManageLifecycleStatus) {
   return status.toLowerCase();
+}
+
+function hasOwnKey<T extends object>(
+  value: T,
+  key: PropertyKey,
+): boolean {
+  return Object.prototype.hasOwnProperty.call(value, key);
 }
 
 function canEditProblem(
@@ -461,7 +489,7 @@ export const problemAuthoringRouter = router({
     .input(
       z.object({
         problemId: z.string().min(1),
-        data: problemMutationSchema,
+        data: problemPatchSchema,
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -504,52 +532,89 @@ export const problemAuthoringRouter = router({
         throw new TRPCError({ code: "FORBIDDEN" });
       }
 
-      const tags = normalizeTags(input.data.tags);
-      const starterCodeRows = buildStarterCodeRows(input.data.starterCodes);
-      const primaryExample = getPrimaryExample(input.data.examples);
-
       await ctx.prisma.$transaction(async (tx) => {
-        await tx.problem.update({
-          where: { id: input.problemId },
-          data: {
-            title: input.data.title.trim(),
-            statement: input.data.statement.trim(),
-            inputFormat: input.data.inputFormat.trim(),
-            outputFormat: input.data.outputFormat.trim(),
-            constraints: input.data.constraints.trim(),
-            exampleInput: primaryExample.input.trim() || null,
-            exampleOutput: primaryExample.output.trim() || null,
-            exampleExplanation: primaryExample.explanation.trim() || null,
-            difficulty: normalizeDifficulty(input.data.difficulty),
-            visible: input.data.visibility,
-            points: input.data.points,
-          },
-        });
+        const problemUpdateData: Prisma.ProblemUpdateInput = {};
 
-        await tx.topic.deleteMany({
-          where: { problemId: input.problemId },
-        });
+        if (hasOwnKey(input.data, "title")) {
+          problemUpdateData.title = input.data.title?.trim();
+        }
 
-        if (tags.length > 0) {
-          await tx.topic.createMany({
-            data: tags.map((name) => ({
-              problemId: input.problemId,
-              name,
-            })),
+        if (hasOwnKey(input.data, "statement")) {
+          problemUpdateData.statement = input.data.statement?.trim();
+        }
+
+        if (hasOwnKey(input.data, "inputFormat")) {
+          problemUpdateData.inputFormat = input.data.inputFormat?.trim();
+        }
+
+        if (hasOwnKey(input.data, "outputFormat")) {
+          problemUpdateData.outputFormat = input.data.outputFormat?.trim();
+        }
+
+        if (hasOwnKey(input.data, "constraints")) {
+          problemUpdateData.constraints = input.data.constraints?.trim();
+        }
+
+        if (hasOwnKey(input.data, "difficulty") && input.data.difficulty) {
+          problemUpdateData.difficulty = normalizeDifficulty(input.data.difficulty);
+        }
+
+        if (hasOwnKey(input.data, "visibility") && input.data.visibility) {
+          problemUpdateData.visible = input.data.visibility;
+        }
+
+        if (hasOwnKey(input.data, "points") && input.data.points !== undefined) {
+          problemUpdateData.points = input.data.points;
+        }
+
+        if (hasOwnKey(input.data, "examples")) {
+          const primaryExample = getPrimaryExample(input.data.examples ?? []);
+          problemUpdateData.exampleInput = primaryExample.input.trim() || null;
+          problemUpdateData.exampleOutput = primaryExample.output.trim() || null;
+          problemUpdateData.exampleExplanation = primaryExample.explanation.trim() || null;
+        }
+
+        if (Object.keys(problemUpdateData).length > 0) {
+          await tx.problem.update({
+            where: { id: input.problemId },
+            data: problemUpdateData,
           });
         }
 
-        await tx.problemStarterCode.deleteMany({
-          where: { problemId: input.problemId },
-        });
+        if (hasOwnKey(input.data, "tags")) {
+          const tags = normalizeTags(input.data.tags ?? []);
 
-        if (starterCodeRows.length > 0) {
-          await tx.problemStarterCode.createMany({
-            data: starterCodeRows.map((starterCode) => ({
-              ...starterCode,
-              problemId: input.problemId,
-            })),
+          await tx.topic.deleteMany({
+            where: { problemId: input.problemId },
           });
+
+          if (tags.length > 0) {
+            await tx.topic.createMany({
+              data: tags.map((name) => ({
+                problemId: input.problemId,
+                name,
+              })),
+            });
+          }
+        }
+
+        if (hasOwnKey(input.data, "starterCodes")) {
+          const starterCodeRows = input.data.starterCodes
+            ? buildStarterCodeRows(input.data.starterCodes)
+            : [];
+
+          await tx.problemStarterCode.deleteMany({
+            where: { problemId: input.problemId },
+          });
+
+          if (starterCodeRows.length > 0) {
+            await tx.problemStarterCode.createMany({
+              data: starterCodeRows.map((starterCode) => ({
+                ...starterCode,
+                problemId: input.problemId,
+              })),
+            });
+          }
         }
       });
 

@@ -7,84 +7,149 @@ servers:
 
 tags:
   - name: Authentication
-    description: Authentication & basics endpoints
+    description: Authentication endpoints (/api/auth/*)
   - name: Student
-    description: Student endpoints (/s/*)
+    description: Student endpoints (/api/s/*)
   - name: Instructor
-    description: Instructor endpoints (/i/*)
+    description: Instructor endpoints (/api/i/*)
   - name: System & Judging
-    description: System & judging endpoints (/m/*)
+    description: System and judging endpoints
+  - name: Internal
+    description: Internal transport endpoints
 
 paths:
-  /:
+  /api/auth/cas/login:
     get:
       tags: [Authentication]
-      summary: CAS Login entry point or redirect to frontend
-      description: CAS Login entry point or redirect to frontend.
+      summary: Start CAS login with redirect response
+      description: Redirects the browser to the CAS login service.
       parameters:
         - in: query
-          name: ticket
+          name: next
           required: false
           schema:
             type: string
       responses:
-        "200":
-          description: OK
+        "302":
+          description: Redirect to CAS login
+        "500":
+          description: CAS configuration missing
           content:
-            text/html:
-              schema:
-                type: string
-            application/json:
-              schema:
-                $ref: "#/components/schemas/OkResponse"
-
-  /login/:
-    get:
-      tags: [Authentication]
-      summary: Render password login page (or redirect)
-      responses:
-        "200":
-          description: OK
-          content:
-            text/html:
-              schema:
-                type: string
             application/json:
               schema:
                 $ref: "#/components/schemas/OkResponse"
     post:
       tags: [Authentication]
-      summary: Process password-based login
+      summary: Start CAS login with JSON response
+      description: Returns a CAS redirect URL in JSON for client-driven login flows.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CasLoginStartRequest"
+      responses:
+        "200":
+          description: CAS redirect URL generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "500":
+          description: CAS configuration missing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /api/auth/cas/callback:
+    get:
+      tags: [Authentication]
+      summary: Complete CAS login callback
+      description: Validates the CAS ticket with the configured auth backend and redirects into the app.
+      parameters:
+        - in: query
+          name: ticket
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: next
+          required: false
+          schema:
+            type: string
+      responses:
+        "302":
+          description: Redirect to the app or back to login with an error
+
+  /api/auth/dev-login:
+    post:
+      tags: [Authentication]
+      summary: Create a dev-mode session
+      description: Available only when `AUTH_MODE=dev`. Creates a signed dev session cookie for one of the configured demo users.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/LoginRequest"
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: "#/components/schemas/LoginRequest"
+              $ref: "#/components/schemas/DevLoginRequest"
       responses:
         "200":
-          description: OK
+          description: Dev login successful
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
-  /logout/:
-    get:
+  /api/auth/logout:
+    post:
       tags: [Authentication]
       summary: Logout the current user
       responses:
         "200":
-          description: OK
+          description: Session cleared
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
-  /s/info:
+  /api/trpc/{trpc}:
+    get:
+      tags: [Internal]
+      summary: tRPC transport endpoint
+      description: Internal tRPC HTTP transport used by the frontend client. Query and body formats are tRPC-specific and not modeled as a conventional REST contract.
+      parameters:
+        - in: path
+          name: trpc
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: tRPC response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+    post:
+      tags: [Internal]
+      summary: tRPC transport endpoint
+      description: Internal tRPC HTTP transport used by the frontend client. Query and body formats are tRPC-specific and not modeled as a conventional REST contract.
+      parameters:
+        - in: path
+          name: trpc
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: tRPC response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /api/s/info:
     get:
       tags: [Student]
       summary: Get summary info for student contests
@@ -96,7 +161,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
-  /s/profile:
+  /api/s/profile:
     get:
       tags: [Student]
       summary: Get current user profile details
@@ -108,7 +173,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
-  /s/update_profile:
+  /api/s/update_profile:
     post:
       tags: [Student]
       summary: Update user profile
@@ -129,7 +194,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
-  /s/achievements:
+  /api/s/achievements:
     get:
       tags: [Student]
       summary: Get list of user achievements
@@ -141,7 +206,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
-  /s/achievements/{id}/icon:
+  /api/s/achievements/{id}/icon:
     get:
       tags: [Student]
       summary: Get the icon image for a specific achievement
@@ -164,7 +229,7 @@ paths:
                 type: string
                 format: binary
 
-  /s/contest/register/{cid}:
+  /api/s/contest/register/{cid}:
     post:
       tags: [Student]
       summary: Register for a specific contest
@@ -182,7 +247,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
-  /s/contest/unregister/{cid}:
+  /api/s/contest/unregister/{cid}:
     get:
       tags: [Student]
       summary: Unregister from a contest
@@ -200,7 +265,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
-  /s/entercontest/{cid}:
+  /api/s/entercontest/{cid}:
     get:
       tags: [Student]
       summary: Enter contest lobby (checks registration status)
@@ -218,7 +283,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
-  /s/contest/{cid}:
+  /api/s/contest/{cid}:
     get:
       tags: [Student]
       summary: Get contest details and problem statuses
@@ -236,7 +301,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
-  /s/closed/{cid}:
+  /api/s/closed/{cid}:
     get:
       tags: [Student]
       summary: Get info for a closed contest
@@ -254,7 +319,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
-  /s/problem/{cid}/{pid}:
+  /api/s/problem/{cid}/{pid}:
     get:
       tags: [Student]
       summary: Get details for a specific problem
@@ -277,7 +342,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
-  /s/submit/{cid}/{pid}:
+  /api/s/submit/{cid}/{pid}:
     post:
       tags: [Student]
       summary: Submit code
@@ -309,7 +374,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
-  /s/submissions/{cid}/{pid}:
+  /api/s/submissions/{cid}/{pid}:
     get:
       tags: [Student]
       summary: Get submission history for a specific problem
@@ -332,7 +397,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
-  /s/allsubmissions:
+  /api/s/allsubmissions:
     get:
       tags: [Student]
       summary: Get all submissions for the current user
@@ -344,7 +409,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
-  /s/request_hint:
+  /api/s/request_hint:
     post:
       tags: [Student]
       summary: Request an AI-generated hint
@@ -365,7 +430,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
-  /s/hints:
+  /api/s/hints:
     get:
       tags: [Student]
       summary: Retrieve hint history for a problem
@@ -388,10 +453,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
-  /i/info:
+  /api/i/info:
     get:
       tags: [Instructor]
       summary: Get instructor dashboard summary
+      description: Planned instructor endpoint. This contract is kept in Swagger for future implementation and may not yet be fully backed by a Next API route.
       responses:
         "200":
           description: OK
@@ -400,10 +466,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
-  /i/contests:
+  /api/i/contests:
     get:
       tags: [Instructor]
-      summary: Get list of all contests (Admin/Instructor view)
+      summary: Get list of all contests for instructor/admin views
+      description: Planned instructor endpoint. This contract is kept in Swagger for future implementation and may not yet be fully backed by a Next API route.
       responses:
         "200":
           description: OK
@@ -412,10 +479,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
-  /i/contest/create:
+  /api/i/contest/create:
     get:
       tags: [Instructor]
-      summary: Get data required to render the create contest form
+      summary: Get data required to render the contest authoring form
+      description: Planned instructor endpoint. This contract is kept in Swagger for future implementation and may not yet be fully backed by a Next API route.
       responses:
         "200":
           description: OK
@@ -425,7 +493,8 @@ paths:
                 $ref: "#/components/schemas/OkResponse"
     post:
       tags: [Instructor]
-      summary: Create or update a contest
+      summary: Create a contest
+      description: Planned instructor endpoint. This contract is kept in Swagger for future implementation and may not yet be fully backed by a Next API route.
       requestBody:
         required: true
         content:
@@ -443,10 +512,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
-  /i/contest/{cid}:
+  /api/i/contest/{cid}:
     get:
       tags: [Instructor]
       summary: Get contest details for editing
+      description: Planned instructor endpoint. This contract is kept in Swagger for future implementation and may not yet be fully backed by a Next API route.
       parameters:
         - in: path
           name: cid
@@ -461,10 +531,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
-  /i/adduser:
+  /api/i/adduser:
     get:
       tags: [Instructor]
       summary: Get form data for adding a new user
+      description: Planned instructor endpoint. This contract is kept in Swagger for future implementation and may not yet be fully backed by a Next API route.
       responses:
         "200":
           description: OK
@@ -475,6 +546,7 @@ paths:
     post:
       tags: [Instructor]
       summary: Add a new user manually
+      description: Planned instructor endpoint. This contract is kept in Swagger for future implementation and may not yet be fully backed by a Next API route.
       requestBody:
         required: true
         content:
@@ -492,10 +564,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
-  /i/problem/{cid}/{pid}:
+  /api/i/problem/{cid}/{pid}:
     get:
       tags: [Instructor]
-      summary: Get problem details (Instructor view)
+      summary: Get problem details for instructor review
+      description: Planned instructor endpoint. This contract is kept in Swagger for future implementation and may not yet be fully backed by a Next API route.
       parameters:
         - in: path
           name: cid
@@ -515,10 +588,69 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
-  /i/submit/{cid}/{pid}:
+  /api/i/problems/{problemId}:
+    patch:
+      tags: [Instructor]
+      summary: Partially update a problem
+      description: >
+        Applies a partial update to an instructor-authored problem. This is PATCH semantics,
+        not full replacement. Only fields included in the request body are updated. Omitted
+        scalar fields remain unchanged, and related collections such as tags, starter codes,
+        and examples are only replaced when those keys are explicitly provided.
+      parameters:
+        - in: path
+          name: problemId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProblemPatchRequest"
+      responses:
+        "200":
+          description: Problem updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntityUpdateResponse"
+
+  /api/i/contests/{contestId}:
+    patch:
+      tags: [Instructor]
+      summary: Partially update a contest
+      description: >
+        Applies a partial update to an instructor-managed contest. This is PATCH semantics,
+        not full replacement. Only fields included in the request body are updated. Omitted
+        fields remain unchanged, and contest problem links are only replaced when
+        selectedProblemIds is explicitly provided.
+      parameters:
+        - in: path
+          name: contestId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContestPatchRequest"
+      responses:
+        "200":
+          description: Contest updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntityUpdateResponse"
+
+  /api/i/submit/{cid}/{pid}:
     post:
       tags: [Instructor]
-      summary: Submit code (Instructor test run)
+      summary: Submit code for an instructor test run
+      description: Planned instructor endpoint. This contract is kept in Swagger for future implementation and may not yet be fully backed by a Next API route.
       parameters:
         - in: path
           name: cid
@@ -547,10 +679,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
-  /i/submissions/{cid}/{pid}:
+  /api/i/submissions/{cid}/{pid}:
     get:
       tags: [Instructor]
-      summary: View all student submissions for a problem
+      summary: View student submissions for a problem
+      description: Planned instructor endpoint. This contract is kept in Swagger for future implementation and may not yet be fully backed by a Next API route.
       parameters:
         - in: path
           name: cid
@@ -570,10 +703,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
-  /i/allsubmissions:
+  /api/i/allsubmissions:
     get:
       tags: [Instructor]
       summary: View all submissions globally
+      description: Planned instructor endpoint. This contract is kept in Swagger for future implementation and may not yet be fully backed by a Next API route.
       responses:
         "200":
           description: OK
@@ -582,7 +716,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
-  /m/judge_result:
+  /api/judge-callback:
     post:
       tags: [System & Judging]
       summary: Webhook to receive results from the Judge
@@ -600,10 +734,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
-  /m/scoreboard/{cid}:
+  /api/m/scoreboard/{cid}:
     get:
       tags: [System & Judging]
       summary: Get scoreboard data for a contest
+      description: Planned system endpoint. This contract is kept in Swagger for future implementation and may not yet be fully backed by a Next API route.
       parameters:
         - in: path
           name: cid
@@ -618,15 +753,16 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
-  /m/submissions:
+  /api/m/submissions:
     get:
       tags: [System & Judging]
-      summary: Retrieve status for multiple submissions (polling)
+      summary: Retrieve status for multiple submissions
+      description: Planned system endpoint. This contract is kept in Swagger for future implementation and may not yet be fully backed by a Next API route.
       parameters:
         - in: query
           name: sids
           required: false
-          description: Submission IDs (often provided as CSV in a single query param)
+          description: Submission IDs, often passed as a comma-separated string.
           schema:
             type: string
             example: "123,124,125"
@@ -638,10 +774,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
-  /m/report_ai_hint:
+  /api/m/report_ai_hint:
     post:
       tags: [System & Judging]
-      summary: Callback to report the result of AI hint generation job
+      summary: Report the result of an AI hint generation job
+      description: Planned system endpoint. This contract is kept in Swagger for future implementation and may not yet be fully backed by a Next API route.
       requestBody:
         required: true
         content:
@@ -681,14 +818,22 @@ components:
             - type: boolean
       required: [ok]
 
-    LoginRequest:
+    CasLoginStartRequest:
       type: object
       properties:
-        uname:
+        next:
           type: string
-        password:
+
+    DevLoginRequest:
+      type: object
+      properties:
+        email:
           type: string
-      required: [uname, password]
+          format: email
+        role:
+          type: string
+          enum: [student, ta, instructor, admin]
+      required: [email, role]
 
     UpdateProfileRequest:
       type: object
@@ -699,7 +844,8 @@ components:
           type: string
         nickname:
           type: string
-      required: [fname, lname, nickname]
+        student_number:
+          type: string
 
     StudentSubmitRequest:
       type: object
@@ -725,10 +871,12 @@ components:
       properties:
         pid:
           type: string
+      additionalProperties: true
       required: [pid]
 
     ContestCreateRequest:
       type: object
+      description: Planned contest creation contract retained for future instructor API work.
       properties:
         name:
           type: string
@@ -745,7 +893,7 @@ components:
         location:
           type: string
         newProblems:
-          description: Problems to add/update (shape not specified in source doc)
+          description: Problems to add or update as part of contest authoring.
           oneOf:
             - type: array
               items:
@@ -756,8 +904,119 @@ components:
       required:
         [name, starts_at, ends_at, published, type, location, newProblems]
 
+    ProblemExampleRequest:
+      type: object
+      properties:
+        id:
+          type: string
+        input:
+          type: string
+        output:
+          type: string
+        explanation:
+          type: string
+      required: [id, input, output, explanation]
+
+    StarterCodesRequest:
+      type: object
+      properties:
+        cplusplus:
+          type: string
+        java:
+          type: string
+        python:
+          type: string
+        typescript:
+          type: string
+        javascript:
+          type: string
+      required: [cplusplus, java, python, typescript, javascript]
+
+    ProblemPatchRequest:
+      type: object
+      description: >
+        Partial problem update payload. All fields are optional. Only included fields are
+        applied. If tags, examples, or starterCodes are included, those collections are
+        replaced with the provided values.
+      minProperties: 1
+      properties:
+        title:
+          type: string
+        difficulty:
+          type: string
+          enum: [easy, medium, hard]
+        points:
+          type: integer
+          minimum: 0
+        tags:
+          type: array
+          items:
+            type: string
+        visibility:
+          type: string
+          enum: [course-only, public, private]
+        statement:
+          type: string
+        inputFormat:
+          type: string
+        outputFormat:
+          type: string
+        constraints:
+          type: string
+        examples:
+          type: array
+          maxItems: 1
+          items:
+            $ref: "#/components/schemas/ProblemExampleRequest"
+        starterCodes:
+          $ref: "#/components/schemas/StarterCodesRequest"
+
+    ContestPatchRequest:
+      type: object
+      description: >
+        Partial contest update payload. All fields are optional. Only included fields are
+        applied. If selectedProblemIds is included, contest problem links are replaced with
+        the provided ordered list. If any schedule field is updated, the persisted schedule
+        is recalculated from the merged start/end values.
+      minProperties: 1
+      properties:
+        contestName:
+          type: string
+        description:
+          type: string
+        startDate:
+          type: string
+          example: "2026-03-24"
+        startTime:
+          type: string
+          example: "09:30"
+        endDate:
+          type: string
+          example: "2026-03-24"
+        endTime:
+          type: string
+          example: "11:00"
+        visibility:
+          type: string
+          enum: [course-only, public, private]
+        aiHintEnabled:
+          type: boolean
+        selectedProblemIds:
+          type: array
+          minItems: 1
+          items:
+            type: string
+
+    EntityUpdateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+      required: [id]
+
     AddUserRequest:
       type: object
+      description: Planned add-user contract retained for future instructor API work.
       properties:
         username:
           type: string
@@ -767,6 +1026,7 @@ components:
 
     InstructorSubmitRequest:
       type: object
+      description: Planned instructor test-run submission contract retained for future API work.
       properties:
         filecode:
           type: string
@@ -792,10 +1052,13 @@ components:
           type: string
         score:
           type: number
-      required: [sid, status, judge_output, score]
+        connection_id:
+          type: string
+      required: [sid, status, judge_output, score, connection_id]
 
     ReportAiHintRequest:
       type: object
+      description: Planned AI hint callback contract retained for future system API work.
       properties:
         code:
           type: string
