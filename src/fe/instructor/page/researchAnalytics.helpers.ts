@@ -45,6 +45,27 @@ export const EXPORT_SECTION_LABELS = {
 export type ExportSectionKey = keyof typeof EXPORT_SECTION_LABELS;
 export type ExportFormat = "json" | "csv" | "pdf";
 
+export function toggleSectionSelection(
+  current: Record<ExportSectionKey, boolean>,
+  section: ExportSectionKey,
+): Record<ExportSectionKey, boolean> {
+  return {
+    ...current,
+    [section]: !current[section],
+  };
+}
+
+export function toggleAllSectionSelections(
+  nextValue: boolean,
+): Record<ExportSectionKey, boolean> {
+  return (Object.keys(EXPORT_SECTION_LABELS) as ExportSectionKey[]).reduce<
+    Record<ExportSectionKey, boolean>
+  >((acc, key) => {
+    acc[key] = nextValue;
+    return acc;
+  }, {} as Record<ExportSectionKey, boolean>);
+}
+
 export function average(values: Array<number | null | undefined>): number {
   const valid = values.filter((value): value is number => typeof value === "number");
   if (valid.length === 0) return 0;
@@ -164,6 +185,17 @@ function toSegmentKey(value: string): "groupA" | "groupB" | "groupC" {
   if (value === "group-a") return "groupA";
   if (value === "group-b") return "groupB";
   return "groupC";
+}
+
+export function getDefaultStudentIdForGroup(
+  analytics: InstructorAnalyticsUiPayload,
+  groupValue: string,
+  fallback: string,
+): string {
+  return (
+    analytics.students_catalog.find((student) => student.segment === toSegmentKey(groupValue))
+      ?.computingId ?? fallback
+  );
 }
 
 export function buildGroupComparisonRows(

@@ -2,22 +2,16 @@
 
 import TimelineOutlinedIcon from "@mui/icons-material/TimelineOutlined";
 import type { ReactNode } from "react";
+import type { BarChartSeries } from "@/fe/instructor/data";
 import MetricsBarChartCard from "@/fe/instructor/components/MetricsBarChartCard";
 import styles from "@/fe/instructor/styles/ResearchAnalyticsPage.module.css";
-
-interface TimelineChartSeries {
-  id: string;
-  label: string;
-  color: string;
-  data: number[];
-}
 
 interface HintEngagementTimelineCardProps {
   title: string;
   description: string;
   yAxisLabel: string;
   xLabels: string[];
-  series: TimelineChartSeries[];
+  series: BarChartSeries[];
   filters?: ReactNode;
 }
 

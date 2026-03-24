@@ -11,28 +11,19 @@ import ScienceOutlinedIcon from "@mui/icons-material/ScienceOutlined";
 import {
   Box,
   Button,
-  Checkbox,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  FormControl,
-  FormControlLabel,
-  MenuItem,
-  Select,
-  Typography,
 } from "@mui/material";
 import { mockResearchAnalyticsDataset } from "@/fe/instructor/data";
 import {
   MOCK_INSTRUCTOR_ANALYTICS,
   type ViewMode,
 } from "@/fe/instructor/data/liveInstructorAnalytics";
+import ComparisonAnalyticsSection from "@/fe/instructor/components/ComparisonAnalyticsSection";
 import HintEngagementTimelineCard from "@/fe/instructor/components/HintEngagementTimelineCard";
 import InstructorSubpageHeader from "@/fe/instructor/components/InstructorSubpageHeader";
+import ExportAnalysisDialog from "@/fe/instructor/components/ExportAnalysisDialog";
 import LiveInstructorAnalyticsCard, {
   resolveLiveInstructorAnalyticsData,
 } from "@/fe/instructor/components/LiveInstructorAnalyticsCard";
-import PolicyComparisonCard from "@/fe/instructor/components/PolicyComparisonCard";
 import SectionFiltersBar from "@/fe/instructor/components/SectionFiltersBar";
 import SolveTimeDistributionCard from "@/fe/instructor/components/SolveTimeDistributionCard";
 import PageHeader from "@/fe/shared/components/PageHeader";
@@ -48,13 +39,17 @@ import {
   EXPORT_SECTION_LABELS,
   formatNumber,
   formatPercent,
+  getDefaultStudentIdForGroup,
   getOptionLabel,
+  toggleAllSectionSelections,
+  toggleSectionSelection,
   type ContestComparisonFilters,
   type ExportFormat,
   type ExportSectionKey,
   type GroupComparisonFilters,
   type StudentComparisonFilters,
 } from "@/fe/instructor/page/researchAnalytics.helpers";
+import type { SectionFilterField } from "@/fe/instructor/components/SectionFiltersBar";
 import subpageStyles from "@/fe/instructor/styles/InstructorSubpageHeader.module.css";
 import styles from "@/fe/instructor/styles/ResearchAnalyticsPage.module.css";
 
@@ -188,6 +183,134 @@ export default function ResearchAnalyticsPage() {
     gamificationTrendsByRange[gamificationFilters.dateRange] ?? gamificationTrendsByRange.all;
   const activeAiHintTrend =
     aiHintTrendsByRange[hintFilters.dateRange] ?? aiHintTrendsByRange.all;
+  const contestComparisonFields: SectionFilterField[] = [
+    {
+      id: "contest-comparison-left",
+      label: "Left Contest",
+      value: contestComparisonFilters.leftContest,
+      options: contestOptions,
+      onChange: (value) =>
+        setContestComparisonFilters((prev) => ({
+          ...prev,
+          leftContest: value,
+        })),
+      icon: <EmojiEventsOutlinedIcon className={styles.sectionFilterIcon} />,
+    },
+    {
+      id: "contest-comparison-right",
+      label: "Right Contest",
+      value: contestComparisonFilters.rightContest,
+      options: contestOptions,
+      onChange: (value) =>
+        setContestComparisonFilters((prev) => ({
+          ...prev,
+          rightContest: value,
+        })),
+      icon: <EmojiEventsOutlinedIcon className={styles.sectionFilterIcon} />,
+    },
+  ];
+  const groupComparisonFields: SectionFilterField[] = [
+    {
+      id: "group-comparison-left-contest",
+      label: "Left Contest",
+      value: groupComparisonFilters.leftContest,
+      options: contestOptions,
+      onChange: (value) =>
+        setGroupComparisonFilters((prev) => ({ ...prev, leftContest: value })),
+      icon: <EmojiEventsOutlinedIcon className={styles.sectionFilterIcon} />,
+    },
+    {
+      id: "group-comparison-left-group",
+      label: "Left Group",
+      value: groupComparisonFilters.leftGroup,
+      options: groupOptions,
+      onChange: (value) =>
+        setGroupComparisonFilters((prev) => ({ ...prev, leftGroup: value })),
+      icon: <ScienceOutlinedIcon className={styles.sectionFilterIcon} />,
+    },
+    {
+      id: "group-comparison-right-contest",
+      label: "Right Contest",
+      value: groupComparisonFilters.rightContest,
+      options: contestOptions,
+      onChange: (value) =>
+        setGroupComparisonFilters((prev) => ({ ...prev, rightContest: value })),
+      icon: <EmojiEventsOutlinedIcon className={styles.sectionFilterIcon} />,
+    },
+    {
+      id: "group-comparison-right-group",
+      label: "Right Group",
+      value: groupComparisonFilters.rightGroup,
+      options: groupOptions,
+      onChange: (value) =>
+        setGroupComparisonFilters((prev) => ({ ...prev, rightGroup: value })),
+      icon: <ScienceOutlinedIcon className={styles.sectionFilterIcon} />,
+    },
+  ];
+  const studentComparisonFields: SectionFilterField[] = [
+    {
+      id: "student-comparison-left-contest",
+      label: "Left Contest",
+      value: studentComparisonFilters.leftContest,
+      options: contestOptions,
+      onChange: (value) =>
+        setStudentComparisonFilters((prev) => ({ ...prev, leftContest: value })),
+      icon: <EmojiEventsOutlinedIcon className={styles.sectionFilterIcon} />,
+    },
+    {
+      id: "student-comparison-left-group",
+      label: "Left Group",
+      value: studentComparisonFilters.leftGroup,
+      options: groupOptions,
+      onChange: (value) =>
+        setStudentComparisonFilters((prev) => ({
+          ...prev,
+          leftGroup: value,
+          leftStudent: getDefaultStudentIdForGroup(MOCK_INSTRUCTOR_ANALYTICS, value, prev.leftStudent),
+        })),
+      icon: <Groups2OutlinedIcon className={styles.sectionFilterIcon} />,
+    },
+    {
+      id: "student-comparison-left",
+      label: "Left Student",
+      value: studentComparisonFilters.leftStudent,
+      options: leftStudentOptions,
+      onChange: (value) =>
+        setStudentComparisonFilters((prev) => ({ ...prev, leftStudent: value })),
+      icon: <PersonOutlinedIcon className={styles.sectionFilterIcon} />,
+    },
+    {
+      id: "student-comparison-right-contest",
+      label: "Right Contest",
+      value: studentComparisonFilters.rightContest,
+      options: contestOptions,
+      onChange: (value) =>
+        setStudentComparisonFilters((prev) => ({ ...prev, rightContest: value })),
+      icon: <EmojiEventsOutlinedIcon className={styles.sectionFilterIcon} />,
+    },
+    {
+      id: "student-comparison-right-group",
+      label: "Right Group",
+      value: studentComparisonFilters.rightGroup,
+      options: groupOptions,
+      onChange: (value) =>
+        setStudentComparisonFilters((prev) => ({
+          ...prev,
+          rightGroup: value,
+          rightStudent: getDefaultStudentIdForGroup(MOCK_INSTRUCTOR_ANALYTICS, value, prev.rightStudent),
+        })),
+      icon: <Groups2OutlinedIcon className={styles.sectionFilterIcon} />,
+    },
+    {
+      id: "student-comparison-right-student",
+      label: "Right Student",
+      value: studentComparisonFilters.rightStudent,
+      options: rightStudentOptions,
+      onChange: (value) =>
+        setStudentComparisonFilters((prev) => ({ ...prev, rightStudent: value })),
+      icon: <PersonOutlinedIcon className={styles.sectionFilterIcon} />,
+    },
+  ];
 
   const exportSections = useMemo(() => {
     return buildExportSections({
@@ -249,10 +372,7 @@ export default function ResearchAnalyticsPage() {
   ]);
 
   function toggleExportSection(section: ExportSectionKey): void {
-    setSelectedExportSections((current) => ({
-      ...current,
-      [section]: !current[section],
-    }));
+    setSelectedExportSections((current) => toggleSectionSelection(current, section));
   }
 
   const allSectionsSelected = (Object.keys(EXPORT_SECTION_LABELS) as ExportSectionKey[]).every(
@@ -264,14 +384,7 @@ export default function ResearchAnalyticsPage() {
 
   function toggleAllExportSections(): void {
     const nextValue = !allSectionsSelected;
-    setSelectedExportSections(
-      (Object.keys(EXPORT_SECTION_LABELS) as ExportSectionKey[]).reduce<
-        Record<ExportSectionKey, boolean>
-      >((acc, key) => {
-        acc[key] = nextValue;
-        return acc;
-      }, {} as Record<ExportSectionKey, boolean>),
-    );
+    setSelectedExportSections(toggleAllSectionSelections(nextValue));
   }
 
   function downloadExport(): void {
@@ -386,188 +499,32 @@ export default function ResearchAnalyticsPage() {
           </Box>
 
           <Box className={styles.sectionBlock}>
-            <PolicyComparisonCard
+            <ComparisonAnalyticsSection
               title="Contest Comparison"
-              description=""
               leftLabel={leftContestLabel}
               rightLabel={rightContestLabel}
               rows={contestComparisonRows}
-              filters={
-                <SectionFiltersBar
-                  fields={[
-                    {
-                      id: "contest-comparison-left",
-                      label: "Left Contest",
-                      value: contestComparisonFilters.leftContest,
-                      options: contestOptions,
-                      onChange: (value) =>
-                        setContestComparisonFilters((prev) => ({
-                          ...prev,
-                          leftContest: value,
-                        })),
-                      icon: <EmojiEventsOutlinedIcon className={styles.sectionFilterIcon} />,
-                    },
-                    {
-                      id: "contest-comparison-right",
-                      label: "Right Contest",
-                      value: contestComparisonFilters.rightContest,
-                      options: contestOptions,
-                      onChange: (value) =>
-                        setContestComparisonFilters((prev) => ({
-                          ...prev,
-                          rightContest: value,
-                        })),
-                      icon: <EmojiEventsOutlinedIcon className={styles.sectionFilterIcon} />,
-                    },
-                  ]}
-                />
-              }
+              fields={contestComparisonFields}
             />
           </Box>
 
           <Box className={styles.sectionBlock}>
-            <PolicyComparisonCard
+            <ComparisonAnalyticsSection
               title="Group Comparison"
-              description=""
               leftLabel={leftGroupLabel}
               rightLabel={rightGroupLabel}
               rows={groupComparisonRows}
-              filters={
-                <SectionFiltersBar
-                  fields={[
-                    {
-                      id: "group-comparison-left-contest",
-                      label: "Left Contest",
-                      value: groupComparisonFilters.leftContest,
-                      options: contestOptions,
-                      onChange: (value) =>
-                        setGroupComparisonFilters((prev) => ({ ...prev, leftContest: value })),
-                      icon: <EmojiEventsOutlinedIcon className={styles.sectionFilterIcon} />,
-                    },
-                    {
-                      id: "group-comparison-left-group",
-                      label: "Left Group",
-                      value: groupComparisonFilters.leftGroup,
-                      options: groupOptions,
-                      onChange: (value) =>
-                        setGroupComparisonFilters((prev) => ({ ...prev, leftGroup: value })),
-                      icon: <ScienceOutlinedIcon className={styles.sectionFilterIcon} />,
-                    },
-                    {
-                      id: "group-comparison-right-contest",
-                      label: "Right Contest",
-                      value: groupComparisonFilters.rightContest,
-                      options: contestOptions,
-                      onChange: (value) =>
-                        setGroupComparisonFilters((prev) => ({ ...prev, rightContest: value })),
-                      icon: <EmojiEventsOutlinedIcon className={styles.sectionFilterIcon} />,
-                    },
-                    {
-                      id: "group-comparison-right-group",
-                      label: "Right Group",
-                      value: groupComparisonFilters.rightGroup,
-                      options: groupOptions,
-                      onChange: (value) =>
-                        setGroupComparisonFilters((prev) => ({ ...prev, rightGroup: value })),
-                      icon: <ScienceOutlinedIcon className={styles.sectionFilterIcon} />,
-                    },
-                  ]}
-                />
-              }
+              fields={groupComparisonFields}
             />
           </Box>
 
           <Box className={styles.sectionBlock}>
-            <PolicyComparisonCard
+            <ComparisonAnalyticsSection
               title="Student Comparison"
-              description=""
               leftLabel={leftStudentLabel}
               rightLabel={rightStudentLabel}
               rows={studentComparisonRows}
-              filters={
-                <SectionFiltersBar
-                  fields={[
-                    {
-                      id: "student-comparison-left-contest",
-                      label: "Left Contest",
-                      value: studentComparisonFilters.leftContest,
-                      options: contestOptions,
-                      onChange: (value) =>
-                        setStudentComparisonFilters((prev) => ({ ...prev, leftContest: value })),
-                      icon: <EmojiEventsOutlinedIcon className={styles.sectionFilterIcon} />,
-                    },
-                    {
-                      id: "student-comparison-left-group",
-                      label: "Left Group",
-                      value: studentComparisonFilters.leftGroup,
-                      options: groupOptions,
-                      onChange: (value) =>
-                        setStudentComparisonFilters((prev) => {
-                          const nextSegment =
-                            value === "group-a" ? "groupA" : value === "group-b" ? "groupB" : "groupC";
-                          const nextStudents = MOCK_INSTRUCTOR_ANALYTICS.students_catalog
-                            .filter((student) => student.segment === nextSegment)
-                            .map((student) => student.computingId);
-
-                          return {
-                            ...prev,
-                            leftGroup: value,
-                            leftStudent: nextStudents[0] ?? prev.leftStudent,
-                          };
-                        }),
-                      icon: <Groups2OutlinedIcon className={styles.sectionFilterIcon} />,
-                    },
-                    {
-                      id: "student-comparison-left",
-                      label: "Left Student",
-                      value: studentComparisonFilters.leftStudent,
-                      options: leftStudentOptions,
-                      onChange: (value) =>
-                        setStudentComparisonFilters((prev) => ({ ...prev, leftStudent: value })),
-                      icon: <PersonOutlinedIcon className={styles.sectionFilterIcon} />,
-                    },
-                    {
-                      id: "student-comparison-right-contest",
-                      label: "Right Contest",
-                      value: studentComparisonFilters.rightContest,
-                      options: contestOptions,
-                      onChange: (value) =>
-                        setStudentComparisonFilters((prev) => ({ ...prev, rightContest: value })),
-                      icon: <EmojiEventsOutlinedIcon className={styles.sectionFilterIcon} />,
-                    },
-                    {
-                      id: "student-comparison-right-group",
-                      label: "Right Group",
-                      value: studentComparisonFilters.rightGroup,
-                      options: groupOptions,
-                      onChange: (value) =>
-                        setStudentComparisonFilters((prev) => {
-                          const nextSegment =
-                            value === "group-a" ? "groupA" : value === "group-b" ? "groupB" : "groupC";
-                          const nextStudents = MOCK_INSTRUCTOR_ANALYTICS.students_catalog
-                            .filter((student) => student.segment === nextSegment)
-                            .map((student) => student.computingId);
-
-                          return {
-                            ...prev,
-                            rightGroup: value,
-                            rightStudent: nextStudents[0] ?? prev.rightStudent,
-                          };
-                        }),
-                      icon: <Groups2OutlinedIcon className={styles.sectionFilterIcon} />,
-                    },
-                    {
-                      id: "student-comparison-right-student",
-                      label: "Right Student",
-                      value: studentComparisonFilters.rightStudent,
-                      options: rightStudentOptions,
-                      onChange: (value) =>
-                        setStudentComparisonFilters((prev) => ({ ...prev, rightStudent: value })),
-                      icon: <PersonOutlinedIcon className={styles.sectionFilterIcon} />,
-                    },
-                  ]}
-                />
-              }
+              fields={studentComparisonFields}
             />
           </Box>
 
@@ -622,66 +579,18 @@ export default function ResearchAnalyticsPage() {
         </Box>
       </Box>
 
-      <Dialog
+      <ExportAnalysisDialog
         open={isExportDialogOpen}
+        exportFormat={exportFormat}
+        selectedSections={selectedExportSections}
+        allSectionsSelected={allSectionsSelected}
+        someSectionsSelected={someSectionsSelected}
         onClose={() => setIsExportDialogOpen(false)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle>Export Analysis Data</DialogTitle>
-        <DialogContent className={styles.exportDialogContent}>
-          <Box className={styles.exportSectionList}>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={allSectionsSelected}
-                  indeterminate={!allSectionsSelected && someSectionsSelected}
-                  onChange={toggleAllExportSections}
-                />
-              }
-              label="Select All"
-              className={styles.exportCheckbox}
-            />
-            {(Object.keys(EXPORT_SECTION_LABELS) as ExportSectionKey[]).map((section) => (
-              <FormControlLabel
-                key={section}
-                control={
-                  <Checkbox
-                    checked={selectedExportSections[section]}
-                    onChange={() => toggleExportSection(section)}
-                  />
-                }
-                label={EXPORT_SECTION_LABELS[section]}
-                className={styles.exportCheckbox}
-              />
-            ))}
-          </Box>
-
-          <Box className={styles.exportFormatRow}>
-            <Typography className={styles.exportFormatLabel}>File format</Typography>
-            <FormControl size="small" className={styles.exportFormatControl}>
-              <Select
-                value={exportFormat}
-                onChange={(event) => setExportFormat(event.target.value as ExportFormat)}
-              >
-                <MenuItem value="json">JSON</MenuItem>
-                <MenuItem value="csv">CSV</MenuItem>
-                <MenuItem value="pdf">PDF</MenuItem>
-              </Select>
-            </FormControl>
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ padding: "0 24px 20px" }}>
-          <Button onClick={() => setIsExportDialogOpen(false)}>Cancel</Button>
-          <Button
-            variant="contained"
-            onClick={downloadExport}
-            disabled={!Object.values(selectedExportSections).some(Boolean)}
-          >
-            Export
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onExport={downloadExport}
+        onExportFormatChange={setExportFormat}
+        onToggleAll={toggleAllExportSections}
+        onToggleSection={toggleExportSection}
+      />
     </>
   );
 }

@@ -9,14 +9,17 @@ import QueryStatsOutlinedIcon from "@mui/icons-material/QueryStatsOutlined";
 import TableViewOutlinedIcon from "@mui/icons-material/TableViewOutlined";
 import TimerOutlinedIcon from "@mui/icons-material/TimerOutlined";
 import {
-  DEFAULT_AI_HINT_NOTE,
-  DEFAULT_GAMIFICATION_NOTE,
   MOCK_INSTRUCTOR_ANALYTICS,
   type ContestCatalogRow,
   type ContestMetricRow,
   type ProblemMetricRow,
   type ViewMode,
 } from "@/fe/instructor/data/liveInstructorAnalytics";
+import {
+  DEFAULT_AI_HINT_NOTE,
+  DEFAULT_GAMIFICATION_NOTE,
+} from "@/fe/instructor/data/analysisConstants";
+import LiveMetricsTable from "@/fe/instructor/components/LiveMetricsTable";
 import styles from "@/fe/instructor/styles/LiveInstructorAnalyticsCard.module.css";
 
 interface LiveInstructorAnalyticsCardProps {
@@ -134,6 +137,75 @@ export default function LiveInstructorAnalyticsCard({
         problemRows.length;
   const visibleContestRows = showAllContestRows ? contestRows : contestRows.slice(0, 10);
   const visibleProblemRows = showAllProblemRows ? orderedProblemRows : orderedProblemRows.slice(0, 10);
+  const contestColumns = [
+    {
+      key: "contest",
+      header: "Contest",
+      render: (row: ContestMetricRow) => row.contest_name,
+    },
+    {
+      key: "solveRate",
+      header: "Solve Rate",
+      render: (row: ContestMetricRow) => formatPercent(row.solve_rate),
+    },
+    {
+      key: "meanSolveTime",
+      header: "Mean Solve Time",
+      render: (row: ContestMetricRow) => `${formatNumber(row.mean_solve_time_minutes)} min`,
+    },
+    {
+      key: "medianSolveTime",
+      header: "Median Solve Time",
+      render: (row: ContestMetricRow) => `${formatNumber(row.median_solve_time_minutes)} min`,
+    },
+    {
+      key: "attemptsToSolve",
+      header: "Attempts to Solve",
+      render: (row: ContestMetricRow) => formatNumber(row.attempts_to_solve),
+    },
+  ];
+  const problemColumns = [
+    {
+      key: "contest",
+      header: "Contest",
+      render: (row: ProblemMetricRow) => row.contest_name,
+    },
+    {
+      key: "problem",
+      header: "Problem",
+      render: (row: ProblemMetricRow) => `${row.problem_code} - ${row.problem_title}`,
+    },
+    {
+      key: "firstSubmission",
+      header: "First Submission",
+      render: (row: ProblemMetricRow) => `${formatNumber(row.time_to_first_submission_minutes)} min`,
+    },
+    {
+      key: "firstCorrect",
+      header: "First Correct",
+      render: (row: ProblemMetricRow) => `${formatNumber(row.time_to_first_correct_submission_minutes)} min`,
+    },
+    {
+      key: "postHintSolveProbability",
+      header: "Post-Hint Solve Prob.",
+      render: (row: ProblemMetricRow) => formatPercent(row.post_hint_solve_probability),
+    },
+    {
+      key: "attemptsBeforeHint",
+      header: "Attempts Before Hint",
+      render: (row: ProblemMetricRow) => formatNumber(row.attempts_before_hint),
+    },
+    {
+      key: "attemptsAfterHint",
+      header: "Attempts After Hint",
+      render: (row: ProblemMetricRow) => formatNumber(row.attempts_after_hint),
+    },
+    {
+      key: "timeToSolveAfterHint",
+      header: "Time to Solve After Hint",
+      render: (row: ProblemMetricRow) => `${formatNumber(row.time_to_solve_after_hint_minutes)} min`,
+    },
+  ];
 
   return (
     <Box className={styles.card}>
@@ -155,40 +227,40 @@ export default function LiveInstructorAnalyticsCard({
 
       <Box className={styles.filterBar}>
         <Box className={styles.filterRow}>
-        <label className={styles.filterField}>
-          <span>Contest</span>
-          <select
-            value={selectedContestId}
-            onChange={(e) => {
-              const value = e.target.value;
-              onSelectedContestIdChange?.(value);
-              if (!onSelectedContestIdChange) setUncontrolledSelectedContestId(value);
-            }}
-          >
-            {contestOptions.map((contest) => (
-              <option key={contest.id} value={contest.id}>
-                {contest.name}
-              </option>
-            ))}
-          </select>
-        </label>
+          <label className={styles.filterField}>
+            <span>Contest</span>
+            <select
+              value={selectedContestId}
+              onChange={(e) => {
+                const value = e.target.value;
+                onSelectedContestIdChange?.(value);
+                if (!onSelectedContestIdChange) setUncontrolledSelectedContestId(value);
+              }}
+            >
+              {contestOptions.map((contest) => (
+                <option key={contest.id} value={contest.id}>
+                  {contest.name}
+                </option>
+              ))}
+            </select>
+          </label>
 
-        <label className={styles.filterField}>
-          <span>View</span>
-          <select
-            value={viewMode}
-            onChange={(e) => {
-              const value = e.target.value as ViewMode;
-              onViewModeChange?.(value);
-              if (!onViewModeChange) setUncontrolledViewMode(value);
-            }}
-          >
-            <option value="all">All Students</option>
-            <option value="groupA">Group A</option>
-            <option value="groupB">Group B</option>
-            <option value="groupC">Group C</option>
-          </select>
-        </label>
+          <label className={styles.filterField}>
+            <span>View</span>
+            <select
+              value={viewMode}
+              onChange={(e) => {
+                const value = e.target.value as ViewMode;
+                onViewModeChange?.(value);
+                if (!onViewModeChange) setUncontrolledViewMode(value);
+              }}
+            >
+              <option value="all">All Students</option>
+              <option value="groupA">Group A</option>
+              <option value="groupB">Group B</option>
+              <option value="groupC">Group C</option>
+            </select>
+          </label>
         </Box>
       </Box>
 
@@ -254,33 +326,12 @@ export default function LiveInstructorAnalyticsCard({
         <EmojiEventsOutlinedIcon className={styles.sectionIcon} />
         Contest Metrics
       </h4>
-      <div className={styles.tableWrap}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Contest</th>
-              <th>Solve Rate</th>
-              <th>Mean Solve Time</th>
-              <th>Median Solve Time</th>
-              <th>Attempts to Solve</th>
-            </tr>
-          </thead>
-          <tbody>
-            {visibleContestRows.map((row) => (
-              <tr key={row.contest_id}>
-                <td>{row.contest_name}</td>
-                <td>{formatPercent(row.solve_rate)}</td>
-                <td>{formatNumber(row.mean_solve_time_minutes)} min</td>
-                <td>{formatNumber(row.median_solve_time_minutes)} min</td>
-                <td>{formatNumber(row.attempts_to_solve)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {!showAllContestRows && contestRows.length > 10 ? (
-          <div className={styles.tableFade} />
-        ) : null}
-      </div>
+      <LiveMetricsTable
+        rows={contestRows}
+        visibleRows={visibleContestRows}
+        rowKey={(row) => row.contest_id}
+        columns={contestColumns}
+      />
       {contestRows.length > 10 ? (
         <Box className={styles.tableActions}>
           <Button
@@ -298,41 +349,12 @@ export default function LiveInstructorAnalyticsCard({
         <TableViewOutlinedIcon className={styles.sectionIcon} />
         Problem Metrics
       </h4>
-      <div className={styles.tableWrap}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Contest</th>
-              <th>Problem</th>
-              <th>First Submission</th>
-              <th>First Correct</th>
-              <th>Post-Hint Solve Prob.</th>
-              <th>Attempts Before Hint</th>
-              <th>Attempts After Hint</th>
-              <th>Time to Solve After Hint</th>
-            </tr>
-          </thead>
-          <tbody>
-            {visibleProblemRows.map((row) => (
-              <tr key={`${row.contest_id}:${row.problem_id}`}>
-                <td>{row.contest_name}</td>
-                <td>
-                  {row.problem_code} - {row.problem_title}
-                </td>
-                <td>{formatNumber(row.time_to_first_submission_minutes)} min</td>
-                <td>{formatNumber(row.time_to_first_correct_submission_minutes)} min</td>
-                <td>{formatPercent(row.post_hint_solve_probability)}</td>
-                <td>{formatNumber(row.attempts_before_hint)}</td>
-                <td>{formatNumber(row.attempts_after_hint)}</td>
-                <td>{formatNumber(row.time_to_solve_after_hint_minutes)} min</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {!showAllProblemRows && orderedProblemRows.length > 10 ? (
-          <div className={styles.tableFade} />
-        ) : null}
-      </div>
+      <LiveMetricsTable
+        rows={orderedProblemRows}
+        visibleRows={visibleProblemRows}
+        rowKey={(row) => `${row.contest_id}:${row.problem_id}`}
+        columns={problemColumns}
+      />
       {orderedProblemRows.length > 10 ? (
         <Box className={styles.tableActions}>
           <Button

@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import type { FilterOption } from "@/fe/instructor/data";
 import styles from "@/fe/instructor/styles/ResearchAnalyticsPage.module.css";
 
-interface SectionFilterField {
+export interface SectionFilterField {
   id: string;
   label: string;
   value: string;

@@ -53,7 +53,7 @@ export interface InstructorAnalyticsUiPayload {
   analytics_notes: string[];
 }
 
-export const MOCK_INSTRUCTOR_ANALYTICS: InstructorAnalyticsUiPayload = {
+const BASE_INSTRUCTOR_ANALYTICS: InstructorAnalyticsUiPayload = {
   segmented_metrics: {
     all: {
       contest_metrics: [
@@ -1507,29 +1507,14 @@ const extraStudentViews: InstructorAnalyticsUiPayload["student_views"] = {
   },
 };
 
-MOCK_INSTRUCTOR_ANALYTICS.contests_catalog.push(...extraContests);
-MOCK_INSTRUCTOR_ANALYTICS.students_catalog.push(...extraStudents);
-
-for (const segment of Object.keys(extraSegmentedMetrics) as SegmentKey[]) {
-  MOCK_INSTRUCTOR_ANALYTICS.segmented_metrics[segment].contest_metrics.push(
-    ...extraSegmentedMetrics[segment].contest_metrics,
-  );
-  MOCK_INSTRUCTOR_ANALYTICS.segmented_metrics[segment].problem_metrics.push(
-    ...extraSegmentedMetrics[segment].problem_metrics,
-  );
-}
-
-Object.assign(MOCK_INSTRUCTOR_ANALYTICS.student_views, extraStudentViews);
-
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
 function buildStudentMetricBundle(
   studentIndex: number,
-  segment: "groupA" | "groupB" | "groupC",
+  segmentBundle: MetricBundle,
 ): MetricBundle {
-  const segmentBundle = MOCK_INSTRUCTOR_ANALYTICS.segmented_metrics[segment];
   const contestOffset = (studentIndex % 3) - 1;
   const problemOffset = (studentIndex % 4) - 1.5;
 
@@ -1598,9 +1583,54 @@ function buildStudentMetricBundle(
   };
 }
 
-MOCK_INSTRUCTOR_ANALYTICS.students_catalog.forEach((student, index) => {
-  MOCK_INSTRUCTOR_ANALYTICS.student_views[student.computingId] = buildStudentMetricBundle(
-    index,
-    student.segment,
+function buildMergedSegmentedMetrics(
+  base: InstructorAnalyticsUiPayload["segmented_metrics"],
+): InstructorAnalyticsUiPayload["segmented_metrics"] {
+  return (Object.keys(base) as SegmentKey[]).reduce<InstructorAnalyticsUiPayload["segmented_metrics"]>(
+    (acc, segment) => {
+      acc[segment] = {
+        contest_metrics: [
+          ...base[segment].contest_metrics,
+          ...extraSegmentedMetrics[segment].contest_metrics,
+        ],
+        problem_metrics: [
+          ...base[segment].problem_metrics,
+          ...extraSegmentedMetrics[segment].problem_metrics,
+        ],
+      };
+      return acc;
+    },
+    {} as InstructorAnalyticsUiPayload["segmented_metrics"],
   );
-});
+}
+
+function buildStudentViews(
+  studentsCatalog: StudentCatalogRow[],
+  segmentedMetrics: InstructorAnalyticsUiPayload["segmented_metrics"],
+): InstructorAnalyticsUiPayload["student_views"] {
+  const seededStudentViews = {
+    ...BASE_INSTRUCTOR_ANALYTICS.student_views,
+    ...extraStudentViews,
+  };
+
+  return studentsCatalog.reduce<InstructorAnalyticsUiPayload["student_views"]>((acc, student, index) => {
+    acc[student.computingId] = buildStudentMetricBundle(index, segmentedMetrics[student.segment]);
+    return acc;
+  }, seededStudentViews);
+}
+
+function buildInstructorAnalytics(): InstructorAnalyticsUiPayload {
+  const contestsCatalog = [...BASE_INSTRUCTOR_ANALYTICS.contests_catalog, ...extraContests];
+  const studentsCatalog = [...BASE_INSTRUCTOR_ANALYTICS.students_catalog, ...extraStudents];
+  const segmentedMetrics = buildMergedSegmentedMetrics(BASE_INSTRUCTOR_ANALYTICS.segmented_metrics);
+
+  return {
+    ...BASE_INSTRUCTOR_ANALYTICS,
+    contests_catalog: contestsCatalog,
+    students_catalog: studentsCatalog,
+    segmented_metrics: segmentedMetrics,
+    student_views: buildStudentViews(studentsCatalog, segmentedMetrics),
+  };
+}
+
+export const MOCK_INSTRUCTOR_ANALYTICS: InstructorAnalyticsUiPayload = buildInstructorAnalytics();
