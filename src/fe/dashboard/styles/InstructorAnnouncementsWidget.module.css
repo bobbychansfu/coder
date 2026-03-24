@@ -1,0 +1,75 @@
+.emptyState {
+  border: 1px solid #eaecf0;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 14px;
+  font-size: 13px;
+  line-height: 18px;
+  color: #4a5565;
+}
+
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.activityItem {
+  border: 1px solid #eaecf0;
+  border-radius: 10px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+}
+
+.activityIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.activityIconGlyph {
+  width: 1rem;
+  height: 1rem;
+  font-size: 1rem;
+}
+
+.activityIcon[data-tone="success"] {
+  background: #fef2f2;
+  color: #b42318;
+}
+
+.activityIcon[data-tone="info"] {
+  background: #fff5f4;
+  color: #d92d20;
+}
+
+.activityIcon[data-tone="highlight"] {
+  background: #fff1f3;
+  color: #b42318;
+}
+
+.activityText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.activityDescription {
+  margin: 0;
+  font-size: 13px;
+  line-height: 18px;
+  color: #101828;
+}
+
+.activityTimestamp {
+  margin: 0;
+  font-size: 12px;
+  line-height: 16px;
+  color: #6a7282;
+}
