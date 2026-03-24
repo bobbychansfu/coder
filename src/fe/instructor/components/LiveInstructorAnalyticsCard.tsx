@@ -9,6 +9,8 @@ import QueryStatsOutlinedIcon from "@mui/icons-material/QueryStatsOutlined";
 import TableViewOutlinedIcon from "@mui/icons-material/TableViewOutlined";
 import TimerOutlinedIcon from "@mui/icons-material/TimerOutlined";
 import {
+  DEFAULT_AI_HINT_NOTE,
+  DEFAULT_GAMIFICATION_NOTE,
   MOCK_INSTRUCTOR_ANALYTICS,
   type ContestCatalogRow,
   type ContestMetricRow,
@@ -202,8 +204,7 @@ export default function LiveInstructorAnalyticsCard({
             <span className={styles.focusLabel}>Gamification Note</span>
           </Box>
           <p className={styles.focusTitle}>
-            {activeContest?.gamificationNote ||
-              "A group members already know each other. B group is randomly assigned and fully unfamiliar. C group members know each other through the platform friend list."}
+            {activeContest?.gamificationNote || DEFAULT_GAMIFICATION_NOTE}
           </p>
         </Box>
 
@@ -213,8 +214,7 @@ export default function LiveInstructorAnalyticsCard({
             <span className={styles.focusLabel}>AI Hint Note</span>
           </Box>
           <p className={styles.focusTitle}>
-            {activeContest?.hintNote ||
-              "A group has no AI hint. B group can access AI hints after 1 minute. C group can access AI hints after 30 minutes."}
+            {activeContest?.hintNote || DEFAULT_AI_HINT_NOTE}
           </p>
         </Box>
       </Box>

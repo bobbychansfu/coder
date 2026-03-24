@@ -1,3 +1,5 @@
+import { DEFAULT_AI_HINT_NOTE, DEFAULT_GAMIFICATION_NOTE } from "@/fe/instructor/data/analysisConstants";
+
 export interface ContestMetricRow {
   contest_id: string;
   contest_name: string;
@@ -920,55 +922,43 @@ export const MOCK_INSTRUCTOR_ANALYTICS: InstructorAnalyticsUiPayload = {
     {
       id: "contest-1",
       name: "Week 3 Lab Contest",
-      hintNote:
-        "A group has no AI hint. B group can access AI hints after 1 minute. C group can access AI hints after 30 minutes.",
-      gamificationNote:
-        "A group members already know each other. B group is randomly assigned and fully unfamiliar. C group members know each other through the platform friend list.",
+      hintNote: DEFAULT_AI_HINT_NOTE,
+      gamificationNote: DEFAULT_GAMIFICATION_NOTE,
       comparisonNote: "Best used to compare aggressive hint timing against short-form beginner contests.",
     },
     {
       id: "contest-2",
       name: "Trees & Graphs Challenge",
-      hintNote:
-        "A group has no AI hint. B group can access AI hints after 1 minute. C group can access AI hints after 30 minutes.",
-      gamificationNote:
-        "A group members already know each other. B group is randomly assigned and fully unfamiliar. C group members know each other through the platform friend list.",
+      hintNote: DEFAULT_AI_HINT_NOTE,
+      gamificationNote: DEFAULT_GAMIFICATION_NOTE,
       comparisonNote: "Best used to compare delayed hint timing for stronger students or harder content.",
     },
     {
       id: "contest-3",
       name: "Arrays & Strings Basics",
-      hintNote:
-        "A group has no AI hint. B group can access AI hints after 1 minute. C group can access AI hints after 30 minutes.",
-      gamificationNote:
-        "A group members already know each other. B group is randomly assigned and fully unfamiliar. C group members know each other through the platform friend list.",
+      hintNote: DEFAULT_AI_HINT_NOTE,
+      gamificationNote: DEFAULT_GAMIFICATION_NOTE,
       comparisonNote: "Best used to compare faster onboarding and participation in shorter practice-heavy contests.",
     },
     {
       id: "contest-4",
       name: "Dynamic Programming Sprint",
-      hintNote:
-        "A group has no AI hint. B group can access AI hints after 1 minute. C group can access AI hints after 30 minutes.",
-      gamificationNote:
-        "A group members already know each other. B group is randomly assigned and fully unfamiliar. C group members know each other through the platform friend list.",
+      hintNote: DEFAULT_AI_HINT_NOTE,
+      gamificationNote: DEFAULT_GAMIFICATION_NOTE,
       comparisonNote: "Best used to compare long-form problem solving where hint timing affects persistence more strongly.",
     },
     {
       id: "contest-5",
       name: "Greedy Open",
-      hintNote:
-        "A group has no AI hint. B group can access AI hints after 1 minute. C group can access AI hints after 30 minutes.",
-      gamificationNote:
-        "A group members already know each other. B group is randomly assigned and fully unfamiliar. C group members know each other through the platform friend list.",
+      hintNote: DEFAULT_AI_HINT_NOTE,
+      gamificationNote: DEFAULT_GAMIFICATION_NOTE,
       comparisonNote: "Best used to compare medium-length contests where pacing and collaboration structure both affect completion.",
     },
     {
       id: "contest-6",
       name: "Graph Theory Marathon",
-      hintNote:
-        "A group has no AI hint. B group can access AI hints after 1 minute. C group can access AI hints after 30 minutes.",
-      gamificationNote:
-        "A group members already know each other. B group is randomly assigned and fully unfamiliar. C group members know each other through the platform friend list.",
+      hintNote: DEFAULT_AI_HINT_NOTE,
+      gamificationNote: DEFAULT_GAMIFICATION_NOTE,
       comparisonNote: "Best used to compare harder graph-heavy contests where hint timing shifts time-to-first-correct more strongly.",
     },
   ],

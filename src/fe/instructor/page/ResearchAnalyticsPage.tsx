@@ -25,7 +25,6 @@ import {
 import { mockResearchAnalyticsDataset } from "@/fe/instructor/data";
 import {
   MOCK_INSTRUCTOR_ANALYTICS,
-  type ProblemMetricRow,
   type ViewMode,
 } from "@/fe/instructor/data/liveInstructorAnalytics";
 import HintEngagementTimelineCard from "@/fe/instructor/components/HintEngagementTimelineCard";
@@ -39,131 +38,25 @@ import SolveTimeDistributionCard from "@/fe/instructor/components/SolveTimeDistr
 import PageHeader from "@/fe/shared/components/PageHeader";
 import { ROUTES } from "@/fe/shared/constants/routes";
 import ScrollbarHider from "@/fe/shared/components/ui/ScrollbarHider";
+import {
+  buildContestComparisonRows,
+  buildExportSections,
+  buildGroupComparisonRows,
+  buildStudentComparisonRows,
+  buildStudentOptions,
+  buildCsvSection,
+  EXPORT_SECTION_LABELS,
+  formatNumber,
+  formatPercent,
+  getOptionLabel,
+  type ContestComparisonFilters,
+  type ExportFormat,
+  type ExportSectionKey,
+  type GroupComparisonFilters,
+  type StudentComparisonFilters,
+} from "@/fe/instructor/page/researchAnalytics.helpers";
 import subpageStyles from "@/fe/instructor/styles/InstructorSubpageHeader.module.css";
 import styles from "@/fe/instructor/styles/ResearchAnalyticsPage.module.css";
-
-function average(values: Array<number | null | undefined>): number {
-  const valid = values.filter((value): value is number => typeof value === "number");
-  if (valid.length === 0) return 0;
-  return valid.reduce((sum, value) => sum + value, 0) / valid.length;
-}
-
-function formatMetricValue(value: number, kind: "percent" | "minutes" | "decimal"): string {
-  if (kind === "percent") return `${Math.round(value)}%`;
-  if (kind === "minutes") return `${Math.round(value)}m`;
-  return value.toFixed(1);
-}
-
-function buildComparisonRow(
-  label: string,
-  left: number,
-  right: number,
-  kind: "percent" | "minutes" | "decimal",
-) {
-  const max = Math.max(left, right, 1);
-
-  return {
-    label,
-    leftValue: formatMetricValue(left, kind),
-    rightValue: formatMetricValue(right, kind),
-    leftPercent: Math.round((left / max) * 100),
-    rightPercent: Math.round((right / max) * 100),
-  };
-}
-
-function buildProblemComparisonRows(
-  leftProblems: ProblemMetricRow[],
-  rightProblems: ProblemMetricRow[],
-) {
-  return [
-    buildComparisonRow(
-      "First Submission",
-      average(leftProblems.map((row) => row.time_to_first_submission_minutes)),
-      average(rightProblems.map((row) => row.time_to_first_submission_minutes)),
-      "minutes",
-    ),
-    buildComparisonRow(
-      "First Correct",
-      average(leftProblems.map((row) => row.time_to_first_correct_submission_minutes)),
-      average(rightProblems.map((row) => row.time_to_first_correct_submission_minutes)),
-      "minutes",
-    ),
-    buildComparisonRow(
-      "Post-Hint Solve",
-      average(leftProblems.map((row) => row.post_hint_solve_probability)),
-      average(rightProblems.map((row) => row.post_hint_solve_probability)),
-      "percent",
-    ),
-    buildComparisonRow(
-      "Attempts Before Hint",
-      average(leftProblems.map((row) => row.attempts_before_hint)),
-      average(rightProblems.map((row) => row.attempts_before_hint)),
-      "decimal",
-    ),
-    buildComparisonRow(
-      "Attempts After Hint",
-      average(leftProblems.map((row) => row.attempts_after_hint)),
-      average(rightProblems.map((row) => row.attempts_after_hint)),
-      "decimal",
-    ),
-    buildComparisonRow(
-      "Solve Time After Hint",
-      average(leftProblems.map((row) => row.time_to_solve_after_hint_minutes)),
-      average(rightProblems.map((row) => row.time_to_solve_after_hint_minutes)),
-      "minutes",
-    ),
-  ];
-}
-
-function formatNumber(value: number | null): string {
-  if (value === null || Number.isNaN(value)) return "N/A";
-  return `${value}`;
-}
-
-function formatPercent(value: number | null): string {
-  if (value === null || Number.isNaN(value)) return "N/A";
-  return `${value}%`;
-}
-
-const EXPORT_SECTION_LABELS = {
-  contestData: "Contest Data",
-  problemData: "Problem Data",
-  contestComparison: "Contest Comparison",
-  groupComparison: "Group Comparison",
-  studentComparison: "Student Comparison",
-  gamificationStatistics: "Gamification Statistics",
-  aiHintStatistics: "AI Hint Statistics",
-} as const;
-
-type ExportSectionKey = keyof typeof EXPORT_SECTION_LABELS;
-type ExportFormat = "json" | "csv" | "pdf";
-
-function buildCsvSection(title: string, rows: Array<Record<string, unknown>>): string {
-  if (rows.length === 0) {
-    return `${title}\nNo data\n`;
-  }
-
-  const headers = Object.keys(rows[0]);
-  const headerLine = headers.join(",");
-  const body = rows
-    .map((row) =>
-      headers
-        .map((header) => {
-          const raw = row[header];
-          const text =
-            raw == null
-              ? ""
-              : typeof raw === "object"
-                ? JSON.stringify(raw)
-                : String(raw);
-          return `"${text.replaceAll('"', '""')}"`;
-        })
-        .join(","),
-    )
-    .join("\n");
-
-  return `${title}\n${headerLine}\n${body}\n`;
-}
 
 export default function ResearchAnalyticsPage() {
   const router = useRouter();
@@ -184,17 +77,17 @@ export default function ResearchAnalyticsPage() {
     [conditionOptions],
   );
 
-  const [contestComparisonFilters, setContestComparisonFilters] = useState({
+  const [contestComparisonFilters, setContestComparisonFilters] = useState<ContestComparisonFilters>({
     leftContest: "contest-1",
     rightContest: "contest-2",
   });
-  const [groupComparisonFilters, setGroupComparisonFilters] = useState({
+  const [groupComparisonFilters, setGroupComparisonFilters] = useState<GroupComparisonFilters>({
     leftContest: "contest-1",
     leftGroup: "group-a",
     rightContest: "contest-2",
     rightGroup: "group-b",
   });
-  const [studentComparisonFilters, setStudentComparisonFilters] = useState({
+  const [studentComparisonFilters, setStudentComparisonFilters] = useState<StudentComparisonFilters>({
     leftContest: "contest-1",
     leftGroup: "group-a",
     leftStudent: "student01",
@@ -229,219 +122,67 @@ export default function ResearchAnalyticsPage() {
   );
 
   const contestComparisonRows = useMemo(() => {
-    const leftContest = contestRows.find(
-      (row) => row.contest_id === contestComparisonFilters.leftContest,
-    );
-    const rightContest = contestRows.find(
-      (row) => row.contest_id === contestComparisonFilters.rightContest,
-    );
-
-    if (!leftContest || !rightContest) {
-      return [];
-    }
-
-    return [
-      buildComparisonRow(
-        "Solve Rate",
-        leftContest.solve_rate,
-        rightContest.solve_rate,
-        "percent",
-      ),
-      buildComparisonRow(
-        "Mean Solve Time",
-        leftContest.mean_solve_time_minutes ?? 0,
-        rightContest.mean_solve_time_minutes ?? 0,
-        "minutes",
-      ),
-      buildComparisonRow(
-        "Median Solve Time",
-        leftContest.median_solve_time_minutes ?? 0,
-        rightContest.median_solve_time_minutes ?? 0,
-        "minutes",
-      ),
-      buildComparisonRow(
-        "Attempts to Solve",
-        leftContest.attempts_to_solve ?? 0,
-        rightContest.attempts_to_solve ?? 0,
-        "decimal",
-      ),
-    ];
-  }, [contestComparisonFilters.leftContest, contestComparisonFilters.rightContest, contestRows]);
+    return buildContestComparisonRows(contestRows, contestComparisonFilters);
+  }, [contestComparisonFilters, contestRows]);
 
   const groupComparisonRows = useMemo(() => {
-    const toSegmentKey = (value: string): "groupA" | "groupB" | "groupC" => {
-      if (value === "group-a") return "groupA";
-      if (value === "group-b") return "groupB";
-      return "groupC";
-    };
-
-    const leftProblems =
-      MOCK_INSTRUCTOR_ANALYTICS.segmented_metrics[
-        toSegmentKey(groupComparisonFilters.leftGroup)
-      ].problem_metrics.filter((row) => row.contest_id === groupComparisonFilters.leftContest);
-    const rightProblems =
-      MOCK_INSTRUCTOR_ANALYTICS.segmented_metrics[
-        toSegmentKey(groupComparisonFilters.rightGroup)
-      ].problem_metrics.filter((row) => row.contest_id === groupComparisonFilters.rightContest);
-
-    return buildProblemComparisonRows(leftProblems, rightProblems);
-  }, [
-    groupComparisonFilters.leftContest,
-    groupComparisonFilters.leftGroup,
-    groupComparisonFilters.rightContest,
-    groupComparisonFilters.rightGroup,
-  ]);
+    return buildGroupComparisonRows(MOCK_INSTRUCTOR_ANALYTICS, groupComparisonFilters);
+  }, [groupComparisonFilters]);
 
   const leftStudentOptions = useMemo(() => {
-    const selectedGroup =
-      studentComparisonFilters.leftGroup === "group-a"
-        ? "groupA"
-        : studentComparisonFilters.leftGroup === "group-b"
-          ? "groupB"
-          : "groupC";
-
-    return MOCK_INSTRUCTOR_ANALYTICS.students_catalog
-      .filter((student) => student.segment === selectedGroup)
-      .map((student) => ({
-        label: student.name,
-        value: student.computingId,
-      }));
+    return buildStudentOptions(MOCK_INSTRUCTOR_ANALYTICS, studentComparisonFilters.leftGroup);
   }, [studentComparisonFilters.leftGroup]);
 
   const rightStudentOptions = useMemo(() => {
-    const selectedGroup =
-      studentComparisonFilters.rightGroup === "group-a"
-        ? "groupA"
-        : studentComparisonFilters.rightGroup === "group-b"
-          ? "groupB"
-          : "groupC";
-
-    return MOCK_INSTRUCTOR_ANALYTICS.students_catalog
-      .filter((student) => student.segment === selectedGroup)
-      .map((student) => ({
-        label: student.name,
-        value: student.computingId,
-      }));
+    return buildStudentOptions(MOCK_INSTRUCTOR_ANALYTICS, studentComparisonFilters.rightGroup);
   }, [studentComparisonFilters.rightGroup]);
 
   const studentComparisonRows = useMemo(() => {
-    const leftStudent = MOCK_INSTRUCTOR_ANALYTICS.student_views[studentComparisonFilters.leftStudent];
-    const rightStudent = MOCK_INSTRUCTOR_ANALYTICS.student_views[studentComparisonFilters.rightStudent];
+    return buildStudentComparisonRows(MOCK_INSTRUCTOR_ANALYTICS, studentComparisonFilters);
+  }, [studentComparisonFilters]);
 
-    const leftContest = leftStudent?.contest_metrics.find(
-      (row) => row.contest_id === studentComparisonFilters.leftContest,
-    );
-    const rightContest = rightStudent?.contest_metrics.find(
-      (row) => row.contest_id === studentComparisonFilters.rightContest,
-    );
-    const leftProblems =
-      leftStudent?.problem_metrics.filter(
-        (row) => row.contest_id === studentComparisonFilters.leftContest,
-      ) ?? [];
-    const rightProblems =
-      rightStudent?.problem_metrics.filter(
-        (row) => row.contest_id === studentComparisonFilters.rightContest,
-      ) ?? [];
-
-    return [
-      buildComparisonRow(
-        "Solve Rate",
-        leftContest?.solve_rate ?? 0,
-        rightContest?.solve_rate ?? 0,
-        "percent",
-      ),
-      buildComparisonRow(
-        "Mean Solve Time",
-        leftContest?.mean_solve_time_minutes ?? 0,
-        rightContest?.mean_solve_time_minutes ?? 0,
-        "minutes",
-      ),
-      buildComparisonRow(
-        "Median Solve Time",
-        leftContest?.median_solve_time_minutes ?? 0,
-        rightContest?.median_solve_time_minutes ?? 0,
-        "minutes",
-      ),
-      buildComparisonRow(
-        "Attempts to Solve",
-        leftContest?.attempts_to_solve ?? 0,
-        rightContest?.attempts_to_solve ?? 0,
-        "decimal",
-      ),
-      buildComparisonRow(
-        "First Submission",
-        average(leftProblems.map((row) => row.time_to_first_submission_minutes)),
-        average(rightProblems.map((row) => row.time_to_first_submission_minutes)),
-        "minutes",
-      ),
-      buildComparisonRow(
-        "First Correct",
-        average(leftProblems.map((row) => row.time_to_first_correct_submission_minutes)),
-        average(rightProblems.map((row) => row.time_to_first_correct_submission_minutes)),
-        "minutes",
-      ),
-      buildComparisonRow(
-        "Post-Hint Solve",
-        average(leftProblems.map((row) => row.post_hint_solve_probability)),
-        average(rightProblems.map((row) => row.post_hint_solve_probability)),
-        "percent",
-      ),
-      buildComparisonRow(
-        "Attempts Before Hint",
-        average(leftProblems.map((row) => row.attempts_before_hint)),
-        average(rightProblems.map((row) => row.attempts_before_hint)),
-        "decimal",
-      ),
-      buildComparisonRow(
-        "Attempts After Hint",
-        average(leftProblems.map((row) => row.attempts_after_hint)),
-        average(rightProblems.map((row) => row.attempts_after_hint)),
-        "decimal",
-      ),
-      buildComparisonRow(
-        "Solve Time After Hint",
-        average(leftProblems.map((row) => row.time_to_solve_after_hint_minutes)),
-        average(rightProblems.map((row) => row.time_to_solve_after_hint_minutes)),
-        "minutes",
-      ),
-    ];
-  }, [
-    studentComparisonFilters.leftContest,
+  const leftContestLabel = getOptionLabel(
+    contestOptions,
+    contestComparisonFilters.leftContest,
+    "Left Contest",
+  );
+  const rightContestLabel = getOptionLabel(
+    contestOptions,
+    contestComparisonFilters.rightContest,
+    "Right Contest",
+  );
+  const leftGroupLabel = getOptionLabel(groupOptions, groupComparisonFilters.leftGroup, "Group A");
+  const rightGroupLabel = getOptionLabel(groupOptions, groupComparisonFilters.rightGroup, "Group B");
+  const leftStudentLabel = getOptionLabel(
+    leftStudentOptions,
     studentComparisonFilters.leftStudent,
-    studentComparisonFilters.rightContest,
+    "Left Student",
+  );
+  const rightStudentLabel = getOptionLabel(
+    rightStudentOptions,
     studentComparisonFilters.rightStudent,
-  ]);
-
-  const leftContestLabel =
-    contestOptions.find((option) => option.value === contestComparisonFilters.leftContest)?.label ??
-    "Left Contest";
-  const rightContestLabel =
-    contestOptions.find((option) => option.value === contestComparisonFilters.rightContest)?.label ??
-    "Right Contest";
-  const leftGroupLabel =
-    groupOptions.find((option) => option.value === groupComparisonFilters.leftGroup)?.label ??
-    "Group A";
-  const rightGroupLabel =
-    groupOptions.find((option) => option.value === groupComparisonFilters.rightGroup)?.label ??
-    "Group B";
-  const leftStudentLabel =
-    leftStudentOptions.find((option) => option.value === studentComparisonFilters.leftStudent)?.label ??
-    "Left Student";
-  const rightStudentLabel =
-    rightStudentOptions.find((option) => option.value === studentComparisonFilters.rightStudent)?.label ??
-    "Right Student";
-  const leftGroupComparisonContestLabel =
-    contestOptions.find((option) => option.value === groupComparisonFilters.leftContest)?.label ??
-    "Left Contest";
-  const rightGroupComparisonContestLabel =
-    contestOptions.find((option) => option.value === groupComparisonFilters.rightContest)?.label ??
-    "Right Contest";
-  const leftStudentContestLabel =
-    contestOptions.find((option) => option.value === studentComparisonFilters.leftContest)?.label ??
-    "Left Contest";
-  const rightStudentContestLabel =
-    contestOptions.find((option) => option.value === studentComparisonFilters.rightContest)?.label ??
-    "Right Contest";
+    "Right Student",
+  );
+  const leftGroupComparisonContestLabel = getOptionLabel(
+    contestOptions,
+    groupComparisonFilters.leftContest,
+    "Left Contest",
+  );
+  const rightGroupComparisonContestLabel = getOptionLabel(
+    contestOptions,
+    groupComparisonFilters.rightContest,
+    "Right Contest",
+  );
+  const leftStudentContestLabel = getOptionLabel(
+    contestOptions,
+    studentComparisonFilters.leftContest,
+    "Left Contest",
+  );
+  const rightStudentContestLabel = getOptionLabel(
+    contestOptions,
+    studentComparisonFilters.rightContest,
+    "Right Contest",
+  );
 
   const activeGamificationTrend =
     gamificationTrendsByRange[gamificationFilters.dateRange] ?? gamificationTrendsByRange.all;
@@ -449,15 +190,15 @@ export default function ResearchAnalyticsPage() {
     aiHintTrendsByRange[hintFilters.dateRange] ?? aiHintTrendsByRange.all;
 
   const exportSections = useMemo(() => {
-    const sections: Record<ExportSectionKey, Array<Record<string, unknown>>> = {
-      contestData: liveAnalyticsData.contestRows.map((row) => ({
+    return buildExportSections({
+      contestRows: liveAnalyticsData.contestRows.map((row) => ({
         contest: row.contest_name,
         solveRate: formatPercent(row.solve_rate),
         meanSolveTime: `${formatNumber(row.mean_solve_time_minutes)} min`,
         medianSolveTime: `${formatNumber(row.median_solve_time_minutes)} min`,
         attemptsToSolve: formatNumber(row.attempts_to_solve),
       })),
-      problemData: liveAnalyticsData.orderedProblemRows.map((row) => ({
+      problemRows: liveAnalyticsData.orderedProblemRows.map((row) => ({
         contest: row.contest_name,
         problem: `${row.problem_code} - ${row.problem_title}`,
         firstSubmission: `${formatNumber(row.time_to_first_submission_minutes)} min`,
@@ -467,48 +208,24 @@ export default function ResearchAnalyticsPage() {
         attemptsAfterHint: formatNumber(row.attempts_after_hint),
         solveTimeAfterHint: `${formatNumber(row.time_to_solve_after_hint_minutes)} min`,
       })),
-      contestComparison: contestComparisonRows.map((row) => ({
-        metric: row.label,
-        leftContest: leftContestLabel,
-        leftValue: row.leftValue,
-        rightContest: rightContestLabel,
-        rightValue: row.rightValue,
-      })),
-      groupComparison: groupComparisonRows.map((row) => ({
-        metric: row.label,
-        leftContest: leftGroupComparisonContestLabel,
-        leftGroup: leftGroupLabel,
-        leftValue: row.leftValue,
-        rightContest: rightGroupComparisonContestLabel,
-        rightGroup: rightGroupLabel,
-        rightValue: row.rightValue,
-      })),
-      studentComparison: studentComparisonRows.map((row) => ({
-        metric: row.label,
-        leftContest: leftStudentContestLabel,
-        leftGroup: studentComparisonFilters.leftGroup,
-        leftStudent: leftStudentLabel,
-        leftValue: row.leftValue,
-        rightContest: rightStudentContestLabel,
-        rightGroup: studentComparisonFilters.rightGroup,
-        rightStudent: rightStudentLabel,
-        rightValue: row.rightValue,
-      })),
-      gamificationStatistics: activeGamificationTrend.xLabels.map((label, index) => ({
-        contest: label,
-        participationRate: `${activeGamificationTrend.series[0]?.data[index] ?? 0}%`,
-        completionRate: `${activeGamificationTrend.series[1]?.data[index] ?? 0}%`,
-        repeatAttempts: `${activeGamificationTrend.series[2]?.data[index] ?? 0}%`,
-      })),
-      aiHintStatistics: activeAiHintTrend.xLabels.map((label, index) => ({
-        contest: label,
-        hintUsageRate: `${activeAiHintTrend.series[0]?.data[index] ?? 0}%`,
-        postHintSolveRate: `${activeAiHintTrend.series[1]?.data[index] ?? 0}%`,
-        attemptsAfterHint: `${activeAiHintTrend.series[2]?.data[index] ?? 0}%`,
-      })),
-    };
-
-    return sections;
+      contestComparisonRows,
+      groupComparisonRows,
+      studentComparisonRows,
+      leftContestLabel,
+      rightContestLabel,
+      leftGroupComparisonContestLabel,
+      rightGroupComparisonContestLabel,
+      leftGroupLabel,
+      rightGroupLabel,
+      leftStudentContestLabel,
+      rightStudentContestLabel,
+      leftStudentLabel,
+      rightStudentLabel,
+      leftStudentGroup: studentComparisonFilters.leftGroup,
+      rightStudentGroup: studentComparisonFilters.rightGroup,
+      gamificationTrend: activeGamificationTrend,
+      aiHintTrend: activeAiHintTrend,
+    });
   }, [
     activeAiHintTrend,
     activeGamificationTrend,

@@ -1,3 +1,5 @@
+import { ANALYSIS_CHART_COLORS } from "@/fe/instructor/data/analysisConstants";
+
 export interface FilterOption {
   label: string;
   value: string;
@@ -374,7 +376,7 @@ export const contestTimelineSeries: ContestTimelineSeries[] = [
   {
     contestId: "week-3-lab",
     contestLabel: "Week 3 Lab",
-    color: "#007AFF",
+    color: ANALYSIS_CHART_COLORS.primary,
     points: [
       { label: "0-5m", value: 10 },
       { label: "5-10m", value: 24 },
@@ -389,7 +391,7 @@ export const contestTimelineSeries: ContestTimelineSeries[] = [
   {
     contestId: "trees-graphs",
     contestLabel: "Trees & Graphs",
-    color: "#34C759",
+    color: ANALYSIS_CHART_COLORS.secondary,
     points: [
       { label: "0-5m", value: 7 },
       { label: "5-10m", value: 18 },
@@ -404,7 +406,7 @@ export const contestTimelineSeries: ContestTimelineSeries[] = [
   {
     contestId: "arrays-strings",
     contestLabel: "Arrays & Strings",
-    color: "#FF9F0A",
+    color: ANALYSIS_CHART_COLORS.accent,
     points: [
       { label: "0-5m", value: 9 },
       { label: "5-10m", value: 20 },
@@ -549,9 +551,9 @@ export const gamificationTrendsByRange: Record<string, TrendDataset> = {
     xValues: [4, 11, 19, 27],
     xGroups: [{ label: "2026 Spring", start: 0, end: 30 }],
     series: [
-      { label: "Participation Rate", color: "#007AFF", data: [74, 69, 82, 77] },
-      { label: "Completion Rate", color: "#34C759", data: [58, 51, 67, 63] },
-      { label: "Repeat Attempts", color: "#FF9F0A", data: [26, 34, 21, 24] },
+      { label: "Participation Rate", color: ANALYSIS_CHART_COLORS.primary, data: [74, 69, 82, 77] },
+      { label: "Completion Rate", color: ANALYSIS_CHART_COLORS.secondary, data: [58, 51, 67, 63] },
+      { label: "Repeat Attempts", color: ANALYSIS_CHART_COLORS.accent, data: [26, 34, 21, 24] },
     ],
   },
   "1m": buildTrendDataset(
@@ -564,9 +566,9 @@ export const gamificationTrendsByRange: Record<string, TrendDataset> = {
       { label: "Heap and Hash", value: 46, semester: "2026 Spring" },
     ],
     [
-      { label: "Participation Rate", color: "#007AFF", data: [84, 71, 89, 86, 74, 78] },
-      { label: "Completion Rate", color: "#34C759", data: [68, 52, 76, 72, 59, 64] },
-      { label: "Repeat Attempts", color: "#FF9F0A", data: [31, 43, 24, 28, 34, 26] },
+      { label: "Participation Rate", color: ANALYSIS_CHART_COLORS.primary, data: [84, 71, 89, 86, 74, 78] },
+      { label: "Completion Rate", color: ANALYSIS_CHART_COLORS.secondary, data: [68, 52, 76, 72, 59, 64] },
+      { label: "Repeat Attempts", color: ANALYSIS_CHART_COLORS.accent, data: [31, 43, 24, 28, 34, 26] },
     ],
   ),
   "1s": buildTrendDataset(
@@ -579,9 +581,9 @@ export const gamificationTrendsByRange: Record<string, TrendDataset> = {
       { label: "Heap and Hash", value: 216, semester: "2026 Summer" },
     ],
     [
-      { label: "Participation Rate", color: "#007AFF", data: [62, 78, 71, 83, 69, 75] },
-      { label: "Completion Rate", color: "#34C759", data: [45, 61, 53, 70, 56, 62] },
-      { label: "Repeat Attempts", color: "#FF9F0A", data: [19, 27, 36, 23, 31, 25] },
+      { label: "Participation Rate", color: ANALYSIS_CHART_COLORS.primary, data: [62, 78, 71, 83, 69, 75] },
+      { label: "Completion Rate", color: ANALYSIS_CHART_COLORS.secondary, data: [45, 61, 53, 70, 56, 62] },
+      { label: "Repeat Attempts", color: ANALYSIS_CHART_COLORS.accent, data: [19, 27, 36, 23, 31, 25] },
     ],
   ),
   "1y": buildTrendDataset(
@@ -595,9 +597,9 @@ export const gamificationTrendsByRange: Record<string, TrendDataset> = {
       { label: "Heap and Hash", value: 449, semester: "2026 Summer" },
     ],
     [
-      { label: "Participation Rate", color: "#007AFF", data: [57, 74, 68, 81, 73, 69, 77] },
-      { label: "Completion Rate", color: "#34C759", data: [39, 58, 49, 66, 57, 54, 61] },
-      { label: "Repeat Attempts", color: "#FF9F0A", data: [15, 25, 33, 22, 29, 31, 24] },
+      { label: "Participation Rate", color: ANALYSIS_CHART_COLORS.primary, data: [57, 74, 68, 81, 73, 69, 77] },
+      { label: "Completion Rate", color: ANALYSIS_CHART_COLORS.secondary, data: [39, 58, 49, 66, 57, 54, 61] },
+      { label: "Repeat Attempts", color: ANALYSIS_CHART_COLORS.accent, data: [15, 25, 33, 22, 29, 31, 24] },
     ],
   ),
   all: buildTrendDataset(
@@ -616,9 +618,9 @@ export const gamificationTrendsByRange: Record<string, TrendDataset> = {
       { label: "Heap and Hash", value: 1268, semester: "2026 Summer" },
     ],
     [
-      { label: "Participation Rate", color: "#007AFF", data: [48, 53, 50, 61, 64, 59, 68, 72, 75, 81, 73, 77] },
-      { label: "Completion Rate", color: "#34C759", data: [30, 34, 33, 42, 46, 43, 52, 57, 61, 66, 58, 63] },
-      { label: "Repeat Attempts", color: "#FF9F0A", data: [11, 13, 15, 18, 20, 24, 28, 26, 30, 22, 27, 24] },
+      { label: "Participation Rate", color: ANALYSIS_CHART_COLORS.primary, data: [48, 53, 50, 61, 64, 59, 68, 72, 75, 81, 73, 77] },
+      { label: "Completion Rate", color: ANALYSIS_CHART_COLORS.secondary, data: [30, 34, 33, 42, 46, 43, 52, 57, 61, 66, 58, 63] },
+      { label: "Repeat Attempts", color: ANALYSIS_CHART_COLORS.accent, data: [11, 13, 15, 18, 20, 24, 28, 26, 30, 22, 27, 24] },
     ],
   ),
 };
@@ -657,9 +659,9 @@ export const aiHintTrendsByRange: Record<string, TrendDataset> = {
     xValues: [4, 11, 19, 27],
     xGroups: [{ label: "2026 Spring", start: 0, end: 30 }],
     series: [
-      { label: "Hint Usage Rate", color: "#007AFF", data: [28, 34, 22, 30] },
-      { label: "Post-Hint Solve Rate", color: "#34C759", data: [54, 49, 58, 56] },
-      { label: "Attempts After Hint", color: "#FF9F0A", data: [16, 22, 13, 17] },
+      { label: "Hint Usage Rate", color: ANALYSIS_CHART_COLORS.primary, data: [28, 34, 22, 30] },
+      { label: "Post-Hint Solve Rate", color: ANALYSIS_CHART_COLORS.secondary, data: [54, 49, 58, 56] },
+      { label: "Attempts After Hint", color: ANALYSIS_CHART_COLORS.accent, data: [16, 22, 13, 17] },
     ],
   },
   "1m": buildTrendDataset(
@@ -672,9 +674,9 @@ export const aiHintTrendsByRange: Record<string, TrendDataset> = {
       { label: "Heap and Hash", value: 46, semester: "2026 Spring" },
     ],
     [
-      { label: "Hint Usage Rate", color: "#007AFF", data: [36, 44, 28, 33, 39, 31] },
-      { label: "Post-Hint Solve Rate", color: "#34C759", data: [58, 49, 61, 57, 54, 63] },
-      { label: "Attempts After Hint", color: "#FF9F0A", data: [18, 27, 14, 16, 21, 15] },
+      { label: "Hint Usage Rate", color: ANALYSIS_CHART_COLORS.primary, data: [36, 44, 28, 33, 39, 31] },
+      { label: "Post-Hint Solve Rate", color: ANALYSIS_CHART_COLORS.secondary, data: [58, 49, 61, 57, 54, 63] },
+      { label: "Attempts After Hint", color: ANALYSIS_CHART_COLORS.accent, data: [18, 27, 14, 16, 21, 15] },
     ],
   ),
   "1s": buildTrendDataset(
@@ -687,9 +689,9 @@ export const aiHintTrendsByRange: Record<string, TrendDataset> = {
       { label: "Heap and Hash", value: 216, semester: "2026 Summer" },
     ],
     [
-      { label: "Hint Usage Rate", color: "#007AFF", data: [18, 29, 41, 26, 35, 28] },
-      { label: "Post-Hint Solve Rate", color: "#34C759", data: [46, 55, 48, 60, 52, 59] },
-      { label: "Attempts After Hint", color: "#FF9F0A", data: [11, 16, 24, 13, 18, 14] },
+      { label: "Hint Usage Rate", color: ANALYSIS_CHART_COLORS.primary, data: [18, 29, 41, 26, 35, 28] },
+      { label: "Post-Hint Solve Rate", color: ANALYSIS_CHART_COLORS.secondary, data: [46, 55, 48, 60, 52, 59] },
+      { label: "Attempts After Hint", color: ANALYSIS_CHART_COLORS.accent, data: [11, 16, 24, 13, 18, 14] },
     ],
   ),
   "1y": buildTrendDataset(
@@ -703,9 +705,9 @@ export const aiHintTrendsByRange: Record<string, TrendDataset> = {
       { label: "Heap and Hash", value: 449, semester: "2026 Summer" },
     ],
     [
-      { label: "Hint Usage Rate", color: "#007AFF", data: [15, 27, 39, 25, 34, 31, 26] },
-      { label: "Post-Hint Solve Rate", color: "#34C759", data: [42, 53, 47, 58, 51, 55, 60] },
-      { label: "Attempts After Hint", color: "#FF9F0A", data: [9, 15, 22, 12, 18, 17, 13] },
+      { label: "Hint Usage Rate", color: ANALYSIS_CHART_COLORS.primary, data: [15, 27, 39, 25, 34, 31, 26] },
+      { label: "Post-Hint Solve Rate", color: ANALYSIS_CHART_COLORS.secondary, data: [42, 53, 47, 58, 51, 55, 60] },
+      { label: "Attempts After Hint", color: ANALYSIS_CHART_COLORS.accent, data: [9, 15, 22, 12, 18, 17, 13] },
     ],
   ),
   all: buildTrendDataset(
@@ -724,9 +726,9 @@ export const aiHintTrendsByRange: Record<string, TrendDataset> = {
       { label: "Heap and Hash", value: 1268, semester: "2026 Summer" },
     ],
     [
-      { label: "Hint Usage Rate", color: "#007AFF", data: [10, 13, 16, 21, 24, 31, 35, 33, 38, 29, 34, 27] },
-      { label: "Post-Hint Solve Rate", color: "#34C759", data: [36, 39, 41, 46, 49, 53, 57, 55, 58, 60, 56, 62] },
-      { label: "Attempts After Hint", color: "#FF9F0A", data: [6, 8, 9, 11, 13, 16, 19, 17, 20, 14, 18, 15] },
+      { label: "Hint Usage Rate", color: ANALYSIS_CHART_COLORS.primary, data: [10, 13, 16, 21, 24, 31, 35, 33, 38, 29, 34, 27] },
+      { label: "Post-Hint Solve Rate", color: ANALYSIS_CHART_COLORS.secondary, data: [36, 39, 41, 46, 49, 53, 57, 55, 58, 60, 56, 62] },
+      { label: "Attempts After Hint", color: ANALYSIS_CHART_COLORS.accent, data: [6, 8, 9, 11, 13, 16, 19, 17, 20, 14, 18, 15] },
     ],
   ),
 };
