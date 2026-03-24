@@ -1,0 +1,1636 @@
+import { DEFAULT_AI_HINT_NOTE, DEFAULT_GAMIFICATION_NOTE } from "@/fe/instructor/data/analysisConstants";
+
+export interface ContestMetricRow {
+  contest_id: string;
+  contest_name: string;
+  solve_rate: number;
+  mean_solve_time_minutes: number | null;
+  median_solve_time_minutes: number | null;
+  attempts_to_solve: number | null;
+}
+
+export interface ProblemMetricRow {
+  contest_id: string;
+  contest_name: string;
+  problem_id: string;
+  problem_code: string;
+  problem_title: string;
+  time_to_first_submission_minutes: number | null;
+  time_to_first_correct_submission_minutes: number | null;
+  post_hint_solve_probability: number | null;
+  attempts_before_hint: number | null;
+  attempts_after_hint: number | null;
+  time_to_solve_after_hint_minutes: number | null;
+}
+
+export type SegmentKey = "all" | "groupA" | "groupB" | "groupC";
+export type ViewMode = "all" | "groupA" | "groupB" | "groupC";
+
+export interface MetricBundle {
+  contest_metrics: ContestMetricRow[];
+  problem_metrics: ProblemMetricRow[];
+}
+
+export interface StudentCatalogRow {
+  computingId: string;
+  name: string;
+  segment: "groupA" | "groupB" | "groupC";
+}
+
+export interface ContestCatalogRow {
+  id: string;
+  name: string;
+  hintNote: string;
+  gamificationNote: string;
+  comparisonNote: string;
+}
+
+export interface InstructorAnalyticsUiPayload {
+  segmented_metrics: Record<SegmentKey, MetricBundle>;
+  student_views: Record<string, MetricBundle>;
+  students_catalog: StudentCatalogRow[];
+  contests_catalog: ContestCatalogRow[];
+  analytics_notes: string[];
+}
+
+const BASE_INSTRUCTOR_ANALYTICS: InstructorAnalyticsUiPayload = {
+  segmented_metrics: {
+    all: {
+      contest_metrics: [
+        {
+          contest_id: "contest-1",
+          contest_name: "Week 3 Lab Contest",
+          solve_rate: 62,
+          mean_solve_time_minutes: 38,
+          median_solve_time_minutes: 34,
+          attempts_to_solve: 2.3,
+        },
+        {
+          contest_id: "contest-2",
+          contest_name: "Trees & Graphs Challenge",
+          solve_rate: 48,
+          mean_solve_time_minutes: 51,
+          median_solve_time_minutes: 46,
+          attempts_to_solve: 3.1,
+        },
+        {
+          contest_id: "contest-3",
+          contest_name: "Arrays & Strings Basics",
+          solve_rate: 74,
+          mean_solve_time_minutes: 29,
+          median_solve_time_minutes: 25,
+          attempts_to_solve: 2.0,
+        },
+        {
+          contest_id: "contest-4",
+          contest_name: "Dynamic Programming Sprint",
+          solve_rate: 39,
+          mean_solve_time_minutes: 63,
+          median_solve_time_minutes: 57,
+          attempts_to_solve: 4.2,
+        },
+        {
+          contest_id: "contest-5",
+          contest_name: "Greedy Open",
+          solve_rate: 57,
+          mean_solve_time_minutes: 42,
+          median_solve_time_minutes: 38,
+          attempts_to_solve: 2.9,
+        },
+        {
+          contest_id: "contest-6",
+          contest_name: "Graph Theory Marathon",
+          solve_rate: 46,
+          mean_solve_time_minutes: 56,
+          median_solve_time_minutes: 49,
+          attempts_to_solve: 3.7,
+        },
+      ],
+      problem_metrics: [
+        {
+          contest_id: "contest-1",
+          contest_name: "Week 3 Lab Contest",
+          problem_id: "p1",
+          problem_code: "A",
+          problem_title: "Warmup Arrays",
+          time_to_first_submission_minutes: 7,
+          time_to_first_correct_submission_minutes: 18,
+          post_hint_solve_probability: 78,
+          attempts_before_hint: 1.2,
+          attempts_after_hint: 0.6,
+          time_to_solve_after_hint_minutes: 12,
+        },
+        {
+          contest_id: "contest-1",
+          contest_name: "Week 3 Lab Contest",
+          problem_id: "p2",
+          problem_code: "B",
+          problem_title: "Sliding Window Lab",
+          time_to_first_submission_minutes: 10,
+          time_to_first_correct_submission_minutes: 22,
+          post_hint_solve_probability: 66,
+          attempts_before_hint: 1.6,
+          attempts_after_hint: 0.8,
+          time_to_solve_after_hint_minutes: 14,
+        },
+        {
+          contest_id: "contest-2",
+          contest_name: "Trees & Graphs Challenge",
+          problem_id: "p3",
+          problem_code: "C",
+          problem_title: "Binary Tree Paths",
+          time_to_first_submission_minutes: 16,
+          time_to_first_correct_submission_minutes: 31,
+          post_hint_solve_probability: 55,
+          attempts_before_hint: 2.4,
+          attempts_after_hint: 1.1,
+          time_to_solve_after_hint_minutes: 19,
+        },
+        {
+          contest_id: "contest-2",
+          contest_name: "Trees & Graphs Challenge",
+          problem_id: "p3b",
+          problem_code: "D",
+          problem_title: "Graph Connectivity",
+          time_to_first_submission_minutes: 18,
+          time_to_first_correct_submission_minutes: 34,
+          post_hint_solve_probability: 52,
+          attempts_before_hint: 2.6,
+          attempts_after_hint: 1.2,
+          time_to_solve_after_hint_minutes: 21,
+        },
+        {
+          contest_id: "contest-3",
+          contest_name: "Arrays & Strings Basics",
+          problem_id: "p4",
+          problem_code: "A",
+          problem_title: "Prefix Sums Warmup",
+          time_to_first_submission_minutes: 6,
+          time_to_first_correct_submission_minutes: 14,
+          post_hint_solve_probability: 81,
+          attempts_before_hint: 1.1,
+          attempts_after_hint: 0.4,
+          time_to_solve_after_hint_minutes: 9,
+        },
+        {
+          contest_id: "contest-3",
+          contest_name: "Arrays & Strings Basics",
+          problem_id: "p4b",
+          problem_code: "B",
+          problem_title: "Substring Frequency",
+          time_to_first_submission_minutes: 9,
+          time_to_first_correct_submission_minutes: 17,
+          post_hint_solve_probability: 76,
+          attempts_before_hint: 1.4,
+          attempts_after_hint: 0.6,
+          time_to_solve_after_hint_minutes: 11,
+        },
+        {
+          contest_id: "contest-4",
+          contest_name: "Dynamic Programming Sprint",
+          problem_id: "p5",
+          problem_code: "D",
+          problem_title: "Knapsack Variants",
+          time_to_first_submission_minutes: 21,
+          time_to_first_correct_submission_minutes: 39,
+          post_hint_solve_probability: 43,
+          attempts_before_hint: 3.1,
+          attempts_after_hint: 1.6,
+          time_to_solve_after_hint_minutes: 24,
+        },
+        {
+          contest_id: "contest-4",
+          contest_name: "Dynamic Programming Sprint",
+          problem_id: "p5b",
+          problem_code: "E",
+          problem_title: "LCS Extensions",
+          time_to_first_submission_minutes: 25,
+          time_to_first_correct_submission_minutes: 44,
+          post_hint_solve_probability: 38,
+          attempts_before_hint: 3.4,
+          attempts_after_hint: 1.8,
+          time_to_solve_after_hint_minutes: 27,
+        },
+        {
+          contest_id: "contest-5",
+          contest_name: "Greedy Open",
+          problem_id: "p6",
+          problem_code: "E",
+          problem_title: "Interval Scheduling",
+          time_to_first_submission_minutes: 12,
+          time_to_first_correct_submission_minutes: 24,
+          post_hint_solve_probability: 64,
+          attempts_before_hint: 1.8,
+          attempts_after_hint: 0.9,
+          time_to_solve_after_hint_minutes: 16,
+        },
+        {
+          contest_id: "contest-5",
+          contest_name: "Greedy Open",
+          problem_id: "p6b",
+          problem_code: "F",
+          problem_title: "Coin Strategy",
+          time_to_first_submission_minutes: 14,
+          time_to_first_correct_submission_minutes: 27,
+          post_hint_solve_probability: 59,
+          attempts_before_hint: 2.0,
+          attempts_after_hint: 1.0,
+          time_to_solve_after_hint_minutes: 17,
+        },
+        {
+          contest_id: "contest-6",
+          contest_name: "Graph Theory Marathon",
+          problem_id: "p7",
+          problem_code: "F",
+          problem_title: "Shortest Paths",
+          time_to_first_submission_minutes: 19,
+          time_to_first_correct_submission_minutes: 35,
+          post_hint_solve_probability: 51,
+          attempts_before_hint: 2.7,
+          attempts_after_hint: 1.4,
+          time_to_solve_after_hint_minutes: 22,
+        },
+        {
+          contest_id: "contest-6",
+          contest_name: "Graph Theory Marathon",
+          problem_id: "p7b",
+          problem_code: "G",
+          problem_title: "Topological Paths",
+          time_to_first_submission_minutes: 22,
+          time_to_first_correct_submission_minutes: 40,
+          post_hint_solve_probability: 45,
+          attempts_before_hint: 3.0,
+          attempts_after_hint: 1.5,
+          time_to_solve_after_hint_minutes: 25,
+        },
+      ],
+    },
+    groupA: {
+      contest_metrics: [
+        {
+          contest_id: "contest-1",
+          contest_name: "Week 3 Lab Contest",
+          solve_rate: 68,
+          mean_solve_time_minutes: 35,
+          median_solve_time_minutes: 32,
+          attempts_to_solve: 2.1,
+        },
+        {
+          contest_id: "contest-2",
+          contest_name: "Trees & Graphs Challenge",
+          solve_rate: 52,
+          mean_solve_time_minutes: 47,
+          median_solve_time_minutes: 43,
+          attempts_to_solve: 2.9,
+        },
+        {
+          contest_id: "contest-3",
+          contest_name: "Arrays & Strings Basics",
+          solve_rate: 79,
+          mean_solve_time_minutes: 26,
+          median_solve_time_minutes: 23,
+          attempts_to_solve: 1.8,
+        },
+        {
+          contest_id: "contest-4",
+          contest_name: "Dynamic Programming Sprint",
+          solve_rate: 44,
+          mean_solve_time_minutes: 58,
+          median_solve_time_minutes: 52,
+          attempts_to_solve: 3.8,
+        },
+        {
+          contest_id: "contest-5",
+          contest_name: "Greedy Open",
+          solve_rate: 63,
+          mean_solve_time_minutes: 37,
+          median_solve_time_minutes: 33,
+          attempts_to_solve: 2.5,
+        },
+        {
+          contest_id: "contest-6",
+          contest_name: "Graph Theory Marathon",
+          solve_rate: 50,
+          mean_solve_time_minutes: 51,
+          median_solve_time_minutes: 45,
+          attempts_to_solve: 3.3,
+        },
+      ],
+      problem_metrics: [
+        {
+          contest_id: "contest-1",
+          contest_name: "Week 3 Lab Contest",
+          problem_id: "p1",
+          problem_code: "A",
+          problem_title: "Warmup Arrays",
+          time_to_first_submission_minutes: 6,
+          time_to_first_correct_submission_minutes: 15,
+          post_hint_solve_probability: 83,
+          attempts_before_hint: 1.1,
+          attempts_after_hint: 0.4,
+          time_to_solve_after_hint_minutes: 10,
+        },
+        {
+          contest_id: "contest-2",
+          contest_name: "Trees & Graphs Challenge",
+          problem_id: "p3",
+          problem_code: "C",
+          problem_title: "Binary Tree Paths",
+          time_to_first_submission_minutes: 14,
+          time_to_first_correct_submission_minutes: 27,
+          post_hint_solve_probability: 61,
+          attempts_before_hint: 2.1,
+          attempts_after_hint: 0.9,
+          time_to_solve_after_hint_minutes: 17,
+        },
+        {
+          contest_id: "contest-2",
+          contest_name: "Trees & Graphs Challenge",
+          problem_id: "p3b",
+          problem_code: "D",
+          problem_title: "Graph Connectivity",
+          time_to_first_submission_minutes: 15,
+          time_to_first_correct_submission_minutes: 29,
+          post_hint_solve_probability: 58,
+          attempts_before_hint: 2.3,
+          attempts_after_hint: 1.0,
+          time_to_solve_after_hint_minutes: 18,
+        },
+        {
+          contest_id: "contest-3",
+          contest_name: "Arrays & Strings Basics",
+          problem_id: "p4",
+          problem_code: "A",
+          problem_title: "Prefix Sums Warmup",
+          time_to_first_submission_minutes: 5,
+          time_to_first_correct_submission_minutes: 12,
+          post_hint_solve_probability: 86,
+          attempts_before_hint: 1.0,
+          attempts_after_hint: 0.3,
+          time_to_solve_after_hint_minutes: 8,
+        },
+        {
+          contest_id: "contest-3",
+          contest_name: "Arrays & Strings Basics",
+          problem_id: "p4b",
+          problem_code: "B",
+          problem_title: "Substring Frequency",
+          time_to_first_submission_minutes: 7,
+          time_to_first_correct_submission_minutes: 14,
+          post_hint_solve_probability: 82,
+          attempts_before_hint: 1.2,
+          attempts_after_hint: 0.5,
+          time_to_solve_after_hint_minutes: 9,
+        },
+        {
+          contest_id: "contest-4",
+          contest_name: "Dynamic Programming Sprint",
+          problem_id: "p5",
+          problem_code: "D",
+          problem_title: "Knapsack Variants",
+          time_to_first_submission_minutes: 18,
+          time_to_first_correct_submission_minutes: 34,
+          post_hint_solve_probability: 47,
+          attempts_before_hint: 2.7,
+          attempts_after_hint: 1.3,
+          time_to_solve_after_hint_minutes: 21,
+        },
+        {
+          contest_id: "contest-4",
+          contest_name: "Dynamic Programming Sprint",
+          problem_id: "p5b",
+          problem_code: "E",
+          problem_title: "LCS Extensions",
+          time_to_first_submission_minutes: 21,
+          time_to_first_correct_submission_minutes: 38,
+          post_hint_solve_probability: 42,
+          attempts_before_hint: 3.0,
+          attempts_after_hint: 1.5,
+          time_to_solve_after_hint_minutes: 23,
+        },
+        {
+          contest_id: "contest-5",
+          contest_name: "Greedy Open",
+          problem_id: "p6",
+          problem_code: "E",
+          problem_title: "Interval Scheduling",
+          time_to_first_submission_minutes: 10,
+          time_to_first_correct_submission_minutes: 20,
+          post_hint_solve_probability: 69,
+          attempts_before_hint: 1.5,
+          attempts_after_hint: 0.7,
+          time_to_solve_after_hint_minutes: 13,
+        },
+        {
+          contest_id: "contest-5",
+          contest_name: "Greedy Open",
+          problem_id: "p6b",
+          problem_code: "F",
+          problem_title: "Coin Strategy",
+          time_to_first_submission_minutes: 11,
+          time_to_first_correct_submission_minutes: 22,
+          post_hint_solve_probability: 65,
+          attempts_before_hint: 1.7,
+          attempts_after_hint: 0.8,
+          time_to_solve_after_hint_minutes: 14,
+        },
+        {
+          contest_id: "contest-6",
+          contest_name: "Graph Theory Marathon",
+          problem_id: "p7",
+          problem_code: "F",
+          problem_title: "Shortest Paths",
+          time_to_first_submission_minutes: 17,
+          time_to_first_correct_submission_minutes: 31,
+          post_hint_solve_probability: 57,
+          attempts_before_hint: 2.4,
+          attempts_after_hint: 1.1,
+          time_to_solve_after_hint_minutes: 19,
+        },
+        {
+          contest_id: "contest-6",
+          contest_name: "Graph Theory Marathon",
+          problem_id: "p7b",
+          problem_code: "G",
+          problem_title: "Topological Paths",
+          time_to_first_submission_minutes: 18,
+          time_to_first_correct_submission_minutes: 34,
+          post_hint_solve_probability: 51,
+          attempts_before_hint: 2.6,
+          attempts_after_hint: 1.2,
+          time_to_solve_after_hint_minutes: 21,
+        },
+      ],
+    },
+    groupB: {
+      contest_metrics: [
+        {
+          contest_id: "contest-1",
+          contest_name: "Week 3 Lab Contest",
+          solve_rate: 55,
+          mean_solve_time_minutes: 44,
+          median_solve_time_minutes: 39,
+          attempts_to_solve: 2.7,
+        },
+        {
+          contest_id: "contest-2",
+          contest_name: "Trees & Graphs Challenge",
+          solve_rate: 41,
+          mean_solve_time_minutes: 58,
+          median_solve_time_minutes: 51,
+          attempts_to_solve: 3.5,
+        },
+        {
+          contest_id: "contest-3",
+          contest_name: "Arrays & Strings Basics",
+          solve_rate: 68,
+          mean_solve_time_minutes: 34,
+          median_solve_time_minutes: 29,
+          attempts_to_solve: 2.5,
+        },
+        {
+          contest_id: "contest-4",
+          contest_name: "Dynamic Programming Sprint",
+          solve_rate: 33,
+          mean_solve_time_minutes: 69,
+          median_solve_time_minutes: 62,
+          attempts_to_solve: 4.8,
+        },
+        {
+          contest_id: "contest-5",
+          contest_name: "Greedy Open",
+          solve_rate: 49,
+          mean_solve_time_minutes: 47,
+          median_solve_time_minutes: 42,
+          attempts_to_solve: 3.4,
+        },
+        {
+          contest_id: "contest-6",
+          contest_name: "Graph Theory Marathon",
+          solve_rate: 40,
+          mean_solve_time_minutes: 61,
+          median_solve_time_minutes: 55,
+          attempts_to_solve: 4.1,
+        },
+      ],
+      problem_metrics: [
+        {
+          contest_id: "contest-1",
+          contest_name: "Week 3 Lab Contest",
+          problem_id: "p2",
+          problem_code: "B",
+          problem_title: "Sliding Window Lab",
+          time_to_first_submission_minutes: 13,
+          time_to_first_correct_submission_minutes: 29,
+          post_hint_solve_probability: 58,
+          attempts_before_hint: 1.9,
+          attempts_after_hint: 1.1,
+          time_to_solve_after_hint_minutes: 17,
+        },
+        {
+          contest_id: "contest-2",
+          contest_name: "Trees & Graphs Challenge",
+          problem_id: "p3",
+          problem_code: "C",
+          problem_title: "Binary Tree Paths",
+          time_to_first_submission_minutes: 18,
+          time_to_first_correct_submission_minutes: 36,
+          post_hint_solve_probability: 49,
+          attempts_before_hint: 2.8,
+          attempts_after_hint: 1.3,
+          time_to_solve_after_hint_minutes: 22,
+        },
+        {
+          contest_id: "contest-2",
+          contest_name: "Trees & Graphs Challenge",
+          problem_id: "p3b",
+          problem_code: "D",
+          problem_title: "Graph Connectivity",
+          time_to_first_submission_minutes: 20,
+          time_to_first_correct_submission_minutes: 38,
+          post_hint_solve_probability: 44,
+          attempts_before_hint: 3.0,
+          attempts_after_hint: 1.4,
+          time_to_solve_after_hint_minutes: 24,
+        },
+        {
+          contest_id: "contest-3",
+          contest_name: "Arrays & Strings Basics",
+          problem_id: "p4",
+          problem_code: "A",
+          problem_title: "Prefix Sums Warmup",
+          time_to_first_submission_minutes: 8,
+          time_to_first_correct_submission_minutes: 17,
+          post_hint_solve_probability: 73,
+          attempts_before_hint: 1.5,
+          attempts_after_hint: 0.8,
+          time_to_solve_after_hint_minutes: 12,
+        },
+        {
+          contest_id: "contest-3",
+          contest_name: "Arrays & Strings Basics",
+          problem_id: "p4b",
+          problem_code: "B",
+          problem_title: "Substring Frequency",
+          time_to_first_submission_minutes: 10,
+          time_to_first_correct_submission_minutes: 20,
+          post_hint_solve_probability: 68,
+          attempts_before_hint: 1.8,
+          attempts_after_hint: 0.9,
+          time_to_solve_after_hint_minutes: 14,
+        },
+        {
+          contest_id: "contest-4",
+          contest_name: "Dynamic Programming Sprint",
+          problem_id: "p5",
+          problem_code: "D",
+          problem_title: "Knapsack Variants",
+          time_to_first_submission_minutes: 24,
+          time_to_first_correct_submission_minutes: 43,
+          post_hint_solve_probability: 39,
+          attempts_before_hint: 3.4,
+          attempts_after_hint: 1.9,
+          time_to_solve_after_hint_minutes: 27,
+        },
+        {
+          contest_id: "contest-4",
+          contest_name: "Dynamic Programming Sprint",
+          problem_id: "p5b",
+          problem_code: "E",
+          problem_title: "LCS Extensions",
+          time_to_first_submission_minutes: 28,
+          time_to_first_correct_submission_minutes: 48,
+          post_hint_solve_probability: 35,
+          attempts_before_hint: 3.8,
+          attempts_after_hint: 2.1,
+          time_to_solve_after_hint_minutes: 30,
+        },
+        {
+          contest_id: "contest-5",
+          contest_name: "Greedy Open",
+          problem_id: "p6",
+          problem_code: "E",
+          problem_title: "Interval Scheduling",
+          time_to_first_submission_minutes: 14,
+          time_to_first_correct_submission_minutes: 28,
+          post_hint_solve_probability: 57,
+          attempts_before_hint: 2.2,
+          attempts_after_hint: 1.2,
+          time_to_solve_after_hint_minutes: 18,
+        },
+        {
+          contest_id: "contest-5",
+          contest_name: "Greedy Open",
+          problem_id: "p6b",
+          problem_code: "F",
+          problem_title: "Coin Strategy",
+          time_to_first_submission_minutes: 16,
+          time_to_first_correct_submission_minutes: 31,
+          post_hint_solve_probability: 53,
+          attempts_before_hint: 2.4,
+          attempts_after_hint: 1.3,
+          time_to_solve_after_hint_minutes: 20,
+        },
+        {
+          contest_id: "contest-6",
+          contest_name: "Graph Theory Marathon",
+          problem_id: "p7",
+          problem_code: "F",
+          problem_title: "Shortest Paths",
+          time_to_first_submission_minutes: 21,
+          time_to_first_correct_submission_minutes: 39,
+          post_hint_solve_probability: 46,
+          attempts_before_hint: 3.0,
+          attempts_after_hint: 1.6,
+          time_to_solve_after_hint_minutes: 24,
+        },
+        {
+          contest_id: "contest-6",
+          contest_name: "Graph Theory Marathon",
+          problem_id: "p7b",
+          problem_code: "G",
+          problem_title: "Topological Paths",
+          time_to_first_submission_minutes: 24,
+          time_to_first_correct_submission_minutes: 43,
+          post_hint_solve_probability: 41,
+          attempts_before_hint: 3.3,
+          attempts_after_hint: 1.8,
+          time_to_solve_after_hint_minutes: 27,
+        },
+      ],
+    },
+    groupC: {
+      contest_metrics: [
+        {
+          contest_id: "contest-1",
+          contest_name: "Week 3 Lab Contest",
+          solve_rate: 59,
+          mean_solve_time_minutes: 41,
+          median_solve_time_minutes: 37,
+          attempts_to_solve: 2.5,
+        },
+        {
+          contest_id: "contest-2",
+          contest_name: "Trees & Graphs Challenge",
+          solve_rate: 45,
+          mean_solve_time_minutes: 54,
+          median_solve_time_minutes: 48,
+          attempts_to_solve: 3.2,
+        },
+        {
+          contest_id: "contest-3",
+          contest_name: "Arrays & Strings Basics",
+          solve_rate: 72,
+          mean_solve_time_minutes: 31,
+          median_solve_time_minutes: 27,
+          attempts_to_solve: 2.2,
+        },
+        {
+          contest_id: "contest-4",
+          contest_name: "Dynamic Programming Sprint",
+          solve_rate: 37,
+          mean_solve_time_minutes: 65,
+          median_solve_time_minutes: 59,
+          attempts_to_solve: 4.4,
+        },
+        {
+          contest_id: "contest-5",
+          contest_name: "Greedy Open",
+          solve_rate: 53,
+          mean_solve_time_minutes: 44,
+          median_solve_time_minutes: 39,
+          attempts_to_solve: 3.1,
+        },
+        {
+          contest_id: "contest-6",
+          contest_name: "Graph Theory Marathon",
+          solve_rate: 43,
+          mean_solve_time_minutes: 58,
+          median_solve_time_minutes: 52,
+          attempts_to_solve: 3.8,
+        },
+      ],
+      problem_metrics: [
+        {
+          contest_id: "contest-1",
+          contest_name: "Week 3 Lab Contest",
+          problem_id: "p1",
+          problem_code: "A",
+          problem_title: "Warmup Arrays",
+          time_to_first_submission_minutes: 8,
+          time_to_first_correct_submission_minutes: 19,
+          post_hint_solve_probability: 72,
+          attempts_before_hint: 1.4,
+          attempts_after_hint: 0.7,
+          time_to_solve_after_hint_minutes: 13,
+        },
+        {
+          contest_id: "contest-2",
+          contest_name: "Trees & Graphs Challenge",
+          problem_id: "p3",
+          problem_code: "C",
+          problem_title: "Binary Tree Paths",
+          time_to_first_submission_minutes: 17,
+          time_to_first_correct_submission_minutes: 33,
+          post_hint_solve_probability: 53,
+          attempts_before_hint: 2.5,
+          attempts_after_hint: 1.2,
+          time_to_solve_after_hint_minutes: 20,
+        },
+        {
+          contest_id: "contest-2",
+          contest_name: "Trees & Graphs Challenge",
+          problem_id: "p3b",
+          problem_code: "D",
+          problem_title: "Graph Connectivity",
+          time_to_first_submission_minutes: 19,
+          time_to_first_correct_submission_minutes: 35,
+          post_hint_solve_probability: 48,
+          attempts_before_hint: 2.7,
+          attempts_after_hint: 1.3,
+          time_to_solve_after_hint_minutes: 22,
+        },
+        {
+          contest_id: "contest-3",
+          contest_name: "Arrays & Strings Basics",
+          problem_id: "p4",
+          problem_code: "A",
+          problem_title: "Prefix Sums Warmup",
+          time_to_first_submission_minutes: 7,
+          time_to_first_correct_submission_minutes: 15,
+          post_hint_solve_probability: 77,
+          attempts_before_hint: 1.3,
+          attempts_after_hint: 0.6,
+          time_to_solve_after_hint_minutes: 10,
+        },
+        {
+          contest_id: "contest-3",
+          contest_name: "Arrays & Strings Basics",
+          problem_id: "p4b",
+          problem_code: "B",
+          problem_title: "Substring Frequency",
+          time_to_first_submission_minutes: 9,
+          time_to_first_correct_submission_minutes: 18,
+          post_hint_solve_probability: 72,
+          attempts_before_hint: 1.6,
+          attempts_after_hint: 0.7,
+          time_to_solve_after_hint_minutes: 12,
+        },
+        {
+          contest_id: "contest-4",
+          contest_name: "Dynamic Programming Sprint",
+          problem_id: "p5",
+          problem_code: "D",
+          problem_title: "Knapsack Variants",
+          time_to_first_submission_minutes: 22,
+          time_to_first_correct_submission_minutes: 40,
+          post_hint_solve_probability: 41,
+          attempts_before_hint: 3.2,
+          attempts_after_hint: 1.7,
+          time_to_solve_after_hint_minutes: 25,
+        },
+        {
+          contest_id: "contest-4",
+          contest_name: "Dynamic Programming Sprint",
+          problem_id: "p5b",
+          problem_code: "E",
+          problem_title: "LCS Extensions",
+          time_to_first_submission_minutes: 26,
+          time_to_first_correct_submission_minutes: 45,
+          post_hint_solve_probability: 37,
+          attempts_before_hint: 3.5,
+          attempts_after_hint: 1.9,
+          time_to_solve_after_hint_minutes: 28,
+        },
+        {
+          contest_id: "contest-5",
+          contest_name: "Greedy Open",
+          problem_id: "p6",
+          problem_code: "E",
+          problem_title: "Interval Scheduling",
+          time_to_first_submission_minutes: 13,
+          time_to_first_correct_submission_minutes: 25,
+          post_hint_solve_probability: 61,
+          attempts_before_hint: 1.9,
+          attempts_after_hint: 1.0,
+          time_to_solve_after_hint_minutes: 15,
+        },
+        {
+          contest_id: "contest-5",
+          contest_name: "Greedy Open",
+          problem_id: "p6b",
+          problem_code: "F",
+          problem_title: "Coin Strategy",
+          time_to_first_submission_minutes: 15,
+          time_to_first_correct_submission_minutes: 29,
+          post_hint_solve_probability: 56,
+          attempts_before_hint: 2.1,
+          attempts_after_hint: 1.1,
+          time_to_solve_after_hint_minutes: 18,
+        },
+        {
+          contest_id: "contest-6",
+          contest_name: "Graph Theory Marathon",
+          problem_id: "p7",
+          problem_code: "F",
+          problem_title: "Shortest Paths",
+          time_to_first_submission_minutes: 20,
+          time_to_first_correct_submission_minutes: 36,
+          post_hint_solve_probability: 49,
+          attempts_before_hint: 2.8,
+          attempts_after_hint: 1.4,
+          time_to_solve_after_hint_minutes: 21,
+        },
+        {
+          contest_id: "contest-6",
+          contest_name: "Graph Theory Marathon",
+          problem_id: "p7b",
+          problem_code: "G",
+          problem_title: "Topological Paths",
+          time_to_first_submission_minutes: 22,
+          time_to_first_correct_submission_minutes: 40,
+          post_hint_solve_probability: 44,
+          attempts_before_hint: 3.1,
+          attempts_after_hint: 1.6,
+          time_to_solve_after_hint_minutes: 24,
+        },
+      ],
+    },
+  },
+  student_views: {
+    student01: {
+      contest_metrics: [
+        {
+          contest_id: "contest-1",
+          contest_name: "Week 3 Lab Contest",
+          solve_rate: 100,
+          mean_solve_time_minutes: 28,
+          median_solve_time_minutes: 28,
+          attempts_to_solve: 1.8,
+        },
+      ],
+      problem_metrics: [
+        {
+          contest_id: "contest-1",
+          contest_name: "Week 3 Lab Contest",
+          problem_id: "p1",
+          problem_code: "A",
+          problem_title: "Warmup Arrays",
+          time_to_first_submission_minutes: 5,
+          time_to_first_correct_submission_minutes: 11,
+          post_hint_solve_probability: 100,
+          attempts_before_hint: 1,
+          attempts_after_hint: 0,
+          time_to_solve_after_hint_minutes: null,
+        },
+      ],
+    },
+    student02: {
+      contest_metrics: [
+        {
+          contest_id: "contest-2",
+          contest_name: "Trees & Graphs Challenge",
+          solve_rate: 50,
+          mean_solve_time_minutes: 47,
+          median_solve_time_minutes: 47,
+          attempts_to_solve: 3,
+        },
+      ],
+      problem_metrics: [
+        {
+          contest_id: "contest-2",
+          contest_name: "Trees & Graphs Challenge",
+          problem_id: "p3",
+          problem_code: "C",
+          problem_title: "Binary Tree Paths",
+          time_to_first_submission_minutes: 14,
+          time_to_first_correct_submission_minutes: 29,
+          post_hint_solve_probability: 60,
+          attempts_before_hint: 2,
+          attempts_after_hint: 1,
+          time_to_solve_after_hint_minutes: 17,
+        },
+      ],
+    },
+  },
+  students_catalog: [
+    { computingId: "student01", name: "Amy Yu", segment: "groupA" },
+    { computingId: "student02", name: "Leo Chen", segment: "groupB" },
+    { computingId: "student03", name: "Mia Patel", segment: "groupC" },
+  ],
+  contests_catalog: [
+    {
+      id: "contest-1",
+      name: "Week 3 Lab Contest",
+      hintNote: DEFAULT_AI_HINT_NOTE,
+      gamificationNote: DEFAULT_GAMIFICATION_NOTE,
+      comparisonNote: "Best used to compare aggressive hint timing against short-form beginner contests.",
+    },
+    {
+      id: "contest-2",
+      name: "Trees & Graphs Challenge",
+      hintNote: DEFAULT_AI_HINT_NOTE,
+      gamificationNote: DEFAULT_GAMIFICATION_NOTE,
+      comparisonNote: "Best used to compare delayed hint timing for stronger students or harder content.",
+    },
+    {
+      id: "contest-3",
+      name: "Arrays & Strings Basics",
+      hintNote: DEFAULT_AI_HINT_NOTE,
+      gamificationNote: DEFAULT_GAMIFICATION_NOTE,
+      comparisonNote: "Best used to compare faster onboarding and participation in shorter practice-heavy contests.",
+    },
+    {
+      id: "contest-4",
+      name: "Dynamic Programming Sprint",
+      hintNote: DEFAULT_AI_HINT_NOTE,
+      gamificationNote: DEFAULT_GAMIFICATION_NOTE,
+      comparisonNote: "Best used to compare long-form problem solving where hint timing affects persistence more strongly.",
+    },
+    {
+      id: "contest-5",
+      name: "Greedy Open",
+      hintNote: DEFAULT_AI_HINT_NOTE,
+      gamificationNote: DEFAULT_GAMIFICATION_NOTE,
+      comparisonNote: "Best used to compare medium-length contests where pacing and collaboration structure both affect completion.",
+    },
+    {
+      id: "contest-6",
+      name: "Graph Theory Marathon",
+      hintNote: DEFAULT_AI_HINT_NOTE,
+      gamificationNote: DEFAULT_GAMIFICATION_NOTE,
+      comparisonNote: "Best used to compare harder graph-heavy contests where hint timing shifts time-to-first-correct more strongly.",
+    },
+  ],
+  analytics_notes: [],
+};
+
+const extraContests: ContestCatalogRow[] = [
+  {
+    id: "contest-7",
+    name: "Recursion Relay",
+    hintNote:
+      "A group has no AI hint. B group can access AI hints after 2 minutes. C group can access AI hints after 20 minutes.",
+    gamificationNote:
+      "A group is a stable friend group. B group is randomly assigned. C group is matched through prior online collaboration.",
+    comparisonNote: "Useful for medium-difficulty recursion problems where persistence patterns diverge clearly.",
+  },
+  {
+    id: "contest-8",
+    name: "Heap and Hash Arena",
+    hintNote:
+      "A group has no AI hint. B group can access AI hints after 3 minutes. C group can access AI hints after 25 minutes.",
+    gamificationNote:
+      "A group members are familiar with each other. B group is fully mixed. C group has lightweight social ties through the platform.",
+    comparisonNote: "Useful for comparing participation and hint reliance in mixed-difficulty data-structure contests.",
+  },
+];
+
+const extraSegmentedMetrics: Record<SegmentKey, MetricBundle> = {
+  all: {
+    contest_metrics: [
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        solve_rate: 53,
+        mean_solve_time_minutes: 47,
+        median_solve_time_minutes: 42,
+        attempts_to_solve: 3.0,
+      },
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        solve_rate: 61,
+        mean_solve_time_minutes: 39,
+        median_solve_time_minutes: 35,
+        attempts_to_solve: 2.6,
+      },
+    ],
+    problem_metrics: [
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        problem_id: "p8",
+        problem_code: "A",
+        problem_title: "Nested Recurrence",
+        time_to_first_submission_minutes: 15,
+        time_to_first_correct_submission_minutes: 29,
+        post_hint_solve_probability: 58,
+        attempts_before_hint: 2.2,
+        attempts_after_hint: 1.1,
+        time_to_solve_after_hint_minutes: 18,
+      },
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        problem_id: "p8b",
+        problem_code: "B",
+        problem_title: "Memoized Paths",
+        time_to_first_submission_minutes: 18,
+        time_to_first_correct_submission_minutes: 33,
+        post_hint_solve_probability: 54,
+        attempts_before_hint: 2.5,
+        attempts_after_hint: 1.2,
+        time_to_solve_after_hint_minutes: 20,
+      },
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        problem_id: "p9",
+        problem_code: "A",
+        problem_title: "Priority Queue Warmup",
+        time_to_first_submission_minutes: 11,
+        time_to_first_correct_submission_minutes: 21,
+        post_hint_solve_probability: 68,
+        attempts_before_hint: 1.7,
+        attempts_after_hint: 0.8,
+        time_to_solve_after_hint_minutes: 14,
+      },
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        problem_id: "p9b",
+        problem_code: "B",
+        problem_title: "Frequency Tracker",
+        time_to_first_submission_minutes: 13,
+        time_to_first_correct_submission_minutes: 24,
+        post_hint_solve_probability: 63,
+        attempts_before_hint: 1.9,
+        attempts_after_hint: 0.9,
+        time_to_solve_after_hint_minutes: 16,
+      },
+    ],
+  },
+  groupA: {
+    contest_metrics: [
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        solve_rate: 57,
+        mean_solve_time_minutes: 43,
+        median_solve_time_minutes: 39,
+        attempts_to_solve: 2.8,
+      },
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        solve_rate: 66,
+        mean_solve_time_minutes: 34,
+        median_solve_time_minutes: 31,
+        attempts_to_solve: 2.3,
+      },
+    ],
+    problem_metrics: [
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        problem_id: "p8",
+        problem_code: "A",
+        problem_title: "Nested Recurrence",
+        time_to_first_submission_minutes: 13,
+        time_to_first_correct_submission_minutes: 26,
+        post_hint_solve_probability: 63,
+        attempts_before_hint: 2.0,
+        attempts_after_hint: 0.9,
+        time_to_solve_after_hint_minutes: 16,
+      },
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        problem_id: "p8b",
+        problem_code: "B",
+        problem_title: "Memoized Paths",
+        time_to_first_submission_minutes: 16,
+        time_to_first_correct_submission_minutes: 30,
+        post_hint_solve_probability: 59,
+        attempts_before_hint: 2.3,
+        attempts_after_hint: 1.0,
+        time_to_solve_after_hint_minutes: 18,
+      },
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        problem_id: "p9",
+        problem_code: "A",
+        problem_title: "Priority Queue Warmup",
+        time_to_first_submission_minutes: 9,
+        time_to_first_correct_submission_minutes: 18,
+        post_hint_solve_probability: 72,
+        attempts_before_hint: 1.5,
+        attempts_after_hint: 0.7,
+        time_to_solve_after_hint_minutes: 12,
+      },
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        problem_id: "p9b",
+        problem_code: "B",
+        problem_title: "Frequency Tracker",
+        time_to_first_submission_minutes: 11,
+        time_to_first_correct_submission_minutes: 21,
+        post_hint_solve_probability: 68,
+        attempts_before_hint: 1.7,
+        attempts_after_hint: 0.8,
+        time_to_solve_after_hint_minutes: 14,
+      },
+    ],
+  },
+  groupB: {
+    contest_metrics: [
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        solve_rate: 51,
+        mean_solve_time_minutes: 48,
+        median_solve_time_minutes: 43,
+        attempts_to_solve: 3.2,
+      },
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        solve_rate: 59,
+        mean_solve_time_minutes: 40,
+        median_solve_time_minutes: 36,
+        attempts_to_solve: 2.8,
+      },
+    ],
+    problem_metrics: [
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        problem_id: "p8",
+        problem_code: "A",
+        problem_title: "Nested Recurrence",
+        time_to_first_submission_minutes: 16,
+        time_to_first_correct_submission_minutes: 31,
+        post_hint_solve_probability: 56,
+        attempts_before_hint: 2.4,
+        attempts_after_hint: 1.2,
+        time_to_solve_after_hint_minutes: 19,
+      },
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        problem_id: "p8b",
+        problem_code: "B",
+        problem_title: "Memoized Paths",
+        time_to_first_submission_minutes: 19,
+        time_to_first_correct_submission_minutes: 35,
+        post_hint_solve_probability: 52,
+        attempts_before_hint: 2.7,
+        attempts_after_hint: 1.4,
+        time_to_solve_after_hint_minutes: 21,
+      },
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        problem_id: "p9",
+        problem_code: "A",
+        problem_title: "Priority Queue Warmup",
+        time_to_first_submission_minutes: 12,
+        time_to_first_correct_submission_minutes: 23,
+        post_hint_solve_probability: 66,
+        attempts_before_hint: 1.8,
+        attempts_after_hint: 0.9,
+        time_to_solve_after_hint_minutes: 15,
+      },
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        problem_id: "p9b",
+        problem_code: "B",
+        problem_title: "Frequency Tracker",
+        time_to_first_submission_minutes: 14,
+        time_to_first_correct_submission_minutes: 26,
+        post_hint_solve_probability: 61,
+        attempts_before_hint: 2.1,
+        attempts_after_hint: 1.1,
+        time_to_solve_after_hint_minutes: 17,
+      },
+    ],
+  },
+  groupC: {
+    contest_metrics: [
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        solve_rate: 46,
+        mean_solve_time_minutes: 54,
+        median_solve_time_minutes: 48,
+        attempts_to_solve: 3.6,
+      },
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        solve_rate: 55,
+        mean_solve_time_minutes: 45,
+        median_solve_time_minutes: 39,
+        attempts_to_solve: 3.0,
+      },
+    ],
+    problem_metrics: [
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        problem_id: "p8",
+        problem_code: "A",
+        problem_title: "Nested Recurrence",
+        time_to_first_submission_minutes: 18,
+        time_to_first_correct_submission_minutes: 34,
+        post_hint_solve_probability: 49,
+        attempts_before_hint: 2.8,
+        attempts_after_hint: 1.5,
+        time_to_solve_after_hint_minutes: 22,
+      },
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        problem_id: "p8b",
+        problem_code: "B",
+        problem_title: "Memoized Paths",
+        time_to_first_submission_minutes: 22,
+        time_to_first_correct_submission_minutes: 39,
+        post_hint_solve_probability: 45,
+        attempts_before_hint: 3.1,
+        attempts_after_hint: 1.6,
+        time_to_solve_after_hint_minutes: 24,
+      },
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        problem_id: "p9",
+        problem_code: "A",
+        problem_title: "Priority Queue Warmup",
+        time_to_first_submission_minutes: 14,
+        time_to_first_correct_submission_minutes: 26,
+        post_hint_solve_probability: 59,
+        attempts_before_hint: 2.1,
+        attempts_after_hint: 1.1,
+        time_to_solve_after_hint_minutes: 18,
+      },
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        problem_id: "p9b",
+        problem_code: "B",
+        problem_title: "Frequency Tracker",
+        time_to_first_submission_minutes: 16,
+        time_to_first_correct_submission_minutes: 29,
+        post_hint_solve_probability: 55,
+        attempts_before_hint: 2.3,
+        attempts_after_hint: 1.2,
+        time_to_solve_after_hint_minutes: 19,
+      },
+    ],
+  },
+};
+
+const extraStudents: StudentCatalogRow[] = [
+  { computingId: "student04", name: "Noah Park", segment: "groupA" },
+  { computingId: "student05", name: "Ivy Nguyen", segment: "groupB" },
+  { computingId: "student06", name: "Sara Lim", segment: "groupC" },
+  { computingId: "student07", name: "Eric Wong", segment: "groupA" },
+  { computingId: "student08", name: "Grace Kim", segment: "groupB" },
+  { computingId: "student09", name: "Daniel Shah", segment: "groupC" },
+];
+
+const extraStudentViews: InstructorAnalyticsUiPayload["student_views"] = {
+  student03: {
+    contest_metrics: [
+      {
+        contest_id: "contest-3",
+        contest_name: "Arrays & Strings Basics",
+        solve_rate: 67,
+        mean_solve_time_minutes: 32,
+        median_solve_time_minutes: 32,
+        attempts_to_solve: 2.9,
+      },
+    ],
+    problem_metrics: [
+      {
+        contest_id: "contest-3",
+        contest_name: "Arrays & Strings Basics",
+        problem_id: "p4",
+        problem_code: "A",
+        problem_title: "Prefix Sums Warmup",
+        time_to_first_submission_minutes: 8,
+        time_to_first_correct_submission_minutes: 17,
+        post_hint_solve_probability: 73,
+        attempts_before_hint: 1.4,
+        attempts_after_hint: 0.6,
+        time_to_solve_after_hint_minutes: 11,
+      },
+    ],
+  },
+  student04: {
+    contest_metrics: [
+      {
+        contest_id: "contest-1",
+        contest_name: "Week 3 Lab Contest",
+        solve_rate: 83,
+        mean_solve_time_minutes: 33,
+        median_solve_time_minutes: 33,
+        attempts_to_solve: 2.2,
+      },
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        solve_rate: 67,
+        mean_solve_time_minutes: 40,
+        median_solve_time_minutes: 40,
+        attempts_to_solve: 2.6,
+      },
+    ],
+    problem_metrics: [
+      {
+        contest_id: "contest-1",
+        contest_name: "Week 3 Lab Contest",
+        problem_id: "p2",
+        problem_code: "B",
+        problem_title: "Sliding Window Lab",
+        time_to_first_submission_minutes: 7,
+        time_to_first_correct_submission_minutes: 15,
+        post_hint_solve_probability: 88,
+        attempts_before_hint: 1.2,
+        attempts_after_hint: 0.3,
+        time_to_solve_after_hint_minutes: 9,
+      },
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        problem_id: "p8",
+        problem_code: "A",
+        problem_title: "Nested Recurrence",
+        time_to_first_submission_minutes: 14,
+        time_to_first_correct_submission_minutes: 24,
+        post_hint_solve_probability: 64,
+        attempts_before_hint: 1.9,
+        attempts_after_hint: 0.8,
+        time_to_solve_after_hint_minutes: 15,
+      },
+    ],
+  },
+  student05: {
+    contest_metrics: [
+      {
+        contest_id: "contest-2",
+        contest_name: "Trees & Graphs Challenge",
+        solve_rate: 58,
+        mean_solve_time_minutes: 44,
+        median_solve_time_minutes: 44,
+        attempts_to_solve: 3.5,
+      },
+    ],
+    problem_metrics: [
+      {
+        contest_id: "contest-2",
+        contest_name: "Trees & Graphs Challenge",
+        problem_id: "p3b",
+        problem_code: "D",
+        problem_title: "Graph Connectivity",
+        time_to_first_submission_minutes: 17,
+        time_to_first_correct_submission_minutes: 31,
+        post_hint_solve_probability: 57,
+        attempts_before_hint: 2.3,
+        attempts_after_hint: 1.1,
+        time_to_solve_after_hint_minutes: 18,
+      },
+    ],
+  },
+  student06: {
+    contest_metrics: [
+      {
+        contest_id: "contest-4",
+        contest_name: "Dynamic Programming Sprint",
+        solve_rate: 42,
+        mean_solve_time_minutes: 61,
+        median_solve_time_minutes: 61,
+        attempts_to_solve: 4.0,
+      },
+    ],
+    problem_metrics: [
+      {
+        contest_id: "contest-4",
+        contest_name: "Dynamic Programming Sprint",
+        problem_id: "p5",
+        problem_code: "D",
+        problem_title: "Knapsack Variants",
+        time_to_first_submission_minutes: 23,
+        time_to_first_correct_submission_minutes: 42,
+        post_hint_solve_probability: 41,
+        attempts_before_hint: 3.2,
+        attempts_after_hint: 1.7,
+        time_to_solve_after_hint_minutes: 25,
+      },
+    ],
+  },
+  student07: {
+    contest_metrics: [
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        solve_rate: 74,
+        mean_solve_time_minutes: 31,
+        median_solve_time_minutes: 31,
+        attempts_to_solve: 2.1,
+      },
+    ],
+    problem_metrics: [
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        problem_id: "p9",
+        problem_code: "A",
+        problem_title: "Priority Queue Warmup",
+        time_to_first_submission_minutes: 8,
+        time_to_first_correct_submission_minutes: 16,
+        post_hint_solve_probability: 79,
+        attempts_before_hint: 1.4,
+        attempts_after_hint: 0.5,
+        time_to_solve_after_hint_minutes: 10,
+      },
+    ],
+  },
+  student08: {
+    contest_metrics: [
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        solve_rate: 61,
+        mean_solve_time_minutes: 39,
+        median_solve_time_minutes: 39,
+        attempts_to_solve: 2.8,
+      },
+    ],
+    problem_metrics: [
+      {
+        contest_id: "contest-8",
+        contest_name: "Heap and Hash Arena",
+        problem_id: "p9b",
+        problem_code: "B",
+        problem_title: "Frequency Tracker",
+        time_to_first_submission_minutes: 13,
+        time_to_first_correct_submission_minutes: 24,
+        post_hint_solve_probability: 62,
+        attempts_before_hint: 2.0,
+        attempts_after_hint: 1.0,
+        time_to_solve_after_hint_minutes: 16,
+      },
+    ],
+  },
+  student09: {
+    contest_metrics: [
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        solve_rate: 39,
+        mean_solve_time_minutes: 57,
+        median_solve_time_minutes: 57,
+        attempts_to_solve: 4.1,
+      },
+    ],
+    problem_metrics: [
+      {
+        contest_id: "contest-7",
+        contest_name: "Recursion Relay",
+        problem_id: "p8b",
+        problem_code: "B",
+        problem_title: "Memoized Paths",
+        time_to_first_submission_minutes: 24,
+        time_to_first_correct_submission_minutes: 41,
+        post_hint_solve_probability: 43,
+        attempts_before_hint: 3.4,
+        attempts_after_hint: 1.7,
+        time_to_solve_after_hint_minutes: 26,
+      },
+    ],
+  },
+};
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function buildStudentMetricBundle(
+  studentIndex: number,
+  segmentBundle: MetricBundle,
+): MetricBundle {
+  const contestOffset = (studentIndex % 3) - 1;
+  const problemOffset = (studentIndex % 4) - 1.5;
+
+  return {
+    contest_metrics: segmentBundle.contest_metrics.map((row, contestIndex) => ({
+      ...row,
+      solve_rate: clamp(row.solve_rate + contestOffset * 3 + (contestIndex % 2), 18, 100),
+      mean_solve_time_minutes:
+        row.mean_solve_time_minutes == null
+          ? null
+          : clamp(row.mean_solve_time_minutes + contestOffset * 2 + (contestIndex % 3), 8, 120),
+      median_solve_time_minutes:
+        row.median_solve_time_minutes == null
+          ? null
+          : clamp(row.median_solve_time_minutes + contestOffset * 2 + (contestIndex % 2), 6, 110),
+      attempts_to_solve:
+        row.attempts_to_solve == null
+          ? null
+          : Number(
+              clamp(row.attempts_to_solve + contestOffset * 0.2 + (contestIndex % 2) * 0.1, 1, 8).toFixed(1),
+            ),
+    })),
+    problem_metrics: segmentBundle.problem_metrics.map((row, problemIndex) => ({
+      ...row,
+      time_to_first_submission_minutes:
+        row.time_to_first_submission_minutes == null
+          ? null
+          : clamp(
+              row.time_to_first_submission_minutes + problemOffset * 2 + (problemIndex % 2),
+              2,
+              90,
+            ),
+      time_to_first_correct_submission_minutes:
+        row.time_to_first_correct_submission_minutes == null
+          ? null
+          : clamp(
+              row.time_to_first_correct_submission_minutes + problemOffset * 2 + (problemIndex % 3),
+              4,
+              120,
+            ),
+      post_hint_solve_probability:
+        row.post_hint_solve_probability == null
+          ? null
+          : clamp(row.post_hint_solve_probability + contestOffset * 4 + (problemIndex % 2), 12, 100),
+      attempts_before_hint:
+        row.attempts_before_hint == null
+          ? null
+          : Number(
+              clamp(row.attempts_before_hint + problemOffset * 0.2 + (problemIndex % 2) * 0.1, 0.5, 8).toFixed(1),
+            ),
+      attempts_after_hint:
+        row.attempts_after_hint == null
+          ? null
+          : Number(
+              clamp(row.attempts_after_hint + problemOffset * 0.15 + (problemIndex % 2) * 0.1, 0, 6).toFixed(1),
+            ),
+      time_to_solve_after_hint_minutes:
+        row.time_to_solve_after_hint_minutes == null
+          ? null
+          : clamp(
+              row.time_to_solve_after_hint_minutes + problemOffset * 2 + (problemIndex % 2),
+              4,
+              90,
+            ),
+    })),
+  };
+}
+
+function buildMergedSegmentedMetrics(
+  base: InstructorAnalyticsUiPayload["segmented_metrics"],
+): InstructorAnalyticsUiPayload["segmented_metrics"] {
+  return (Object.keys(base) as SegmentKey[]).reduce<InstructorAnalyticsUiPayload["segmented_metrics"]>(
+    (acc, segment) => {
+      acc[segment] = {
+        contest_metrics: [
+          ...base[segment].contest_metrics,
+          ...extraSegmentedMetrics[segment].contest_metrics,
+        ],
+        problem_metrics: [
+          ...base[segment].problem_metrics,
+          ...extraSegmentedMetrics[segment].problem_metrics,
+        ],
+      };
+      return acc;
+    },
+    {} as InstructorAnalyticsUiPayload["segmented_metrics"],
+  );
+}
+
+function buildStudentViews(
+  studentsCatalog: StudentCatalogRow[],
+  segmentedMetrics: InstructorAnalyticsUiPayload["segmented_metrics"],
+): InstructorAnalyticsUiPayload["student_views"] {
+  const seededStudentViews = {
+    ...BASE_INSTRUCTOR_ANALYTICS.student_views,
+    ...extraStudentViews,
+  };
+
+  return studentsCatalog.reduce<InstructorAnalyticsUiPayload["student_views"]>((acc, student, index) => {
+    acc[student.computingId] = buildStudentMetricBundle(index, segmentedMetrics[student.segment]);
+    return acc;
+  }, seededStudentViews);
+}
+
+function buildInstructorAnalytics(): InstructorAnalyticsUiPayload {
+  const contestsCatalog = [...BASE_INSTRUCTOR_ANALYTICS.contests_catalog, ...extraContests];
+  const studentsCatalog = [...BASE_INSTRUCTOR_ANALYTICS.students_catalog, ...extraStudents];
+  const segmentedMetrics = buildMergedSegmentedMetrics(BASE_INSTRUCTOR_ANALYTICS.segmented_metrics);
+
+  return {
+    ...BASE_INSTRUCTOR_ANALYTICS,
+    contests_catalog: contestsCatalog,
+    students_catalog: studentsCatalog,
+    segmented_metrics: segmentedMetrics,
+    student_views: buildStudentViews(studentsCatalog, segmentedMetrics),
+  };
+}
+
+export const MOCK_INSTRUCTOR_ANALYTICS: InstructorAnalyticsUiPayload = buildInstructorAnalytics();
