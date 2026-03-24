@@ -3,7 +3,6 @@ import { contestAuthoringRouter } from "./contestAuthoring";
 import { dashboardMetadataRouter } from "./dashboardMetadata";
 import { instructorManageContentRouter } from "./instructorManageContent";
 import { problemAuthoringRouter } from "./problemAuthoring";
-import { instructorDashboardRouter } from "./instructorDashboard";
 import { practiceRouter } from "./practice";
 import { practiceExecutionRouter } from "./practiceExecution";
 
@@ -14,6 +13,5 @@ export const appRouter = router({
   contestAuthoring: contestAuthoringRouter,
   problemAuthoring: problemAuthoringRouter,
   instructorManageContent: instructorManageContentRouter,
-  instructorDashboard: instructorDashboardRouter,
 });
 export type AppRouter = typeof appRouter;
