@@ -68,6 +68,7 @@ export interface InstructorDashboardSnapshot {
     author: {
       firstName: string;
       lastName: string;
+      role: "ADMIN" | "INSTRUCTOR" | "TA";
     };
   }>;
 }
@@ -184,15 +185,19 @@ export async function loadInstructorDashboardSnapshot(
   const recentAnnouncements = contests
     .flatMap((contest) =>
       contest.announcements
-        .filter((announcement) => announcement.author?.role === "TA")
+        .filter((announcement) => {
+          const role = announcement.author?.role;
+          return role === "TA" || role === "INSTRUCTOR" || role === "ADMIN";
+        })
         .map((announcement) => ({
           id: announcement.id,
           contestName: contest.name,
           title: announcement.title,
           createdAt: announcement.createdAt,
           author: {
-            firstName: announcement.author?.firstName ?? "TA",
+            firstName: announcement.author?.firstName ?? "Course",
             lastName: announcement.author?.lastName ?? "",
+            role: announcement.author?.role ?? "TA",
           },
         })),
     )

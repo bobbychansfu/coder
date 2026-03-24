@@ -2,8 +2,8 @@ import type { InstructorDashboardResponse } from "@/lib/trpc/types/instructorDas
 import type { InstructorDashboardSnapshot } from "./repository";
 
 function titleCaseContestStatus(
-  status: "DRAFT" | "UPCOMING" | "ACTIVE",
-): "Draft" | "Upcoming" | "Active" {
+  status: "DRAFT" | "UPCOMING" | "ACTIVE" | "ENDED",
+): "Draft" | "Upcoming" | "Active" | "Ended" {
   switch (status) {
     case "DRAFT":
       return "Draft";
@@ -11,6 +11,21 @@ function titleCaseContestStatus(
       return "Upcoming";
     case "ACTIVE":
       return "Active";
+    case "ENDED":
+      return "Ended";
+  }
+}
+
+function titleCaseAuthorRole(
+  role: "ADMIN" | "INSTRUCTOR" | "TA",
+): "Admin" | "Instructor" | "TA" {
+  switch (role) {
+    case "ADMIN":
+      return "Admin";
+    case "INSTRUCTOR":
+      return "Instructor";
+    case "TA":
+      return "TA";
   }
 }
 
@@ -124,14 +139,14 @@ export function buildInstructorDashboardResponse(
         title: contest.name,
         startsAt: contest.startsAt.toISOString(),
         endsAt: contest.endsAt?.toISOString() ?? null,
-        status: titleCaseContestStatus(contest.status as "DRAFT" | "UPCOMING" | "ACTIVE"),
+        status: titleCaseContestStatus(contest.status),
         readinessState: buildReadinessState(readinessItems),
       };
     });
 
   const announcements = snapshot.recentAnnouncements.map((item) => ({
     id: item.id,
-    description: `TA ${item.author.firstName} ${item.author.lastName} posted “${item.title}” for ${item.contestName}`,
+    description: `${titleCaseAuthorRole(item.author.role)} ${item.author.firstName} ${item.author.lastName} posted “${item.title}” for ${item.contestName}`,
     timestamp: item.createdAt.toISOString(),
     tone: "highlight" as const,
   }));
@@ -208,14 +223,7 @@ export function buildInstructorDashboardResponse(
             id: contest.id,
             title: contest.name,
             startsAt: contest.startsAt.toISOString(),
-            status:
-              contest.status === "DRAFT"
-                ? "Draft"
-                : contest.status === "UPCOMING"
-                  ? "Upcoming"
-                  : contest.status === "ACTIVE"
-                    ? "Active"
-                    : "Ended",
+            status: titleCaseContestStatus(contest.status),
             participants: contest.participants,
             problemsCount: contest.contestProblems.length,
             groupsAssignedCount: assignedGroups.size,

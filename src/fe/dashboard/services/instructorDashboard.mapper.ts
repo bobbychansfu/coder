@@ -59,7 +59,7 @@ function formatScheduleTimeUntil(
       if (diffMinutes < 60) {
         return `${diffMinutes || 1} min left`;
       }
-      return `${Math.round(diffMinutes / 60)} hours left`;
+      return `${Math.max(1, Math.floor(diffMinutes / 60))} hours left`;
     }
     return "Live now";
   }
@@ -77,9 +77,9 @@ function formatScheduleTimeUntil(
     return `${diffMinutes || 1} min`;
   }
   if (diffMinutes < 1440) {
-    return `${Math.round(diffMinutes / 60)} hours`;
+    return `${Math.max(1, Math.floor(diffMinutes / 60))} hours`;
   }
-  return `${Math.round(diffMinutes / 1440)} days`;
+  return `${Math.max(1, Math.floor(diffMinutes / 1440))} days`;
 }
 
 function formatActivityTimestamp(value: string | null): string {
