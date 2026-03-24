@@ -4,6 +4,13 @@
   gap: 16px;
 }
 
+.empty {
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  line-height: 18px;
+  color: #4a5565;
+}
+
 .contestTitle {
   font-family: Inter, sans-serif;
   font-weight: 600;
@@ -31,4 +38,30 @@
   font-size: 14px;
   color: #e03e3e;
   margin-top: 8px;
+}
+
+.readinessBadge {
+  display: inline-flex;
+  margin-top: 8px;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+}
+
+.readinessBadge[data-readiness="ready"] {
+  background: #ecfdf3;
+  color: #027a48;
+}
+
+.readinessBadge[data-readiness="needs-attention"] {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.readinessBadge[data-readiness="blocked"] {
+  background: #fef2f2;
+  color: #b42318;
 }
