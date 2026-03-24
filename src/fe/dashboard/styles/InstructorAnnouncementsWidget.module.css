@@ -34,9 +34,9 @@
 }
 
 .activityIconGlyph {
-  width: 1rem !important;
-  height: 1rem !important;
-  font-size: 1rem !important;
+  width: 1rem;
+  height: 1rem;
+  font-size: 1rem;
 }
 
 .activityIcon[data-tone="success"] {

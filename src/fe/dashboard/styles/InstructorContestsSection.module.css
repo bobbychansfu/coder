@@ -69,7 +69,7 @@
 
 .contestIcon {
   color: #ffffff;
-  font-size: 24px !important;
+  font-size: 24px;
 }
 
 .contestHeaderContent {
@@ -108,7 +108,7 @@
 }
 
 .contestMetaIcon {
-  font-size: 14px !important;
+  font-size: 14px;
   color: #4a5565;
 }
 

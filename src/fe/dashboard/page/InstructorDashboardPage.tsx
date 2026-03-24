@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import StatisticsSection from "@/fe/dashboard/components/StatisticsSection";
 import InstructorContestsSection from "@/fe/dashboard/components/InstructorContestsSection";
 import InstructorAnnouncementsWidget from "@/fe/dashboard/components/InstructorAnnouncementsWidget";
@@ -15,6 +16,17 @@ import styles from "@/fe/dashboard/styles/InstructorDashboardPage.module.css";
 export default function InstructorDashboardPage() {
   const { data, isError } = useInstructorDashboard();
   const resolvedMetadata = data ?? EMPTY_INSTRUCTOR_DASHBOARD_DATA;
+  const upcomingContests = useMemo(
+    () =>
+      resolvedMetadata.schedule.map((contest) => ({
+        id: contest.id,
+        title: contest.title,
+        date: contest.date,
+        timeUntil: contest.timeUntil,
+        readinessState: contest.readinessState,
+      })),
+    [resolvedMetadata.schedule],
+  );
 
   return (
     <>
@@ -38,13 +50,7 @@ export default function InstructorDashboardPage() {
 
         <aside className={styles.sidebar}>
           <UpcomingContests
-            contests={resolvedMetadata.schedule.map((contest) => ({
-              id: contest.id,
-              title: contest.title,
-              date: contest.date,
-              timeUntil: contest.timeUntil,
-              readinessState: contest.readinessState,
-            }))}
+            contests={upcomingContests}
             emptyMessage="No upcoming contests right now."
             hideCourseCode
           />
