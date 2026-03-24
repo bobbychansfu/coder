@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { can } from "@/lib/authz";
 import type { Context } from "../init";
@@ -17,6 +18,22 @@ const contestMutationSchema = z.object({
   aiHintEnabled: z.boolean(),
   selectedProblemIds: z.array(z.string().min(1)).min(1, "Select at least one problem."),
 });
+
+const contestPatchSchema = z
+  .object({
+    contestName: z.string().trim().min(1, "Contest name is required.").optional(),
+    description: z.string().optional(),
+    startDate: z.string().optional(),
+    startTime: z.string().optional(),
+    endDate: z.string().optional(),
+    endTime: z.string().optional(),
+    visibility: visibilitySchema.optional(),
+    aiHintEnabled: z.boolean().optional(),
+    selectedProblemIds: z.array(z.string().min(1)).min(1, "Select at least one problem.").optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field must be provided.",
+  });
 
 function slugifyValue(value: string) {
   const slug = value
@@ -81,6 +98,13 @@ function computeContestStatus(startsAt: Date, endsAt: Date | null) {
   }
 
   return "ACTIVE" as const;
+}
+
+function hasOwnKey<T extends object>(
+  value: T,
+  key: PropertyKey,
+): boolean {
+  return Object.prototype.hasOwnProperty.call(value, key);
 }
 
 async function getContestAuthoringUserOrThrow(ctx: Context) {
@@ -290,7 +314,7 @@ export const contestAuthoringRouter = router({
     .input(
       z.object({
         contestId: z.string().min(1),
-        data: contestMutationSchema,
+        data: contestPatchSchema,
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -303,6 +327,8 @@ export const contestAuthoringRouter = router({
           id: true,
           instructorId: true,
           manageStatus: true,
+          startsAt: true,
+          endsAt: true,
         },
       });
 
@@ -321,71 +347,125 @@ export const contestAuthoringRouter = router({
         throw new TRPCError({ code: "FORBIDDEN" });
       }
 
-      const startsAt = parseDateTime(input.data.startDate, input.data.startTime, "start date/time");
-      const hasEnd = input.data.endDate.trim() || input.data.endTime.trim();
+      const hasStartDate = hasOwnKey(input.data, "startDate");
+      const hasStartTime = hasOwnKey(input.data, "startTime");
+      const hasEndDate = hasOwnKey(input.data, "endDate");
+      const hasEndTime = hasOwnKey(input.data, "endTime");
+      const scheduleChanged = hasStartDate || hasStartTime || hasEndDate || hasEndTime;
+
+      const startDateValue = hasStartDate
+        ? (input.data.startDate ?? "").trim()
+        : formatDateInput(contest.startsAt);
+      const startTimeValue = hasStartTime
+        ? (input.data.startTime ?? "").trim()
+        : formatTimeInput(contest.startsAt);
+
+      if (!startDateValue || !startTimeValue) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Start date and start time are required.",
+        });
+      }
+
+      const startsAt = parseDateTime(startDateValue, startTimeValue, "start date/time");
+
+      const existingEndDateValue = contest.endsAt ? formatDateInput(contest.endsAt) : "";
+      const existingEndTimeValue = contest.endsAt ? formatTimeInput(contest.endsAt) : "";
+      const endDateValue = hasEndDate
+        ? (input.data.endDate ?? "").trim()
+        : existingEndDateValue;
+      const endTimeValue = hasEndTime
+        ? (input.data.endTime ?? "").trim()
+        : existingEndTimeValue;
+      const hasEnd = Boolean(endDateValue || endTimeValue);
+
+      if (hasEnd && (!endDateValue || !endTimeValue)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Both end date and end time are required when updating the end schedule.",
+        });
+      }
+
       const endsAt = hasEnd
-        ? parseDateTime(
-            input.data.endDate.trim(),
-            input.data.endTime.trim(),
-            "end date/time",
-          )
+        ? parseDateTime(endDateValue, endTimeValue, "end date/time")
         : null;
 
-      if (endsAt && endsAt <= startsAt) {
+      if (scheduleChanged && endsAt && endsAt <= startsAt) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "End time must be after start time.",
         });
       }
 
-      const problems = await ctx.prisma.problem.findMany({
-        where: {
-          id: { in: input.data.selectedProblemIds },
-          manageStatus: {
-            not: "DELETED",
+      if (hasOwnKey(input.data, "selectedProblemIds")) {
+        const problems = await ctx.prisma.problem.findMany({
+          where: {
+            id: { in: input.data.selectedProblemIds },
+            manageStatus: {
+              not: "DELETED",
+            },
           },
-        },
-        select: { id: true },
-      });
-
-      if (problems.length !== input.data.selectedProblemIds.length) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "One or more selected problems cannot be used in this contest.",
+          select: { id: true },
         });
+
+        if (problems.length !== input.data.selectedProblemIds.length) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "One or more selected problems cannot be used in this contest.",
+          });
+        }
       }
 
-      const durationMinutes = endsAt
-        ? Math.max(1, Math.round((endsAt.getTime() - startsAt.getTime()) / 60000))
-        : null;
-
       await ctx.prisma.$transaction(async (tx) => {
-        await tx.contest.update({
-          where: { id: input.contestId },
-          data: {
-            name: input.data.contestName.trim(),
-            description: input.data.description.trim() || null,
-            visibility: toDbVisibility(input.data.visibility),
-            startsAt,
-            endsAt,
-            durationMinutes,
-            aiHintEnabled: input.data.aiHintEnabled,
-            published: true,
-            status: computeContestStatus(startsAt, endsAt),
-          },
-        });
+        const contestUpdateData: Prisma.ContestUpdateInput = {};
 
-        await tx.contestProblem.deleteMany({
-          where: { contestId: input.contestId },
-        });
+        if (hasOwnKey(input.data, "contestName")) {
+          contestUpdateData.name = input.data.contestName?.trim();
+        }
 
-        await tx.contestProblem.createMany({
-          data: input.data.selectedProblemIds.map((problemId, index) => ({
-            contestId: input.contestId,
-            problemId,
-            ordering: index + 1,
-          })),
-        });
+        if (hasOwnKey(input.data, "description")) {
+          contestUpdateData.description = input.data.description?.trim() || null;
+        }
+
+        if (hasOwnKey(input.data, "visibility") && input.data.visibility) {
+          contestUpdateData.visibility = toDbVisibility(input.data.visibility);
+        }
+
+        if (hasOwnKey(input.data, "aiHintEnabled") && input.data.aiHintEnabled !== undefined) {
+          contestUpdateData.aiHintEnabled = input.data.aiHintEnabled;
+        }
+
+        if (scheduleChanged) {
+          const durationMinutes = endsAt
+            ? Math.max(1, Math.round((endsAt.getTime() - startsAt.getTime()) / 60000))
+            : null;
+
+          contestUpdateData.startsAt = startsAt;
+          contestUpdateData.endsAt = endsAt;
+          contestUpdateData.durationMinutes = durationMinutes;
+          contestUpdateData.status = computeContestStatus(startsAt, endsAt);
+        }
+
+        if (Object.keys(contestUpdateData).length > 0) {
+          await tx.contest.update({
+            where: { id: input.contestId },
+            data: contestUpdateData,
+          });
+        }
+
+        if (hasOwnKey(input.data, "selectedProblemIds")) {
+          await tx.contestProblem.deleteMany({
+            where: { contestId: input.contestId },
+          });
+
+          await tx.contestProblem.createMany({
+            data: (input.data.selectedProblemIds ?? []).map((problemId, index) => ({
+              contestId: input.contestId,
+              problemId,
+              ordering: index + 1,
+            })),
+          });
+        }
       });
 
       return { id: input.contestId };
