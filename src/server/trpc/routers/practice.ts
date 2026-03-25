@@ -227,6 +227,8 @@ export const practiceRouter = router({
       return {
         id: record.id,
         isSubmit: record.isSubmit,
+        language: codingLanguageToAppLanguage(record.language),
+        code: record.code,
         status: mapPracticeRunRecordToSubmissionPayload(record).status,
         verdict: record.verdict,
         score: record.score,

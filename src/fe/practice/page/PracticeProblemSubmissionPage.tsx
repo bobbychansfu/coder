@@ -19,6 +19,27 @@ type SupportedLanguage = "cplusplus" | "java" | "typescript" | "javascript" | "p
 
 const DEFAULT_LANGUAGE: SupportedLanguage = "cplusplus";
 
+function formatVerdictLabel(verdict: string | null | undefined) {
+  const normalized = verdict?.trim().toLowerCase();
+
+  switch (normalized) {
+    case "accepted":
+      return "Accepted";
+    case "wrong_answer":
+    case "wrong answer":
+      return "Wrong Answer";
+    case "partial":
+      return "Partial";
+    case "runtime_error":
+    case "runtime error":
+      return "Runtime Error";
+    case "failed":
+      return "Failed";
+    default:
+      return null;
+  }
+}
+
 interface RunResult {
   submissionId: string;
   status: "idle" | PracticeSubmissionPayload["status"];
@@ -26,6 +47,24 @@ interface RunResult {
   feedback: string | null;
   errorMessage: string | null;
   testcases: PracticeSubmissionPayload["testcases"];
+}
+
+function buildRunResult(input: {
+  submissionId: string;
+  status: RunResult["status"];
+  verdict: string | null | undefined;
+  feedback: string | null;
+  errorMessage: string | null;
+  testcases: PracticeSubmissionPayload["testcases"];
+}): RunResult {
+  return {
+    submissionId: input.submissionId,
+    status: input.status,
+    verdict: formatVerdictLabel(input.verdict),
+    feedback: input.feedback,
+    errorMessage: input.errorMessage,
+    testcases: input.testcases,
+  };
 }
 
 export default function PracticeProblemSubmissionPage({
@@ -59,6 +98,11 @@ function PracticeProblemSubmissionPageContent({
     { problemCode },
     { enabled: !!detail },
   );
+  const latestRunId = runHistory?.[0]?.id;
+  const latestRunRecordQuery = trpc.practice.getRunRecord.useQuery(
+    { problemCode, recordId: latestRunId ?? "" },
+    { enabled: Boolean(latestRunId), retry: false },
+  );
 
   const { mutateAsync: openSessionMutateAsync } = trpc.practiceExecution.openSession.useMutation();
   const [submitState, setSubmitState] = useState<"idle" | "submitting" | "queued" | "running" | "done" | "failed">("idle");
@@ -76,28 +120,17 @@ function PracticeProblemSubmissionPageContent({
 
   const applySubmissionUpdate = useCallback(
     async (payload: PracticeSubmissionPayload) => {
-      const verdictLabel =
-        payload.verdict === "accepted"
-          ? "Accepted"
-          : payload.verdict === "wrong_answer"
-            ? "Wrong Answer"
-            : payload.verdict === "partial"
-              ? "Partial"
-              : payload.verdict === "runtime_error"
-                ? "Runtime Error"
-                : payload.verdict === "failed"
-                  ? "Failed"
-                  : null;
-
       setSubmitState(payload.status);
-      setRunResult({
-        submissionId: payload.submissionId,
-        status: payload.status,
-        verdict: verdictLabel,
-        feedback: payload.feedback,
-        errorMessage: payload.errorMessage,
-        testcases: payload.testcases,
-      });
+      setRunResult(
+        buildRunResult({
+          submissionId: payload.submissionId,
+          status: payload.status,
+          verdict: payload.verdict,
+          feedback: payload.feedback,
+          errorMessage: payload.errorMessage,
+          testcases: payload.testcases,
+        }),
+      );
 
       if (payload.status === "done" || payload.status === "failed") {
         closeSubmissionStream();
@@ -204,6 +237,38 @@ function PracticeProblemSubmissionPageContent({
 
   useEffect(() => () => closeSubmissionStream(), [closeSubmissionStream]);
 
+  useEffect(() => {
+    if (!latestRunRecordQuery.data) {
+      return;
+    }
+
+    if (hasRun || runResult || Object.keys(drafts).length > 0) {
+      return;
+    }
+
+    const latestRunRecord = latestRunRecordQuery.data;
+
+    setLanguage(latestRunRecord.language as SupportedLanguage);
+    setDrafts({ [latestRunRecord.language]: latestRunRecord.code });
+    setHasRun(true);
+    setTab("submissions");
+    setSubmitState(latestRunRecord.status);
+    setRunResult(
+      buildRunResult({
+        submissionId: latestRunRecord.id,
+        status: latestRunRecord.status,
+        verdict: latestRunRecord.verdict,
+        feedback: latestRunRecord.feedback,
+        errorMessage: latestRunRecord.errorMessage,
+        testcases: Array.isArray(latestRunRecord.testcases) ? latestRunRecord.testcases : [],
+      }),
+    );
+
+    if (latestRunRecord.status === "queued" || latestRunRecord.status === "running") {
+      openSubmissionStream(latestRunRecord.id);
+    }
+  }, [drafts, hasRun, latestRunRecordQuery.data, openSubmissionStream, runResult]);
+
   const handleSubmitCode = async () => {
     if (!hasTypedCode) return;
 
@@ -238,25 +303,29 @@ function PracticeProblemSubmissionPageContent({
       }
 
       setSubmitState("queued");
-      setRunResult({
-        submissionId: payload.submissionId,
-        status: "queued",
-        verdict: null,
-        feedback: null,
-        errorMessage: null,
-        testcases: [],
-      });
+      setRunResult(
+        buildRunResult({
+          submissionId: payload.submissionId,
+          status: "queued",
+          verdict: null,
+          feedback: null,
+          errorMessage: null,
+          testcases: [],
+        }),
+      );
       openSubmissionStream(payload.submissionId);
     } catch (error) {
       setSubmitState("failed");
-      setRunResult({
-        submissionId: "",
-        status: "failed",
-        verdict: "Failed",
-        feedback: null,
-        errorMessage: error instanceof Error ? error.message : "Failed to submit code.",
-        testcases: [],
-      });
+      setRunResult(
+        buildRunResult({
+          submissionId: "",
+          status: "failed",
+          verdict: "failed",
+          feedback: null,
+          errorMessage: error instanceof Error ? error.message : "Failed to submit code.",
+          testcases: [],
+        }),
+      );
     }
   };
 
