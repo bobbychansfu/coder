@@ -8,7 +8,7 @@ import ProblemHeader from "@/fe/shared/components/problem/ProblemHeader";
 import ProblemDetails from "@/fe/shared/components/problem/ProblemDetails";
 import SolutionEditor from "@/fe/shared/components/problem/SolutionEditor";
 import { trpc } from "@/lib/trpc/client";
-import type { PracticeSubmissionPayload } from "@/lib/practiceSubmission";
+import type { PracticeSubmissionPayload, PracticeSubmissionTestcase } from "@/lib/practiceSubmission";
 import styles from "@/fe/contests/styles/ProblemSubmissionPage.module.css";
 
 interface PracticeProblemSubmissionPageProps {
@@ -253,7 +253,7 @@ function PracticeProblemSubmissionPageContent({
         verdict: latestRunRecord.verdict,
         feedback: latestRunRecord.feedback,
         errorMessage: latestRunRecord.errorMessage,
-        testcases: Array.isArray(latestRunRecord.testcases) ? latestRunRecord.testcases : [],
+        testcases: Array.isArray(latestRunRecord.testcases) ? (latestRunRecord.testcases as unknown as PracticeSubmissionTestcase[]) : [],
       }),
     );
 
