@@ -56,6 +56,15 @@ Quick links:
 <a href="docs/backend.md"><kbd>Backend Docs</kbd></a>
 <a href="docs/workflow.md"><kbd>Workflow Docs</kbd></a>
 
+### Temporary AI Practice Judging
+
+Local practice submissions now use a temporary Gemini-backed judge instead of the external judge API.
+
+- Required env vars: `JUDGING_MODE=gemini`, `GEMINI_API_KEY`, optional `GEMINI_MODEL`
+- Submission flow: frontend `POST /api/practice/submissions` -> backend persists queued submission -> backend runs Gemini judging async -> frontend listens on `GET /api/practice/submissions/:submissionId/stream` via SSE
+- Current limitations: this does not compile or execute code, it evaluates code conservatively from the prompt context and visible example tests only
+- Swap-back path: keep frontend on the normalized submission contract and replace the provider behind `JudgingProvider`
+
 ---
 
 ## 🧱 Project Structure
@@ -98,6 +107,7 @@ Quick links:
 | Bobby Chan    | bobbyc@sfu.ca  |
 | Dingsong Zhou | dza68@sfu.ca   |
 | Ran Wang      | rwa122@sfu.ca  |
+| Shilin Mao    | sma382@sfu.ca  |
 
 ---
 

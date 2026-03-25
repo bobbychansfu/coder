@@ -27,8 +27,9 @@ async function getFirstProblemCode(page: Page): Promise<string | null> {
 }
 
 async function typeInMonaco(page: Page, text: string) {
-  const editorInput = page.locator(".monaco-editor textarea").first();
-  await editorInput.click();
+  // Click the visible editor content area to focus Monaco, then type via keyboard.
+  // The .inputarea textarea is positioned off-screen by Monaco and cannot be clicked normally.
+  await page.locator(".monaco-editor .view-lines").first().click();
   await page.keyboard.type(text);
 }
 
@@ -187,7 +188,7 @@ test.describe("Practice problem submission page", () => {
     await expect(submitBtn).toBeEnabled({ timeout: 10000 });
   });
 
-  test("clicking Submit fires the single tRPC submitCode mutation", async ({ page }) => {
+  test("clicking Submit posts to the practice submission endpoint", async ({ page }) => {
     if (!firstProblemCode) test.skip();
 
     await page.goto(`/practice/${firstProblemCode}`);
@@ -196,7 +197,7 @@ test.describe("Practice problem submission page", () => {
     await expect(submitBtn).toBeEnabled({ timeout: 10000 });
 
     const submitRequest = page.waitForRequest((req) =>
-      req.url().includes("practiceExecution.submitCode"),
+      req.url().includes("/api/practice/submissions") && req.method() === "POST",
     );
     await submitBtn.click();
     await expect(submitRequest).resolves.toBeTruthy();
@@ -213,11 +214,12 @@ test.describe("Practice problem submission page", () => {
 
     // "Output" label renders immediately when hasRun=true
     await expect(page.getByText("Output")).toBeVisible({ timeout: 5000 });
-    // "Judging..." spinner visible while tRPC call is in-flight
-    await expect(page.getByText(/judging your code/i)).toBeVisible({ timeout: 5000 });
+    await expect(
+      page.getByText(/queued for gemini judging|judging your code/i),
+    ).toBeVisible({ timeout: 5000 });
   });
 
-  test("Submit button fires tRPC submitCode mutation", async ({ page }) => {
+  test("Submit button opens the submission SSE stream", async ({ page }) => {
     if (!firstProblemCode) test.skip();
 
     await page.goto(`/practice/${firstProblemCode}`);
@@ -225,14 +227,16 @@ test.describe("Practice problem submission page", () => {
     const submitBtn = page.getByRole("button", { name: /^submit$/i });
     await expect(submitBtn).toBeEnabled({ timeout: 10000 });
 
-    const submitRequest = page.waitForRequest((req) =>
-      req.url().includes("practiceExecution.submitCode"),
+    const streamRequest = page.waitForRequest((req) =>
+      req.url().includes("/api/practice/submissions/") &&
+      req.url().includes("/stream") &&
+      req.method() === "GET",
     );
     await submitBtn.click();
-    await expect(submitRequest).resolves.toBeTruthy();
+    await expect(streamRequest).resolves.toBeTruthy();
   });
 
-  test("Submit payload includes sessionId, problemId, language, code, and timestamp", async ({
+  test("Submit payload includes problemId, language, and code", async ({
     page,
   }) => {
     if (!firstProblemCode) test.skip();
@@ -244,23 +248,19 @@ test.describe("Practice problem submission page", () => {
 
     // Capture the request before clicking
     const submitRequestPromise = page.waitForRequest((req) =>
-      req.url().includes("practiceExecution.submitCode"),
+      req.url().includes("/api/practice/submissions") && req.method() === "POST",
     );
     await submitBtn.click();
     const submitRequest = await submitRequestPromise;
 
-    // httpBatchLink sends body as {"0": {input fields}} (object keyed by index)
-    const raw = JSON.parse(submitRequest.postData() ?? "{}") as Record<string, unknown>;
-    const input = raw["0"] as Record<string, unknown>;
+    const input = JSON.parse(submitRequest.postData() ?? "{}") as Record<string, unknown>;
 
-    expect(input).toHaveProperty("sessionId");
     expect(input).toHaveProperty("problemId");
     expect(input).toHaveProperty("language");
     expect(input).toHaveProperty("code");
-    expect(input).toHaveProperty("timestamp");
   });
 
-  test("Submit payload no longer includes a separate isSubmit flag", async ({ page }) => {
+  test("Submit payload no longer includes sessionId or timestamp", async ({ page }) => {
     if (!firstProblemCode) test.skip();
 
     await page.goto(`/practice/${firstProblemCode}`);
@@ -269,14 +269,14 @@ test.describe("Practice problem submission page", () => {
     await expect(submitBtn).toBeEnabled({ timeout: 10000 });
 
     const submitRequestPromise = page.waitForRequest((req) =>
-      req.url().includes("practiceExecution.submitCode"),
+      req.url().includes("/api/practice/submissions") && req.method() === "POST",
     );
     await submitBtn.click();
     const submitRequest = await submitRequestPromise;
 
-    const raw = JSON.parse(submitRequest.postData() ?? "{}") as Record<string, unknown>;
-    const input = raw["0"] as Record<string, unknown>;
+    const input = JSON.parse(submitRequest.postData() ?? "{}") as Record<string, unknown>;
 
-    expect(input).not.toHaveProperty("isSubmit");
+    expect(input).not.toHaveProperty("sessionId");
+    expect(input).not.toHaveProperty("timestamp");
   });
 });
