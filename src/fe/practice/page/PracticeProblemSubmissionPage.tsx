@@ -98,10 +98,9 @@ function PracticeProblemSubmissionPageContent({
     { problemCode },
     { enabled: !!detail },
   );
-  const latestRunId = runHistory?.[0]?.id;
-  const latestRunRecordQuery = trpc.practice.getRunRecord.useQuery(
-    { problemCode, recordId: latestRunId ?? "" },
-    { enabled: Boolean(latestRunId), retry: false },
+  const { data: latestRunRecord } = trpc.practice.getLatestRunRecord.useQuery(
+    { problemCode },
+    { enabled: !!detail, retry: false },
   );
 
   const { mutateAsync: openSessionMutateAsync } = trpc.practiceExecution.openSession.useMutation();
@@ -238,15 +237,9 @@ function PracticeProblemSubmissionPageContent({
   useEffect(() => () => closeSubmissionStream(), [closeSubmissionStream]);
 
   useEffect(() => {
-    if (!latestRunRecordQuery.data) {
+    if (!latestRunRecord || hasRun || runResult || Object.keys(drafts).length > 0) {
       return;
     }
-
-    if (hasRun || runResult || Object.keys(drafts).length > 0) {
-      return;
-    }
-
-    const latestRunRecord = latestRunRecordQuery.data;
 
     setLanguage(latestRunRecord.language as SupportedLanguage);
     setDrafts({ [latestRunRecord.language]: latestRunRecord.code });
@@ -267,7 +260,7 @@ function PracticeProblemSubmissionPageContent({
     if (latestRunRecord.status === "queued" || latestRunRecord.status === "running") {
       openSubmissionStream(latestRunRecord.id);
     }
-  }, [drafts, hasRun, latestRunRecordQuery.data, openSubmissionStream, runResult]);
+  }, [drafts, hasRun, latestRunRecord, openSubmissionStream, runResult]);
 
   const handleSubmitCode = async () => {
     if (!hasTypedCode) return;

@@ -204,6 +204,31 @@ export const practiceRouter = router({
       }));
     }),
 
+  getLatestRunRecord: studentProcedure
+    .input(z.object({ problemCode: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const dbUser = await getDbUser(ctx);
+      const problem = await getProblemByCode(ctx, input.problemCode);
+
+      const record = await ctx.prisma.practiceRunRecord.findFirst({
+        where: { session: { userId: dbUser.id, problemId: problem.id } },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (!record) return null;
+
+      return {
+        id: record.id,
+        language: codingLanguageToAppLanguage(record.language),
+        code: record.code,
+        status: mapPracticeRunRecordToSubmissionPayload(record).status,
+        verdict: record.verdict,
+        feedback: record.feedback,
+        errorMessage: record.errorMessage,
+        testcases: Array.isArray(record.testcases) ? record.testcases : [],
+      };
+    }),
+
   getRunRecord: studentProcedure
     .input(z.object({ problemCode: z.string(), recordId: z.string() }))
     .query(async ({ ctx, input }) => {
