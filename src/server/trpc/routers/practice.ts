@@ -229,43 +229,4 @@ export const practiceRouter = router({
       };
     }),
 
-  getRunRecord: studentProcedure
-    .input(z.object({ problemCode: z.string(), recordId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const dbUser = await getDbUser(ctx);
-      const problem = await getProblemByCode(ctx, input.problemCode);
-
-      const record = await ctx.prisma.practiceRunRecord.findFirst({
-        where: {
-          id: input.recordId,
-          session: {
-            userId: dbUser.id,
-            problemId: problem.id,
-          },
-        },
-      });
-
-      if (!record) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Run record not found" });
-      }
-
-      return {
-        id: record.id,
-        isSubmit: record.isSubmit,
-        language: codingLanguageToAppLanguage(record.language),
-        code: record.code,
-        status: mapPracticeRunRecordToSubmissionPayload(record).status,
-        verdict: record.verdict,
-        score: record.score,
-        feedback: record.feedback,
-        testcases: Array.isArray(record.testcases) ? record.testcases : [],
-        judgedBy: record.judgedBy,
-        errorMessage: record.errorMessage,
-        compilePassed: record.compilePassed,
-        stdout: record.stdout,
-        stderr: record.stderr,
-        runtimeMs: record.runtimeMs,
-        createdAt: record.createdAt,
-      };
-    }),
 });
