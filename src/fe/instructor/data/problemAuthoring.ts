@@ -166,7 +166,7 @@ export const problemMetadataDraft: ProblemMetadataDraft = {
   difficulty: "medium",
   points: "100",
   tags: [],
-  visibility: "course-only",
+  visibility: "contest-only",
 };
 
 export const problemStatementDraft: ProblemStatementDraft = {

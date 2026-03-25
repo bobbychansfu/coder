@@ -38,6 +38,9 @@ const APP_TO_JUDGE_LANGUAGE: Record<AppLanguage, string> = {
 
 export function parseAppLanguage(value: string): AppLanguage | null {
   const normalized = value.trim().toLowerCase();
+  if (normalized === "cpp") {
+    return "cplusplus";
+  }
   return APP_LANGUAGES.includes(normalized as AppLanguage)
     ? (normalized as AppLanguage)
     : null;

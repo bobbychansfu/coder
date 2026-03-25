@@ -49,3 +49,6 @@ CLAUDE.local.md
 #gemini 
 gemini/
 GEMINI.md
+# Playwright
+playwright-report/
+test-results/

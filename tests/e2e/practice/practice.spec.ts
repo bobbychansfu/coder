@@ -26,6 +26,13 @@ async function getFirstProblemCode(page: Page): Promise<string | null> {
   return href?.replace("/practice/", "") ?? null;
 }
 
+async function typeInMonaco(page: Page, text: string) {
+  // Click the visible editor content area to focus Monaco, then type via keyboard.
+  // The .inputarea textarea is positioned off-screen by Monaco and cannot be clicked normally.
+  await page.locator(".monaco-editor .view-lines").first().click();
+  await page.keyboard.type(text);
+}
+
 // ---------------------------------------------------------------------------
 // Practice list page
 // ---------------------------------------------------------------------------
@@ -167,104 +174,109 @@ test.describe("Practice problem submission page", () => {
     }
   });
 
-  test("Run Code button is visible and enabled after session opens", async ({ page }) => {
+  test("Submit button stays disabled until the user types", async ({ page }) => {
     if (!firstProblemCode) test.skip();
 
     await page.goto(`/practice/${firstProblemCode}`);
     await expect(page.locator(".monaco-editor")).toBeVisible({ timeout: 15000 });
 
-    const runBtn = page.getByRole("button", { name: /run code/i });
-    await expect(runBtn).toBeVisible();
-    // Wait for session → button becomes enabled
-    await expect(runBtn).toBeEnabled({ timeout: 10000 });
+    const submitBtn = page.getByRole("button", { name: /^submit$/i });
+    await expect(submitBtn).toBeVisible();
+    await expect(submitBtn).toBeDisabled();
+
+    await typeInMonaco(page, "\n// typed by e2e");
+    await expect(submitBtn).toBeEnabled({ timeout: 10000 });
   });
 
-  test("clicking Run Code fires tRPC runCode mutation", async ({ page }) => {
+  test("clicking Submit posts to the practice submission endpoint", async ({ page }) => {
     if (!firstProblemCode) test.skip();
 
     await page.goto(`/practice/${firstProblemCode}`);
-    const runBtn = page.getByRole("button", { name: /run code/i });
-    await expect(runBtn).toBeEnabled({ timeout: 10000 });
-
-    const runRequest = page.waitForRequest((req) =>
-      req.url().includes("practiceExecution.runCode"),
-    );
-    await runBtn.click();
-    await expect(runRequest).resolves.toBeTruthy();
-  });
-
-  test("Output section appears and shows judging state after Run Code", async ({ page }) => {
-    if (!firstProblemCode) test.skip();
-
-    await page.goto(`/practice/${firstProblemCode}`);
-    const runBtn = page.getByRole("button", { name: /run code/i });
-    await expect(runBtn).toBeEnabled({ timeout: 10000 });
-    await runBtn.click();
-
-    // "Output" label renders immediately when hasRun=true
-    await expect(page.getByText("Output")).toBeVisible({ timeout: 5000 });
-    // "Judging..." spinner visible while tRPC call is in-flight
-    await expect(page.getByText(/judging your code/i)).toBeVisible({ timeout: 5000 });
-  });
-
-  test("Submit button fires tRPC submitCode mutation", async ({ page }) => {
-    if (!firstProblemCode) test.skip();
-
-    await page.goto(`/practice/${firstProblemCode}`);
+    await typeInMonaco(page, "\n// typed by e2e");
     const submitBtn = page.getByRole("button", { name: /^submit$/i });
     await expect(submitBtn).toBeEnabled({ timeout: 10000 });
 
     const submitRequest = page.waitForRequest((req) =>
-      req.url().includes("practiceExecution.submitCode"),
+      req.url().includes("/api/practice/submissions") && req.method() === "POST",
     );
     await submitBtn.click();
     await expect(submitRequest).resolves.toBeTruthy();
   });
 
-  test("Run Code payload includes sessionId, problemId, language, code, isSubmit=false", async ({
+  test("Output section appears and shows judging state after Submit", async ({ page }) => {
+    if (!firstProblemCode) test.skip();
+
+    await page.goto(`/practice/${firstProblemCode}`);
+    await typeInMonaco(page, "\n// typed by e2e");
+    const submitBtn = page.getByRole("button", { name: /^submit$/i });
+    await expect(submitBtn).toBeEnabled({ timeout: 10000 });
+    await submitBtn.click();
+
+    // "Output" label renders immediately when hasRun=true
+    await expect(page.getByText("Output")).toBeVisible({ timeout: 5000 });
+    await expect(
+      page.getByText(/queued for gemini judging|judging your code/i),
+    ).toBeVisible({ timeout: 5000 });
+  });
+
+  test("Submit button opens the submission SSE stream", async ({ page }) => {
+    if (!firstProblemCode) test.skip();
+
+    await page.goto(`/practice/${firstProblemCode}`);
+    await typeInMonaco(page, "\n// typed by e2e");
+    const submitBtn = page.getByRole("button", { name: /^submit$/i });
+    await expect(submitBtn).toBeEnabled({ timeout: 10000 });
+
+    const streamRequest = page.waitForRequest((req) =>
+      req.url().includes("/api/practice/submissions/") &&
+      req.url().includes("/stream") &&
+      req.method() === "GET",
+    );
+    await submitBtn.click();
+    await expect(streamRequest).resolves.toBeTruthy();
+  });
+
+  test("Submit payload includes problemId, language, and code", async ({
     page,
   }) => {
     if (!firstProblemCode) test.skip();
 
     await page.goto(`/practice/${firstProblemCode}`);
-    const runBtn = page.getByRole("button", { name: /run code/i });
-    await expect(runBtn).toBeEnabled({ timeout: 10000 });
-
-    // Capture the request before clicking
-    const runRequestPromise = page.waitForRequest((req) =>
-      req.url().includes("practiceExecution.runCode"),
-    );
-    await runBtn.click();
-    const runRequest = await runRequestPromise;
-
-    // httpBatchLink sends body as {"0": {input fields}} (object keyed by index)
-    const raw = JSON.parse(runRequest.postData() ?? "{}") as Record<string, unknown>;
-    const input = raw["0"] as Record<string, unknown>;
-
-    expect(input).toHaveProperty("sessionId");
-    expect(input).toHaveProperty("problemId");
-    expect(input).toHaveProperty("language");
-    expect(input).toHaveProperty("code");
-    expect(input).toHaveProperty("isSubmit", false);
-    expect(input).toHaveProperty("timestamp");
-  });
-
-  test("Submit payload includes isSubmit=true", async ({ page }) => {
-    if (!firstProblemCode) test.skip();
-
-    await page.goto(`/practice/${firstProblemCode}`);
+    await typeInMonaco(page, "\n// typed by e2e");
     const submitBtn = page.getByRole("button", { name: /^submit$/i });
     await expect(submitBtn).toBeEnabled({ timeout: 10000 });
 
+    // Capture the request before clicking
     const submitRequestPromise = page.waitForRequest((req) =>
-      req.url().includes("practiceExecution.submitCode"),
+      req.url().includes("/api/practice/submissions") && req.method() === "POST",
     );
     await submitBtn.click();
     const submitRequest = await submitRequestPromise;
 
-    const raw = JSON.parse(submitRequest.postData() ?? "{}") as Record<string, unknown>;
-    const input = raw["0"] as Record<string, unknown>;
+    const input = JSON.parse(submitRequest.postData() ?? "{}") as Record<string, unknown>;
 
-    expect(input).toHaveProperty("isSubmit", true);
+    expect(input).toHaveProperty("problemId");
+    expect(input).toHaveProperty("language");
+    expect(input).toHaveProperty("code");
+  });
+
+  test("Submit payload no longer includes sessionId or timestamp", async ({ page }) => {
+    if (!firstProblemCode) test.skip();
+
+    await page.goto(`/practice/${firstProblemCode}`);
+    await typeInMonaco(page, "\n// typed by e2e");
+    const submitBtn = page.getByRole("button", { name: /^submit$/i });
+    await expect(submitBtn).toBeEnabled({ timeout: 10000 });
+
+    const submitRequestPromise = page.waitForRequest((req) =>
+      req.url().includes("/api/practice/submissions") && req.method() === "POST",
+    );
+    await submitBtn.click();
+    const submitRequest = await submitRequestPromise;
+
+    const input = JSON.parse(submitRequest.postData() ?? "{}") as Record<string, unknown>;
+
+    expect(input).not.toHaveProperty("sessionId");
+    expect(input).not.toHaveProperty("timestamp");
   });
 });
