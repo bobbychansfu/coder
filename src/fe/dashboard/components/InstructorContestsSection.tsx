@@ -42,7 +42,7 @@ export default function InstructorContestsSection({
                   </div>
                   <div className={styles.contestMetaItem}>
                     <PeopleOutlineIcon className={styles.contestMetaIcon} />
-                    <span>{contest.participants} participants</span>
+                    <span>{`${contest.participants} participant${contest.participants === 1 ? "" : "s"}`}</span>
                   </div>
                 </div>
               </div>

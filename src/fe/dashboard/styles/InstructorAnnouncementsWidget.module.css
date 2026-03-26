@@ -40,18 +40,38 @@
 }
 
 .activityIcon[data-tone="success"] {
-  background: #fef2f2;
-  color: #b42318;
+  background: #ecfdf3;
+  color: #027a48;
 }
 
 .activityIcon[data-tone="info"] {
-  background: #fff5f4;
-  color: #d92d20;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.activityIcon[data-tone="warning"] {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.activityIcon[data-tone="danger"] {
+  background: #fef2f2;
+  color: #b91c1c;
 }
 
 .activityIcon[data-tone="highlight"] {
-  background: #fff1f3;
-  color: #b42318;
+  background: #fefce8;
+  color: #a16207;
+}
+
+.activityIcon[data-tone="purple"] {
+  background: #f4f3ff;
+  color: #6d28d9;
+}
+
+.activityIcon[data-tone="neutral"] {
+  background: #f8fafc;
+  color: #475467;
 }
 
 .activityText {

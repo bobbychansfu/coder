@@ -191,7 +191,10 @@ export function useResearchAnalyticsExport({
         })
         .join("");
       const printWindow = window.open("", "_blank", "width=900,height=700");
-      if (!printWindow) return;
+      if (!printWindow) {
+        window.alert("PDF export was blocked by the browser. Please allow pop-ups for this site or export as CSV/JSON.");
+        return;
+      }
       printWindow.document.write(`<!doctype html>
 <html>
   <head>

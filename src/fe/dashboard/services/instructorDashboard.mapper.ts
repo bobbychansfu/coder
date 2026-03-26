@@ -109,12 +109,24 @@ function formatActivityTimestamp(value: string | null): string {
 export function mapInstructorDashboardResponse(
   payload: InstructorDashboardResponse,
 ): InstructorDashboardData {
+  const scheduleStatusCounts = payload.schedule.upcoming.reduce(
+    (acc, contest) => {
+      if (contest.status === "Active") {
+        acc.active += 1;
+      } else if (contest.status === "Upcoming") {
+        acc.upcoming += 1;
+      }
+      return acc;
+    },
+    { active: 0, upcoming: 0 },
+  );
+
   return {
     statistics: [
       {
         title: "Contests Held",
         value: String(payload.metadata.contestsHeld),
-        subtitle: `${payload.schedule.upcoming.filter((contest) => contest.status === "Active").length} active · ${payload.schedule.upcoming.filter((contest) => contest.status === "Upcoming").length} upcoming`,
+        subtitle: `${scheduleStatusCounts.active} active · ${scheduleStatusCounts.upcoming} upcoming`,
         icon: EmojiEventsOutlinedIcon,
         variant: "neutral",
       },

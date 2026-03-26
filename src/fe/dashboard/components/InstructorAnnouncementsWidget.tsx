@@ -1,18 +1,20 @@
 "use client";
 
+import CheckCircleOutlineOutlinedIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
-import TrendingUpOutlinedIcon from "@mui/icons-material/TrendingUpOutlined";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
 import DashboardWidget from "@/fe/dashboard/components/DashboardWidget";
 import ActivityFeedItem from "@/fe/shared/components/ActivityFeedItem";
 import type { ActivityItemData } from "@/fe/shared/types/common";
 import styles from "@/fe/dashboard/styles/InstructorAnnouncementsWidget.module.css";
 
 const activityIconMap = {
-  danger: TrendingUpOutlinedIcon,
-  warning: TrendingUpOutlinedIcon,
-  success: DescriptionOutlinedIcon,
-  info: TrendingUpOutlinedIcon,
+  danger: WarningAmberOutlinedIcon,
+  warning: WarningAmberOutlinedIcon,
+  success: CheckCircleOutlineOutlinedIcon,
+  info: InfoOutlinedIcon,
   purple: GroupAddOutlinedIcon,
   highlight: GroupAddOutlinedIcon,
   neutral: DescriptionOutlinedIcon,
