@@ -76,7 +76,7 @@ export interface ContestFormDraft {
   startTime: string;
   endDate: string;
   endTime: string;
-  visibility: string;
+  visibility: "course-only" | "public" | "private";
 }
 
 export interface ContestPreviewFallback {
@@ -97,7 +97,7 @@ export interface ContestAiHintConfig {
 }
 
 export const contestAuthoringCopy: ContestAuthoringCopy = {
-  backButtonLabel: "Back to Contests",
+  backButtonLabel: "Back",
   pageTitle: "Create Contest",
   pageSubtitle: "Set up a new programming contest for your students",
   saveDraftLabel: "Save Draft",
