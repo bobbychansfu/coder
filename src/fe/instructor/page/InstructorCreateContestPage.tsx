@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
@@ -17,7 +17,6 @@ import {
   Button,
   Card,
   CardContent,
-  CircularProgress,
   Dialog,
   DialogContent,
   IconButton,
@@ -40,14 +39,13 @@ import {
   contestDrafts,
   contestFormDraft,
   contestPreviewFallback,
+  contestProblemLibrary,
   type ContestDifficulty,
   type ContestFormDraft,
   type ContestProblemRecord,
 } from "@/fe/instructor/data/contestAuthoring";
 import AuthoringPageShell from "@/fe/shared/components/authoring/AuthoringPageShell";
-import { ROUTES } from "@/fe/shared/constants/routes";
 import { VISIBILITY_OPTIONS } from "@/fe/shared/constants/options";
-import { trpc } from "@/lib/trpc/client";
 import subpageStyles from "@/fe/instructor/styles/InstructorSubpageHeader.module.css";
 import styles from "@/fe/instructor/styles/InstructorCreateContestPage.module.css";
 
@@ -107,33 +105,14 @@ function getDifficultyBadgeClassName(difficulty: ContestDifficulty) {
   return `${styles.difficultyBadge} ${toneClassMap[difficulty]}`;
 }
 
-interface SelectableContestProblemRecord extends ContestProblemRecord {
-  manageStatus?: string;
-}
-
 export default function InstructorCreateContestPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const initializedContestIdRef = useRef<string | null>(null);
-  const utils = trpc.useUtils();
-  const contestId = searchParams.get("contestId");
-  const isEditMode = Boolean(contestId);
   const [formValues, setFormValues] = useState<ContestFormDraft>(contestFormDraft);
   const [selectedProblemIds, setSelectedProblemIds] = useState<string[]>([]);
   const [pendingProblemIds, setPendingProblemIds] = useState<string[]>([]);
   const [selectProblemsOpen, setSelectProblemsOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [aiHintEnabled, setAiHintEnabled] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const contestQuery = trpc.contestAuthoring.getContestById.useQuery(
-    { contestId: contestId ?? "" },
-    { enabled: isEditMode, retry: false },
-  );
-  const problemLibraryQuery = trpc.contestAuthoring.listProblemLibrary.useQuery(undefined, {
-    retry: false,
-  });
-  const createContestMutation = trpc.contestAuthoring.createContest.useMutation();
-  const updateContestMutation = trpc.contestAuthoring.updateContest.useMutation();
 
   const headerActions: SubpageActionButtonItem[] = [
     {
@@ -149,82 +128,28 @@ export default function InstructorCreateContestPage() {
     },
   ];
 
-  useEffect(() => {
-    if (!contestQuery.data) {
-      return;
-    }
-
-    if (initializedContestIdRef.current === contestQuery.data.id) {
-      return;
-    }
-
-    queueMicrotask(() => {
-      setFormValues({
-        contestName: contestQuery.data.contestName,
-        description: contestQuery.data.description,
-        startDate: contestQuery.data.startDate,
-        startTime: contestQuery.data.startTime,
-        endDate: contestQuery.data.endDate,
-        endTime: contestQuery.data.endTime,
-        visibility: contestQuery.data.visibility,
-      });
-      setSelectedProblemIds(contestQuery.data.selectedProblemIds);
-      setAiHintEnabled(contestQuery.data.aiHintEnabled);
-      initializedContestIdRef.current = contestQuery.data.id;
-    });
-  }, [contestQuery.data]);
-
-  useEffect(() => {
-    if (isEditMode) {
-      return;
-    }
-
-    initializedContestIdRef.current = null;
-
-    queueMicrotask(() => {
-      setFormValues(contestFormDraft);
-      setSelectedProblemIds([]);
-      setPendingProblemIds([]);
-      setAiHintEnabled(false);
-      setSaveError(null);
-    });
-  }, [isEditMode]);
-
-  const availableProblems = useMemo(() => {
-    const problemMap = new Map<string, SelectableContestProblemRecord>();
-
-    (problemLibraryQuery.data ?? []).forEach((problem) => {
-      problemMap.set(problem.id, problem);
-    });
-    (contestQuery.data?.selectedProblems ?? []).forEach((problem) => {
-      problemMap.set(problem.id, problem);
-    });
-
-    return Array.from(problemMap.values());
-  }, [contestQuery.data?.selectedProblems, problemLibraryQuery.data]);
-
   const selectedProblems = useMemo(
     () =>
       selectedProblemIds
-        .map((problemId) => availableProblems.find((problem) => problem.id === problemId))
+        .map((problemId) => contestProblemLibrary.find((problem) => problem.id === problemId))
         .filter((problem): problem is ContestProblemRecord => Boolean(problem)),
-    [availableProblems, selectedProblemIds],
+    [selectedProblemIds],
   );
 
   const previewProblems = selectedProblems.length
     ? selectedProblems.slice(0, 3)
-    : availableProblems.slice(0, 3);
+    : contestProblemLibrary.filter((problem) =>
+        ["valid-palindrome", "longest-increasing-subsequence", "graph-shortest-path"].includes(
+          problem.id,
+        ),
+      );
 
   const contestStatusRows: StatusSummaryRow[] = aiHintEnabled
     ? [
         {
           id: "status",
           label: "Status",
-          value: (
-            <span className={styles.statusNewBadge}>
-              {isEditMode ? "Editing" : "New"}
-            </span>
-          ),
+          value: <span className={styles.statusNewBadge}>New</span>,
         },
         {
           id: "problems",
@@ -265,11 +190,7 @@ export default function InstructorCreateContestPage() {
         {
           id: "status",
           label: "Status",
-          value: (
-            <span className={styles.statusNewBadge}>
-              {isEditMode ? "Editing" : "New"}
-            </span>
-          ),
+          value: <span className={styles.statusNewBadge}>New</span>,
         },
         {
           id: "problems",
@@ -299,16 +220,6 @@ export default function InstructorCreateContestPage() {
     formatPreviewDate(formValues.startDate, formValues.startTime) || contestPreviewFallback.start;
   const previewEnd =
     formatPreviewDate(formValues.endDate, formValues.endTime) || contestPreviewFallback.end;
-  const pageTitle = isEditMode ? "Edit Contest" : contestAuthoringCopy.pageTitle;
-  const pageSubtitle = isEditMode
-    ? "Update an existing programming contest for your students"
-    : contestAuthoringCopy.pageSubtitle;
-  const publishLabel = isEditMode ? "Save Changes" : contestAuthoringCopy.publishLabel;
-  const isSaving = createContestMutation.isPending || updateContestMutation.isPending;
-  const pageError = saveError ?? contestQuery.error?.message ?? problemLibraryQuery.error?.message ?? null;
-  const isPageLoading =
-    (isEditMode && contestQuery.isLoading && !contestQuery.data) ||
-    (problemLibraryQuery.isLoading && availableProblems.length === 0);
 
   const updateField = (field: keyof ContestFormDraft, value: string) => {
     setFormValues((prev) => ({ ...prev, [field]: value }));
@@ -334,46 +245,14 @@ export default function InstructorCreateContestPage() {
     setSelectedProblemIds((prev) => prev.filter((id) => id !== problemId));
   };
 
-  const handlePublish = async () => {
-    setSaveError(null);
-
-    try {
-      if (isEditMode && contestId) {
-        await updateContestMutation.mutateAsync({
-          contestId,
-          data: {
-            ...formValues,
-            aiHintEnabled,
-            selectedProblemIds,
-          },
-        });
-      } else {
-        await createContestMutation.mutateAsync({
-          ...formValues,
-          aiHintEnabled,
-          selectedProblemIds,
-        });
-      }
-
-      await Promise.all([
-        utils.instructorManageContent.getManageContent.invalidate(),
-        utils.contestAuthoring.getContestById.invalidate({ contestId: contestId ?? "" }),
-      ]);
-
-      router.push(ROUTES.instructorManageContests);
-    } catch (error) {
-      setSaveError(error instanceof Error ? error.message : "Unable to save the contest.");
-    }
-  };
-
   return (
     <>
       <AuthoringPageShell
         onBack={() => router.back()}
         backLabel={contestAuthoringCopy.backButtonLabel}
         backButtonClassName={subpageStyles.backButton}
-        title={pageTitle}
-        subtitle={pageSubtitle}
+        title={contestAuthoringCopy.pageTitle}
+        subtitle={contestAuthoringCopy.pageSubtitle}
         actions={
           <SubpageActionButtons
             items={headerActions}
@@ -384,30 +263,8 @@ export default function InstructorCreateContestPage() {
         }
         main={
           <>
-            {pageError ? (
-              <Box
-                sx={{
-                  border: "1px solid #fecaca",
-                  borderRadius: "12px",
-                  backgroundColor: "#fef2f2",
-                  px: 2,
-                  py: 1.5,
-                }}
-              >
-                <Typography sx={{ color: "#b91c1c", fontSize: 13, fontWeight: 500 }}>
-                  {pageError}
-                </Typography>
-              </Box>
-            ) : null}
-
             <Card className={styles.card} elevation={0}>
               <CardContent className={styles.cardContent}>
-                {isPageLoading ? (
-                  <Box display="flex" justifyContent="center" py={6}>
-                    <CircularProgress size={28} />
-                  </Box>
-                ) : null}
-
                 <Box className={styles.sectionHeader}>
                   <Typography className={styles.sectionTitle}>
                     {contestAuthoringCopy.basicInfoTitle}
@@ -789,13 +646,8 @@ export default function InstructorCreateContestPage() {
               </CardContent>
             </Card>
 
-            <Button
-              className={styles.publishButton}
-              variant="contained"
-              disabled={isSaving || isPageLoading}
-              onClick={() => void handlePublish()}
-            >
-              {isSaving ? "Saving..." : publishLabel}
+            <Button className={styles.publishButton} variant="contained">
+              {contestAuthoringCopy.publishLabel}
             </Button>
           </>
         }
@@ -828,7 +680,7 @@ export default function InstructorCreateContestPage() {
           </Box>
 
           <Box className={styles.modalProblemList}>
-            {availableProblems.map((problem) => {
+            {contestProblemLibrary.map((problem) => {
               const isSelected = pendingProblemIds.includes(problem.id);
 
               return (

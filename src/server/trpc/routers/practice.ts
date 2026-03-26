@@ -7,6 +7,7 @@ import {
   codingLanguageToAppLanguage,
   codingLanguageToLabel,
 } from "../../coding-language";
+import { mapPracticeRunRecordToSubmissionPayload } from "@/server/practice/submissionService";
 
 export type PrismaClient = typeof _prisma;
 
@@ -90,7 +91,6 @@ export const practiceRouter = router({
 
       const problems = await ctx.prisma.problem.findMany({
         where: {
-          manageStatus: "ACTIVE",
           source: { in: ["PRACTICE", "BOTH"] },
           ...(andClauses.length > 0 ? { AND: andClauses } : {}),
         },
@@ -134,9 +134,7 @@ export const practiceRouter = router({
         where: { code: input.problemCode },
         include: { topics: true, starterCodes: true },
       });
-      if (!problem || problem.manageStatus !== "ACTIVE") {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Problem not found" });
-      }
+      if (!problem) throw new TRPCError({ code: "NOT_FOUND", message: "Problem not found" });
 
       return {
         id: problem.id,
@@ -226,7 +224,13 @@ export const practiceRouter = router({
       return {
         id: record.id,
         isSubmit: record.isSubmit,
+        status: mapPracticeRunRecordToSubmissionPayload(record).status,
         verdict: record.verdict,
+        score: record.score,
+        feedback: record.feedback,
+        testcases: Array.isArray(record.testcases) ? record.testcases : [],
+        judgedBy: record.judgedBy,
+        errorMessage: record.errorMessage,
         compilePassed: record.compilePassed,
         stdout: record.stdout,
         stderr: record.stderr,

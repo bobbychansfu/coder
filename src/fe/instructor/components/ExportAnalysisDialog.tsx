@@ -68,8 +68,8 @@ export default function ExportAnalysisDialog({
               value={exportFormat}
               onChange={(event) => onExportFormatChange(event.target.value as ExportFormat)}
             >
-              <MenuItem value="json">JSON</MenuItem>
               <MenuItem value="csv">CSV</MenuItem>
+              <MenuItem value="json">JSON</MenuItem>
               <MenuItem value="pdf">PDF</MenuItem>
             </Select>
           </FormControl>
@@ -84,4 +84,3 @@ export default function ExportAnalysisDialog({
     </Dialog>
   );
 }
-

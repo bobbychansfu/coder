@@ -99,7 +99,7 @@ export default function ResearchAnalyticsPage() {
     dateRange: "1m",
   });
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
-  const [exportFormat, setExportFormat] = useState<ExportFormat>("json");
+  const [exportFormat, setExportFormat] = useState<ExportFormat>("csv");
   const [selectedExportSections, setSelectedExportSections] = useState<Record<ExportSectionKey, boolean>>({
     contestData: false,
     problemData: false,
@@ -474,7 +474,7 @@ export default function ResearchAnalyticsPage() {
 
           <Box className={styles.heroBlock}>
             <InstructorSubpageHeader
-              title="Instructor Comparison Dashboard"
+              title={copy.pageTitle}
               subtitle=""
               actions={
                 <Button

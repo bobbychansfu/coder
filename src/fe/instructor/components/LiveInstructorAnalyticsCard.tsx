@@ -211,7 +211,7 @@ export default function LiveInstructorAnalyticsCard({
     <Box className={styles.card}>
       <Box className={styles.headerRow}>
         <Box>
-          <h3 className={styles.title}>Live Contest & Problem Metrics</h3>
+          <h3 className={styles.title}>Metrics Table</h3>
         </Box>
         <Box className={styles.actions}>
           <Button

@@ -20,12 +20,6 @@ enum ContestStatus {
   ENDED
 }
 
-enum ManageLifecycleStatus {
-  ACTIVE
-  ARCHIVED
-  DELETED
-}
-
 enum Visibility {
   PUBLIC
   PRIVATE
@@ -123,31 +117,42 @@ model PracticeSession {
 model PracticeRunRecord {
   id            String         @id @default(cuid())
   sessionId     String
+  userId        String
+  problemId     String
+  source        String         @default("practice")
+  status        String         @default("queued")
   isSubmit      Boolean        @default(false)
   language      CodingLanguage
   code          String
   verdict       String
+  score         Int?
+  feedback      String?
+  testcases     Json?
+  judgedBy      String?
+  rawProviderResponse Json?
+  errorMessage  String?
   compilePassed Boolean        @default(false)
   stdout        String?
   stderr        String?
   runtimeMs     Int?
   createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
   session PracticeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId, createdAt])
+  @@index([userId, problemId, createdAt])
+  @@index([status, updatedAt])
 }
 
 model Contest {
   id              String        @id @default(cuid())
   slug            String        @unique
   name            String
-  description     String?
   classSection    String?
   type            String?
   location        String?
   status          ContestStatus @default(DRAFT)
-  manageStatus    ManageLifecycleStatus @default(ACTIVE)
   visibility      Visibility    @default(PRIVATE)
   startsAt        DateTime
   endsAt          DateTime?
@@ -182,7 +187,6 @@ model Problem {
   exampleOutput      String?
   exampleExplanation String?
   difficulty         String
-  manageStatus       ManageLifecycleStatus @default(ACTIVE)
   visible            String?
   ap                 Int?
   author             String?
