@@ -51,7 +51,7 @@ export default function AdminContestsPage() {
     <Box className={styles.page}>
       <PageHeader
         onBack={() => router.push(ROUTES.admin)}
-        backLabel="Back to Admin Hub"
+        backLabel="Back"
         backButtonClassName={subpageStyles.backButton}
       />
 

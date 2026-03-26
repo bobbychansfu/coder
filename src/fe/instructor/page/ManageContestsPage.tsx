@@ -10,9 +10,19 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import EmojiEventsOutlinedIcon from "@mui/icons-material/EmojiEventsOutlined";
 import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
 import type { SvgIconComponent } from "@mui/icons-material";
-import { Box, Chip, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Typography,
+} from "@mui/material";
 
-import { managedContests, managedProblems } from "@/fe/instructor/data";
 import {
   DEFAULT_MANAGE_CONTENT_TAB,
   MANAGED_CONTEST_STATUS_LABELS,
@@ -37,6 +47,7 @@ import ScrollbarHider from "@/fe/shared/components/ui/ScrollbarHider";
 import UnderlineTabs from "@/fe/shared/components/ui/UnderlineTabs";
 import { ROUTES } from "@/fe/shared/constants/routes";
 import type { CompactStatTone, MenuActionItem } from "@/fe/shared/types/common";
+import { trpc } from "@/lib/trpc/client";
 import styles from "@/fe/instructor/styles/ManageContestsPage.module.css";
 
 interface ManageContentStatSummary {
@@ -47,17 +58,79 @@ interface ManageContentStatSummary {
   tone: CompactStatTone;
 }
 
+interface ManagedContestRecord {
+  id: string;
+  title: string;
+  owner: string;
+  section: string;
+  status: ManagedContestStatus;
+  startAt: string;
+  endAt: string;
+  problemsCount: number;
+  enrolledCount: number;
+  submittedCount: number;
+}
+
+interface ManagedProblemRecord {
+  id: string;
+  title: string;
+  points: number;
+  status: ManagedProblemStatus;
+  difficulty: ManagedProblemDifficulty;
+  tags: string[];
+}
+
+const EMPTY_CONTESTS: ManagedContestRecord[] = [];
+const EMPTY_PROBLEMS: ManagedProblemRecord[] = [];
+
 export default function ManageContestsPage() {
   const router = useRouter();
+  const utils = trpc.useUtils();
   const [selectedTab, setSelectedTab] = useState<ManageContentTab>(DEFAULT_MANAGE_CONTENT_TAB);
-  const [contestRecords, setContestRecords] = useState(managedContests);
-  const [problemRecords, setProblemRecords] = useState(managedProblems);
   const [contestSearchQuery, setContestSearchQuery] = useState("");
   const [problemSearchQuery, setProblemSearchQuery] = useState("");
   const [selectedContestStatus, setSelectedContestStatus] =
     useState<ManagedContestStatusFilter>("all");
   const [selectedProblemStatus, setSelectedProblemStatus] =
     useState<ManagedProblemStatusFilter>("all");
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    type: "contest" | "problem";
+    id: string;
+    title: string;
+  } | null>(null);
+
+  const { data, isLoading, error } = trpc.instructorManageContent.getManageContent.useQuery(
+    undefined,
+    { retry: false },
+  );
+  const contestStatusMutation = trpc.instructorManageContent.updateContestManageStatus.useMutation({
+    onSuccess: async () => {
+      setActionError(null);
+      await Promise.all([
+        utils.instructorManageContent.getManageContent.invalidate(),
+        utils.instructorManageContent.getInstructorOverview.invalidate(),
+      ]);
+    },
+    onError: (mutationError) => {
+      setActionError(mutationError.message);
+    },
+  });
+  const problemStatusMutation = trpc.instructorManageContent.updateProblemManageStatus.useMutation({
+    onSuccess: async () => {
+      setActionError(null);
+      await Promise.all([
+        utils.instructorManageContent.getManageContent.invalidate(),
+        utils.instructorManageContent.getInstructorOverview.invalidate(),
+      ]);
+    },
+    onError: (mutationError) => {
+      setActionError(mutationError.message);
+    },
+  });
+
+  const contestRecords = (data?.contests ?? EMPTY_CONTESTS) as ManagedContestRecord[];
+  const problemRecords = (data?.problems ?? EMPTY_PROBLEMS) as ManagedProblemRecord[];
 
   const stats = useMemo<ManageContentStatSummary[]>(
     () => [
@@ -128,20 +201,31 @@ export default function ManageContestsPage() {
     });
   }, [problemRecords, problemSearchQuery, selectedProblemStatus]);
 
-  const handleUpdateContestStatus = (contestId: string, nextStatus: ManagedContestStatus) => {
-    setContestRecords((current) =>
-      current.map((contest) =>
-        contest.id === contestId ? { ...contest, status: nextStatus } : contest,
-      ),
-    );
+  const handleArchiveContest = async (contestId: string) => {
+    setActionError(null);
+    await contestStatusMutation.mutateAsync({ contestId, manageStatus: "ARCHIVED" });
   };
 
-  const handleUpdateProblemStatus = (problemId: string, nextStatus: ManagedProblemStatus) => {
-    setProblemRecords((current) =>
-      current.map((problem) =>
-        problem.id === problemId ? { ...problem, status: nextStatus } : problem,
-      ),
-    );
+  const handleArchiveProblem = async (problemId: string) => {
+    setActionError(null);
+    await problemStatusMutation.mutateAsync({ problemId, manageStatus: "ARCHIVED" });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setActionError(null);
+    if (deleteTarget.type === "contest") {
+      await contestStatusMutation.mutateAsync({
+        contestId: deleteTarget.id,
+        manageStatus: "DELETED",
+      });
+    } else {
+      await problemStatusMutation.mutateAsync({
+        problemId: deleteTarget.id,
+        manageStatus: "DELETED",
+      });
+    }
+    setDeleteTarget(null);
   };
 
   const getContestStatusClassName = (status: ManagedContestStatus) => {
@@ -167,6 +251,8 @@ export default function ManageContestsPage() {
     switch (status) {
       case "active":
         return styles.statusActive;
+      case "draft":
+        return styles.statusDraft;
       case "archived":
         return styles.statusArchived;
       case "deleted":
@@ -195,6 +281,11 @@ export default function ManageContestsPage() {
   const currentStatusOptions =
     selectedTab === "contests" ? MANAGE_CONTEST_STATUS_FILTERS : MANAGE_PROBLEM_STATUS_FILTERS;
   const currentViewConfig = MANAGE_CONTENT_VIEW_CONFIG[selectedTab];
+  const isContestUpdatePending = (contestId: string) =>
+    contestStatusMutation.isPending && contestStatusMutation.variables?.contestId === contestId;
+  const isProblemUpdatePending = (problemId: string) =>
+    problemStatusMutation.isPending && problemStatusMutation.variables?.problemId === problemId;
+  const pageError = error?.message ?? actionError;
 
   return (
     <>
@@ -229,6 +320,12 @@ export default function ManageContestsPage() {
             className={styles.tabs}
           />
 
+          {pageError ? (
+            <Box className={styles.errorBanner}>
+              <Typography className={styles.errorText}>{pageError}</Typography>
+            </Box>
+          ) : null}
+
           <Box className={styles.controlsRow}>
             <div className={styles.searchWrap}>
               <SearchInput
@@ -261,7 +358,11 @@ export default function ManageContestsPage() {
           </Box>
 
           <Box className={styles.tableCard}>
-            {selectedTab === "contests" ? (
+            {isLoading ? (
+              <Box className={styles.loadingState}>
+                <CircularProgress size={28} />
+              </Box>
+            ) : selectedTab === "contests" ? (
               filteredContests.length > 0 ? (
                 <table className={styles.table}>
                   <thead>
@@ -318,6 +419,16 @@ export default function ManageContestsPage() {
                           </Box>
                         </td>
 
+                        <td className={styles.bodyCell}>
+                          <Typography className={styles.mobileCellLabel}>Enrolled</Typography>
+                          <Typography className={styles.scheduleText}>{contest.enrolledCount}</Typography>
+                        </td>
+
+                        <td className={styles.bodyCell}>
+                          <Typography className={styles.mobileCellLabel}>Submitted</Typography>
+                          <Typography className={styles.scheduleText}>{contest.submittedCount}</Typography>
+                        </td>
+
                         <td className={`${styles.bodyCell} ${styles.actionsCell}`}>
                           <Typography className={styles.mobileCellLabel}>Actions</Typography>
                           <RowActionsMenu
@@ -327,24 +438,39 @@ export default function ManageContestsPage() {
                                 id: "edit",
                                 label: "Edit Contest",
                                 icon: EditOutlinedIcon,
-                                disabled: contest.status === "deleted",
-                                onClick: () => router.push(ROUTES.instructorCreateContest),
+                                disabled:
+                                  contest.status === "archived" ||
+                                  contest.status === "deleted" ||
+                                  isContestUpdatePending(contest.id),
+                                onClick: () =>
+                                  router.push(
+                                    `${ROUTES.instructorCreateContest}?contestId=${contest.id}`,
+                                  ),
                               },
                               {
                                 id: "archive",
                                 label: "Archive",
                                 icon: ArchiveOutlinedIcon,
                                 disabled:
-                                  contest.status === "archived" || contest.status === "deleted",
-                                onClick: () => handleUpdateContestStatus(contest.id, "archived"),
+                                  contest.status === "archived" ||
+                                  contest.status === "deleted" ||
+                                  isContestUpdatePending(contest.id),
+                                onClick: () => void handleArchiveContest(contest.id),
                               },
                               {
                                 id: "delete",
                                 label: "Delete",
                                 icon: DeleteOutlineRoundedIcon,
-                                disabled: contest.status === "deleted",
                                 danger: true,
-                                onClick: () => handleUpdateContestStatus(contest.id, "deleted"),
+                                disabled:
+                                  contest.status === "deleted" ||
+                                  isContestUpdatePending(contest.id),
+                                onClick: () =>
+                                  setDeleteTarget({
+                                    type: "contest",
+                                    id: contest.id,
+                                    title: contest.title,
+                                  }),
                               },
                             ] satisfies MenuActionItem[]}
                           />
@@ -438,24 +564,39 @@ export default function ManageContestsPage() {
                               id: "edit",
                               label: "Edit Problem",
                               icon: EditOutlinedIcon,
-                              disabled: problem.status === "deleted",
-                              onClick: () => router.push(ROUTES.instructorCreateProblem),
+                              disabled:
+                                problem.status === "archived" ||
+                                problem.status === "deleted" ||
+                                isProblemUpdatePending(problem.id),
+                              onClick: () =>
+                                router.push(
+                                  `${ROUTES.instructorCreateProblem}?problemId=${problem.id}`,
+                                ),
                             },
                             {
                               id: "archive",
                               label: "Archive",
                               icon: ArchiveOutlinedIcon,
                               disabled:
-                                problem.status === "archived" || problem.status === "deleted",
-                              onClick: () => handleUpdateProblemStatus(problem.id, "archived"),
+                                problem.status === "archived" ||
+                                problem.status === "deleted" ||
+                                isProblemUpdatePending(problem.id),
+                              onClick: () => void handleArchiveProblem(problem.id),
                             },
                             {
                               id: "delete",
                               label: "Delete",
                               icon: DeleteOutlineRoundedIcon,
-                              disabled: problem.status === "deleted",
                               danger: true,
-                              onClick: () => handleUpdateProblemStatus(problem.id, "deleted"),
+                              disabled:
+                                problem.status === "deleted" ||
+                                isProblemUpdatePending(problem.id),
+                              onClick: () =>
+                                setDeleteTarget({
+                                  type: "problem",
+                                  id: problem.id,
+                                  title: problem.title,
+                                }),
                             },
                           ] satisfies MenuActionItem[]}
                         />
@@ -477,6 +618,31 @@ export default function ManageContestsPage() {
           </Box>
         </Box>
       </Box>
+      <Dialog
+        open={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Delete {deleteTarget?.type === "contest" ? "Contest" : "Problem"}?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            <strong>{deleteTarget?.title}</strong> will be marked as deleted and hidden from
+            students. This cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteTarget(null)}>Cancel</Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={() => void handleConfirmDelete()}
+            disabled={contestStatusMutation.isPending || problemStatusMutation.isPending}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

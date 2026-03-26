@@ -180,9 +180,14 @@ test.describe("Practice problem submission page", () => {
     await page.goto(`/practice/${firstProblemCode}`);
     await expect(page.locator(".monaco-editor")).toBeVisible({ timeout: 15000 });
 
+    // Clear any code restored from a previous session so we start with an empty editor.
+    await page.locator(".monaco-editor .view-lines").first().click();
+    await page.keyboard.press("Control+a");
+    await page.keyboard.press("Delete");
+
     const submitBtn = page.getByRole("button", { name: /^submit$/i });
     await expect(submitBtn).toBeVisible();
-    await expect(submitBtn).toBeDisabled();
+    await expect(submitBtn).toBeDisabled({ timeout: 5000 });
 
     await typeInMonaco(page, "\n// typed by e2e");
     await expect(submitBtn).toBeEnabled({ timeout: 10000 });
@@ -264,6 +269,11 @@ test.describe("Practice problem submission page", () => {
     if (!firstProblemCode) test.skip();
 
     await page.goto(`/practice/${firstProblemCode}`);
+    await expect(page.locator(".monaco-editor")).toBeVisible({ timeout: 15000 });
+    // If a prior test left a submission in "queued"/"running" state, wait for it to resolve.
+    await expect(page.getByText(/queued for gemini judging|judging your code/i)).not.toBeVisible({
+      timeout: 30000,
+    });
     await typeInMonaco(page, "\n// typed by e2e");
     const submitBtn = page.getByRole("button", { name: /^submit$/i });
     await expect(submitBtn).toBeEnabled({ timeout: 10000 });

@@ -1,10 +1,18 @@
 import { TRPCError } from "@trpc/server";
+import type { CodingLanguage, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { can } from "@/lib/authz";
-import { APP_LANGUAGES } from "@/server/coding-language";
+import {
+  APP_LANGUAGES,
+  appLanguageToCodingLanguage,
+  codingLanguageToAppLanguage,
+} from "@/server/coding-language";
+import type { Context } from "../init";
 import { publicProcedure, router } from "../init";
 
 const starterLanguageSchema = z.enum(APP_LANGUAGES);
+const difficultySchema = z.enum(["easy", "medium", "hard"]);
+const problemSourceSchema = z.enum(["contest-only", "public"]);
 
 const generatedStarterCodesSchema = z
   .object({
@@ -15,6 +23,61 @@ const generatedStarterCodesSchema = z
     javascript: z.string().min(1).optional(),
   })
   .partial();
+
+const starterCodesInputSchema = z.object({
+  cplusplus: z.string(),
+  java: z.string(),
+  python: z.string(),
+  typescript: z.string(),
+  javascript: z.string(),
+});
+
+const problemExampleSchema = z.object({
+  id: z.string(),
+  input: z.string(),
+  output: z.string(),
+  explanation: z.string(),
+});
+
+const problemMutationSchema = z.object({
+  title: z.string().trim().min(1, "Problem title is required."),
+  difficulty: difficultySchema,
+  points: z.number().int().nonnegative(),
+  tags: z.array(z.string()).default([]),
+  isDraft: z.boolean().default(false),
+  source: problemSourceSchema.default("public"),
+  statement: z.string().trim().default(""),
+  inputFormat: z.string().trim().default(""),
+  outputFormat: z.string().trim().default(""),
+  constraints: z.string().trim().default(""),
+  examples: z
+    .array(problemExampleSchema)
+    .max(1, "Only one example is currently supported.")
+    .default([]),
+  starterCodes: starterCodesInputSchema,
+});
+
+const problemPatchSchema = z
+  .object({
+    title: z.string().trim().min(1, "Problem title is required.").optional(),
+    difficulty: difficultySchema.optional(),
+    points: z.number().int().nonnegative().optional(),
+    tags: z.array(z.string()).optional(),
+    isDraft: z.boolean().optional(),
+    source: problemSourceSchema.optional(),
+    statement: z.string().trim().optional(),
+    inputFormat: z.string().trim().optional(),
+    outputFormat: z.string().trim().optional(),
+    constraints: z.string().trim().optional(),
+    examples: z
+      .array(problemExampleSchema)
+      .max(1, "Only one example is currently supported.")
+      .optional(),
+    starterCodes: starterCodesInputSchema.optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field must be provided.",
+  });
 
 function extractJsonObject(text: string): string {
   const start = text.indexOf("{");
@@ -69,6 +132,140 @@ function buildGenerationPrompt(input: {
   ]
     .filter(Boolean)
     .join("\n\n");
+}
+
+async function getAuthoringUserOrThrow(ctx: Context) {
+  if (!ctx.user) {
+    throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
+
+  if (!can(ctx.user.role).canCreateProblem) {
+    throw new TRPCError({ code: "FORBIDDEN" });
+  }
+
+  const dbUser = await ctx.prisma.user.findUnique({
+    where: { computingId: ctx.user.computingId },
+    select: {
+      id: true,
+      computingId: true,
+      firstName: true,
+      lastName: true,
+    },
+  });
+
+  if (!dbUser) {
+    throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
+
+  return dbUser;
+}
+
+function slugifyValue(value: string) {
+  const slug = value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return slug || "untitled-problem";
+}
+
+async function ensureUniqueProblemCode(
+  ctx: Context,
+  title: string,
+  excludeProblemId?: string,
+) {
+  const baseCode = slugifyValue(title);
+  let attempt = 0;
+
+  while (true) {
+    const candidate = attempt === 0 ? baseCode : `${baseCode}-${attempt + 1}`;
+    const existing = await ctx.prisma.problem.findFirst({
+      where: {
+        code: candidate,
+        ...(excludeProblemId ? { id: { not: excludeProblemId } } : {}),
+      },
+      select: { id: true },
+    });
+
+    if (!existing) {
+      return candidate;
+    }
+
+    attempt += 1;
+  }
+}
+
+function normalizeDifficulty(value: z.infer<typeof difficultySchema>) {
+  return `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
+}
+
+function normalizeTags(tags: string[]) {
+  return Array.from(
+    new Set(
+      tags
+        .map((tag) => tag.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  );
+}
+
+function getPrimaryExample(examples: Array<z.infer<typeof problemExampleSchema>>) {
+  return (
+    examples.find((example) => example.input.trim() && example.output.trim()) ?? {
+      id: "example-1",
+      input: "",
+      output: "",
+      explanation: "",
+    }
+  );
+}
+
+function buildStarterCodeRows(
+  starterCodes: z.infer<typeof starterCodesInputSchema>,
+): Array<{ language: CodingLanguage; code: string }> {
+  return Object.entries(starterCodes)
+    .map(([language, code]) => ({
+      language: appLanguageToCodingLanguage(language),
+      code: code.trim(),
+    }))
+    .filter((entry): entry is { language: CodingLanguage; code: string } => Boolean(entry.language))
+    .filter((entry) => entry.code.length > 0);
+}
+
+function getProblemDisplayStatus(isDraft: boolean, manageStatus: string) {
+  if (manageStatus === "ARCHIVED") return "archived";
+  if (manageStatus === "DELETED") return "deleted";
+  if (isDraft) return "draft";
+  return "active";
+}
+
+function hasOwnKey<T extends object>(
+  value: T,
+  key: PropertyKey,
+): boolean {
+  return Object.prototype.hasOwnProperty.call(value, key);
+}
+
+function canEditProblem(
+  input: {
+    author: string | null;
+    contestLinks: Array<{ contest: { instructorId: string | null } }>;
+  },
+  currentComputingId: string,
+  fullName: string,
+  dbUserId: string,
+  isAdmin: boolean,
+) {
+  if (isAdmin) {
+    return true;
+  }
+
+  return (
+    input.author?.toLowerCase() === currentComputingId.toLowerCase() ||
+    input.author?.toLowerCase() === fullName.toLowerCase() ||
+    input.contestLinks.some((link) => link.contest.instructorId === dbUserId)
+  );
 }
 
 export const problemAuthoringRouter = router({
@@ -183,5 +380,255 @@ export const problemAuthoringRouter = router({
         generatedCodes: filteredCodes,
         model,
       };
+    }),
+
+  getProblemById: publicProcedure
+    .input(z.object({ problemId: z.string().min(1) }))
+    .query(async ({ ctx, input }) => {
+      const dbUser = await getAuthoringUserOrThrow(ctx);
+      const fullName = `${dbUser.firstName} ${dbUser.lastName}`.trim();
+      const isAdmin = ctx.user?.role === "admin";
+
+      const problem = await ctx.prisma.problem.findUnique({
+        where: { id: input.problemId },
+        include: {
+          topics: { orderBy: { name: "asc" } },
+          starterCodes: true,
+          contestLinks: {
+            select: {
+              contest: {
+                select: {
+                  instructorId: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!problem || problem.manageStatus === "DELETED") {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Problem not found." });
+      }
+
+      if (
+        !canEditProblem(problem, dbUser.computingId, fullName, dbUser.id, isAdmin)
+      ) {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+
+      const starterCodes = Object.fromEntries(
+        APP_LANGUAGES.map((language) => [language, ""]),
+      ) as Record<(typeof APP_LANGUAGES)[number], string>;
+
+      problem.starterCodes.forEach((starterCode) => {
+        starterCodes[codingLanguageToAppLanguage(starterCode.language)] = starterCode.code;
+      });
+
+      return {
+        id: problem.id,
+        title: problem.title,
+        difficulty: problem.difficulty.toLowerCase() as z.infer<typeof difficultySchema>,
+        points: problem.points ?? 0,
+        tags: problem.topics.map((topic) => topic.name),
+        source: (problem.source === "CONTEST" ? "contest-only" : "public") as z.infer<typeof problemSourceSchema>,
+        statement: problem.statement,
+        inputFormat: problem.inputFormat ?? "",
+        outputFormat: problem.outputFormat ?? "",
+        constraints: problem.constraints ?? "",
+        examples: [
+          {
+            id: "example-1",
+            input: problem.exampleInput ?? "",
+            output: problem.exampleOutput ?? "",
+            explanation: problem.exampleExplanation ?? "",
+          },
+        ],
+        starterCodes,
+        isDraft: problem.isDraft,
+        manageStatus: getProblemDisplayStatus(problem.isDraft, problem.manageStatus),
+      };
+    }),
+
+  createProblem: publicProcedure
+    .input(problemMutationSchema)
+    .mutation(async ({ ctx, input }) => {
+      const dbUser = await getAuthoringUserOrThrow(ctx);
+      const code = await ensureUniqueProblemCode(ctx, input.title);
+      const tags = normalizeTags(input.tags);
+      const starterCodeRows = buildStarterCodeRows(input.starterCodes);
+      const primaryExample = getPrimaryExample(input.examples);
+
+      const problem = await ctx.prisma.problem.create({
+        data: {
+          code,
+          title: input.title.trim(),
+          statement: input.statement.trim(),
+          inputFormat: input.inputFormat.trim(),
+          outputFormat: input.outputFormat.trim(),
+          constraints: input.constraints.trim(),
+          exampleInput: primaryExample.input.trim() || null,
+          exampleOutput: primaryExample.output.trim() || null,
+          exampleExplanation: primaryExample.explanation.trim() || null,
+          difficulty: normalizeDifficulty(input.difficulty),
+          author: dbUser.computingId,
+          points: input.points,
+          isDraft: input.isDraft,
+          manageStatus: "ACTIVE",
+          source: input.source === "contest-only" ? "CONTEST" : "BOTH",
+          starterCodes: starterCodeRows.length
+            ? {
+                create: starterCodeRows,
+              }
+            : undefined,
+          topics: tags.length
+            ? {
+                create: tags.map((name) => ({ name })),
+              }
+            : undefined,
+        },
+        select: { id: true },
+      });
+
+      return problem;
+    }),
+
+  updateProblem: publicProcedure
+    .input(
+      z.object({
+        problemId: z.string().min(1),
+        data: problemPatchSchema,
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const dbUser = await getAuthoringUserOrThrow(ctx);
+      const fullName = `${dbUser.firstName} ${dbUser.lastName}`.trim();
+      const isAdmin = ctx.user?.role === "admin";
+
+      const existingProblem = await ctx.prisma.problem.findUnique({
+        where: { id: input.problemId },
+        select: {
+          id: true,
+          manageStatus: true,
+          author: true,
+          contestLinks: {
+            select: {
+              contest: {
+                select: {
+                  instructorId: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!existingProblem) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Problem not found." });
+      }
+
+      if (existingProblem.manageStatus === "DELETED") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Deleted problems cannot be edited.",
+        });
+      }
+
+      if (
+        !canEditProblem(existingProblem, dbUser.computingId, fullName, dbUser.id, isAdmin)
+      ) {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+
+      await ctx.prisma.$transaction(async (tx) => {
+        const problemUpdateData: Prisma.ProblemUpdateInput = {};
+
+        if (hasOwnKey(input.data, "title")) {
+          problemUpdateData.title = input.data.title?.trim();
+        }
+
+        if (hasOwnKey(input.data, "statement")) {
+          problemUpdateData.statement = input.data.statement?.trim();
+        }
+
+        if (hasOwnKey(input.data, "inputFormat")) {
+          problemUpdateData.inputFormat = input.data.inputFormat?.trim();
+        }
+
+        if (hasOwnKey(input.data, "outputFormat")) {
+          problemUpdateData.outputFormat = input.data.outputFormat?.trim();
+        }
+
+        if (hasOwnKey(input.data, "constraints")) {
+          problemUpdateData.constraints = input.data.constraints?.trim();
+        }
+
+        if (hasOwnKey(input.data, "difficulty") && input.data.difficulty) {
+          problemUpdateData.difficulty = normalizeDifficulty(input.data.difficulty);
+        }
+
+        if (hasOwnKey(input.data, "isDraft") && input.data.isDraft !== undefined) {
+          problemUpdateData.isDraft = input.data.isDraft;
+        }
+
+        if (hasOwnKey(input.data, "source") && input.data.source) {
+          problemUpdateData.source = input.data.source === "contest-only" ? "CONTEST" : "BOTH";
+        }
+
+        if (hasOwnKey(input.data, "points") && input.data.points !== undefined) {
+          problemUpdateData.points = input.data.points;
+        }
+
+        if (hasOwnKey(input.data, "examples")) {
+          const primaryExample = getPrimaryExample(input.data.examples ?? []);
+          problemUpdateData.exampleInput = primaryExample.input.trim() || null;
+          problemUpdateData.exampleOutput = primaryExample.output.trim() || null;
+          problemUpdateData.exampleExplanation = primaryExample.explanation.trim() || null;
+        }
+
+        if (Object.keys(problemUpdateData).length > 0) {
+          await tx.problem.update({
+            where: { id: input.problemId },
+            data: problemUpdateData,
+          });
+        }
+
+        if (hasOwnKey(input.data, "tags")) {
+          const tags = normalizeTags(input.data.tags ?? []);
+
+          await tx.topic.deleteMany({
+            where: { problemId: input.problemId },
+          });
+
+          if (tags.length > 0) {
+            await tx.topic.createMany({
+              data: tags.map((name) => ({
+                problemId: input.problemId,
+                name,
+              })),
+            });
+          }
+        }
+
+        if (hasOwnKey(input.data, "starterCodes")) {
+          const starterCodeRows = input.data.starterCodes
+            ? buildStarterCodeRows(input.data.starterCodes)
+            : [];
+
+          await tx.problemStarterCode.deleteMany({
+            where: { problemId: input.problemId },
+          });
+
+          if (starterCodeRows.length > 0) {
+            await tx.problemStarterCode.createMany({
+              data: starterCodeRows.map((starterCode) => ({
+                ...starterCode,
+                problemId: input.problemId,
+              })),
+            });
+          }
+        }
+      });
+
+      return { id: input.problemId };
     }),
 });

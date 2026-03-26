@@ -8,7 +8,7 @@ export const LANGUAGE_OPTIONS = [
   { value: "python", label: "Python", monacoLanguage: "python" },
   { value: "typescript", label: "TypeScript", monacoLanguage: "typescript" },
   { value: "javascript", label: "JavaScript", monacoLanguage: "javascript" },
-];
+] as const;
 
 export const DIFFICULTY_OPTIONS = [
   { value: "easy", label: "Easy" },
@@ -20,6 +20,11 @@ export const VISIBILITY_OPTIONS = [
   { value: "contest-only", label: "contest-only" },
   { value: "public", label: "public" },
   { value: "draft", label: "draft" },
+];
+
+export const PROBLEM_SOURCE_OPTIONS = [
+  { value: "public", label: "Public (Practice + Contests)" },
+  { value: "contest-only", label: "Contest Only" },
 ];
 
 export const PROBLEM_TAG_GROUPS = [
@@ -70,9 +75,9 @@ export const SUBMISSION_STATUS_CONFIG = {
 } as const;
 
 export const CONTEST_STATUS_CONFIG = {
-  upcoming: { label: "upcoming", background: "#eceef2", color: "#030213" },
-  "in progress": { label: "in progress", background: "#f97316", color: "#ffffff" },
-  closed: { label: "closed", background: "#f3f4f6", color: "#4b5563" },
+  upcoming: { label: "Upcoming", background: "#eceef2", color: "#030213" },
+  "in progress": { label: "In Progress", background: "#f97316", color: "#ffffff" },
+  closed: { label: "Closed", background: "#f3f4f6", color: "#4b5563" },
 } as const;
 
 export const PRACTICE_FILTERS = [

@@ -19,7 +19,6 @@ export interface ProblemAuthoringCopy {
   supportedLanguagesLabel: string;
   statementMarkdownHint: string;
   examplesInfoBanner: string;
-  addAnotherExampleLabel: string;
   nextStatementLabel: string;
   nextExamplesLabel: string;
   nextStarterCodeLabel: string;
@@ -65,7 +64,7 @@ export interface ProblemMetadataDraft {
   difficulty: string;
   points: string;
   tags: string[];
-  visibility: string;
+  source: string;
 }
 
 export interface ProblemStatementDraft {
@@ -112,8 +111,7 @@ export const problemAuthoringCopy: ProblemAuthoringCopy = {
   supportedLanguagesLabel: "Supported Languages",
   statementMarkdownHint: "Supports Markdown formatting",
   examplesInfoBanner:
-    "Provide at least one example to help students understand the problem. Each example should have an input, expected output, and optionally an explanation.",
-  addAnotherExampleLabel: "Add Another Example",
+    "Provide one example to help students understand the problem. The current authoring flow supports a single persisted example with input, expected output, and an optional explanation.",
   nextStatementLabel: "Next: Statement",
   nextExamplesLabel: "Next: Examples",
   nextStarterCodeLabel: "Next: Starter Code",
@@ -168,7 +166,7 @@ export const problemMetadataDraft: ProblemMetadataDraft = {
   difficulty: "medium",
   points: "100",
   tags: [],
-  visibility: "contest-only",
+  source: "public",
 };
 
 export const problemStatementDraft: ProblemStatementDraft = {
@@ -191,8 +189,7 @@ export const starterCodeDraft: Record<StarterLanguage, string> = {
   cplusplus: "",
   java: "",
   python: "",
-  typescript:
-    "// TypeScript starter code\nfunction solve(nums: number[]): number[] {\n  // Your code here\n  return [];\n}",
+  typescript: "",
   javascript: "",
 };
 
