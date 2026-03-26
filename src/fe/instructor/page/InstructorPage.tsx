@@ -80,6 +80,7 @@ export default function InstructorPage() {
 
   const overviewQuery = trpc.instructorManageContent.getInstructorOverview.useQuery(undefined, {
     retry: false,
+    refetchOnWindowFocus: true,
   });
 
   const actions: ToolCardData[] = instructorActions.map((action) => ({

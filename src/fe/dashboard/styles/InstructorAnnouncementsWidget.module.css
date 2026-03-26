@@ -1,0 +1,95 @@
+.emptyState {
+  border: 1px solid #eaecf0;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 14px;
+  font-size: 13px;
+  line-height: 18px;
+  color: #4a5565;
+}
+
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.activityItem {
+  border: 1px solid #eaecf0;
+  border-radius: 10px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+}
+
+.activityIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.activityIconGlyph {
+  width: 1rem;
+  height: 1rem;
+  font-size: 1rem;
+}
+
+.activityIcon[data-tone="success"] {
+  background: #ecfdf3;
+  color: #027a48;
+}
+
+.activityIcon[data-tone="info"] {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.activityIcon[data-tone="warning"] {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.activityIcon[data-tone="danger"] {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.activityIcon[data-tone="highlight"] {
+  background: #fefce8;
+  color: #a16207;
+}
+
+.activityIcon[data-tone="purple"] {
+  background: #f4f3ff;
+  color: #6d28d9;
+}
+
+.activityIcon[data-tone="neutral"] {
+  background: #f8fafc;
+  color: #475467;
+}
+
+.activityText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.activityDescription {
+  margin: 0;
+  font-size: 13px;
+  line-height: 18px;
+  color: #101828;
+}
+
+.activityTimestamp {
+  margin: 0;
+  font-size: 12px;
+  line-height: 16px;
+  color: #6a7282;
+}

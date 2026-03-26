@@ -18,9 +18,10 @@ export interface Contest {
 export interface UpcomingContest {
   id: string;
   title: string;
-  courseCode: string;
+  courseCode?: string;
   date: string;
   timeUntil: string;
+  readinessState?: "Ready" | "Needs Attention" | "Blocked";
 }
 
 export interface ContestAlert {

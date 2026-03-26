@@ -1,3 +1,5 @@
+import { ANALYSIS_CHART_COLORS } from "@/fe/instructor/data/analysisConstants";
+
 export interface FilterOption {
   label: string;
   value: string;
@@ -47,6 +49,59 @@ export interface ContestTimelineSeries {
   points: TimelineSeriesPoint[];
 }
 
+export interface TrendDataset {
+  xLabels: string[];
+  xValues: number[];
+  xGroups: Array<{
+    label: string;
+    start: number;
+    end: number;
+  }>;
+  series: BarChartSeries[];
+}
+
+function buildTrendDataset(
+  points: Array<{ label: string; value: number; semester: string }>,
+  series: BarChartSeries[],
+): TrendDataset {
+  const semesterRanges = new Map<string, { start: number; end: number }>();
+
+  for (const point of points) {
+    const current = semesterRanges.get(point.semester);
+    if (!current) {
+      semesterRanges.set(point.semester, { start: point.value, end: point.value });
+      continue;
+    }
+
+    current.start = Math.min(current.start, point.value);
+    current.end = Math.max(current.end, point.value);
+  }
+
+  return {
+    xLabels: points.map((point) => point.label),
+    xValues: points.map((point) => point.value),
+    xGroups: [...semesterRanges.entries()].map(([label, range]) => ({
+      label,
+      start: Math.max(0, range.start - 18),
+      end: range.end + 18,
+    })),
+    series,
+  };
+}
+
+export interface BarChartSeries {
+  label: string;
+  color: string;
+  data: number[];
+}
+
+export interface AnalyticsSummaryStat {
+  label: string;
+  value: string;
+  caption: string;
+  tone: "primary" | "secondary" | "accent";
+}
+
 export interface ConditionSummaryMetric {
   label: string;
   value: string;
@@ -64,6 +119,20 @@ export interface KeyFinding {
   label: string;
   value: string;
   tone: "positive" | "info";
+}
+
+export interface GroupComparisonMetricRow {
+  label: string;
+  leftValue: string;
+  rightValue: string;
+  leftPercent: number;
+  rightPercent: number;
+}
+
+export interface ContestGroupComparison {
+  contestId: string;
+  contestLabel: string;
+  groups: Record<string, GroupComparisonMetricRow[]>;
 }
 
 export interface TimingDistributionItem {
@@ -170,15 +239,17 @@ export const contestOptions: FilterOption[] = [
 ];
 
 export const dateRangeOptions: FilterOption[] = [
-  { label: "Last 30 days", value: "30d" },
-  { label: "Last 14 days", value: "14d" },
-  { label: "Last 7 days", value: "7d" },
+  { label: "Past One Month", value: "1m" },
+  { label: "Past One Semester", value: "1s" },
+  { label: "Past One Year", value: "1y" },
+  { label: "Since Launch", value: "all" },
 ];
 
 export const conditionOptions: FilterOption[] = [
-  { label: "All Conditions", value: "all" },
-  { label: "Early Hints", value: "early" },
-  { label: "Delayed Hints", value: "delayed" },
+  { label: "All Groups", value: "all" },
+  { label: "Group A", value: "group-a" },
+  { label: "Group B", value: "group-b" },
+  { label: "Group C", value: "group-c" },
 ];
 
 export const policyOptions: FilterOption[] = [
@@ -305,7 +376,7 @@ export const contestTimelineSeries: ContestTimelineSeries[] = [
   {
     contestId: "week-3-lab",
     contestLabel: "Week 3 Lab",
-    color: "#00c950",
+    color: ANALYSIS_CHART_COLORS.primary,
     points: [
       { label: "0-5m", value: 10 },
       { label: "5-10m", value: 24 },
@@ -320,7 +391,7 @@ export const contestTimelineSeries: ContestTimelineSeries[] = [
   {
     contestId: "trees-graphs",
     contestLabel: "Trees & Graphs",
-    color: "#155dfc",
+    color: ANALYSIS_CHART_COLORS.secondary,
     points: [
       { label: "0-5m", value: 7 },
       { label: "5-10m", value: 18 },
@@ -335,7 +406,7 @@ export const contestTimelineSeries: ContestTimelineSeries[] = [
   {
     contestId: "arrays-strings",
     contestLabel: "Arrays & Strings",
-    color: "#9810fa",
+    color: ANALYSIS_CHART_COLORS.accent,
     points: [
       { label: "0-5m", value: 9 },
       { label: "5-10m", value: 20 },
@@ -389,6 +460,278 @@ export const policyKeyFindings: KeyFinding[] = [
   { label: "Time Reduction", value: "-3m 27s", tone: "positive" },
   { label: "Hint Usage Lift", value: "+7%", tone: "info" },
 ];
+
+export const contestGroupComparisons: ContestGroupComparison[] = [
+  {
+    contestId: "week-3-lab",
+    contestLabel: "Week 3 Lab",
+    groups: {
+      "group-a:group-b": [
+        { label: "Solve Rate", leftValue: "72%", rightValue: "64%", leftPercent: 72, rightPercent: 64 },
+        { label: "Median Solve Time", leftValue: "14m", rightValue: "19m", leftPercent: 74, rightPercent: 56 },
+        { label: "Attempts to Solve", leftValue: "2.8", rightValue: "4.1", leftPercent: 68, rightPercent: 100 },
+        { label: "Post-Hint Solve", leftValue: "58%", rightValue: "46%", leftPercent: 58, rightPercent: 46 },
+        { label: "Hint Usage", leftValue: "34%", rightValue: "51%", leftPercent: 67, rightPercent: 100 },
+      ],
+      "group-a:group-c": [
+        { label: "Solve Rate", leftValue: "72%", rightValue: "61%", leftPercent: 72, rightPercent: 61 },
+        { label: "Median Solve Time", leftValue: "14m", rightValue: "22m", leftPercent: 64, rightPercent: 100 },
+        { label: "Attempts to Solve", leftValue: "2.8", rightValue: "4.5", leftPercent: 62, rightPercent: 100 },
+        { label: "Post-Hint Solve", leftValue: "58%", rightValue: "39%", leftPercent: 58, rightPercent: 39 },
+        { label: "Hint Usage", leftValue: "34%", rightValue: "27%", leftPercent: 100, rightPercent: 79 },
+      ],
+      "group-b:group-c": [
+        { label: "Solve Rate", leftValue: "64%", rightValue: "61%", leftPercent: 64, rightPercent: 61 },
+        { label: "Median Solve Time", leftValue: "19m", rightValue: "22m", leftPercent: 86, rightPercent: 100 },
+        { label: "Attempts to Solve", leftValue: "4.1", rightValue: "4.5", leftPercent: 91, rightPercent: 100 },
+        { label: "Post-Hint Solve", leftValue: "46%", rightValue: "39%", leftPercent: 46, rightPercent: 39 },
+        { label: "Hint Usage", leftValue: "51%", rightValue: "27%", leftPercent: 100, rightPercent: 53 },
+      ],
+    },
+  },
+  {
+    contestId: "trees-graphs",
+    contestLabel: "Trees & Graphs",
+    groups: {
+      "group-a:group-b": [
+        { label: "Solve Rate", leftValue: "68%", rightValue: "62%", leftPercent: 68, rightPercent: 62 },
+        { label: "Median Solve Time", leftValue: "18m", rightValue: "23m", leftPercent: 78, rightPercent: 57 },
+        { label: "Attempts to Solve", leftValue: "3.1", rightValue: "4.0", leftPercent: 78, rightPercent: 100 },
+        { label: "Post-Hint Solve", leftValue: "53%", rightValue: "44%", leftPercent: 53, rightPercent: 44 },
+        { label: "Hint Usage", leftValue: "42%", rightValue: "49%", leftPercent: 86, rightPercent: 100 },
+      ],
+      "group-a:group-c": [
+        { label: "Solve Rate", leftValue: "68%", rightValue: "57%", leftPercent: 68, rightPercent: 57 },
+        { label: "Median Solve Time", leftValue: "18m", rightValue: "26m", leftPercent: 69, rightPercent: 100 },
+        { label: "Attempts to Solve", leftValue: "3.1", rightValue: "4.7", leftPercent: 66, rightPercent: 100 },
+        { label: "Post-Hint Solve", leftValue: "53%", rightValue: "36%", leftPercent: 53, rightPercent: 36 },
+        { label: "Hint Usage", leftValue: "42%", rightValue: "31%", leftPercent: 100, rightPercent: 74 },
+      ],
+      "group-b:group-c": [
+        { label: "Solve Rate", leftValue: "62%", rightValue: "57%", leftPercent: 62, rightPercent: 57 },
+        { label: "Median Solve Time", leftValue: "23m", rightValue: "26m", leftPercent: 88, rightPercent: 100 },
+        { label: "Attempts to Solve", leftValue: "4.0", rightValue: "4.7", leftPercent: 85, rightPercent: 100 },
+        { label: "Post-Hint Solve", leftValue: "44%", rightValue: "36%", leftPercent: 44, rightPercent: 36 },
+        { label: "Hint Usage", leftValue: "49%", rightValue: "31%", leftPercent: 100, rightPercent: 63 },
+      ],
+    },
+  },
+  {
+    contestId: "arrays-strings",
+    contestLabel: "Arrays & Strings",
+    groups: {
+      "group-a:group-b": [
+        { label: "Solve Rate", leftValue: "76%", rightValue: "69%", leftPercent: 76, rightPercent: 69 },
+        { label: "Median Solve Time", leftValue: "12m", rightValue: "16m", leftPercent: 75, rightPercent: 56 },
+        { label: "Attempts to Solve", leftValue: "2.2", rightValue: "3.1", leftPercent: 71, rightPercent: 100 },
+        { label: "Post-Hint Solve", leftValue: "61%", rightValue: "55%", leftPercent: 61, rightPercent: 55 },
+        { label: "Hint Usage", leftValue: "29%", rightValue: "38%", leftPercent: 76, rightPercent: 100 },
+      ],
+      "group-a:group-c": [
+        { label: "Solve Rate", leftValue: "76%", rightValue: "63%", leftPercent: 76, rightPercent: 63 },
+        { label: "Median Solve Time", leftValue: "12m", rightValue: "21m", leftPercent: 57, rightPercent: 100 },
+        { label: "Attempts to Solve", leftValue: "2.2", rightValue: "4.0", leftPercent: 55, rightPercent: 100 },
+        { label: "Post-Hint Solve", leftValue: "61%", rightValue: "41%", leftPercent: 61, rightPercent: 41 },
+        { label: "Hint Usage", leftValue: "29%", rightValue: "24%", leftPercent: 100, rightPercent: 83 },
+      ],
+      "group-b:group-c": [
+        { label: "Solve Rate", leftValue: "69%", rightValue: "63%", leftPercent: 69, rightPercent: 63 },
+        { label: "Median Solve Time", leftValue: "16m", rightValue: "21m", leftPercent: 76, rightPercent: 100 },
+        { label: "Attempts to Solve", leftValue: "3.1", rightValue: "4.0", leftPercent: 78, rightPercent: 100 },
+        { label: "Post-Hint Solve", leftValue: "55%", rightValue: "41%", leftPercent: 55, rightPercent: 41 },
+        { label: "Hint Usage", leftValue: "38%", rightValue: "24%", leftPercent: 100, rightPercent: 63 },
+      ],
+    },
+  },
+];
+
+export const gamificationTrendsByRange: Record<string, TrendDataset> = {
+  "1w": {
+    xLabels: ["Week 1", "Week 2", "Week 3", "Week 4"],
+    xValues: [4, 11, 19, 27],
+    xGroups: [{ label: "2026 Spring", start: 0, end: 30 }],
+    series: [
+      { label: "Participation Rate", color: ANALYSIS_CHART_COLORS.primary, data: [74, 69, 82, 77] },
+      { label: "Completion Rate", color: ANALYSIS_CHART_COLORS.secondary, data: [58, 51, 67, 63] },
+      { label: "Repeat Attempts", color: ANALYSIS_CHART_COLORS.accent, data: [26, 34, 21, 24] },
+    ],
+  },
+  "1m": buildTrendDataset(
+    [
+      { label: "Week 3 Lab", value: 4, semester: "2026 Spring" },
+      { label: "Trees & Graphs", value: 12, semester: "2026 Spring" },
+      { label: "Arrays & Strings", value: 21, semester: "2026 Spring" },
+      { label: "DP Sprint", value: 29, semester: "2026 Spring" },
+      { label: "Recursion Relay", value: 37, semester: "2026 Spring" },
+      { label: "Heap and Hash", value: 46, semester: "2026 Spring" },
+    ],
+    [
+      { label: "Participation Rate", color: ANALYSIS_CHART_COLORS.primary, data: [84, 71, 89, 86, 74, 78] },
+      { label: "Completion Rate", color: ANALYSIS_CHART_COLORS.secondary, data: [68, 52, 76, 72, 59, 64] },
+      { label: "Repeat Attempts", color: ANALYSIS_CHART_COLORS.accent, data: [31, 43, 24, 28, 34, 26] },
+    ],
+  ),
+  "1s": buildTrendDataset(
+    [
+      { label: "Warmup", value: 14, semester: "2025 Fall" },
+      { label: "Week 3 Lab", value: 58, semester: "2026 Spring" },
+      { label: "Trees & Graphs", value: 91, semester: "2026 Spring" },
+      { label: "Arrays & Strings", value: 146, semester: "2026 Summer" },
+      { label: "Recursion Relay", value: 183, semester: "2026 Summer" },
+      { label: "Heap and Hash", value: 216, semester: "2026 Summer" },
+    ],
+    [
+      { label: "Participation Rate", color: ANALYSIS_CHART_COLORS.primary, data: [62, 78, 71, 83, 69, 75] },
+      { label: "Completion Rate", color: ANALYSIS_CHART_COLORS.secondary, data: [45, 61, 53, 70, 56, 62] },
+      { label: "Repeat Attempts", color: ANALYSIS_CHART_COLORS.accent, data: [19, 27, 36, 23, 31, 25] },
+    ],
+  ),
+  "1y": buildTrendDataset(
+    [
+      { label: "Intro Lab", value: 28, semester: "2025 Spring" },
+      { label: "Summer Sprint", value: 121, semester: "2025 Summer" },
+      { label: "Warmup", value: 216, semester: "2025 Fall" },
+      { label: "Week 3 Lab", value: 309, semester: "2026 Spring" },
+      { label: "Trees & Graphs", value: 356, semester: "2026 Spring" },
+      { label: "Recursion Relay", value: 402, semester: "2026 Summer" },
+      { label: "Heap and Hash", value: 449, semester: "2026 Summer" },
+    ],
+    [
+      { label: "Participation Rate", color: ANALYSIS_CHART_COLORS.primary, data: [57, 74, 68, 81, 73, 69, 77] },
+      { label: "Completion Rate", color: ANALYSIS_CHART_COLORS.secondary, data: [39, 58, 49, 66, 57, 54, 61] },
+      { label: "Repeat Attempts", color: ANALYSIS_CHART_COLORS.accent, data: [15, 25, 33, 22, 29, 31, 24] },
+    ],
+  ),
+  all: buildTrendDataset(
+    [
+      { label: "Intro Lab", value: 34, semester: "2023 Spring" },
+      { label: "Summer Sprint", value: 149, semester: "2023 Summer" },
+      { label: "Graph Warmup", value: 273, semester: "2023 Fall" },
+      { label: "Week 3 Lab", value: 398, semester: "2024 Spring" },
+      { label: "Arrays Camp", value: 512, semester: "2024 Summer" },
+      { label: "Trees & Graphs", value: 639, semester: "2024 Fall" },
+      { label: "Dynamic Programming", value: 759, semester: "2025 Spring" },
+      { label: "Strings Marathon", value: 874, semester: "2025 Summer" },
+      { label: "Greedy Open", value: 998, semester: "2025 Fall" },
+      { label: "AI Hint Trial", value: 1116, semester: "2026 Spring" },
+      { label: "Recursion Relay", value: 1191, semester: "2026 Summer" },
+      { label: "Heap and Hash", value: 1268, semester: "2026 Summer" },
+    ],
+    [
+      { label: "Participation Rate", color: ANALYSIS_CHART_COLORS.primary, data: [48, 53, 50, 61, 64, 59, 68, 72, 75, 81, 73, 77] },
+      { label: "Completion Rate", color: ANALYSIS_CHART_COLORS.secondary, data: [30, 34, 33, 42, 46, 43, 52, 57, 61, 66, 58, 63] },
+      { label: "Repeat Attempts", color: ANALYSIS_CHART_COLORS.accent, data: [11, 13, 15, 18, 20, 24, 28, 26, 30, 22, 27, 24] },
+    ],
+  ),
+};
+
+export const gamificationSummaryStatsByRange: Record<string, AnalyticsSummaryStat[]> = {
+  "1w": [
+    { label: "Peak Participation", value: "82%", caption: "2026 Spring · Week 3", tone: "primary" },
+    { label: "Peak Completion", value: "67%", caption: "2026 Spring · Week 3", tone: "secondary" },
+    { label: "Most Repeat Attempts", value: "34%", caption: "2026 Spring · Week 2", tone: "accent" },
+  ],
+  "1m": [
+    { label: "Peak Participation", value: "89%", caption: "2026 Spring · Arrays & Strings", tone: "primary" },
+    { label: "Peak Completion", value: "76%", caption: "2026 Spring · Arrays & Strings", tone: "secondary" },
+    { label: "Most Repeat Attempts", value: "43%", caption: "2026 Spring · Trees & Graphs", tone: "accent" },
+  ],
+  "1s": [
+    { label: "Peak Participation", value: "83%", caption: "2026 Summer · Arrays & Strings", tone: "primary" },
+    { label: "Peak Completion", value: "70%", caption: "2026 Summer · Arrays & Strings", tone: "secondary" },
+    { label: "Most Repeat Attempts", value: "36%", caption: "2026 Spring · Trees & Graphs", tone: "accent" },
+  ],
+  "1y": [
+    { label: "Peak Participation", value: "81%", caption: "2026 Spring · Week 3 Lab", tone: "primary" },
+    { label: "Peak Completion", value: "66%", caption: "2026 Spring · Week 3 Lab", tone: "secondary" },
+    { label: "Most Repeat Attempts", value: "33%", caption: "2025 Fall · Warmup", tone: "accent" },
+  ],
+  all: [
+    { label: "Peak Participation", value: "81%", caption: "2026 Spring · AI Hint Trial", tone: "primary" },
+    { label: "Peak Completion", value: "66%", caption: "2026 Spring · AI Hint Trial", tone: "secondary" },
+    { label: "Most Repeat Attempts", value: "30%", caption: "2025 Fall · Greedy Open", tone: "accent" },
+  ],
+};
+
+export const aiHintTrendsByRange: Record<string, TrendDataset> = {
+  "1w": {
+    xLabels: ["Week 1", "Week 2", "Week 3", "Week 4"],
+    xValues: [4, 11, 19, 27],
+    xGroups: [{ label: "2026 Spring", start: 0, end: 30 }],
+    series: [
+      { label: "Hint Usage Rate", color: ANALYSIS_CHART_COLORS.primary, data: [28, 34, 22, 30] },
+      { label: "Post-Hint Solve Rate", color: ANALYSIS_CHART_COLORS.secondary, data: [54, 49, 58, 56] },
+      { label: "Attempts After Hint", color: ANALYSIS_CHART_COLORS.accent, data: [16, 22, 13, 17] },
+    ],
+  },
+  "1m": buildTrendDataset(
+    [
+      { label: "Week 3 Lab", value: 4, semester: "2026 Spring" },
+      { label: "Trees & Graphs", value: 12, semester: "2026 Spring" },
+      { label: "Arrays & Strings", value: 21, semester: "2026 Spring" },
+      { label: "DP Sprint", value: 29, semester: "2026 Spring" },
+      { label: "Recursion Relay", value: 37, semester: "2026 Spring" },
+      { label: "Heap and Hash", value: 46, semester: "2026 Spring" },
+    ],
+    [
+      { label: "Hint Usage Rate", color: ANALYSIS_CHART_COLORS.primary, data: [36, 44, 28, 33, 39, 31] },
+      { label: "Post-Hint Solve Rate", color: ANALYSIS_CHART_COLORS.secondary, data: [58, 49, 61, 57, 54, 63] },
+      { label: "Attempts After Hint", color: ANALYSIS_CHART_COLORS.accent, data: [18, 27, 14, 16, 21, 15] },
+    ],
+  ),
+  "1s": buildTrendDataset(
+    [
+      { label: "Warmup", value: 14, semester: "2025 Fall" },
+      { label: "Week 3 Lab", value: 58, semester: "2026 Spring" },
+      { label: "Trees & Graphs", value: 91, semester: "2026 Spring" },
+      { label: "Arrays & Strings", value: 146, semester: "2026 Summer" },
+      { label: "Recursion Relay", value: 183, semester: "2026 Summer" },
+      { label: "Heap and Hash", value: 216, semester: "2026 Summer" },
+    ],
+    [
+      { label: "Hint Usage Rate", color: ANALYSIS_CHART_COLORS.primary, data: [18, 29, 41, 26, 35, 28] },
+      { label: "Post-Hint Solve Rate", color: ANALYSIS_CHART_COLORS.secondary, data: [46, 55, 48, 60, 52, 59] },
+      { label: "Attempts After Hint", color: ANALYSIS_CHART_COLORS.accent, data: [11, 16, 24, 13, 18, 14] },
+    ],
+  ),
+  "1y": buildTrendDataset(
+    [
+      { label: "Intro Lab", value: 28, semester: "2025 Spring" },
+      { label: "Summer Sprint", value: 121, semester: "2025 Summer" },
+      { label: "Warmup", value: 216, semester: "2025 Fall" },
+      { label: "Week 3 Lab", value: 309, semester: "2026 Spring" },
+      { label: "Trees & Graphs", value: 356, semester: "2026 Spring" },
+      { label: "Recursion Relay", value: 402, semester: "2026 Summer" },
+      { label: "Heap and Hash", value: 449, semester: "2026 Summer" },
+    ],
+    [
+      { label: "Hint Usage Rate", color: ANALYSIS_CHART_COLORS.primary, data: [15, 27, 39, 25, 34, 31, 26] },
+      { label: "Post-Hint Solve Rate", color: ANALYSIS_CHART_COLORS.secondary, data: [42, 53, 47, 58, 51, 55, 60] },
+      { label: "Attempts After Hint", color: ANALYSIS_CHART_COLORS.accent, data: [9, 15, 22, 12, 18, 17, 13] },
+    ],
+  ),
+  all: buildTrendDataset(
+    [
+      { label: "Intro Lab", value: 34, semester: "2023 Spring" },
+      { label: "Summer Sprint", value: 149, semester: "2023 Summer" },
+      { label: "Graph Warmup", value: 273, semester: "2023 Fall" },
+      { label: "Week 3 Lab", value: 398, semester: "2024 Spring" },
+      { label: "Arrays Camp", value: 512, semester: "2024 Summer" },
+      { label: "Trees & Graphs", value: 639, semester: "2024 Fall" },
+      { label: "Dynamic Programming", value: 759, semester: "2025 Spring" },
+      { label: "Strings Marathon", value: 874, semester: "2025 Summer" },
+      { label: "Greedy Open", value: 998, semester: "2025 Fall" },
+      { label: "AI Hint Trial", value: 1116, semester: "2026 Spring" },
+      { label: "Recursion Relay", value: 1191, semester: "2026 Summer" },
+      { label: "Heap and Hash", value: 1268, semester: "2026 Summer" },
+    ],
+    [
+      { label: "Hint Usage Rate", color: ANALYSIS_CHART_COLORS.primary, data: [10, 13, 16, 21, 24, 31, 35, 33, 38, 29, 34, 27] },
+      { label: "Post-Hint Solve Rate", color: ANALYSIS_CHART_COLORS.secondary, data: [36, 39, 41, 46, 49, 53, 57, 55, 58, 60, 56, 62] },
+      { label: "Attempts After Hint", color: ANALYSIS_CHART_COLORS.accent, data: [6, 8, 9, 11, 13, 16, 19, 17, 20, 14, 18, 15] },
+    ],
+  ),
+};
 
 export const hintTimingDistributionRows: TimingDistributionItem[] = [
   { label: "Before first attempt", value: "8%" },
@@ -529,6 +872,10 @@ export interface ResearchAnalyticsDataset {
   timelineAxisTicks: string[];
   policyConditionPanels: ConditionSummaryPanel[];
   policyKeyFindings: KeyFinding[];
+  contestGroupComparisons: ContestGroupComparison[];
+  gamificationTrendsByRange: Record<string, TrendDataset>;
+  gamificationSummaryStatsByRange: Record<string, AnalyticsSummaryStat[]>;
+  aiHintTrendsByRange: Record<string, TrendDataset>;
   hintTimingDistributionRows: TimingDistributionItem[];
   hintDepthDistributionRows: HintDepthDistributionItem[];
   engagementMetricCards: EngagementMetricCard[];
@@ -553,6 +900,10 @@ export const mockResearchAnalyticsDataset: ResearchAnalyticsDataset = {
   timelineAxisTicks,
   policyConditionPanels,
   policyKeyFindings,
+  contestGroupComparisons,
+  gamificationTrendsByRange,
+  gamificationSummaryStatsByRange,
+  aiHintTrendsByRange,
   hintTimingDistributionRows,
   hintDepthDistributionRows,
   engagementMetricCards,
