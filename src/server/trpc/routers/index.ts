@@ -3,6 +3,7 @@ import { contestAuthoringRouter } from "./contestAuthoring";
 import { dashboardMetadataRouter } from "./dashboardMetadata";
 import { instructorManageContentRouter } from "./instructorManageContent";
 import { problemAuthoringRouter } from "./problemAuthoring";
+import { instructorDashboardRouter } from "./instructorDashboard";
 import { practiceRouter } from "./practice";
 import { practiceExecutionRouter } from "./practiceExecution";
 
