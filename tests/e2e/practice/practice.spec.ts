@@ -218,7 +218,7 @@ test.describe("Practice problem submission page", () => {
     await submitBtn.click();
 
     // "Output" label renders immediately when hasRun=true
-    await expect(page.getByText("Output")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText("Output", { exact: true })).toBeVisible({ timeout: 5000 });
     await expect(
       page.getByText(/queued for gemini judging|judging your code/i),
     ).toBeVisible({ timeout: 5000 });

@@ -2,8 +2,12 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import type { ManageLifecycleStatus } from "@prisma/client";
 import { can } from "@/lib/authz";
+import type { ManagedContestStatus, ManagedProblemStatus } from "@/fe/shared/constants/manageContent";
 import type { Context } from "../init";
 import { publicProcedure, router } from "../init";
+
+type ManagedContestDisplayStatus = ManagedContestStatus;
+type ManagedProblemDisplayStatus = ManagedProblemStatus;
 
 
 function formatDateTime(value: Date | null | undefined) {
