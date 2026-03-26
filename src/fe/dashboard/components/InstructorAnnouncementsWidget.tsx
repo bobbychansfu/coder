@@ -9,9 +9,13 @@ import type { ActivityItemData } from "@/fe/shared/types/common";
 import styles from "@/fe/dashboard/styles/InstructorAnnouncementsWidget.module.css";
 
 const activityIconMap = {
+  danger: TrendingUpOutlinedIcon,
+  warning: TrendingUpOutlinedIcon,
   success: DescriptionOutlinedIcon,
   info: TrendingUpOutlinedIcon,
+  purple: GroupAddOutlinedIcon,
   highlight: GroupAddOutlinedIcon,
+  neutral: DescriptionOutlinedIcon,
 };
 
 interface InstructorAnnouncementsWidgetProps {
