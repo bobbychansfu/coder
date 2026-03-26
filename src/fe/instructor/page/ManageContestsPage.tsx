@@ -102,7 +102,12 @@ export default function ManageContestsPage() {
 
   const { data, isLoading, error } = trpc.instructorManageContent.getManageContent.useQuery(
     undefined,
-    { retry: false },
+    {
+      retry: false,
+      refetchOnWindowFocus: true,
+      refetchInterval: 60_000,
+      refetchIntervalInBackground: false,
+    },
   );
   const contestStatusMutation = trpc.instructorManageContent.updateContestManageStatus.useMutation({
     onSuccess: async () => {
