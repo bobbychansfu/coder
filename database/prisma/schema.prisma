@@ -20,7 +20,11 @@ enum ContestStatus {
   ENDED
 }
 
+// DRAFT is a retired value — never written by application code.
+// Problem draft state is tracked via Problem.isDraft (Boolean).
+// Contest draft state is tracked via ContestStatus.DRAFT.
 enum ManageLifecycleStatus {
+  DRAFT
   ACTIVE
   ARCHIVED
   DELETED
@@ -195,6 +199,7 @@ model Problem {
   exampleOutput      String?
   exampleExplanation String?
   difficulty         String
+  isDraft            Boolean               @default(false)
   manageStatus       ManageLifecycleStatus @default(ACTIVE)
   visible            String?
   ap                 Int?

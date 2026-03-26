@@ -130,7 +130,7 @@ export default function ProfilePage() {
     <div className={styles.page}>
       <Link href="/" className={styles.backLink}>
         <ArrowBackOutlinedIcon className={styles.backIcon} />
-        Back to Dashboard
+        Back
       </Link>
 
       <div className={styles.layout}>

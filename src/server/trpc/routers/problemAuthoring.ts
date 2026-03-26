@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import type { CodingLanguage, ManageLifecycleStatus, Prisma } from "@prisma/client";
+import type { CodingLanguage, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { can } from "@/lib/authz";
 import {
@@ -11,8 +11,8 @@ import type { Context } from "../init";
 import { publicProcedure, router } from "../init";
 
 const starterLanguageSchema = z.enum(APP_LANGUAGES);
-const visibilitySchema = z.enum(["course-only", "public", "private"]);
 const difficultySchema = z.enum(["easy", "medium", "hard"]);
+const problemSourceSchema = z.enum(["contest-only", "public"]);
 
 const generatedStarterCodesSchema = z
   .object({
@@ -44,11 +44,12 @@ const problemMutationSchema = z.object({
   difficulty: difficultySchema,
   points: z.number().int().nonnegative(),
   tags: z.array(z.string()).default([]),
-  visibility: visibilitySchema,
-  statement: z.string().trim().min(1, "Problem statement is required."),
-  inputFormat: z.string().trim().min(1, "Input format is required."),
-  outputFormat: z.string().trim().min(1, "Output format is required."),
-  constraints: z.string().trim().min(1, "Constraints are required."),
+  isDraft: z.boolean().default(false),
+  source: problemSourceSchema.default("public"),
+  statement: z.string().trim().default(""),
+  inputFormat: z.string().trim().default(""),
+  outputFormat: z.string().trim().default(""),
+  constraints: z.string().trim().default(""),
   examples: z
     .array(problemExampleSchema)
     .max(1, "Only one example is currently supported.")
@@ -62,11 +63,12 @@ const problemPatchSchema = z
     difficulty: difficultySchema.optional(),
     points: z.number().int().nonnegative().optional(),
     tags: z.array(z.string()).optional(),
-    visibility: visibilitySchema.optional(),
-    statement: z.string().trim().min(1, "Problem statement is required.").optional(),
-    inputFormat: z.string().trim().min(1, "Input format is required.").optional(),
-    outputFormat: z.string().trim().min(1, "Output format is required.").optional(),
-    constraints: z.string().trim().min(1, "Constraints are required.").optional(),
+    isDraft: z.boolean().optional(),
+    source: problemSourceSchema.optional(),
+    statement: z.string().trim().optional(),
+    inputFormat: z.string().trim().optional(),
+    outputFormat: z.string().trim().optional(),
+    constraints: z.string().trim().optional(),
     examples: z
       .array(problemExampleSchema)
       .max(1, "Only one example is currently supported.")
@@ -231,8 +233,11 @@ function buildStarterCodeRows(
     .filter((entry) => entry.code.length > 0);
 }
 
-function mapProblemManageStatus(status: ManageLifecycleStatus) {
-  return status.toLowerCase();
+function getProblemDisplayStatus(isDraft: boolean, manageStatus: string) {
+  if (manageStatus === "ARCHIVED") return "archived";
+  if (manageStatus === "DELETED") return "deleted";
+  if (isDraft) return "draft";
+  return "active";
 }
 
 function hasOwnKey<T extends object>(
@@ -425,7 +430,7 @@ export const problemAuthoringRouter = router({
         difficulty: problem.difficulty.toLowerCase() as z.infer<typeof difficultySchema>,
         points: problem.points ?? 0,
         tags: problem.topics.map((topic) => topic.name),
-        visibility: (problem.visible ?? "course-only") as z.infer<typeof visibilitySchema>,
+        source: (problem.source === "CONTEST" ? "contest-only" : "public") as z.infer<typeof problemSourceSchema>,
         statement: problem.statement,
         inputFormat: problem.inputFormat ?? "",
         outputFormat: problem.outputFormat ?? "",
@@ -439,7 +444,8 @@ export const problemAuthoringRouter = router({
           },
         ],
         starterCodes,
-        manageStatus: mapProblemManageStatus(problem.manageStatus),
+        isDraft: problem.isDraft,
+        manageStatus: getProblemDisplayStatus(problem.isDraft, problem.manageStatus),
       };
     }),
 
@@ -464,10 +470,11 @@ export const problemAuthoringRouter = router({
           exampleOutput: primaryExample.output.trim() || null,
           exampleExplanation: primaryExample.explanation.trim() || null,
           difficulty: normalizeDifficulty(input.difficulty),
-          visible: input.visibility,
           author: dbUser.computingId,
           points: input.points,
-          source: "BOTH",
+          isDraft: input.isDraft,
+          manageStatus: "ACTIVE",
+          source: input.source === "contest-only" ? "CONTEST" : "BOTH",
           starterCodes: starterCodeRows.length
             ? {
                 create: starterCodeRows,
@@ -559,8 +566,12 @@ export const problemAuthoringRouter = router({
           problemUpdateData.difficulty = normalizeDifficulty(input.data.difficulty);
         }
 
-        if (hasOwnKey(input.data, "visibility") && input.data.visibility) {
-          problemUpdateData.visible = input.data.visibility;
+        if (hasOwnKey(input.data, "isDraft") && input.data.isDraft !== undefined) {
+          problemUpdateData.isDraft = input.data.isDraft;
+        }
+
+        if (hasOwnKey(input.data, "source") && input.data.source) {
+          problemUpdateData.source = input.data.source === "contest-only" ? "CONTEST" : "BOTH";
         }
 
         if (hasOwnKey(input.data, "points") && input.data.points !== undefined) {
