@@ -20,9 +20,9 @@ import type { AdminContest, AdminContestStatus, AdminContestVisibility } from "@
 import styles from "@/fe/admin/styles/ContestTable.module.css";
 
 const statusChipConfig: Record<AdminContestStatus, { label: string; className: string }> = {
-  upcoming: { label: "upcoming", className: styles.statusChipUpcoming },
-  active: { label: "active", className: styles.statusChipActive },
-  ended: { label: "ended", className: styles.statusChipEnded },
+  upcoming: { label: "Upcoming", className: styles.statusChipUpcoming },
+  active: { label: "In Progress", className: styles.statusChipActive },
+  ended: { label: "Closed", className: styles.statusChipEnded },
 };
 
 const visibilityChipConfig: Record<AdminContestVisibility, { label: string; className: string }> =

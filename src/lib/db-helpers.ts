@@ -15,6 +15,7 @@ export const dbHelpers = {
     return prisma.problem.findFirst({
       where: {
         id: problemId,
+        isDraft: false,
         manageStatus: "ACTIVE",
       },
     });
@@ -24,6 +25,7 @@ export const dbHelpers = {
     return prisma.problem.findFirst({
       where: {
         code,
+        isDraft: false,
         manageStatus: "ACTIVE",
       },
     });
@@ -91,7 +93,7 @@ export const dbHelpers = {
       where: {
         contestId,
         contest: { manageStatus: "ACTIVE" },
-        problem: { manageStatus: "ACTIVE" },
+        problem: { isDraft: false, manageStatus: "ACTIVE" },
       },
       include: {
         problem: {
@@ -114,7 +116,7 @@ export const dbHelpers = {
       where: {
         contestId,
         contest: { manageStatus: "ACTIVE" },
-        problem: { manageStatus: "ACTIVE" },
+        problem: { isDraft: false, manageStatus: "ACTIVE" },
       },
       include: { problem: true },
       orderBy: { ordering: "asc" },

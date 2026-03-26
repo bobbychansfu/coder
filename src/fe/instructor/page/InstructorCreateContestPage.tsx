@@ -108,7 +108,7 @@ function getDifficultyBadgeClassName(difficulty: ContestDifficulty) {
 }
 
 interface SelectableContestProblemRecord extends ContestProblemRecord {
-  manageStatus?: string;
+  isDraft?: boolean;
 }
 
 export default function InstructorCreateContestPage() {
@@ -134,12 +134,12 @@ export default function InstructorCreateContestPage() {
   });
   const createContestMutation = trpc.contestAuthoring.createContest.useMutation();
   const updateContestMutation = trpc.contestAuthoring.updateContest.useMutation();
-
   const headerActions: SubpageActionButtonItem[] = [
     {
       id: "save-draft",
       label: contestAuthoringCopy.saveDraftLabel,
       icon: SaveOutlinedIcon,
+      onClick: () => void handleSaveDraft(),
     },
     {
       id: "preview",
@@ -343,6 +343,7 @@ export default function InstructorCreateContestPage() {
           contestId,
           data: {
             ...formValues,
+            isDraft: false,
             aiHintEnabled,
             selectedProblemIds,
           },
@@ -350,6 +351,7 @@ export default function InstructorCreateContestPage() {
       } else {
         await createContestMutation.mutateAsync({
           ...formValues,
+          isDraft: false,
           aiHintEnabled,
           selectedProblemIds,
         });
@@ -357,12 +359,55 @@ export default function InstructorCreateContestPage() {
 
       await Promise.all([
         utils.instructorManageContent.getManageContent.invalidate(),
+        utils.instructorManageContent.getInstructorOverview.invalidate(),
         utils.contestAuthoring.getContestById.invalidate({ contestId: contestId ?? "" }),
       ]);
 
       router.push(ROUTES.instructorManageContests);
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : "Unable to save the contest.");
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    if (!formValues.contestName.trim()) {
+      setSaveError("Contest name is required to save a draft.");
+      return;
+    }
+
+    setSaveError(null);
+
+    try {
+      if (isEditMode && contestId) {
+        await updateContestMutation.mutateAsync({
+          contestId,
+          data: {
+            ...formValues,
+            isDraft: true,
+            aiHintEnabled,
+            selectedProblemIds,
+          },
+        });
+        await Promise.all([
+          utils.instructorManageContent.getInstructorOverview.invalidate(),
+          utils.contestAuthoring.getContestById.invalidate({ contestId }),
+        ]);
+        router.push(ROUTES.instructorManageContests);
+      } else {
+        await createContestMutation.mutateAsync({
+          ...formValues,
+          isDraft: true,
+          aiHintEnabled,
+          selectedProblemIds,
+        });
+        await Promise.all([
+          utils.instructorManageContent.getManageContent.invalidate(),
+          utils.instructorManageContent.getInstructorOverview.invalidate(),
+        ]);
+        router.push(ROUTES.instructorManageContests);
+      }
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Unable to save draft.");
     }
   };
 

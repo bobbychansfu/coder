@@ -10,13 +10,14 @@ const visibilitySchema = z.enum(["course-only", "public", "private"]);
 const contestMutationSchema = z.object({
   contestName: z.string().trim().min(1, "Contest name is required."),
   description: z.string(),
-  startDate: z.string().trim().min(1, "Start date is required."),
-  startTime: z.string().trim().min(1, "Start time is required."),
+  startDate: z.string(),
+  startTime: z.string(),
   endDate: z.string(),
   endTime: z.string(),
   visibility: visibilitySchema,
   aiHintEnabled: z.boolean(),
-  selectedProblemIds: z.array(z.string().min(1)).min(1, "Select at least one problem."),
+  isDraft: z.boolean().default(false),
+  selectedProblemIds: z.array(z.string().min(1)).default([]),
 });
 
 const contestPatchSchema = z
@@ -29,7 +30,8 @@ const contestPatchSchema = z
     endTime: z.string().optional(),
     visibility: visibilitySchema.optional(),
     aiHintEnabled: z.boolean().optional(),
-    selectedProblemIds: z.array(z.string().min(1)).min(1, "Select at least one problem.").optional(),
+    isDraft: z.boolean().optional(),
+    selectedProblemIds: z.array(z.string().min(1)).optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field must be provided.",
@@ -181,7 +183,7 @@ export const contestAuthoringRouter = router({
       difficulty: problem.difficulty.toLowerCase() as "easy" | "medium" | "hard",
       points: problem.points ?? 0,
       tags: problem.topics.map((topic) => topic.name),
-      manageStatus: problem.manageStatus.toLowerCase(),
+      isDraft: problem.isDraft,
     }));
   }),
 
@@ -227,6 +229,7 @@ export const contestAuthoringRouter = router({
         endTime: contest.endsAt ? formatTimeInput(contest.endsAt) : "",
         visibility: toUiVisibility(contest.visibility),
         aiHintEnabled: contest.aiHintEnabled,
+        status: contest.status,
         selectedProblemIds: contest.contestProblems.map((entry) => entry.problemId),
         selectedProblems: contest.contestProblems.map((entry) => ({
           id: entry.problem.id,
@@ -243,7 +246,25 @@ export const contestAuthoringRouter = router({
     .input(contestMutationSchema)
     .mutation(async ({ ctx, input }) => {
       const dbUser = await getContestAuthoringUserOrThrow(ctx);
-      const startsAt = parseDateTime(input.startDate, input.startTime, "start date/time");
+
+      if (!input.isDraft && input.selectedProblemIds.length === 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Select at least one problem.",
+        });
+      }
+
+      const hasStartSchedule = input.startDate.trim() && input.startTime.trim();
+      if (!input.isDraft && !hasStartSchedule) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Start date and start time are required.",
+        });
+      }
+
+      const startsAt = hasStartSchedule
+        ? parseDateTime(input.startDate, input.startTime, "start date/time")
+        : new Date();
       const hasEnd = input.endDate.trim() || input.endTime.trim();
       const endsAt = hasEnd
         ? parseDateTime(input.endDate.trim(), input.endTime.trim(), "end date/time")
@@ -256,21 +277,23 @@ export const contestAuthoringRouter = router({
         });
       }
 
-      const problems = await ctx.prisma.problem.findMany({
-        where: {
-          id: { in: input.selectedProblemIds },
-          manageStatus: {
-            not: "DELETED",
+      if (input.selectedProblemIds.length > 0) {
+        const problems = await ctx.prisma.problem.findMany({
+          where: {
+            id: { in: input.selectedProblemIds },
+            manageStatus: {
+              not: "DELETED",
+            },
           },
-        },
-        select: { id: true },
-      });
-
-      if (problems.length !== input.selectedProblemIds.length) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "One or more selected problems cannot be used in this contest.",
+          select: { id: true },
         });
+
+        if (problems.length !== input.selectedProblemIds.length) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "One or more selected problems cannot be used in this contest.",
+          });
+        }
       }
 
       const slug = await ensureUniqueContestSlug(ctx, input.contestName);
@@ -290,7 +313,7 @@ export const contestAuthoringRouter = router({
             durationMinutes,
             aiHintEnabled: input.aiHintEnabled,
             published: true,
-            status: computeContestStatus(startsAt, endsAt),
+            status: input.isDraft ? "DRAFT" : computeContestStatus(startsAt, endsAt),
             instructorId: dbUser.id,
           },
           select: { id: true },
@@ -408,7 +431,7 @@ export const contestAuthoringRouter = router({
           select: { id: true },
         });
 
-        if (problems.length !== input.data.selectedProblemIds.length) {
+        if (problems.length !== (input.data.selectedProblemIds ?? []).length) {
           throw new TRPCError({
             code: "BAD_REQUEST",
             message: "One or more selected problems cannot be used in this contest.",
@@ -435,6 +458,14 @@ export const contestAuthoringRouter = router({
           contestUpdateData.aiHintEnabled = input.data.aiHintEnabled;
         }
 
+        if (hasOwnKey(input.data, "isDraft") && input.data.isDraft !== undefined) {
+          if (input.data.isDraft) {
+            contestUpdateData.status = "DRAFT";
+          } else if (!scheduleChanged) {
+            contestUpdateData.status = computeContestStatus(startsAt, endsAt);
+          }
+        }
+
         if (scheduleChanged) {
           const durationMinutes = endsAt
             ? Math.max(1, Math.round((endsAt.getTime() - startsAt.getTime()) / 60000))
@@ -443,7 +474,9 @@ export const contestAuthoringRouter = router({
           contestUpdateData.startsAt = startsAt;
           contestUpdateData.endsAt = endsAt;
           contestUpdateData.durationMinutes = durationMinutes;
-          contestUpdateData.status = computeContestStatus(startsAt, endsAt);
+          if (!input.data.isDraft) {
+            contestUpdateData.status = computeContestStatus(startsAt, endsAt);
+          }
         }
 
         if (Object.keys(contestUpdateData).length > 0) {

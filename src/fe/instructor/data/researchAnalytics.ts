@@ -193,7 +193,7 @@ export const consentOptions: FilterOption[] = [
 ];
 
 export const researchAnalyticsCopy: ResearchAnalyticsCopy = {
-  backButtonLabel: "Back to Instructor Hub",
+  backButtonLabel: "Back",
   pageTitle: "Research Analytics Dashboard",
   pageSubtitle: "A/B testing platform for hint timing systems in competitive programming",
   exportDataLabel: "Export Data",

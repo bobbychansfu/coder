@@ -51,7 +51,7 @@ import {
 import AuthoringPageShell from "@/fe/shared/components/authoring/AuthoringPageShell";
 import AuthoringStepTabs from "@/fe/shared/components/authoring/AuthoringStepTabs";
 import { ROUTES } from "@/fe/shared/constants/routes";
-import { DIFFICULTY_OPTIONS, LANGUAGE_OPTIONS, PROBLEM_TAG_GROUPS, VISIBILITY_OPTIONS } from "@/fe/shared/constants/options";
+import { DIFFICULTY_OPTIONS, LANGUAGE_OPTIONS, PROBLEM_SOURCE_OPTIONS, PROBLEM_TAG_GROUPS } from "@/fe/shared/constants/options";
 import { trpc } from "@/lib/trpc/client";
 import subpageStyles from "@/fe/instructor/styles/InstructorSubpageHeader.module.css";
 import styles from "@/fe/instructor/styles/InstructorCreateProblemPage.module.css";
@@ -110,6 +110,7 @@ export default function InstructorCreateProblemPage() {
       id: "save-draft",
       label: problemAuthoringCopy.saveDraftLabel,
       icon: SaveOutlinedIcon,
+      onClick: () => void handleSaveDraft(),
     },
     {
       id: "import-csv",
@@ -140,7 +141,7 @@ export default function InstructorCreateProblemPage() {
         difficulty: problemQuery.data.difficulty,
         points: String(problemQuery.data.points),
         tags: problemQuery.data.tags,
-        visibility: problemQuery.data.visibility,
+        source: problemQuery.data.source,
       });
       setStatementValues({
         statement: problemQuery.data.statement,
@@ -190,12 +191,12 @@ export default function InstructorCreateProblemPage() {
     );
   }, [metadataValues.difficulty]);
 
-  const visibilityLabel = useMemo(() => {
+  const sourceLabel = useMemo(() => {
     return (
-      VISIBILITY_OPTIONS.find((option) => option.value === metadataValues.visibility)?.label ??
-      "contest-only"
+      PROBLEM_SOURCE_OPTIONS.find((option) => option.value === metadataValues.source)?.label ??
+      "Public (Practice + Contests)"
     );
-  }, [metadataValues.visibility]);
+  }, [metadataValues.source]);
 
   const completedExamplesCount = useMemo(() => {
     return examples.filter((example) => example.input.trim() && example.output.trim()).length;
@@ -210,7 +211,7 @@ export default function InstructorCreateProblemPage() {
   const metadataComplete = Boolean(
     metadataValues.title.trim() &&
       metadataValues.points.trim() &&
-      metadataValues.visibility.trim() &&
+      metadataValues.source.trim() &&
       metadataValues.difficulty.trim(),
   );
   const statementComplete = Boolean(
@@ -237,9 +238,11 @@ export default function InstructorCreateProblemPage() {
         <Chip
           label={
             isEditMode
-              ? problemQuery.data?.manageStatus === "archived"
-                ? "Archived"
-                : "Editing"
+              ? problemQuery.data?.isDraft
+                ? "Draft"
+                : problemQuery.data?.manageStatus === "archived"
+                  ? "Archived"
+                  : "Active"
               : problemAuthoringCopy.statusNewLabel
           }
           size="small"
@@ -250,7 +253,7 @@ export default function InstructorCreateProblemPage() {
     {
       id: "visibility",
       label: "Visibility",
-      value: <Chip label={visibilityLabel} size="small" className={styles.visibilityChip} />,
+      value: <Chip label={sourceLabel} size="small" className={styles.visibilityChip} />,
     },
     {
       id: "difficulty",
@@ -404,13 +407,13 @@ export default function InstructorCreateProblemPage() {
         inputFormat: statementValues.inputFormat,
         outputFormat: statementValues.outputFormat,
         constraints: statementValues.constraints,
-        baseLanguage,
+        baseLanguage: baseLanguage as "cplusplus" | "java" | "typescript" | "javascript" | "python",
         baseCode,
       });
 
       setStarterCodes((prev) => ({
         ...prev,
-        ...result.generatedCodes,
+        ...(result.generatedCodes as typeof prev),
       }));
       setGenerationFeedback(
         `Generated ${Object.keys(result.generatedCodes).length} languages with ${result.model}.`,
@@ -455,7 +458,8 @@ export default function InstructorCreateProblemPage() {
             difficulty: metadataValues.difficulty as "easy" | "medium" | "hard",
             points,
             tags: metadataValues.tags,
-            visibility: metadataValues.visibility as "course-only" | "public" | "private",
+            isDraft: false,
+            source: metadataValues.source as "contest-only" | "public",
             statement: statementValues.statement,
             inputFormat: statementValues.inputFormat,
             outputFormat: statementValues.outputFormat,
@@ -470,7 +474,8 @@ export default function InstructorCreateProblemPage() {
           difficulty: metadataValues.difficulty as "easy" | "medium" | "hard",
           points,
           tags: metadataValues.tags,
-          visibility: metadataValues.visibility as "course-only" | "public" | "private",
+          isDraft: false,
+          source: metadataValues.source as "contest-only" | "public",
           statement: statementValues.statement,
           inputFormat: statementValues.inputFormat,
           outputFormat: statementValues.outputFormat,
@@ -482,12 +487,74 @@ export default function InstructorCreateProblemPage() {
 
       await Promise.all([
         utils.instructorManageContent.getManageContent.invalidate(),
+        utils.instructorManageContent.getInstructorOverview.invalidate(),
         utils.problemAuthoring.getProblemById.invalidate({ problemId: problemId ?? "" }),
       ]);
 
       router.push(ROUTES.instructorManageContests);
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : "Unable to save the problem.");
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    if (!metadataValues.title.trim()) {
+      setSaveError("Problem title is required to save a draft.");
+      return;
+    }
+
+    const points = Number.parseInt(metadataValues.points, 10);
+    if (!Number.isFinite(points) || points < 0) {
+      setSaveError("Points must be a non-negative integer.");
+      return;
+    }
+
+    setSaveError(null);
+
+    try {
+      if (isEditMode && problemId) {
+        await updateProblemMutation.mutateAsync({
+          problemId,
+          data: {
+            title: metadataValues.title,
+            difficulty: metadataValues.difficulty as "easy" | "medium" | "hard",
+            points,
+            tags: metadataValues.tags,
+            isDraft: true,
+            source: metadataValues.source as "contest-only" | "public",
+            statement: statementValues.statement,
+            inputFormat: statementValues.inputFormat,
+            outputFormat: statementValues.outputFormat,
+            constraints: statementValues.constraints,
+            examples: examples.slice(0, 1),
+            starterCodes,
+          },
+        });
+        await Promise.all([
+          utils.instructorManageContent.getInstructorOverview.invalidate(),
+          utils.problemAuthoring.getProblemById.invalidate({ problemId }),
+        ]);
+        router.push(ROUTES.instructorManageContests);
+      } else {
+        await createProblemMutation.mutateAsync({
+          title: metadataValues.title,
+          difficulty: metadataValues.difficulty as "easy" | "medium" | "hard",
+          points,
+          tags: metadataValues.tags,
+          isDraft: true,
+          source: metadataValues.source as "contest-only" | "public",
+          statement: statementValues.statement,
+          inputFormat: statementValues.inputFormat,
+          outputFormat: statementValues.outputFormat,
+          constraints: statementValues.constraints,
+          examples: examples.slice(0, 1),
+          starterCodes,
+        });
+        await utils.instructorManageContent.getInstructorOverview.invalidate();
+        router.push(ROUTES.instructorManageContests);
+      }
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Unable to save draft.");
     }
   };
 
@@ -625,17 +692,17 @@ export default function InstructorCreateProblemPage() {
                     </Box>
 
                     <Box className={styles.fieldBlock}>
-                      <Typography className={styles.fieldLabel}>Visibility *</Typography>
+                      <Typography className={styles.fieldLabel}>Problem Type *</Typography>
                       <TextField
                         select
                         fullWidth
                         size="small"
-                        value={metadataValues.visibility}
-                        onChange={(event) => updateMetadataField("visibility", event.target.value)}
+                        value={metadataValues.source}
+                        onChange={(event) => updateMetadataField("source", event.target.value)}
                         className={styles.inputField}
                         SelectProps={{ IconComponent: KeyboardArrowDownRoundedIcon }}
                       >
-                        {VISIBILITY_OPTIONS.map((option) => (
+                        {PROBLEM_SOURCE_OPTIONS.map((option) => (
                           <MenuItem key={option.value} value={option.value}>
                             {option.label}
                           </MenuItem>
@@ -823,18 +890,20 @@ export default function InstructorCreateProblemPage() {
                     </Box>
 
                     <Box className={styles.generatePanel}>
-                      <Box className={styles.fieldBlock}>
-                        <Typography className={styles.fieldLabel}>
-                          {problemAuthoringCopy.baseLanguageLabel}
-                        </Typography>
+                      <Typography className={styles.fieldLabel}>
+                        {problemAuthoringCopy.baseLanguageLabel}
+                      </Typography>
+                      <Box className={styles.generateRow}>
                         <TextField
                           select
                           fullWidth
                           size="small"
                           value={baseLanguage}
-                          onChange={(event) =>
-                            setBaseLanguage(event.target.value as StarterLanguage)
-                          }
+                          onChange={(event) => {
+                            const lang = event.target.value as StarterLanguage;
+                            setBaseLanguage(lang);
+                            setActiveLanguage(lang);
+                          }}
                           className={styles.inputField}
                           SelectProps={{ IconComponent: KeyboardArrowDownRoundedIcon }}
                         >
@@ -844,22 +913,21 @@ export default function InstructorCreateProblemPage() {
                             </MenuItem>
                           ))}
                         </TextField>
-                        <Typography className={styles.fieldHint}>
-                          {problemAuthoringCopy.baseLanguageHint}
-                        </Typography>
+                        <Button
+                          className={styles.generateButton}
+                          variant="contained"
+                          startIcon={<AutoAwesomeRoundedIcon className={styles.actionIcon} />}
+                          onClick={generateOtherLanguages}
+                          disabled={generateStarterCodesMutation.isPending}
+                        >
+                          {generateStarterCodesMutation.isPending
+                            ? "Generating..."
+                            : problemAuthoringCopy.generateOtherLanguagesLabel}
+                        </Button>
                       </Box>
-
-                      <Button
-                        className={styles.generateButton}
-                        variant="contained"
-                        startIcon={<AutoAwesomeRoundedIcon className={styles.actionIcon} />}
-                        onClick={generateOtherLanguages}
-                        disabled={generateStarterCodesMutation.isPending}
-                      >
-                        {generateStarterCodesMutation.isPending
-                          ? "Generating..."
-                          : problemAuthoringCopy.generateOtherLanguagesLabel}
-                      </Button>
+                      <Typography className={styles.fieldHint}>
+                        {problemAuthoringCopy.baseLanguageHint}
+                      </Typography>
                     </Box>
 
                     {generationError ? (

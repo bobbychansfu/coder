@@ -64,7 +64,7 @@ export interface ProblemMetadataDraft {
   difficulty: string;
   points: string;
   tags: string[];
-  visibility: string;
+  source: string;
 }
 
 export interface ProblemStatementDraft {
@@ -166,7 +166,7 @@ export const problemMetadataDraft: ProblemMetadataDraft = {
   difficulty: "medium",
   points: "100",
   tags: [],
-  visibility: "contest-only",
+  source: "public",
 };
 
 export const problemStatementDraft: ProblemStatementDraft = {
@@ -189,8 +189,7 @@ export const starterCodeDraft: Record<StarterLanguage, string> = {
   cplusplus: "",
   java: "",
   python: "",
-  typescript:
-    "// TypeScript starter code\nfunction solve(nums: number[]): number[] {\n  // Your code here\n  return [];\n}",
+  typescript: "",
   javascript: "",
 };
 
