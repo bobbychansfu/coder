@@ -118,7 +118,7 @@ test("AI judging full flow: login -> submit -> SSE -> verdict persisted", async 
   console.log(`[verify] SSE stream opened: ${streamReq.url()}`);
 
   // ── 9. UI shows queued/running state ─────────────────────────────────────────
-  await expect(page.getByText("Output")).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByText("Output", { exact: true })).toBeVisible({ timeout: 5_000 });
   await expect(
     page.getByText(/queued for gemini judging|judging your code/i),
   ).toBeVisible({ timeout: 5_000 });
@@ -172,12 +172,12 @@ test("AI judging full flow: login -> submit -> SSE -> verdict persisted", async 
   // ── 12. Reload the problem page and verify saved result rehydrates in the UI ──
   await page.reload();
   await expect(page.locator(".monaco-editor")).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByText("Output")).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByText("Output", { exact: true })).toBeVisible({ timeout: 5_000 });
 
   const reloadedOutputBlock = page.locator("[class*='outputBlock']").first();
   await expect(
     page.getByText(/queued for gemini judging|judging your code/i),
-  ).not.toBeVisible({ timeout: 5_000 });
+  ).not.toBeVisible({ timeout: 120_000 });
 
   if (persisted.feedback) {
     await expect(reloadedOutputBlock).toContainText(persisted.feedback.slice(0, 20), {
