@@ -81,15 +81,6 @@ export interface ProblemExampleDraft {
   explanation: string;
 }
 
-export interface ProblemDraftRecord {
-  id: string;
-  title: string;
-  difficulty: "easy" | "medium" | "hard";
-  date: string;
-  examplesCount: number;
-  testCasesCount: number;
-}
-
 export type StarterLanguage = (typeof LANGUAGE_OPTIONS)[number]["value"];
 
 export const problemAuthoringCopy: ProblemAuthoringCopy = {
@@ -193,21 +184,3 @@ export const starterCodeDraft: Record<StarterLanguage, string> = {
   javascript: "",
 };
 
-export const savedProblemDrafts: ProblemDraftRecord[] = [
-  {
-    id: "draft-binary-search",
-    title: "Binary Search Implementation",
-    difficulty: "medium",
-    date: "2/19/2026",
-    examplesCount: 2,
-    testCasesCount: 5,
-  },
-  {
-    id: "draft-linked-list",
-    title: "Linked List Reversal",
-    difficulty: "easy",
-    date: "2/18/2026",
-    examplesCount: 1,
-    testCasesCount: 0,
-  },
-];

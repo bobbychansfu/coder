@@ -6,9 +6,8 @@ import type { ManagedContestStatus, ManagedProblemStatus } from "@/fe/shared/con
 import type { Context } from "../init";
 import { publicProcedure, router } from "../init";
 
-type ManagedContestDisplayStatus = ManagedContestStatus;
-type ManagedProblemDisplayStatus = ManagedProblemStatus;
-
+type ManagedContestDisplayStatus = ManagedContestStatus | null;
+type ManagedProblemDisplayStatus = ManagedProblemStatus | null;
 
 function formatDateTime(value: Date | null | undefined) {
   if (!value) {
@@ -28,22 +27,30 @@ function getContestDisplayStatus(
   workflowStatus: "DRAFT" | "UPCOMING" | "ACTIVE" | "ENDED",
   manageStatus: ManageLifecycleStatus,
 ): ManagedContestDisplayStatus {
+  if (manageStatus === "DELETED") {
+    return null;
+  }
+
   if (manageStatus === "ARCHIVED") {
     return "archived";
   }
 
-  if (manageStatus === "DELETED") {
-    return "deleted";
+  if (workflowStatus === "DRAFT") {
+    return "draft";
   }
 
   return workflowStatus.toLowerCase() as ManagedContestDisplayStatus;
 }
 
-function getProblemDisplayStatus(isDraft: boolean, manageStatus: string): ManagedProblemDisplayStatus {
+function getProblemDisplayStatus(
+  isDraft: boolean,
+  manageStatus: ManageLifecycleStatus,
+  source: string,
+): ManagedProblemDisplayStatus {
+  if (manageStatus === "DELETED") return null;
   if (manageStatus === "ARCHIVED") return "archived";
-  if (manageStatus === "DELETED") return "deleted";
   if (isDraft) return "draft";
-  return "active";
+  return source === "CONTEST" ? "contest-only" : "public";
 }
 
 async function getDbUserOrThrow(ctx: Context) {
@@ -100,6 +107,7 @@ export const instructorManageContentRouter = router({
           title: true,
           isDraft: true,
           manageStatus: true,
+          source: true,
           updatedAt: true,
         },
         orderBy: { updatedAt: "desc" },
@@ -117,23 +125,44 @@ export const instructorManageContentRouter = router({
       (p) => p.manageStatus !== "ARCHIVED" && p.manageStatus !== "DELETED",
     ).length;
 
-    const contestActivity = contests.slice(0, 5).map((c) => ({
-      id: `contest-${c.id}`,
-      type: "contest" as const,
-      title: c.name,
-      status: getContestDisplayStatus(c.status, c.manageStatus),
-      updatedAt: c.updatedAt.toISOString(),
-    }));
+    const problemActivity = problems
+      .slice(0, 5)
+      .flatMap((p) => {
+        const status = getProblemDisplayStatus(p.isDraft, p.manageStatus, p.source);
+        if (!status) {
+          return [];
+        }
 
-    const problemActivity = problems.slice(0, 5).map((p) => ({
-      id: `problem-${p.id}`,
-      type: "problem" as const,
-      title: p.title,
-      status: getProblemDisplayStatus(p.isDraft, p.manageStatus),
-      updatedAt: p.updatedAt.toISOString(),
-    }));
+        return [
+          {
+            id: `problem-${p.id}`,
+            type: "problem" as const,
+            title: p.title,
+            status,
+            updatedAt: p.updatedAt.toISOString(),
+          },
+        ];
+      });
 
-    const recentActivity = [...contestActivity, ...problemActivity]
+    const recentActivity = [
+      ...contests.slice(0, 5).flatMap((c) => {
+        const status = getContestDisplayStatus(c.status, c.manageStatus);
+        if (!status) {
+          return [];
+        }
+
+        return [
+          {
+            id: `contest-${c.id}`,
+            type: "contest" as const,
+            title: c.name,
+            status,
+            updatedAt: c.updatedAt.toISOString(),
+          },
+        ];
+      }),
+      ...problemActivity,
+    ]
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
       .slice(0, 5);
 
@@ -219,7 +248,12 @@ export const instructorManageContentRouter = router({
     }
 
     return {
-      contests: contests.map((contest) => {
+      contests: contests.flatMap((contest) => {
+        const status = getContestDisplayStatus(contest.status, contest.manageStatus);
+        if (!status) {
+          return [];
+        }
+
         const computedEndAt =
           contest.endsAt ??
           (contest.durationMinutes
@@ -230,27 +264,39 @@ export const instructorManageContentRouter = router({
           ? `${contest.instructor.firstName} ${contest.instructor.lastName}`.trim()
           : "Unassigned";
 
-        return {
-          id: contest.id,
-          title: contest.name,
-          owner: ownerName || contest.instructor?.computingId || "Unassigned",
-          section: contest.classSection ?? "No section",
-          status: getContestDisplayStatus(contest.status, contest.manageStatus),
-          startAt: formatDateTime(contest.startsAt),
-          endAt: formatDateTime(computedEndAt),
-          problemsCount: contest._count.contestProblems,
-          enrolledCount: enrolledMap[contest.id] ?? 0,
-          submittedCount: submittedMap[contest.id] ?? 0,
-        };
+        return [
+          {
+            id: contest.id,
+            title: contest.name,
+            owner: ownerName || contest.instructor?.computingId || "Unassigned",
+            section: contest.classSection ?? "No section",
+            status,
+            startAt: formatDateTime(contest.startsAt),
+            endAt: formatDateTime(computedEndAt),
+            problemsCount: contest._count.contestProblems,
+            enrolledCount: enrolledMap[contest.id] ?? 0,
+            submittedCount: submittedMap[contest.id] ?? 0,
+          },
+        ];
       }),
-      problems: problems.map((problem) => ({
-        id: problem.id,
-        title: problem.title,
-        points: problem.points ?? 0,
-        status: getProblemDisplayStatus(problem.isDraft, problem.manageStatus),
-        difficulty: problem.difficulty.toLowerCase() as "easy" | "medium" | "hard",
-        tags: problem.topics.length > 0 ? problem.topics.map((topic) => topic.name) : ["untagged"],
-      })),
+      problems: problems.flatMap((problem) => {
+        const status = getProblemDisplayStatus(problem.isDraft, problem.manageStatus, problem.source);
+        if (!status) {
+          return [];
+        }
+
+        return [
+          {
+            id: problem.id,
+            title: problem.title,
+            points: problem.points ?? 0,
+            status,
+            difficulty: problem.difficulty.toLowerCase() as "easy" | "medium" | "hard",
+            tags:
+              problem.topics.length > 0 ? problem.topics.map((topic) => topic.name) : ["untagged"],
+          },
+        ];
+      }),
     };
   }),
 
