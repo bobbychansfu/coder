@@ -382,6 +382,57 @@ export const problemAuthoringRouter = router({
       };
     }),
 
+  listDraftProblems: publicProcedure.query(async ({ ctx }) => {
+    const dbUser = await getAuthoringUserOrThrow(ctx);
+    const fullName = `${dbUser.firstName} ${dbUser.lastName}`.trim();
+    const isAdmin = ctx.user?.role === "admin";
+
+    const problems = await ctx.prisma.problem.findMany({
+      where: {
+        isDraft: true,
+        manageStatus: "ACTIVE",
+      },
+      select: {
+        id: true,
+        title: true,
+        difficulty: true,
+        updatedAt: true,
+        author: true,
+        exampleInput: true,
+        exampleOutput: true,
+        starterCodes: {
+          select: {
+            id: true,
+          },
+        },
+        contestLinks: {
+          select: {
+            contest: {
+              select: {
+                instructorId: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { updatedAt: "desc" },
+    });
+
+    return problems
+      .filter((problem) =>
+        canEditProblem(problem, dbUser.computingId, fullName, dbUser.id, isAdmin),
+      )
+      .map((problem) => ({
+        id: problem.id,
+        title: problem.title,
+        difficulty: problem.difficulty.toLowerCase() as z.infer<typeof difficultySchema>,
+        updatedAt: problem.updatedAt.toISOString(),
+        examplesCount:
+          problem.exampleInput?.trim() && problem.exampleOutput?.trim() ? 1 : 0,
+        starterCodesCount: problem.starterCodes.length,
+      }));
+  }),
+
   getProblemById: publicProcedure
     .input(z.object({ problemId: z.string().min(1) }))
     .query(async ({ ctx, input }) => {

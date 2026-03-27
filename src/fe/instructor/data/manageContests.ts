@@ -57,7 +57,7 @@ export const managedContests: ManagedContestRecord[] = [
     title: "Dynamic Programming Fundamentals",
     owner: "Dr. Emily Wong",
     section: "Section C",
-    status: "ended",
+    status: "archived",
     startAt: "Jan 4, 2026, 10:00 a.m.",
     endAt: "Jan 4, 2026, 02:00 p.m.",
     problemsCount: 2,
