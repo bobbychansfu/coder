@@ -7,6 +7,13 @@ import PageHeader from "@/fe/shared/components/PageHeader";
 import ProblemHeader from "@/fe/shared/components/problem/ProblemHeader";
 import ProblemDetails from "@/fe/shared/components/problem/ProblemDetails";
 import SolutionEditor from "@/fe/shared/components/problem/SolutionEditor";
+import {
+  DEFAULT_CODE_LANGUAGE,
+  readPersistedCodeDraft,
+  removePersistedCodeDraft,
+  writePersistedCodeDraft,
+  type SupportedCodeLanguage,
+} from "@/fe/shared/services/codeDraftStorage";
 import { trpc } from "@/lib/trpc/client";
 import type { PracticeSubmissionPayload, PracticeSubmissionTestcase } from "@/lib/practiceSubmission";
 import styles from "@/fe/contests/styles/ProblemSubmissionPage.module.css";
@@ -15,9 +22,14 @@ interface PracticeProblemSubmissionPageProps {
   problemCode: string;
 }
 
-type SupportedLanguage = "cplusplus" | "java" | "typescript" | "javascript" | "python";
+type SupportedLanguage = SupportedCodeLanguage;
 
-const DEFAULT_LANGUAGE: SupportedLanguage = "cplusplus";
+const DEFAULT_LANGUAGE: SupportedLanguage = DEFAULT_CODE_LANGUAGE;
+const PRACTICE_DRAFT_STORAGE_KEY_PREFIX = "practice-submission-draft:";
+
+function getPracticeDraftStorageKey(problemCode: string) {
+  return `${PRACTICE_DRAFT_STORAGE_KEY_PREFIX}${problemCode}`;
+}
 
 function formatVerdictLabel(verdict: string | null | undefined) {
   const normalized = verdict?.trim().toLowerCase();
@@ -90,6 +102,8 @@ function PracticeProblemSubmissionPageContent({
     Promise<{ sessionId: string; problemId: string } | null> | null
   >(null);
   const submissionEventSourceRef = useRef<EventSource | null>(null);
+  const [isDraftStorageReady, setIsDraftStorageReady] = useState(false);
+  const [hasPersistedDraft, setHasPersistedDraft] = useState(false);
 
   const { data: detail, isLoading: detailLoading, error: detailError } =
     trpc.practice.getProblemDetail.useQuery({ problemCode }, { retry: false });
@@ -237,7 +251,44 @@ function PracticeProblemSubmissionPageContent({
   useEffect(() => () => closeSubmissionStream(), [closeSubmissionStream]);
 
   useEffect(() => {
-    if (!latestRunRecord || hasRun || runResult || Object.keys(drafts).length > 0) {
+    const persistedDraft = readPersistedCodeDraft(getPracticeDraftStorageKey(problemCode));
+
+    if (persistedDraft) {
+      setLanguage(persistedDraft.language);
+      setDrafts(persistedDraft.drafts);
+    }
+
+    setHasPersistedDraft(Boolean(persistedDraft));
+    setIsDraftStorageReady(true);
+  }, [problemCode]);
+
+  useEffect(() => {
+    if (!isDraftStorageReady) {
+      return;
+    }
+
+    const hasDraftContent = Object.keys(drafts).length > 0;
+
+    if (!hasDraftContent && language === DEFAULT_LANGUAGE) {
+      removePersistedCodeDraft(getPracticeDraftStorageKey(problemCode));
+      return;
+    }
+
+    writePersistedCodeDraft(getPracticeDraftStorageKey(problemCode), {
+      language,
+      drafts,
+    });
+  }, [drafts, isDraftStorageReady, language, problemCode]);
+
+  useEffect(() => {
+    if (
+      !isDraftStorageReady ||
+      hasPersistedDraft ||
+      !latestRunRecord ||
+      hasRun ||
+      runResult ||
+      Object.keys(drafts).length > 0
+    ) {
       return;
     }
 
@@ -260,7 +311,15 @@ function PracticeProblemSubmissionPageContent({
     if (latestRunRecord.status === "queued" || latestRunRecord.status === "running") {
       openSubmissionStream(latestRunRecord.id);
     }
-  }, [drafts, hasRun, latestRunRecord, openSubmissionStream, runResult]);
+  }, [
+    drafts,
+    hasPersistedDraft,
+    hasRun,
+    isDraftStorageReady,
+    latestRunRecord,
+    openSubmissionStream,
+    runResult,
+  ]);
 
   const handleSubmitCode = async () => {
     if (!hasTypedCode) return;

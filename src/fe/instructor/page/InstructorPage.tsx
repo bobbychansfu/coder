@@ -59,19 +59,19 @@ function getActivityDescription(
   if (type === "problem") {
     if (status === "draft") return `Problem "${title}" saved as draft`;
     if (status === "archived") return `Problem "${title}" archived`;
-    if (status === "deleted") return `Problem "${title}" deleted`;
+    if (status === "contest-only") return `Problem "${title}" set to contest-only`;
     return `Problem "${title}" published`;
   }
   if (status === "draft") return `Contest "${title}" saved as draft`;
   if (status === "archived") return `Contest "${title}" archived`;
-  if (status === "deleted") return `Contest "${title}" deleted`;
   if (status === "upcoming") return `Contest "${title}" scheduled`;
   if (status === "active") return `Contest "${title}" is now active`;
+  if (status === "ended") return `Contest "${title}" ended`;
   return `Contest "${title}" updated`;
 }
 
 function getActivityTone(status: string): ActivityTone {
-  if (status === "archived" || status === "deleted" || status === "draft") return "info";
+  if (status === "archived" || status === "draft") return "info";
   return "success";
 }
 

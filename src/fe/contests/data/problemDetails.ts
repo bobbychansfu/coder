@@ -47,6 +47,247 @@ export interface EditorialDetail {
   note: string;
 }
 
+const defaultStarterCodes: NonNullable<ProblemNarrative["starterCodes"]> = {
+  cplusplus: `#include <iostream>
+#include <vector>
+using namespace std;
+
+int main() {
+  // TODO: read input, solve the problem, and print the answer.
+  return 0;
+}
+`,
+  java: `import java.io.*;
+import java.util.*;
+
+public class Main {
+  public static void main(String[] args) throws Exception {
+    // TODO: read input, solve the problem, and print the answer.
+  }
+}
+`,
+  python: `def solve() -> None:
+    # TODO: read input, solve the problem, and print the answer.
+    pass
+
+
+if __name__ == "__main__":
+    solve()
+`,
+  typescript: `function solve(input: string): string {
+  // TODO: parse input, solve the problem, and return the answer.
+  return "";
+}
+
+import * as fs from "fs";
+const input = fs.readFileSync(0, "utf8");
+process.stdout.write(solve(input));
+`,
+  javascript: `function solve(input) {
+  // TODO: parse input, solve the problem, and return the answer.
+  return "";
+}
+
+const fs = require("fs");
+const input = fs.readFileSync(0, "utf8");
+process.stdout.write(solve(input));
+`,
+};
+
+const starterCodesByCode: Record<string, NonNullable<ProblemNarrative["starterCodes"]>> = {
+  a: {
+    cplusplus: `#include <iostream>
+#include <unordered_map>
+#include <vector>
+using namespace std;
+
+vector<int> twoSum(const vector<int>& nums, int target) {
+  // TODO: return the two indices whose values sum to target.
+  return {};
+}
+
+int main() {
+  int n = 0;
+  int target = 0;
+  cin >> n >> target;
+  vector<int> nums(n);
+  for (int i = 0; i < n; ++i) cin >> nums[i];
+  vector<int> answer = twoSum(nums, target);
+  if (answer.size() == 2) cout << answer[0] << " " << answer[1] << "\\n";
+  return 0;
+}
+`,
+    java: `import java.io.*;
+import java.util.*;
+
+public class Main {
+  static int[] twoSum(int[] nums, int target) {
+    // TODO: return the two indices whose values sum to target.
+    return new int[0];
+  }
+
+  public static void main(String[] args) throws Exception {
+    BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+    StringTokenizer firstLine = new StringTokenizer(reader.readLine());
+    int n = Integer.parseInt(firstLine.nextToken());
+    int target = Integer.parseInt(firstLine.nextToken());
+    StringTokenizer values = new StringTokenizer(reader.readLine());
+    int[] nums = new int[n];
+    for (int i = 0; i < n; i++) nums[i] = Integer.parseInt(values.nextToken());
+    int[] answer = twoSum(nums, target);
+    if (answer.length == 2) System.out.println(answer[0] + " " + answer[1]);
+  }
+}
+`,
+    python: `from typing import List
+
+
+def two_sum(nums: List[int], target: int) -> List[int]:
+    # TODO: return the two indices whose values sum to target.
+    return []
+
+
+def solve() -> None:
+    n, target = map(int, input().split())
+    nums = list(map(int, input().split()))
+    answer = two_sum(nums, target)
+    if len(answer) == 2:
+        print(answer[0], answer[1])
+
+
+if __name__ == "__main__":
+    solve()
+`,
+    typescript: `function twoSum(nums: number[], target: number): number[] {
+  // TODO: return the two indices whose values sum to target.
+  return [];
+}
+
+function solve(input: string): string {
+  const [firstLine = "", secondLine = ""] = input.trim().split(/\\r?\\n/);
+  const [n, target] = firstLine.split(" ").map(Number);
+  const nums = secondLine.split(" ").slice(0, n).map(Number);
+  const answer = twoSum(nums, target);
+  return answer.length === 2 ? \`\${answer[0]} \${answer[1]}\` : "";
+}
+
+import * as fs from "fs";
+const input = fs.readFileSync(0, "utf8");
+process.stdout.write(solve(input));
+`,
+    javascript: `function twoSum(nums, target) {
+  // TODO: return the two indices whose values sum to target.
+  return [];
+}
+
+function solve(input) {
+  const [firstLine = "", secondLine = ""] = input.trim().split(/\\r?\\n/);
+  const [n, target] = firstLine.split(" ").map(Number);
+  const nums = secondLine.split(" ").slice(0, n).map(Number);
+  const answer = twoSum(nums, target);
+  return answer.length === 2 ? \`\${answer[0]} \${answer[1]}\` : "";
+}
+
+const fs = require("fs");
+const input = fs.readFileSync(0, "utf8");
+process.stdout.write(solve(input));
+`,
+  },
+  b: {
+    cplusplus: `#include <iostream>
+#include <vector>
+using namespace std;
+
+int main() {
+  // TODO: build the tree and print preorder, inorder, and postorder traversals.
+  return 0;
+}
+`,
+    java: `import java.io.*;
+import java.util.*;
+
+public class Main {
+  public static void main(String[] args) throws Exception {
+    // TODO: build the tree and print preorder, inorder, and postorder traversals.
+  }
+}
+`,
+    python: `def solve() -> None:
+    # TODO: build the tree and print preorder, inorder, and postorder traversals.
+    pass
+
+
+if __name__ == "__main__":
+    solve()
+`,
+    typescript: `function solve(input: string): string {
+  // TODO: build the tree and return the preorder, inorder, and postorder traversals.
+  return "";
+}
+
+import * as fs from "fs";
+const input = fs.readFileSync(0, "utf8");
+process.stdout.write(solve(input));
+`,
+    javascript: `function solve(input) {
+  // TODO: build the tree and return the preorder, inorder, and postorder traversals.
+  return "";
+}
+
+const fs = require("fs");
+const input = fs.readFileSync(0, "utf8");
+process.stdout.write(solve(input));
+`,
+  },
+  c: {
+    cplusplus: `#include <iostream>
+#include <queue>
+#include <vector>
+using namespace std;
+
+int main() {
+  // TODO: merge the sorted lists and print the merged result.
+  return 0;
+}
+`,
+    java: `import java.io.*;
+import java.util.*;
+
+public class Main {
+  public static void main(String[] args) throws Exception {
+    // TODO: merge the sorted lists and print the merged result.
+  }
+}
+`,
+    python: `def solve() -> None:
+    # TODO: merge the sorted lists and print the merged result.
+    pass
+
+
+if __name__ == "__main__":
+    solve()
+`,
+    typescript: `function solve(input: string): string {
+  // TODO: merge the sorted lists and return the merged result.
+  return "";
+}
+
+import * as fs from "fs";
+const input = fs.readFileSync(0, "utf8");
+process.stdout.write(solve(input));
+`,
+    javascript: `function solve(input) {
+  // TODO: merge the sorted lists and return the merged result.
+  return "";
+}
+
+const fs = require("fs");
+const input = fs.readFileSync(0, "utf8");
+process.stdout.write(solve(input));
+`,
+  },
+};
+
 const defaultNarrative: ProblemNarrative = {
   timeLimit: "1 second",
   memory: "256 MB",
@@ -74,6 +315,7 @@ const defaultNarrative: ProblemNarrative = {
     { id: "Test Case 2", input: "2 | 1 2", expected: "3", sample: true },
   ],
   hiddenCount: 8,
+  starterCodes: defaultStarterCodes,
   submissions: [
     {
       id: "1",
@@ -136,6 +378,7 @@ const narrativeByCode: Record<string, ProblemNarrative> = {
       },
     ],
     hiddenCount: 8,
+    starterCodes: starterCodesByCode.a,
     submissions: [
       {
         id: "1",
@@ -210,6 +453,7 @@ const narrativeByCode: Record<string, ProblemNarrative> = {
       },
     ],
     hiddenCount: 6,
+    starterCodes: starterCodesByCode.b,
     submissions: [
       {
         id: "1",
@@ -266,6 +510,7 @@ const narrativeByCode: Record<string, ProblemNarrative> = {
       },
     ],
     hiddenCount: 5,
+    starterCodes: starterCodesByCode.c,
     submissions: [
       {
         id: "1",

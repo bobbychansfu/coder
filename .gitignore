@@ -49,6 +49,10 @@ CLAUDE.local.md
 #gemini 
 gemini/
 GEMINI.md
+
 # Playwright
 playwright-report/
 test-results/
+
+# vscode
+.vscode/settings.json

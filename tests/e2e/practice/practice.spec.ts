@@ -193,6 +193,27 @@ test.describe("Practice problem submission page", () => {
     await expect(submitBtn).toBeEnabled({ timeout: 10000 });
   });
 
+  test("typed practice answer survives a page refresh", async ({ page }) => {
+    if (!firstProblemCode) test.skip();
+
+    const persistedMarker = `persisted draft ${Date.now()}`;
+
+    await page.goto(`/practice/${firstProblemCode}`);
+    await expect(page.locator(".monaco-editor")).toBeVisible({ timeout: 15000 });
+
+    await page.locator(".monaco-editor .view-lines").first().click();
+    await page.keyboard.press("Control+a");
+    await page.keyboard.press("Delete");
+    await typeInMonaco(page, persistedMarker);
+    await expect(page.locator(".monaco-editor .view-lines")).toContainText(persistedMarker);
+
+    await page.reload();
+    await expect(page.locator(".monaco-editor")).toBeVisible({ timeout: 15000 });
+    await expect(page.locator(".monaco-editor .view-lines")).toContainText(persistedMarker, {
+      timeout: 10000,
+    });
+  });
+
   test("clicking Submit posts to the practice submission endpoint", async ({ page }) => {
     if (!firstProblemCode) test.skip();
 

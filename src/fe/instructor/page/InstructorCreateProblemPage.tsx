@@ -41,7 +41,6 @@ import {
   problemExamplesDraft,
   problemMetadataDraft,
   problemStatementDraft,
-  savedProblemDrafts,
   starterCodeDraft,
   type ProblemExampleDraft,
   type ProblemMetadataDraft,
@@ -71,6 +70,29 @@ const draftDifficultyChipColors = {
   medium: { background: "#dc2626", color: "#ffffff" },
   hard: { background: "#b91c1c", color: "#ffffff" },
 } as const;
+
+function formatDraftUpdatedAt(isoValue: string) {
+  const date = new Date(isoValue);
+
+  if (Number.isNaN(date.getTime())) {
+    return isoValue;
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "numeric",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}
+
+interface ProblemDraftListItem {
+  id: string;
+  title: string;
+  difficulty: "easy" | "medium" | "hard";
+  updatedAt: string;
+  examplesCount: number;
+  starterCodesCount: number;
+}
 
 export default function InstructorCreateProblemPage() {
   const router = useRouter();
@@ -102,8 +124,23 @@ export default function InstructorCreateProblemPage() {
     { problemId: problemId ?? "" },
     { enabled: isEditMode, retry: false },
   );
+  const draftProblemsQuery = trpc.problemAuthoring.listDraftProblems.useQuery(undefined, {
+    retry: false,
+  });
   const createProblemMutation = trpc.problemAuthoring.createProblem.useMutation();
   const updateProblemMutation = trpc.problemAuthoring.updateProblem.useMutation();
+  const deleteDraftMutation = trpc.instructorManageContent.updateProblemManageStatus.useMutation({
+    onSuccess: async () => {
+      await Promise.all([
+        utils.problemAuthoring.listDraftProblems.invalidate(),
+        utils.instructorManageContent.getManageContent.invalidate(),
+        utils.instructorManageContent.getInstructorOverview.invalidate(),
+      ]);
+    },
+    onError: (mutationError) => {
+      setSaveError(mutationError.message);
+    },
+  });
 
   const headerActions: SubpageActionButtonItem[] = [
     {
@@ -304,13 +341,15 @@ export default function InstructorCreateProblemPage() {
   const tagSummary = metadataValues.tags.join(", ");
   const tagPopoverOpen = Boolean(tagAnchorEl);
   const starterProgress = `${(filledLanguages.length / LANGUAGE_OPTIONS.length) * 100}%`;
+  const draftProblems = (draftProblemsQuery.data ?? []) as ProblemDraftListItem[];
   const pageTitle = isEditMode ? "Edit Problem" : problemAuthoringCopy.pageTitle;
   const pageSubtitle = isEditMode
     ? "Update an existing competitive programming problem"
     : problemAuthoringCopy.pageSubtitle;
   const publishLabel = isEditMode ? "Save Changes" : problemAuthoringCopy.publishLabel;
   const isSaving = createProblemMutation.isPending || updateProblemMutation.isPending;
-  const pageError = saveError ?? problemQuery.error?.message ?? null;
+  const pageError =
+    saveError ?? problemQuery.error?.message ?? draftProblemsQuery.error?.message ?? null;
   const isPageLoading = isEditMode && problemQuery.isLoading && !problemQuery.data;
 
   const updateMetadataField = (field: keyof ProblemMetadataDraft, value: string) => {
@@ -439,6 +478,27 @@ export default function InstructorCreateProblemPage() {
     URL.revokeObjectURL(url);
   };
 
+  const handleEditDraftProblem = (draftProblemId: string) => {
+    router.push(`${ROUTES.instructorCreateProblem}?problemId=${draftProblemId}`);
+  };
+
+  const handleDeleteDraftProblem = async (draftProblemId: string) => {
+    setSaveError(null);
+
+    try {
+      await deleteDraftMutation.mutateAsync({
+        problemId: draftProblemId,
+        manageStatus: "DELETED",
+      });
+
+      if (problemId === draftProblemId) {
+        router.push(ROUTES.instructorCreateProblem);
+      }
+    } catch {
+      // Error state is handled by the mutation onError callback.
+    }
+  };
+
   const handlePublish = async () => {
     const points = Number.parseInt(metadataValues.points, 10);
 
@@ -488,6 +548,7 @@ export default function InstructorCreateProblemPage() {
       await Promise.all([
         utils.instructorManageContent.getManageContent.invalidate(),
         utils.instructorManageContent.getInstructorOverview.invalidate(),
+        utils.problemAuthoring.listDraftProblems.invalidate(),
         utils.problemAuthoring.getProblemById.invalidate({ problemId: problemId ?? "" }),
       ]);
 
@@ -531,7 +592,9 @@ export default function InstructorCreateProblemPage() {
           },
         });
         await Promise.all([
+          utils.instructorManageContent.getManageContent.invalidate(),
           utils.instructorManageContent.getInstructorOverview.invalidate(),
+          utils.problemAuthoring.listDraftProblems.invalidate(),
           utils.problemAuthoring.getProblemById.invalidate({ problemId }),
         ]);
         router.push(ROUTES.instructorManageContests);
@@ -550,7 +613,11 @@ export default function InstructorCreateProblemPage() {
           examples: examples.slice(0, 1),
           starterCodes,
         });
-        await utils.instructorManageContent.getInstructorOverview.invalidate();
+        await Promise.all([
+          utils.instructorManageContent.getManageContent.invalidate(),
+          utils.instructorManageContent.getInstructorOverview.invalidate(),
+          utils.problemAuthoring.listDraftProblems.invalidate(),
+        ]);
         router.push(ROUTES.instructorManageContests);
       }
     } catch (error) {
@@ -1036,44 +1103,60 @@ export default function InstructorCreateProblemPage() {
                 </Box>
 
                 <Box className={styles.draftsList}>
-                  {savedProblemDrafts.map((draft) => {
-                    const difficultyChip = draftDifficultyChipColors[draft.difficulty];
+                  {draftProblemsQuery.isLoading && draftProblems.length === 0 ? (
+                    <Typography className={styles.sectionDescription}>
+                      Loading problem drafts...
+                    </Typography>
+                  ) : draftProblems.length === 0 ? (
+                    <Typography className={styles.sectionDescription}>
+                      No saved problem drafts yet.
+                    </Typography>
+                  ) : (
+                    draftProblems.map((draft) => {
+                      const difficultyChip = draftDifficultyChipColors[draft.difficulty];
 
-                    return (
-                      <DraftRecordItem
-                        key={draft.id}
-                        title={draft.title}
-                        topMeta={
-                          <Box className={styles.draftMetaRow}>
-                            <Chip
-                              size="small"
-                              label={draft.difficulty}
-                              className={styles.draftDifficultyChip}
-                              sx={{
-                                backgroundColor: difficultyChip.background,
-                                color: difficultyChip.color,
-                              }}
-                            />
-                            <Typography className={styles.draftDate}>{draft.date}</Typography>
-                          </Box>
-                        }
-                        bottomMeta={
-                          <Typography className={styles.draftCounts}>
-                            {`${draft.examplesCount} example(s)`}
-                            {"   "}
-                            {`${draft.testCasesCount} test case(s)`}
-                          </Typography>
-                        }
-                        itemClassName={styles.draftItem}
-                        mainClassName={styles.draftMain}
-                        titleClassName={styles.draftTitle}
-                        actionsClassName={styles.draftActions}
-                        iconButtonClassName={styles.draftIconButton}
-                        editIconClassName={styles.draftActionIcon}
-                        deleteIconClassName={styles.draftActionIconDanger}
-                      />
-                    );
-                  })}
+                      return (
+                        <DraftRecordItem
+                          key={draft.id}
+                          title={draft.title}
+                          topMeta={
+                            <Box className={styles.draftMetaRow}>
+                              <Chip
+                                size="small"
+                                label={draft.difficulty}
+                                className={styles.draftDifficultyChip}
+                                sx={{
+                                  backgroundColor: difficultyChip.background,
+                                  color: difficultyChip.color,
+                                }}
+                              />
+                              <Typography className={styles.draftDate}>
+                                {formatDraftUpdatedAt(draft.updatedAt)}
+                              </Typography>
+                            </Box>
+                          }
+                          bottomMeta={
+                            <Typography className={styles.draftCounts}>
+                              {`${draft.examplesCount} example(s)`}
+                              {"   "}
+                              {`${draft.starterCodesCount} starter language(s)`}
+                            </Typography>
+                          }
+                          itemClassName={styles.draftItem}
+                          mainClassName={styles.draftMain}
+                          titleClassName={styles.draftTitle}
+                          actionsClassName={styles.draftActions}
+                          iconButtonClassName={styles.draftIconButton}
+                          editIconClassName={styles.draftActionIcon}
+                          deleteIconClassName={styles.draftActionIconDanger}
+                          onEdit={() => handleEditDraftProblem(draft.id)}
+                          onDelete={() => void handleDeleteDraftProblem(draft.id)}
+                          editAriaLabel={`Edit draft ${draft.title}`}
+                          deleteAriaLabel={`Delete draft ${draft.title}`}
+                        />
+                      );
+                    })
+                  )}
                 </Box>
               </CardContent>
             </Card>

@@ -160,6 +160,36 @@ async function ensureUniqueContestSlug(
 }
 
 export const contestAuthoringRouter = router({
+  listDraftContests: publicProcedure.query(async ({ ctx }) => {
+    const dbUser = await getContestAuthoringUserOrThrow(ctx);
+    const isAdmin = ctx.user?.role === "admin";
+
+    const contests = await ctx.prisma.contest.findMany({
+      where: {
+        ...(isAdmin ? {} : { instructorId: dbUser.id }),
+        status: "DRAFT",
+        manageStatus: "ACTIVE",
+      },
+      include: {
+        _count: {
+          select: {
+            contestProblems: true,
+          },
+        },
+      },
+      orderBy: { updatedAt: "desc" },
+    });
+
+    return contests.map((contest) => ({
+      id: contest.id,
+      title: contest.name,
+      updatedAt: contest.updatedAt.toISOString(),
+      status: "Draft" as const,
+      problemsCount: contest._count.contestProblems,
+      durationMinutes: contest.durationMinutes,
+    }));
+  }),
+
   listProblemLibrary: publicProcedure.query(async ({ ctx }) => {
     await getContestAuthoringUserOrThrow(ctx);
 
@@ -183,6 +213,7 @@ export const contestAuthoringRouter = router({
       difficulty: problem.difficulty.toLowerCase() as "easy" | "medium" | "hard",
       points: problem.points ?? 0,
       tags: problem.topics.map((topic) => topic.name),
+      source: problem.source === "CONTEST" ? "contest-only" : "public",
       isDraft: problem.isDraft,
     }));
   }),
@@ -237,6 +268,7 @@ export const contestAuthoringRouter = router({
           difficulty: entry.problem.difficulty.toLowerCase() as "easy" | "medium" | "hard",
           points: entry.problem.points ?? 0,
           tags: entry.problem.topics.map((topic) => topic.name),
+          source: entry.problem.source === "CONTEST" ? "contest-only" : "public",
           manageStatus: entry.problem.manageStatus.toLowerCase(),
         })),
       };
