@@ -28,6 +28,7 @@ export interface ClarificationItem {
 export interface ContestProblem {
   code: string;
   title: string;
+  practiceProblemCode?: string;
   difficulty: "easy" | "medium" | "hard";
   tags: string[];
   timeComplexity: string;
@@ -248,6 +249,7 @@ const week3LabContest: ContestDetail = {
     {
       code: "A",
       title: "Two Sum",
+      practiceProblemCode: "two-sum",
       difficulty: "easy",
       tags: ["arrays", "hash-table"],
       timeComplexity: "O(n)",
@@ -259,6 +261,7 @@ const week3LabContest: ContestDetail = {
     {
       code: "B",
       title: "Binary Tree Traversal",
+      practiceProblemCode: "binary-tree-traversal",
       difficulty: "medium",
       tags: ["trees", "recursion", "dfs"],
       timeComplexity: "O(n)",
@@ -269,6 +272,7 @@ const week3LabContest: ContestDetail = {
     {
       code: "C",
       title: "Merge K Sorted Lists",
+      practiceProblemCode: "merge-k-sorted-lists",
       difficulty: "hard",
       tags: ["linked-list", "divide-conquer", "heap"],
       timeComplexity: "O(n log k)",
@@ -279,6 +283,7 @@ const week3LabContest: ContestDetail = {
     {
       code: "D",
       title: "Valid Palindrome",
+      practiceProblemCode: "valid-palindrome",
       difficulty: "easy",
       tags: ["strings", "two-pointers"],
       timeComplexity: "O(n)",
@@ -290,6 +295,7 @@ const week3LabContest: ContestDetail = {
     {
       code: "E",
       title: "Longest Increasing Subsequence",
+      practiceProblemCode: "longest-increasing-subsequence",
       difficulty: "medium",
       tags: ["dynamic-programming", "binary-search"],
       timeComplexity: "O(n log n)",
