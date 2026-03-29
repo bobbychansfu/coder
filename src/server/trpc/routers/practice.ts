@@ -7,6 +7,7 @@ import {
   codingLanguageToAppLanguage,
   codingLanguageToLabel,
 } from "../../coding-language";
+import { normalizePracticeSubmissionTestcases } from "@/lib/practiceSubmission";
 import { mapPracticeRunRecordToSubmissionPayload } from "@/server/practice/submissionService";
 
 export type PrismaClient = typeof _prisma;
@@ -226,7 +227,7 @@ export const practiceRouter = router({
         verdict: record.verdict,
         feedback: record.feedback,
         errorMessage: record.errorMessage,
-        testcases: Array.isArray(record.testcases) ? record.testcases : [],
+        testcases: normalizePracticeSubmissionTestcases(record.testcases),
       };
     }),
 

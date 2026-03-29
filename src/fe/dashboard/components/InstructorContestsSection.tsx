@@ -3,27 +3,51 @@
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
+import Link from "next/link";
 import type { InstructorDashboardContestItem } from "@/lib/types/instructorDashboard";
+import { buildContestRoute } from "@/fe/shared/constants/routes";
 import styles from "@/fe/dashboard/styles/InstructorContestsSection.module.css";
 
 interface InstructorContestsSectionProps {
   contests: InstructorDashboardContestItem[];
 }
 
+function isVisibleContest(
+  contest: InstructorDashboardContestItem,
+): contest is InstructorDashboardContestItem & { status: "Active" | "Upcoming" } {
+  return contest.status === "Active" || contest.status === "Upcoming";
+}
+
 export default function InstructorContestsSection({
   contests,
 }: InstructorContestsSectionProps) {
+  const visibleContests = contests
+    .filter(isVisibleContest)
+    .sort((left, right) => {
+      const statusPriority = {
+        Active: 0,
+        Upcoming: 1,
+      } as const;
+
+      return statusPriority[left.status] - statusPriority[right.status];
+    });
+
   return (
     <section className={styles.sectionBlock}>
       <div className={styles.sectionHeader}>
         <h2 className={styles.sectionTitle}>My Contests</h2>
       </div>
       <div className={styles.contestList}>
-        {contests.length === 0 && (
+        {visibleContests.length === 0 && (
           <div className={styles.emptyState}>No instructor contests to show yet.</div>
         )}
-        {contests.map((contest) => (
-          <article key={contest.id} className={styles.contestCard}>
+        {visibleContests.map((contest) => (
+          <Link
+            key={contest.id}
+            href={buildContestRoute(contest.id)}
+            className={styles.contestCard}
+            aria-label={`Open contest ${contest.title}`}
+          >
             <div className={styles.contestHeader}>
               <div className={styles.contestIconWrapper}>
                 <EmojiEventsIcon className={styles.contestIcon} />
@@ -63,7 +87,7 @@ export default function InstructorContestsSection({
                 </span>
               </div>
             </div>
-          </article>
+          </Link>
         ))}
       </div>
     </section>

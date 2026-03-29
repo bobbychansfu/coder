@@ -29,3 +29,25 @@ export interface PracticeSubmissionPayload {
   updatedAt: string;
   errorMessage: string | null;
 }
+
+export function normalizePracticeSubmissionTestcases(
+  value: unknown,
+): PracticeSubmissionTestcase[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter(
+      (testcase): testcase is Record<string, unknown> =>
+        typeof testcase === "object" && testcase !== null,
+    )
+    .map((testcase, index) => ({
+      name:
+        typeof testcase.name === "string" && testcase.name.trim().length > 0
+          ? testcase.name.trim()
+          : `Visible test ${index + 1}`,
+      passed: Boolean(testcase.passed),
+      message: typeof testcase.message === "string" ? testcase.message.trim() : "",
+    }));
+}
