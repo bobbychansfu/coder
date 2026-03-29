@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import CasLoginCard from "@/fe/auth/components/CasLoginCard";
 import DevQuickAccessCard from "@/fe/auth/components/DevQuickAccessCard";
@@ -12,6 +12,58 @@ interface LoginPageProps {
 }
 
 export default function LoginPage({ showDevQuickAccess }: LoginPageProps) {
+  return (
+    <Suspense fallback={<LoginPageView showDevQuickAccess={showDevQuickAccess} />}>
+      <LoginPageContent showDevQuickAccess={showDevQuickAccess} />
+    </Suspense>
+  );
+}
+
+interface LoginPageViewProps {
+  showDevQuickAccess: boolean;
+  isLoading?: boolean;
+  loadingEmail?: string | null;
+  casError?: string | null;
+  devError?: string | null;
+  onCasLogin?: () => Promise<void> | void;
+  onDevLogin?: (email: string, role: DemoRole) => Promise<void> | void;
+}
+
+function LoginPageView({
+  showDevQuickAccess,
+  isLoading = false,
+  loadingEmail = null,
+  casError = null,
+  devError = null,
+  onCasLogin = () => undefined,
+  onDevLogin = () => undefined,
+}: LoginPageViewProps) {
+  return (
+    <main className={styles.page}>
+      <section className={styles.container}>
+        <div className={styles.brandIcon} aria-hidden>
+          {"</>"}
+        </div>
+        <h1 className={styles.brandTitle}>cs-coder</h1>
+        <p className={styles.brandSubtitle}>Competitive Programming Platform</p>
+
+        <CasLoginCard onCasLogin={onCasLogin} loading={isLoading && loadingEmail === null} error={casError} />
+
+        {showDevQuickAccess ? (
+          <DevQuickAccessCard
+            users={demoUsers}
+            loading={isLoading}
+            loadingEmail={loadingEmail}
+            error={devError}
+            onDevLogin={onDevLogin}
+          />
+        ) : null}
+      </section>
+    </main>
+  );
+}
+
+function LoginPageContent({ showDevQuickAccess }: LoginPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
@@ -110,30 +162,14 @@ export default function LoginPage({ showDevQuickAccess }: LoginPageProps) {
   };
 
   return (
-    <main className={styles.page}>
-      <section className={styles.container}>
-        <div className={styles.brandIcon} aria-hidden>
-          {"</>"}
-        </div>
-        <h1 className={styles.brandTitle}>cs-coder</h1>
-        <p className={styles.brandSubtitle}>Competitive Programming Platform</p>
-
-        <CasLoginCard
-          onCasLogin={handleCasLogin}
-          loading={isLoading && loadingEmail === null}
-          error={casError}
-        />
-
-        {showDevQuickAccess ? (
-          <DevQuickAccessCard
-            users={demoUsers}
-            loading={isLoading}
-            loadingEmail={loadingEmail}
-            error={devError}
-            onDevLogin={handleDevLogin}
-          />
-        ) : null}
-      </section>
-    </main>
+    <LoginPageView
+      showDevQuickAccess={showDevQuickAccess}
+      isLoading={isLoading}
+      loadingEmail={loadingEmail}
+      casError={casError}
+      devError={devError}
+      onCasLogin={handleCasLogin}
+      onDevLogin={handleDevLogin}
+    />
   );
 }

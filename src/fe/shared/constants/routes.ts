@@ -17,5 +17,9 @@ export const ROUTES = {
   profile: "/profile",
 } as const;
 
+export function buildContestRoute(contestId: string) {
+  return `${ROUTES.contests}/${contestId}`;
+}
+
 // Type-safe route access
 export type RouteKey = keyof typeof ROUTES;
