@@ -14,6 +14,10 @@ interface DraftRecordItemProps {
   iconButtonClassName: string;
   editIconClassName: string;
   deleteIconClassName: string;
+  onEdit?: () => void;
+  onDelete?: () => void;
+  editAriaLabel?: string;
+  deleteAriaLabel?: string;
 }
 
 export default function DraftRecordItem({
@@ -27,6 +31,10 @@ export default function DraftRecordItem({
   iconButtonClassName,
   editIconClassName,
   deleteIconClassName,
+  onEdit,
+  onDelete,
+  editAriaLabel = "Edit draft",
+  deleteAriaLabel = "Delete draft",
 }: DraftRecordItemProps) {
   return (
     <Box className={itemClassName}>
@@ -36,10 +44,20 @@ export default function DraftRecordItem({
         {bottomMeta}
       </Box>
       <Box className={actionsClassName}>
-        <Button className={iconButtonClassName} aria-label="Edit draft">
+        <Button
+          className={iconButtonClassName}
+          aria-label={editAriaLabel}
+          onClick={onEdit}
+          disabled={!onEdit}
+        >
           <EditOutlinedIcon className={editIconClassName} />
         </Button>
-        <Button className={iconButtonClassName} aria-label="Delete draft">
+        <Button
+          className={iconButtonClassName}
+          aria-label={deleteAriaLabel}
+          onClick={onDelete}
+          disabled={!onDelete}
+        >
           <DeleteOutlineRoundedIcon className={deleteIconClassName} />
         </Button>
       </Box>

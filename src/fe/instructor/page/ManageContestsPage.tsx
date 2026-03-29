@@ -5,23 +5,11 @@ import { useRouter } from "next/navigation";
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
 import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
 import CodeRoundedIcon from "@mui/icons-material/CodeRounded";
-import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import EmojiEventsOutlinedIcon from "@mui/icons-material/EmojiEventsOutlined";
 import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
 import type { SvgIconComponent } from "@mui/icons-material";
-import {
-  Box,
-  Button,
-  Chip,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  Typography,
-} from "@mui/material";
+import { Box, Chip, CircularProgress, Typography } from "@mui/material";
 
 import {
   DEFAULT_MANAGE_CONTENT_TAB,
@@ -94,16 +82,17 @@ export default function ManageContestsPage() {
   const [selectedProblemStatus, setSelectedProblemStatus] =
     useState<ManagedProblemStatusFilter>("all");
   const [actionError, setActionError] = useState<string | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<{
-    type: "contest" | "problem";
-    id: string;
-    title: string;
-  } | null>(null);
 
   const { data, isLoading, error } = trpc.instructorManageContent.getManageContent.useQuery(
     undefined,
-    { retry: false },
+    {
+      retry: false,
+      refetchOnWindowFocus: true,
+      refetchInterval: 60_000,
+      refetchIntervalInBackground: false,
+    },
   );
+
   const contestStatusMutation = trpc.instructorManageContent.updateContestManageStatus.useMutation({
     onSuccess: async () => {
       setActionError(null);
@@ -116,6 +105,7 @@ export default function ManageContestsPage() {
       setActionError(mutationError.message);
     },
   });
+
   const problemStatusMutation = trpc.instructorManageContent.updateProblemManageStatus.useMutation({
     onSuccess: async () => {
       setActionError(null);
@@ -149,21 +139,19 @@ export default function ManageContestsPage() {
         tone: "blue",
       },
       {
+        id: "public-problems",
+        label: "Public Problems",
+        value: problemRecords.filter((problem) => problem.status === "public").length,
+        icon: CodeRoundedIcon,
+        tone: "orange",
+      },
+      {
         id: "archived",
         label: "Archived",
         value:
           contestRecords.filter((contest) => contest.status === "archived").length +
           problemRecords.filter((problem) => problem.status === "archived").length,
         icon: ArchiveOutlinedIcon,
-        tone: "orange",
-      },
-      {
-        id: "deleted",
-        label: "Deleted",
-        value:
-          contestRecords.filter((contest) => contest.status === "deleted").length +
-          problemRecords.filter((problem) => problem.status === "deleted").length,
-        icon: DeleteOutlineRoundedIcon,
         tone: "gray",
       },
     ],
@@ -211,23 +199,6 @@ export default function ManageContestsPage() {
     await problemStatusMutation.mutateAsync({ problemId, manageStatus: "ARCHIVED" });
   };
 
-  const handleConfirmDelete = async () => {
-    if (!deleteTarget) return;
-    setActionError(null);
-    if (deleteTarget.type === "contest") {
-      await contestStatusMutation.mutateAsync({
-        contestId: deleteTarget.id,
-        manageStatus: "DELETED",
-      });
-    } else {
-      await problemStatusMutation.mutateAsync({
-        problemId: deleteTarget.id,
-        manageStatus: "DELETED",
-      });
-    }
-    setDeleteTarget(null);
-  };
-
   const getContestStatusClassName = (status: ManagedContestStatus) => {
     switch (status) {
       case "active":
@@ -240,8 +211,6 @@ export default function ManageContestsPage() {
         return styles.statusEnded;
       case "archived":
         return styles.statusArchived;
-      case "deleted":
-        return styles.statusDeleted;
       default:
         return "";
     }
@@ -249,14 +218,14 @@ export default function ManageContestsPage() {
 
   const getProblemStatusClassName = (status: ManagedProblemStatus) => {
     switch (status) {
-      case "active":
-        return styles.statusActive;
+      case "public":
+        return styles.statusPublic;
+      case "contest-only":
+        return styles.statusContestOnly;
       case "draft":
         return styles.statusDraft;
       case "archived":
         return styles.statusArchived;
-      case "deleted":
-        return styles.statusDeleted;
       default:
         return "";
     }
@@ -296,7 +265,7 @@ export default function ManageContestsPage() {
         <Box className={styles.hero}>
           <Typography className={styles.pageTitle}>Manage Problems &amp; Contests</Typography>
           <Typography className={styles.pageSubtitle}>
-            Edit, archive, or remove your contests and problems
+            Review the real publishing state of your problems and contests
           </Typography>
         </Box>
 
@@ -391,7 +360,7 @@ export default function ManageContestsPage() {
                             <Box className={styles.contestMetaRow}>
                               <PersonOutlineRoundedIcon className={styles.inlineIcon} />
                               <Typography className={styles.contestMeta}>
-                                {contest.owner} · {contest.section}
+                                {contest.owner} | {contest.section}
                               </Typography>
                             </Box>
                           </Box>
@@ -414,7 +383,7 @@ export default function ManageContestsPage() {
                               <Typography className={styles.scheduleText}>{contest.startAt}</Typography>
                             </Box>
                             <Typography className={styles.scheduleSubtext}>
-                              → {contest.endAt}
+                              Ends {contest.endAt}
                             </Typography>
                           </Box>
                         </td>
@@ -440,7 +409,6 @@ export default function ManageContestsPage() {
                                 icon: EditOutlinedIcon,
                                 disabled:
                                   contest.status === "archived" ||
-                                  contest.status === "deleted" ||
                                   isContestUpdatePending(contest.id),
                                 onClick: () =>
                                   router.push(
@@ -453,24 +421,8 @@ export default function ManageContestsPage() {
                                 icon: ArchiveOutlinedIcon,
                                 disabled:
                                   contest.status === "archived" ||
-                                  contest.status === "deleted" ||
                                   isContestUpdatePending(contest.id),
                                 onClick: () => void handleArchiveContest(contest.id),
-                              },
-                              {
-                                id: "delete",
-                                label: "Delete",
-                                icon: DeleteOutlineRoundedIcon,
-                                danger: true,
-                                disabled:
-                                  contest.status === "deleted" ||
-                                  isContestUpdatePending(contest.id),
-                                onClick: () =>
-                                  setDeleteTarget({
-                                    type: "contest",
-                                    id: contest.id,
-                                    title: contest.title,
-                                  }),
                               },
                             ] satisfies MenuActionItem[]}
                           />
@@ -566,7 +518,6 @@ export default function ManageContestsPage() {
                               icon: EditOutlinedIcon,
                               disabled:
                                 problem.status === "archived" ||
-                                problem.status === "deleted" ||
                                 isProblemUpdatePending(problem.id),
                               onClick: () =>
                                 router.push(
@@ -579,24 +530,8 @@ export default function ManageContestsPage() {
                               icon: ArchiveOutlinedIcon,
                               disabled:
                                 problem.status === "archived" ||
-                                problem.status === "deleted" ||
                                 isProblemUpdatePending(problem.id),
                               onClick: () => void handleArchiveProblem(problem.id),
-                            },
-                            {
-                              id: "delete",
-                              label: "Delete",
-                              icon: DeleteOutlineRoundedIcon,
-                              danger: true,
-                              disabled:
-                                problem.status === "deleted" ||
-                                isProblemUpdatePending(problem.id),
-                              onClick: () =>
-                                setDeleteTarget({
-                                  type: "problem",
-                                  id: problem.id,
-                                  title: problem.title,
-                                }),
                             },
                           ] satisfies MenuActionItem[]}
                         />
@@ -618,31 +553,6 @@ export default function ManageContestsPage() {
           </Box>
         </Box>
       </Box>
-      <Dialog
-        open={Boolean(deleteTarget)}
-        onClose={() => setDeleteTarget(null)}
-        maxWidth="xs"
-        fullWidth
-      >
-        <DialogTitle>Delete {deleteTarget?.type === "contest" ? "Contest" : "Problem"}?</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            <strong>{deleteTarget?.title}</strong> will be marked as deleted and hidden from
-            students. This cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteTarget(null)}>Cancel</Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={() => void handleConfirmDelete()}
-            disabled={contestStatusMutation.isPending || problemStatusMutation.isPending}
-          >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
     </>
   );
 }

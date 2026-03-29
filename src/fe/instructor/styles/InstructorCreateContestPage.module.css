@@ -897,6 +897,35 @@
   font-weight: 500 !important;
 }
 
+.modalProblemTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.contestOnlyBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 20px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-family: Inter, sans-serif;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.contestOnlyBadgeIcon {
+  width: 12px !important;
+  height: 12px !important;
+}
+
 .modalProblemMeta {
   gap: 6px;
 }

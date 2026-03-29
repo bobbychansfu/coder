@@ -46,6 +46,7 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
 
   return (
     <ProblemSubmissionPage
+      contestId={contest.id}
       detail={buildProblemDetail(problem)}
       navigator={{
         position: problemIndex + 1,
