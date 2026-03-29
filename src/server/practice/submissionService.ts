@@ -1,6 +1,10 @@
 import { Prisma, type CodingLanguage, type PracticeRunRecord } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import type { PracticeSubmissionPayload, PracticeSubmissionVerdict } from "@/lib/practiceSubmission";
+import {
+  normalizePracticeSubmissionTestcases,
+  type PracticeSubmissionPayload,
+  type PracticeSubmissionVerdict,
+} from "@/lib/practiceSubmission";
 import {
   appLanguageToCodingLanguage,
   codingLanguageToAppLanguage,
@@ -384,9 +388,7 @@ export function mapPracticeRunRecordToSubmissionPayload(
     score: record.score ?? null,
     verdict: normalizeVerdictLabel(record.verdict),
     feedback: record.feedback ?? null,
-    testcases: Array.isArray(record.testcases)
-      ? (record.testcases as unknown as PracticeSubmissionPayload["testcases"])
-      : [],
+    testcases: normalizePracticeSubmissionTestcases(record.testcases),
     judgedBy: record.judgedBy === "gemini" ? "gemini" : null,
     updatedAt: record.updatedAt.toISOString(),
     errorMessage: record.errorMessage ?? null,

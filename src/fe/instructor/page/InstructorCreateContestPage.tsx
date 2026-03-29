@@ -133,6 +133,26 @@ interface SelectableContestProblemRecord extends ContestProblemRecord {
   isDraft?: boolean;
 }
 
+function toSelectableContestProblemRecord(problem: {
+  id: string;
+  title: string;
+  difficulty: ContestDifficulty;
+  points: number;
+  tags: string[];
+  source?: string | null;
+  isDraft?: boolean;
+}): SelectableContestProblemRecord {
+  return {
+    id: problem.id,
+    title: problem.title,
+    difficulty: problem.difficulty,
+    points: problem.points,
+    tags: problem.tags,
+    source: problem.source === "contest-only" ? "contest-only" : "public",
+    isDraft: problem.isDraft,
+  };
+}
+
 interface ContestDraftListItem {
   id: string;
   title: string;
@@ -240,10 +260,10 @@ export default function InstructorCreateContestPage() {
     const problemMap = new Map<string, SelectableContestProblemRecord>();
 
     (problemLibraryQuery.data ?? []).forEach((problem) => {
-      problemMap.set(problem.id, problem);
+      problemMap.set(problem.id, toSelectableContestProblemRecord(problem));
     });
     (contestQuery.data?.selectedProblems ?? []).forEach((problem) => {
-      problemMap.set(problem.id, problem);
+      problemMap.set(problem.id, toSelectableContestProblemRecord(problem));
     });
 
     return Array.from(problemMap.values()).sort((left, right) => {

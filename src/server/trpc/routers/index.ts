@@ -11,6 +11,7 @@ export const appRouter = router({
   practice: practiceRouter,
   practiceExecution: practiceExecutionRouter,
   dashboardMetadata: dashboardMetadataRouter,
+  instructorDashboard: instructorDashboardRouter,
   contestAuthoring: contestAuthoringRouter,
   problemAuthoring: problemAuthoringRouter,
   instructorManageContent: instructorManageContentRouter,

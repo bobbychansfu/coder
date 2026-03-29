@@ -43,11 +43,18 @@
   flex-direction: column;
   gap: 16px;
   transition: all 0.2s;
+  text-decoration: none;
+  cursor: pointer;
 }
 
 .contestCard:hover {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   border-color: rgba(0, 0, 0, 0.15);
+}
+
+.contestCard:focus-visible {
+  outline: 3px solid rgba(224, 62, 62, 0.22);
+  outline-offset: 2px;
 }
 
 .contestHeader {
