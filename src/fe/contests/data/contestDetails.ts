@@ -26,14 +26,15 @@ export interface ClarificationItem {
 }
 
 export interface ContestProblem {
+  problemId?: string;
   code: string;
   title: string;
   practiceProblemCode?: string;
   difficulty: "easy" | "medium" | "hard";
   tags: string[];
-  timeComplexity: string;
-  spaceComplexity: string;
-  solvedBy: number;
+  timeComplexity?: string;
+  spaceComplexity?: string;
+  solvedBy?: number;
   points: number;
   solved?: boolean;
 }

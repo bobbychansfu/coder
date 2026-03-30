@@ -32,8 +32,13 @@ export async function getProblemByCode(
   ctx: { prisma: PrismaClient },
   problemCode: string,
 ): Promise<{ id: string; code: string }> {
-  const problem = await ctx.prisma.problem.findUnique({
-    where: { code: problemCode },
+  const problem = await ctx.prisma.problem.findFirst({
+    where: {
+      code: problemCode,
+      isDraft: false,
+      manageStatus: "ACTIVE",
+      source: { in: ["PRACTICE", "BOTH"] },
+    },
     select: { id: true, code: true },
   });
   if (!problem) throw new TRPCError({ code: "NOT_FOUND", message: "Problem not found" });
@@ -137,7 +142,12 @@ export const practiceRouter = router({
         where: { code: input.problemCode },
         include: { topics: true, starterCodes: true },
       });
-      if (!problem || problem.isDraft || problem.manageStatus !== "ACTIVE") {
+      if (
+        !problem ||
+        problem.isDraft ||
+        problem.manageStatus !== "ACTIVE" ||
+        !["PRACTICE", "BOTH"].includes(problem.source)
+      ) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Problem not found" });
       }
 

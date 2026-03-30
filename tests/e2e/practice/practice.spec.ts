@@ -11,6 +11,20 @@ async function loginAsStudent(page: Page) {
   expect(response.status()).toBe(200);
 }
 
+async function loginAsInstructor(page: Page) {
+  const response = await page.request.post("/api/auth/dev-login", {
+    data: { email: "sarah.johnson@sfu.ca", role: "instructor" },
+  });
+  expect(response.status()).toBe(200);
+}
+
+async function loginAsAdmin(page: Page) {
+  const response = await page.request.post("/api/auth/dev-login", {
+    data: { email: "admin@sfu.ca", role: "admin" },
+  });
+  expect(response.status()).toBe(200);
+}
+
 /** Wait for MUI loading spinner to disappear (targets only the root progressbar). */
 async function waitForLoadingDone(page: Page) {
   await expect(page.getByRole("progressbar").first()).not.toBeVisible({ timeout: 15000 });
@@ -309,5 +323,30 @@ test.describe("Practice problem submission page", () => {
 
     expect(input).not.toHaveProperty("sessionId");
     expect(input).not.toHaveProperty("timestamp");
+  });
+});
+
+test.describe("Student workflow guards", () => {
+  test("rejects practice submissions from non-student roles", async ({ page }) => {
+    await loginAsInstructor(page);
+
+    const response = await page.request.post("/api/practice/submissions", {
+      data: {
+        problemId: "not-used-because-role-check-runs-first",
+        language: "cpp",
+        code: "int main() { return 0; }",
+      },
+    });
+
+    expect(response.status()).toBe(403);
+  });
+
+  test("redirects admin users to the admin area instead of the student dashboard", async ({
+    page,
+  }) => {
+    await loginAsAdmin(page);
+
+    await page.goto("/dashboard");
+    await expect(page).toHaveURL(/\/admin$/);
   });
 });

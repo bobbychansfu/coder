@@ -4,7 +4,12 @@ import { dbHelpers } from "@/lib/db-helpers";
 import { syncStudentGamification } from "@/server/gamification/persistence";
 import path from "path";
 import { promises as fs } from "fs";
-import { appLanguageToCodingLanguage, appLanguageToJudgeLanguage } from "@/server/coding-language";
+import {
+  appLanguageToCodingLanguage,
+  appLanguageToJudgeLanguage,
+  codingLanguageToLabel,
+} from "@/server/coding-language";
+import { SubmissionStatus } from "@prisma/client";
 
 interface SubmitCodeBody {
   language?: string;
@@ -15,10 +20,119 @@ interface SubmitCodeBody {
 
 interface JudgeSubmissionResponse {
   score?: number;
+  status?: string;
+  judge_output?: string;
+  runtime?: string | number;
+  runtime_ms?: string | number;
+  memory?: string | number;
+  memory_kb?: string | number;
+  memory_mb?: string | number;
 }
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
+}
+
+function normalizeJudgeStatusToSubmissionStatus(
+  status: string | null | undefined,
+  score: number,
+): SubmissionStatus {
+  const normalized = status?.trim().toUpperCase();
+
+  switch (normalized) {
+    case "AC":
+    case "ACCEPTED":
+      return "ACCEPTED";
+    case "WA":
+    case "WRONG_ANSWER":
+    case "WRONG ANSWER":
+      return "WRONG_ANSWER";
+    case "TLE":
+    case "TIME_LIMIT_EXCEEDED":
+    case "TIME LIMIT EXCEEDED":
+      return "TIME_LIMIT_EXCEEDED";
+    case "RE":
+    case "ERR":
+    case "RUNTIME_ERROR":
+    case "RUNTIME ERROR":
+    case "IERR":
+    case "INTERNALERROR":
+    case "INTERNAL ERROR":
+      return "RUNTIME_ERROR";
+    case "CE":
+    case "CERR":
+    case "COMPILE_ERROR":
+    case "COMPILE ERROR":
+      return "COMPILE_ERROR";
+    case "PENDING":
+    case "QUEUED":
+    case "RUNNING":
+      return "PENDING";
+    default:
+      return score > 0 ? "ACCEPTED" : "WRONG_ANSWER";
+  }
+}
+
+function parseMetricValue(
+  judgeOutput: string | null | undefined,
+  patterns: RegExp[],
+): string | null {
+  if (!judgeOutput) {
+    return null;
+  }
+
+  for (const pattern of patterns) {
+    const match = judgeOutput.match(pattern);
+    const value = match?.[1]?.trim();
+    if (value) {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+function formatRuntimeFromJudgeResponse(result: JudgeSubmissionResponse, judgeOutput: string | null) {
+  const runtimeMs = result.runtime_ms ?? result.runtime;
+  if (typeof runtimeMs === "number") {
+    return `${runtimeMs}ms`;
+  }
+
+  if (typeof runtimeMs === "string" && runtimeMs.trim().length > 0) {
+    return runtimeMs.trim();
+  }
+
+  return (
+    parseMetricValue(judgeOutput, [
+      /runtime\s*[:=]\s*([^\n,;]+)/i,
+      /time\s*[:=]\s*([^\n,;]+)/i,
+    ]) ?? "-"
+  );
+}
+
+function formatMemoryFromJudgeResponse(result: JudgeSubmissionResponse, judgeOutput: string | null) {
+  if (typeof result.memory_mb === "number") {
+    return `${result.memory_mb}MB`;
+  }
+
+  if (typeof result.memory_kb === "number") {
+    return `${result.memory_kb}KB`;
+  }
+
+  if (typeof result.memory === "number") {
+    return `${result.memory}`;
+  }
+
+  if (typeof result.memory === "string" && result.memory.trim().length > 0) {
+    return result.memory.trim();
+  }
+
+  return (
+    parseMetricValue(judgeOutput, [
+      /memory\s*[:=]\s*([^\n,;]+)/i,
+      /mem\s*[:=]\s*([^\n,;]+)/i,
+    ]) ?? "-"
+  );
 }
 
 export async function handleGetProblemDetails(
@@ -39,7 +153,11 @@ export async function handleGetProblemDetails(
       return NextResponse.json({ error: "Invalid problem ID" }, { status: 400 });
     }
 
-    const problem = await dbHelpers.findProblem(pid);
+    const problem = await dbHelpers.findProblemWithDetails(pid);
+
+    if (!problem) {
+      return NextResponse.json({ error: "Problem not found" }, { status: 404 });
+    }
     
     const basePath = path.join(process.cwd(), "src", "server", "sfu_judge_problems", pid);
     const htmlPath = path.join(basePath, "problem.html");
@@ -124,6 +242,8 @@ export async function handleSubmitCode(
       return NextResponse.json({ error: "Not registered for contest" }, { status: 403 });
     }
 
+    await dbHelpers.createProblemStatus(computingId, cid, pid);
+
     const codingLanguage = appLanguageToCodingLanguage(language);
     const judgeLanguage = appLanguageToJudgeLanguage(language);
 
@@ -139,18 +259,8 @@ export async function handleSubmitCode(
       language: codingLanguage,
     });
 
-    const ps = await dbHelpers.findProblemStatus(computingId, cid, pid);
-
     const now = new Date();
     const endsAt = contest.endsAt ? new Date(contest.endsAt) : null;
-
-    if (endsAt && endsAt < now && ps) {
-      await dbHelpers.updateProblemStatus(computingId, cid, pid, {
-        status: "judging",
-        score: ps.score,
-        tries: 1, // increment tries
-      });
-    }
 
     const JUDGE_URL = process.env.JUDGE_URL || "http://127.0.0.1:8000";
     let judgeResponse: JudgeSubmissionResponse;
@@ -174,6 +284,15 @@ export async function handleSubmitCode(
 
     const problem = await dbHelpers.findProblem(pid);
     const score = judgeResponse.score || 0;
+    const judgeOutput = judgeResponse.judge_output?.trim() || "";
+    const submissionStatus = normalizeJudgeStatusToSubmissionStatus(judgeResponse.status, score);
+
+    await dbHelpers.updateSubmission(submission.id, submissionStatus, judgeOutput, score);
+    await dbHelpers.updateProblemStatus(computingId, cid, pid, {
+      status: submissionStatus === "ACCEPTED" ? "correct" : "wrong",
+      score,
+      tries: 1,
+    });
 
     await dbHelpers.updateUserPointsAndProblems(computingId, score, score > 0 ? 1 : 0);
     if (problem) {
@@ -182,9 +301,23 @@ export async function handleSubmitCode(
     await syncStudentGamification(computingId);
 
     if (endsAt && endsAt < now) {
-      return NextResponse.json({ message: "Contest has ended, submission recorded", sid: submission.id });
+      return NextResponse.json({
+        message: "Contest has ended, submission recorded",
+        sid: submission.id,
+        score,
+        status: submissionStatus,
+        runtime: formatRuntimeFromJudgeResponse(judgeResponse, judgeOutput),
+        memory: formatMemoryFromJudgeResponse(judgeResponse, judgeOutput),
+      });
     } else {
-      return NextResponse.json({ message: "Submission received", sid: submission.id });
+      return NextResponse.json({
+        message: "Submission received",
+        sid: submission.id,
+        score,
+        status: submissionStatus,
+        runtime: formatRuntimeFromJudgeResponse(judgeResponse, judgeOutput),
+        memory: formatMemoryFromJudgeResponse(judgeResponse, judgeOutput),
+      });
     }
   } catch (error: unknown) {
     console.error(error);
@@ -208,7 +341,17 @@ export async function handleGetSubmissionsForProblem(
 
     return NextResponse.json({
       computingId: user.computingId,
-      submissions: subs,
+      submissions: subs.map((submission) => ({
+        id: submission.id,
+        status: submission.status,
+        language: submission.language,
+        languageLabel: codingLanguageToLabel(submission.language),
+        createdAt: submission.createdAt.toISOString(),
+        score: submission.score,
+        runtime: formatRuntimeFromJudgeResponse({}, submission.judgeOutput),
+        memory: formatMemoryFromJudgeResponse({}, submission.judgeOutput),
+        judgeOutput: submission.judgeOutput ?? "",
+      })),
       problem,
     });
   } catch (error) {

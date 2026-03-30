@@ -344,7 +344,7 @@ export const contestAuthoringRouter = router({
             endsAt,
             durationMinutes,
             aiHintEnabled: input.aiHintEnabled,
-            published: true,
+            published: !input.isDraft,
             status: input.isDraft ? "DRAFT" : computeContestStatus(startsAt, endsAt),
             instructorId: dbUser.id,
           },
@@ -536,3 +536,6 @@ export const contestAuthoringRouter = router({
       return { id: input.contestId };
     }),
 });
+
+
+

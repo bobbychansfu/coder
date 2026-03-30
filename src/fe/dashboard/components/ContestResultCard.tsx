@@ -12,10 +12,10 @@ interface ContestResultCardProps {
   participants: number;
   difficulty: "Easy" | "Medium" | "Hard";
   status: ContestStatus;
-  rank: number;
-  problemsSolved: string;
-  score: string;
-  timeTaken: string;
+  rank?: number | null;
+  problemsSolved?: string;
+  score?: string;
+  timeTaken?: string;
 }
 
 export default function ContestResultCard({
@@ -31,16 +31,21 @@ export default function ContestResultCard({
 }: ContestResultCardProps) {
   const statusClassName =
     status === "In Progress" ? styles.statusInProgress : styles.statusClosed;
+  const statItems = [
+    problemsSolved ? { label: "Problems Solved", value: problemsSolved } : null,
+    score ? { label: "Score", value: score } : null,
+    timeTaken ? { label: "Time Taken", value: timeTaken } : null,
+  ].filter(Boolean) as Array<{ label: string; value: string }>;
 
   return (
     <div className={styles.card}>
-      {/* Rank Badge */}
-      <div className={styles.rankBadge}>
-        <div className={styles.rankNumber}>#{rank}</div>
-        <div className={styles.rankLabel}>Rank</div>
-      </div>
+      {typeof rank === "number" ? (
+        <div className={styles.rankBadge}>
+          <div className={styles.rankNumber}>#{rank}</div>
+          <div className={styles.rankLabel}>Rank</div>
+        </div>
+      ) : null}
 
-      {/* Header */}
       <div className={styles.header}>
         <div className={styles.iconWrapper}>
           <EmojiEventsIcon className={styles.icon} />
@@ -64,29 +69,22 @@ export default function ContestResultCard({
             </div>
             <div className={styles.metadataItem}>
               <PeopleOutlineIcon className={styles.metadataIcon} />
-              <span className={styles.metadataText}>
-                {participants} participants
-              </span>
+              <span className={styles.metadataText}>{participants} participants</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className={styles.stats}>
-        <div className={styles.stat}>
-          <div className={styles.statLabel}>Problems Solved</div>
-          <div className={styles.statValue}>{problemsSolved}</div>
+      {statItems.length > 0 ? (
+        <div className={styles.stats}>
+          {statItems.map((stat) => (
+            <div key={stat.label} className={styles.stat}>
+              <div className={styles.statLabel}>{stat.label}</div>
+              <div className={styles.statValue}>{stat.value}</div>
+            </div>
+          ))}
         </div>
-        <div className={styles.stat}>
-          <div className={styles.statLabel}>Score</div>
-          <div className={styles.statValue}>{score}</div>
-        </div>
-        <div className={styles.stat}>
-          <div className={styles.statLabel}>Time Taken</div>
-          <div className={styles.statValue}>{timeTaken}</div>
-        </div>
-      </div>
+      ) : null}
     </div>
   );
 }

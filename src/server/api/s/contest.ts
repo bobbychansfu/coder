@@ -94,27 +94,18 @@ export async function handleGetContestDetails(
     const computingId = user.computingId;
     const role = user.role;
 
-    const contest = await dbHelpers.findSpecificContestForUser(computingId, cid, "contestant");
+    const contest = await dbHelpers.findContest(cid);
 
-    if (contest) {
-      const now = new Date();
-      if (contest.startsAt > now) {
-        return NextResponse.json({ error: "Contest has not started yet" }, { status: 400 });
-      }
-
-      const contestProblems = await dbHelpers.getProblemsForContest(cid);
-      for (const cp of contestProblems) {
-        await dbHelpers.createProblemStatus(computingId, cid, cp.problemId);
-      }
-
-      const contestProblemsStatus = await dbHelpers.findContestsProblemsStatusForUser(
-        computingId,
-        cid
-      );
-      return NextResponse.json({ computingId, contestProblemsStatus, role });
-    } else {
-      return NextResponse.json({ error: "Not registered for contest" }, { status: 403 });
+    if (!contest || !contest.published || contest.status === "DRAFT") {
+      return NextResponse.json({ error: "Contest not found" }, { status: 404 });
     }
+
+    const contestProblemsStatus = await dbHelpers.findContestsProblemsStatusForUser(
+      computingId,
+      cid
+    );
+
+    return NextResponse.json({ computingId, contestProblemsStatus, role });
   } catch (error: any) {
     console.error(error);
     return NextResponse.json({ error: "Internal server error", details: error.message }, { status: 500 });

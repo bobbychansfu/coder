@@ -21,6 +21,31 @@ export const dbHelpers = {
     });
   },
 
+  findProblemWithDetails: async (problemId: string) => {
+    return prisma.problem.findFirst({
+      where: {
+        id: problemId,
+        isDraft: false,
+        manageStatus: "ACTIVE",
+      },
+      include: {
+        topics: {
+          select: {
+            name: true,
+          },
+          orderBy: { name: "asc" },
+        },
+        starterCodes: {
+          select: {
+            language: true,
+            code: true,
+          },
+          orderBy: { language: "asc" },
+        },
+      },
+    });
+  },
+
   findProblemByCode: async (code: string) => {
     return prisma.problem.findFirst({
       where: {
@@ -35,6 +60,10 @@ export const dbHelpers = {
     return prisma.contest.findMany({
       where: {
         manageStatus: "ACTIVE",
+        published: true,
+        status: {
+          not: "DRAFT",
+        },
         participations: {
           some: {
             user: { computingId },
@@ -62,11 +91,14 @@ export const dbHelpers = {
   },
 
   findOpenContestsForUser: async (computingId: string, role: string) => {
-    // Finds published contests where the user is NOT participating
+    // Finds published, non-draft contests where the user is NOT participating
     return prisma.contest.findMany({
       where: {
         manageStatus: "ACTIVE",
         published: true,
+        status: {
+          not: "DRAFT",
+        },
         participations: {
           none: {
             user: { computingId },
@@ -88,7 +120,6 @@ export const dbHelpers = {
   },
 
   findContestsProblemsStatusForUser: async (computingId: string, contestId: string) => {
-    // This combines multiple tables in the original SQL
     return prisma.contestProblem.findMany({
       where: {
         contestId,
@@ -165,7 +196,7 @@ export const dbHelpers = {
         contestId,
         problemId,
       },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: "desc" },
     });
   },
 
@@ -175,7 +206,6 @@ export const dbHelpers = {
       include: { problem: true },
     });
   },
-
   getTopicXp: async (computingId: string) => {
     const userAchievements = await prisma.userAchievement.findMany({
       where: { user: { computingId } },
@@ -467,3 +497,6 @@ export const dbHelpers = {
     });
   },
 };
+
+
+

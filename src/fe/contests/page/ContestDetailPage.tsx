@@ -20,6 +20,7 @@ export default function ContestDetailPage({ contest }: ContestDetailPageProps) {
   const router = useRouter();
   const [tab, setTab] = useState<string>("problems");
   const problemColumns = contest.problems.map((problem) => problem.code);
+  const hasScoreboard = contest.scoreboard.length > 0;
 
   return (
     <Box className={styles.page}>
@@ -39,14 +40,18 @@ export default function ContestDetailPage({ contest }: ContestDetailPageProps) {
         <TabSwitcher
           value={tab}
           onChange={setTab}
-          options={[
-            { value: "problems", label: "Problems" },
-            { value: "scoreboard", label: "Scoreboard" },
-          ]}
+          options={
+            hasScoreboard
+              ? [
+                  { value: "problems", label: "Problems" },
+                  { value: "scoreboard", label: "Scoreboard" },
+                ]
+              : [{ value: "problems", label: "Problems" }]
+          }
           ariaLabel="Contest detail tabs"
         />
 
-        {tab === "problems" ? (
+        {tab === "problems" || !hasScoreboard ? (
           <ProblemsTab contestId={contest.id} problems={contest.problems} />
         ) : (
           <ScoreboardTab rows={contest.scoreboard} problemColumns={problemColumns} />

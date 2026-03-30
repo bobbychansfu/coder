@@ -1,6 +1,8 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import ContestDetailPage from "@/fe/contests/page/ContestDetailPage";
-import { contestDetailsById } from "@/fe/contests/data/contestDetails";
+import { getContestSummaries, toContestDetail } from "@/fe/contests/services/contestAdapters";
+import { getContestProblemStatus, getStudentContestInfo } from "@/fe/contests/services/contestApi";
+import { getCurrentUser } from "@/lib/session";
 
 interface ContestDetailRouteProps {
   params: Promise<{ id: string }>;
@@ -8,21 +10,35 @@ interface ContestDetailRouteProps {
 
 export const dynamicParams = true;
 
-export function generateStaticParams() {
-  return Object.keys(contestDetailsById).map((id) => ({ id }));
-}
-
 export default async function ContestDetailRoute({ params }: ContestDetailRouteProps) {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
   const { id } = await params;
-  const contestId = id ?? "contest-1";
-  const contest =
-    contestDetailsById[contestId] ??
-    contestDetailsById["contest-1"] ??
-    Object.values(contestDetailsById)[0];
+  const contestId = id ?? "";
+  const contestInfoResponse = await getStudentContestInfo();
+
+  if (!contestInfoResponse.ok || !contestInfoResponse.data) {
+    notFound();
+  }
+
+  const contest = getContestSummaries(contestInfoResponse.data).find((item) => item.id === contestId);
 
   if (!contest) {
     notFound();
   }
 
-  return <ContestDetailPage contest={contest} />;
+  const contestProblemStatusResponse = await getContestProblemStatus(contestId);
+
+  return (
+    <ContestDetailPage
+      contest={toContestDetail(
+        contest,
+        contestProblemStatusResponse.ok ? contestProblemStatusResponse.data : null,
+      )}
+    />
+  );
 }
