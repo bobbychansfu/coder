@@ -154,9 +154,8 @@ function ProblemSubmissionPageContent({
     hasLocalDraftState ? language : (persistedDraft?.language ?? DEFAULT_LANGUAGE);
   const effectiveDrafts =
     hasLocalDraftState ? drafts : (persistedDraft?.drafts ?? drafts);
-  const typedCode = effectiveDrafts[effectiveLanguage] ?? "";
   const code = effectiveDrafts[effectiveLanguage] ?? detail.starterCodes?.[effectiveLanguage] ?? "";
-  const hasTypedCode = typedCode.trim().length > 0;
+  const hasCode = code.trim().length > 0;
   const isJudging = submitState === "submitting";
   const displayedRunResult = runResult;
   const detailWithHistory = {
@@ -217,7 +216,7 @@ function ProblemSubmissionPageContent({
   };
 
   const submitContestCode = async (mode: "run" | "submit") => {
-    if (!hasTypedCode || !detail.problemId) {
+    if (!hasCode || !detail.problemId) {
       return;
     }
 
@@ -385,9 +384,9 @@ function ProblemSubmissionPageContent({
             }}
             onSubmitCode={() => void submitContestCode("submit")}
             onSecondaryAction={() => void submitContestCode("run")}
-            secondaryButtonDisabled={!hasTypedCode || isJudging || !detail.problemId}
+            secondaryButtonDisabled={!hasCode || isJudging || !detail.problemId}
             secondaryButtonLabel={submitState === "submitting" ? "Submitting..." : "Run Code"}
-            submitButtonDisabled={!hasTypedCode || isJudging || !detail.problemId}
+            submitButtonDisabled={!hasCode || isJudging || !detail.problemId}
             submitButtonLabel={submitState === "submitting" ? "Submitting..." : "Submit"}
             submitButtonStartIcon={<SendRoundedIcon fontSize="small" />}
             showAiHint

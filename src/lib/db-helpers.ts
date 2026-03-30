@@ -57,7 +57,7 @@ export const dbHelpers = {
   },
 
   findContestsForUser: async (computingId: string, role: string) => {
-    return prisma.contest.findMany({
+    const contests = await prisma.contest.findMany({
       where: {
         manageStatus: "ACTIVE",
         published: true,
@@ -71,12 +71,22 @@ export const dbHelpers = {
           },
         },
       },
+      include: {
+        participations: {
+          select: { role: true },
+        },
+      },
       orderBy: { createdAt: "desc" },
     });
+
+    return contests.map(({ participations, ...contest }) => ({
+      ...contest,
+      participants: participations.filter((participation) => participation.role === "contestant").length,
+    }));
   },
 
   findSpecificContestForUser: async (computingId: string, contestId: string, role: string) => {
-    return prisma.contest.findFirst({
+    const contest = await prisma.contest.findFirst({
       where: {
         id: contestId,
         manageStatus: "ACTIVE",
@@ -87,12 +97,28 @@ export const dbHelpers = {
           },
         },
       },
+      include: {
+        participations: {
+          select: { role: true },
+        },
+      },
     });
+
+    if (!contest) {
+      return null;
+    }
+
+    const { participations, ...contestRecord } = contest;
+
+    return {
+      ...contestRecord,
+      participants: participations.filter((participation) => participation.role === "contestant").length,
+    };
   },
 
   findOpenContestsForUser: async (computingId: string, role: string) => {
     // Finds published, non-draft contests where the user is NOT participating
-    return prisma.contest.findMany({
+    const contests = await prisma.contest.findMany({
       where: {
         manageStatus: "ACTIVE",
         published: true,
@@ -106,17 +132,43 @@ export const dbHelpers = {
           },
         },
       },
+      include: {
+        participations: {
+          select: { role: true },
+        },
+      },
       orderBy: { createdAt: "desc" },
     });
+
+    return contests.map(({ participations, ...contest }) => ({
+      ...contest,
+      participants: participations.filter((participation) => participation.role === "contestant").length,
+    }));
   },
 
   findContest: async (contestId: string) => {
-    return prisma.contest.findFirst({
+    const contest = await prisma.contest.findFirst({
       where: {
         id: contestId,
         manageStatus: "ACTIVE",
       },
+      include: {
+        participations: {
+          select: { role: true },
+        },
+      },
     });
+
+    if (!contest) {
+      return null;
+    }
+
+    const { participations, ...contestRecord } = contest;
+
+    return {
+      ...contestRecord,
+      participants: participations.filter((participation) => participation.role === "contestant").length,
+    };
   },
 
   findContestsProblemsStatusForUser: async (computingId: string, contestId: string) => {
@@ -271,30 +323,96 @@ export const dbHelpers = {
   },
 
   insertParticipate: async (computingId: string, contestId: string, role: string) => {
-    const user = await dbHelpers.findUserByComputingId(computingId);
-    if (!user) throw new Error("User not found");
+    return prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { computingId },
+        select: { id: true },
+      });
+      if (!user) throw new Error("User not found");
 
-    return prisma.participation.create({
-      data: {
-        userId: user.id,
-        contestId,
-        role,
-      },
+      const existingParticipation = await tx.participation.findUnique({
+        where: {
+          userId_contestId: {
+            userId: user.id,
+            contestId,
+          },
+        },
+      });
+
+      if (existingParticipation) {
+        return existingParticipation;
+      }
+
+      const participation = await tx.participation.create({
+        data: {
+          userId: user.id,
+          contestId,
+          role,
+        },
+      });
+
+      if (role === "contestant") {
+        await tx.contest.update({
+          where: { id: contestId },
+          data: {
+            participants: { increment: 1 },
+          },
+        });
+      }
+
+      return participation;
     });
   },
 
   removeParticipate: async (computingId: string, contestId: string, _role: string) => {
     void _role;
-    const user = await dbHelpers.findUserByComputingId(computingId);
-    if (!user) throw new Error("User not found");
 
-    return prisma.participation.delete({
-      where: {
-        userId_contestId: {
-          userId: user.id,
-          contestId,
+    return prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { computingId },
+        select: { id: true },
+      });
+      if (!user) throw new Error("User not found");
+
+      const existingParticipation = await tx.participation.findUnique({
+        where: {
+          userId_contestId: {
+            userId: user.id,
+            contestId,
+          },
         },
-      },
+      });
+
+      if (!existingParticipation) {
+        return null;
+      }
+
+      await tx.participation.delete({
+        where: {
+          userId_contestId: {
+            userId: user.id,
+            contestId,
+          },
+        },
+      });
+
+      if (existingParticipation.role === "contestant") {
+        const contest = await tx.contest.findUnique({
+          where: { id: contestId },
+          select: { participants: true },
+        });
+
+        if (contest && contest.participants > 0) {
+          await tx.contest.update({
+            where: { id: contestId },
+            data: {
+              participants: { decrement: 1 },
+            },
+          });
+        }
+      }
+
+      return existingParticipation;
     });
   },
 
@@ -497,6 +615,7 @@ export const dbHelpers = {
     });
   },
 };
+
 
 
 

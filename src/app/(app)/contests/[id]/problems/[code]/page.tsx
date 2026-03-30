@@ -10,7 +10,7 @@ import {
   getContestProblemDetail,
   getContestProblemStatus,
   getContestProblemSubmissions,
-  getStudentContestInfo,
+  getStudentContestInfoForRoute,
 } from "@/fe/contests/services/contestApi";
 import { getCurrentUser } from "@/lib/session";
 
@@ -29,7 +29,7 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
 
   const { id, code } = await params;
   const contestId = id ?? "";
-  const contestInfoResponse = await getStudentContestInfo();
+  const contestInfoResponse = await getStudentContestInfoForRoute(contestId, user.role);
 
   if (!contestInfoResponse.ok || !contestInfoResponse.data) {
     notFound();

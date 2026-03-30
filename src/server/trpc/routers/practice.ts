@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { router, studentProcedure } from "../init";
+import { practiceViewProcedure, router } from "../init";
 import { prisma as _prisma } from "@/lib/prisma";
 import {
   APP_LANGUAGES,
@@ -67,7 +67,7 @@ function mapRunVerdictToStatus(verdict: string): "accepted" | "wrong" | "tle" {
 // ---------------------------------------------------------------------------
 
 export const practiceRouter = router({
-  listProblems: studentProcedure
+  listProblems: practiceViewProcedure
     .input(
       z.object({
         difficulty: z.string().optional(),
@@ -135,7 +135,7 @@ export const practiceRouter = router({
       }));
     }),
 
-  getProblemDetail: studentProcedure
+  getProblemDetail: practiceViewProcedure
     .input(z.object({ problemCode: z.string() }))
     .query(async ({ ctx, input }) => {
       const problem = await ctx.prisma.problem.findUnique({
@@ -193,7 +193,7 @@ export const practiceRouter = router({
       };
     }),
 
-  getRunHistory: studentProcedure
+  getRunHistory: practiceViewProcedure
     .input(z.object({ problemCode: z.string() }))
     .query(async ({ ctx, input }) => {
       const dbUser = await getDbUser(ctx);
@@ -216,7 +216,7 @@ export const practiceRouter = router({
       }));
     }),
 
-  getLatestRunRecord: studentProcedure
+  getLatestRunRecord: practiceViewProcedure
     .input(z.object({ problemCode: z.string() }))
     .query(async ({ ctx, input }) => {
       const dbUser = await getDbUser(ctx);

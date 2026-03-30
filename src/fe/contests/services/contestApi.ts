@@ -115,8 +115,67 @@ async function fetchContestApi<T>(path: string): Promise<ApiResponse<T>> {
   };
 }
 
-export async function getStudentContestInfo() {
-  return fetchContestApi<StudentContestInfoResponse>("/api/s/info");
+async function mutateContestApi<T>(
+  path: string,
+  method: "POST" | "DELETE",
+): Promise<ApiResponse<T>> {
+  const origin = await getApiOrigin();
+  const cookieHeader = await getForwardedCookieHeader();
+
+  const response = await fetch(`${origin}${path}`, {
+    method,
+    headers: {
+      Accept: "application/json",
+      ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    return { ok: false, status: response.status, data: null };
+  }
+
+  return {
+    ok: true,
+    status: response.status,
+    data: (await response.json()) as T,
+  };
+}
+
+export async function getStudentContestInfo(refreshKey?: string) {
+  const query = refreshKey ? `?refresh=${encodeURIComponent(refreshKey)}` : "";
+  return fetchContestApi<StudentContestInfoResponse>(`/api/s/info${query}`);
+}
+
+export async function registerContest(contestId: string) {
+  return mutateContestApi<{ message: string; registeredContests: BackendContestSummary[] }>(
+    `/api/s/contest/register/${contestId}`,
+    "POST",
+  );
+}
+
+export async function getStudentContestInfoForRoute(contestId: string, role: string) {
+  const initialResponse = await getStudentContestInfo();
+
+  if (!initialResponse.ok || !initialResponse.data) {
+    return initialResponse;
+  }
+
+  const shouldAutoRegister =
+    role === "student" &&
+    initialResponse.data.contestsOpen.some((contest) => contest.id === contestId);
+
+  if (!shouldAutoRegister) {
+    return initialResponse;
+  }
+
+  const registerResponse = await registerContest(contestId);
+
+  if (!registerResponse.ok) {
+    return initialResponse;
+  }
+
+  return getStudentContestInfo(`contest-${contestId}`);
 }
 
 export async function getContestProblemStatus(contestId: string) {
@@ -132,3 +191,5 @@ export async function getContestProblemSubmissions(contestId: string, problemId:
     `/api/s/submissions/${contestId}/${problemId}`,
   );
 }
+
+

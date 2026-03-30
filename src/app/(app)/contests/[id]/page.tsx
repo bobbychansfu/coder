@@ -1,7 +1,10 @@
 import { notFound, redirect } from "next/navigation";
 import ContestDetailPage from "@/fe/contests/page/ContestDetailPage";
 import { getContestSummaries, toContestDetail } from "@/fe/contests/services/contestAdapters";
-import { getContestProblemStatus, getStudentContestInfo } from "@/fe/contests/services/contestApi";
+import {
+  getContestProblemStatus,
+  getStudentContestInfoForRoute,
+} from "@/fe/contests/services/contestApi";
 import { getCurrentUser } from "@/lib/session";
 
 interface ContestDetailRouteProps {
@@ -19,7 +22,7 @@ export default async function ContestDetailRoute({ params }: ContestDetailRouteP
 
   const { id } = await params;
   const contestId = id ?? "";
-  const contestInfoResponse = await getStudentContestInfo();
+  const contestInfoResponse = await getStudentContestInfoForRoute(contestId, user.role);
 
   if (!contestInfoResponse.ok || !contestInfoResponse.data) {
     notFound();
