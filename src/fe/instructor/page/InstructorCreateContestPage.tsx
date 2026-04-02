@@ -51,6 +51,8 @@ import { trpc } from "@/lib/trpc/client";
 import subpageStyles from "@/fe/instructor/styles/InstructorSubpageHeader.module.css";
 import styles from "@/fe/instructor/styles/InstructorCreateContestPage.module.css";
 
+const MANAGE_CONTESTS_TAB_ROUTE = `${ROUTES.instructorManageContests}?tab=contests`;
+
 function formatPreviewDate(dateValue: string, timeValue: string) {
   if (!dateValue) {
     return null;
@@ -466,7 +468,7 @@ export default function InstructorCreateContestPage() {
         utils.contestAuthoring.getContestById.invalidate({ contestId: contestId ?? "" }),
       ]);
 
-      router.push(ROUTES.instructorManageContests);
+      router.push(MANAGE_CONTESTS_TAB_ROUTE);
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : "Unable to save the contest.");
     }
@@ -497,7 +499,7 @@ export default function InstructorCreateContestPage() {
           utils.contestAuthoring.listDraftContests.invalidate(),
           utils.contestAuthoring.getContestById.invalidate({ contestId }),
         ]);
-        router.push(ROUTES.instructorManageContests);
+        router.push(MANAGE_CONTESTS_TAB_ROUTE);
       } else {
         await createContestMutation.mutateAsync({
           ...formValues,
@@ -510,7 +512,7 @@ export default function InstructorCreateContestPage() {
           utils.instructorManageContent.getInstructorOverview.invalidate(),
           utils.contestAuthoring.listDraftContests.invalidate(),
         ]);
-        router.push(ROUTES.instructorManageContests);
+        router.push(MANAGE_CONTESTS_TAB_ROUTE);
       }
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : "Unable to save draft.");

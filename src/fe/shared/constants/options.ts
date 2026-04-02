@@ -57,6 +57,11 @@ export const PROBLEM_TAG_GROUPS = [
 ] as const;
 
 export const SUBMISSION_STATUS_CONFIG = {
+  pending: {
+    label: "Pending",
+    color: "#6b7280",
+    icon: AccessTimeOutlinedIcon,
+  },
   accepted: {
     label: "Accepted",
     color: "#00a63e",
@@ -71,6 +76,16 @@ export const SUBMISSION_STATUS_CONFIG = {
     label: "Time Limit Exceeded",
     color: "#f54900",
     icon: AccessTimeOutlinedIcon,
+  },
+  runtime_error: {
+    label: "Runtime Error",
+    color: "#e7000b",
+    icon: CancelOutlinedIcon,
+  },
+  compile_error: {
+    label: "Compile Error",
+    color: "#e7000b",
+    icon: CancelOutlinedIcon,
   },
 } as const;
 

@@ -33,7 +33,7 @@ export type ProblemDetail = ContestProblem & ProblemNarrative;
 
 export interface SubmissionRecord {
   id: string;
-  status: "accepted" | "wrong" | "tle";
+  status: "pending" | "accepted" | "wrong" | "tle" | "runtime_error" | "compile_error";
   language: string;
   runtime: string;
   memory: string;

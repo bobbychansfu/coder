@@ -83,6 +83,10 @@ function average(values: number[]): number {
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
+function getContestantCount(contest: InstructorDashboardSnapshot["contests"][number]): number {
+  return contest.participations.filter((participation) => participation.role === "contestant").length;
+}
+
 export function buildInstructorDashboardResponse(
   snapshot: InstructorDashboardSnapshot,
 ): InstructorDashboardResponse {
@@ -152,7 +156,7 @@ export function buildInstructorDashboardResponse(
     return relevantStatuses.length === 0 ? 0 : (solvedStatuses.length / relevantStatuses.length) * 100;
   });
 
-  const participationByContest = contests.map((contest) => contest.participants);
+  const participationByContest = contests.map((contest) => getContestantCount(contest));
 
   const aiUsageByContest = contests.map((contest) => {
     const contestantIds = new Set(
@@ -216,7 +220,7 @@ export function buildInstructorDashboardResponse(
                   : contest.status === "ACTIVE"
                     ? "Active"
                     : "Ended",
-            participants: contest.participants,
+            participants: getContestantCount(contest),
             problemsCount: contest.contestProblems.length,
             groupsAssignedCount: assignedGroups.size,
             aiHintEnabled: contest.aiHintEnabled,

@@ -1,5 +1,7 @@
 import { prisma } from "./prisma";
-import { UserRole, SubmissionStatus, CodingLanguage } from "@prisma/client";
+import { ContestStatus, UserRole, SubmissionStatus, CodingLanguage } from "@prisma/client";
+
+const JOINABLE_CONTEST_STATUSES: ContestStatus[] = ["UPCOMING", "ACTIVE"];
 
 export const dbHelpers = {
   // ********************
@@ -21,6 +23,31 @@ export const dbHelpers = {
     });
   },
 
+  findProblemWithDetails: async (problemId: string) => {
+    return prisma.problem.findFirst({
+      where: {
+        id: problemId,
+        isDraft: false,
+        manageStatus: "ACTIVE",
+      },
+      include: {
+        topics: {
+          select: {
+            name: true,
+          },
+          orderBy: { name: "asc" },
+        },
+        starterCodes: {
+          select: {
+            language: true,
+            code: true,
+          },
+          orderBy: { language: "asc" },
+        },
+      },
+    });
+  },
+
   findProblemByCode: async (code: string) => {
     return prisma.problem.findFirst({
       where: {
@@ -32,9 +59,13 @@ export const dbHelpers = {
   },
 
   findContestsForUser: async (computingId: string, role: string) => {
-    return prisma.contest.findMany({
+    const contests = await prisma.contest.findMany({
       where: {
         manageStatus: "ACTIVE",
+        published: true,
+        status: {
+          not: "DRAFT",
+        },
         participations: {
           some: {
             user: { computingId },
@@ -42,12 +73,22 @@ export const dbHelpers = {
           },
         },
       },
+      include: {
+        participations: {
+          select: { role: true },
+        },
+      },
       orderBy: { createdAt: "desc" },
     });
+
+    return contests.map(({ participations, ...contest }) => ({
+      ...contest,
+      participants: participations.filter((participation) => participation.role === "contestant").length,
+    }));
   },
 
   findSpecificContestForUser: async (computingId: string, contestId: string, role: string) => {
-    return prisma.contest.findFirst({
+    const contest = await prisma.contest.findFirst({
       where: {
         id: contestId,
         manageStatus: "ACTIVE",
@@ -58,15 +99,34 @@ export const dbHelpers = {
           },
         },
       },
+      include: {
+        participations: {
+          select: { role: true },
+        },
+      },
     });
+
+    if (!contest) {
+      return null;
+    }
+
+    const { participations, ...contestRecord } = contest;
+
+    return {
+      ...contestRecord,
+      participants: participations.filter((participation) => participation.role === "contestant").length,
+    };
   },
 
   findOpenContestsForUser: async (computingId: string, role: string) => {
-    // Finds published contests where the user is NOT participating
-    return prisma.contest.findMany({
+    // Finds contests students can still join.
+    const contests = await prisma.contest.findMany({
       where: {
         manageStatus: "ACTIVE",
         published: true,
+        status: {
+          in: JOINABLE_CONTEST_STATUSES,
+        },
         participations: {
           none: {
             user: { computingId },
@@ -74,21 +134,81 @@ export const dbHelpers = {
           },
         },
       },
+      include: {
+        participations: {
+          select: { role: true },
+        },
+      },
       orderBy: { createdAt: "desc" },
     });
+
+    return contests.map(({ participations, ...contest }) => ({
+      ...contest,
+      participants: participations.filter((participation) => participation.role === "contestant").length,
+    }));
+  },
+
+  findJoinableContestForUser: async (computingId: string, contestId: string, role: string) => {
+    const contest = await prisma.contest.findFirst({
+      where: {
+        id: contestId,
+        manageStatus: "ACTIVE",
+        published: true,
+        status: {
+          in: JOINABLE_CONTEST_STATUSES,
+        },
+        participations: {
+          none: {
+            user: { computingId },
+            role,
+          },
+        },
+      },
+      include: {
+        participations: {
+          select: { role: true },
+        },
+      },
+    });
+
+    if (!contest) {
+      return null;
+    }
+
+    const { participations, ...contestRecord } = contest;
+
+    return {
+      ...contestRecord,
+      participants: participations.filter((participation) => participation.role === "contestant").length,
+    };
   },
 
   findContest: async (contestId: string) => {
-    return prisma.contest.findFirst({
+    const contest = await prisma.contest.findFirst({
       where: {
         id: contestId,
         manageStatus: "ACTIVE",
       },
+      include: {
+        participations: {
+          select: { role: true },
+        },
+      },
     });
+
+    if (!contest) {
+      return null;
+    }
+
+    const { participations, ...contestRecord } = contest;
+
+    return {
+      ...contestRecord,
+      participants: participations.filter((participation) => participation.role === "contestant").length,
+    };
   },
 
   findContestsProblemsStatusForUser: async (computingId: string, contestId: string) => {
-    // This combines multiple tables in the original SQL
     return prisma.contestProblem.findMany({
       where: {
         contestId,
@@ -136,10 +256,121 @@ export const dbHelpers = {
       where: { contestId, role: "contestant" },
       include: {
         user: {
-          select: { computingId: true, nickname: true },
+          select: { computingId: true, nickname: true, firstName: true, lastName: true },
         },
       },
     });
+  },
+
+  findScoreboardRowsForContest: async (contestId: string, viewerComputingId?: string) => {
+    const [contestProblems, contestants, problemStatuses] = await Promise.all([
+      prisma.contestProblem.findMany({
+        where: {
+          contestId,
+          contest: { manageStatus: "ACTIVE" },
+          problem: { isDraft: false, manageStatus: "ACTIVE" },
+        },
+        select: {
+          problemId: true,
+          ordering: true,
+        },
+        orderBy: { ordering: "asc" },
+      }),
+      prisma.participation.findMany({
+        where: { contestId, role: "contestant" },
+        select: {
+          userId: true,
+          rank: true,
+          user: {
+            select: {
+              computingId: true,
+              nickname: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+        },
+      }),
+      prisma.problemStatus.findMany({
+        where: {
+          contestId,
+          contest: { manageStatus: "ACTIVE" },
+        },
+        select: {
+          userId: true,
+          problemId: true,
+          status: true,
+          score: true,
+        },
+      }),
+    ]);
+
+    const problemCodeById = new Map(
+      contestProblems.map((problem, index) => [problem.problemId, String.fromCharCode(65 + index)]),
+    );
+    const statusesByUserId = new Map<string, typeof problemStatuses>();
+
+    for (const status of problemStatuses) {
+      const existing = statusesByUserId.get(status.userId) ?? [];
+      existing.push(status);
+      statusesByUserId.set(status.userId, existing);
+    }
+
+    const rows = contestants.map((contestant) => {
+      const statuses = statusesByUserId.get(contestant.userId) ?? [];
+      const solvedStatuses = statuses.filter((status) => {
+        const normalizedStatus = status.status.trim().toLowerCase();
+        return normalizedStatus === "correct" || status.score > 0;
+      });
+      const totalScore = statuses.reduce((sum, status) => sum + Math.max(0, status.score), 0);
+      const displayName =
+        contestant.user.nickname?.trim() ||
+        `${contestant.user.firstName} ${contestant.user.lastName}`.trim() ||
+        contestant.user.computingId;
+
+      return {
+        computingId: contestant.user.computingId,
+        name: displayName,
+        solved: solvedStatuses.length,
+        score: totalScore,
+        presetRank: contestant.rank,
+        problems: Object.fromEntries(
+          statuses.flatMap((status) => {
+            const code = problemCodeById.get(status.problemId);
+
+            if (!code) {
+              return [];
+            }
+
+            return [[code, { points: status.score }]] as const;
+          }),
+        ),
+        isCurrentUser: contestant.user.computingId === viewerComputingId,
+      };
+    });
+
+    const sortedRows = rows.sort((left, right) => {
+      if (typeof left.presetRank === "number" && typeof right.presetRank === "number") {
+        if (left.presetRank !== right.presetRank) {
+          return left.presetRank - right.presetRank;
+        }
+      }
+
+      if (right.score !== left.score) {
+        return right.score - left.score;
+      }
+
+      if (right.solved !== left.solved) {
+        return right.solved - left.solved;
+      }
+
+      return left.name.localeCompare(right.name);
+    });
+
+    return sortedRows.map(({ presetRank: _presetRank, ...row }, index) => ({
+      rank: index + 1,
+      ...row,
+    }));
   },
 
   findProblemStatus: async (computingId: string, contestId: string, problemId: string) => {
@@ -165,7 +396,7 @@ export const dbHelpers = {
         contestId,
         problemId,
       },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: "desc" },
     });
   },
 
@@ -175,7 +406,6 @@ export const dbHelpers = {
       include: { problem: true },
     });
   },
-
   getTopicXp: async (computingId: string) => {
     const userAchievements = await prisma.userAchievement.findMany({
       where: { user: { computingId } },
@@ -241,30 +471,96 @@ export const dbHelpers = {
   },
 
   insertParticipate: async (computingId: string, contestId: string, role: string) => {
-    const user = await dbHelpers.findUserByComputingId(computingId);
-    if (!user) throw new Error("User not found");
+    return prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { computingId },
+        select: { id: true },
+      });
+      if (!user) throw new Error("User not found");
 
-    return prisma.participation.create({
-      data: {
-        userId: user.id,
-        contestId,
-        role,
-      },
+      const existingParticipation = await tx.participation.findUnique({
+        where: {
+          userId_contestId: {
+            userId: user.id,
+            contestId,
+          },
+        },
+      });
+
+      if (existingParticipation) {
+        return existingParticipation;
+      }
+
+      const participation = await tx.participation.create({
+        data: {
+          userId: user.id,
+          contestId,
+          role,
+        },
+      });
+
+      if (role === "contestant") {
+        await tx.contest.update({
+          where: { id: contestId },
+          data: {
+            participants: { increment: 1 },
+          },
+        });
+      }
+
+      return participation;
     });
   },
 
   removeParticipate: async (computingId: string, contestId: string, _role: string) => {
     void _role;
-    const user = await dbHelpers.findUserByComputingId(computingId);
-    if (!user) throw new Error("User not found");
 
-    return prisma.participation.delete({
-      where: {
-        userId_contestId: {
-          userId: user.id,
-          contestId,
+    return prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { computingId },
+        select: { id: true },
+      });
+      if (!user) throw new Error("User not found");
+
+      const existingParticipation = await tx.participation.findUnique({
+        where: {
+          userId_contestId: {
+            userId: user.id,
+            contestId,
+          },
         },
-      },
+      });
+
+      if (!existingParticipation) {
+        return null;
+      }
+
+      await tx.participation.delete({
+        where: {
+          userId_contestId: {
+            userId: user.id,
+            contestId,
+          },
+        },
+      });
+
+      if (existingParticipation.role === "contestant") {
+        const contest = await tx.contest.findUnique({
+          where: { id: contestId },
+          select: { participants: true },
+        });
+
+        if (contest && contest.participants > 0) {
+          await tx.contest.update({
+            where: { id: contestId },
+            data: {
+              participants: { decrement: 1 },
+            },
+          });
+        }
+      }
+
+      return existingParticipation;
     });
   },
 
@@ -467,3 +763,9 @@ export const dbHelpers = {
     });
   },
 };
+
+
+
+
+
+

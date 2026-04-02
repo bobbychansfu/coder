@@ -124,9 +124,8 @@ function PracticeProblemSubmissionPageContent({
   const [submitState, setSubmitState] = useState<"idle" | "submitting" | "queued" | "running" | "done" | "failed">("idle");
   const isSubmitting = submitState === "submitting";
   const isJudging = submitState === "submitting" || submitState === "queued" || submitState === "running";
-  const typedCode = drafts[language] ?? "";
   const code = drafts[language] ?? detail?.starterCodes?.[language] ?? "";
-  const hasTypedCode = typedCode.trim().length > 0;
+  const hasCode = code.trim().length > 0;
   const displayedRunResult = runResult;
 
   const closeSubmissionStream = useCallback(() => {
@@ -325,7 +324,7 @@ function PracticeProblemSubmissionPageContent({
   ]);
 
   const handleSubmitCode = async () => {
-    if (!hasTypedCode) return;
+    if (!hasCode) return;
 
     const currentSession = await ensureSessionInfo();
 
@@ -472,7 +471,7 @@ function PracticeProblemSubmissionPageContent({
               }))
             }
             onSubmitCode={handleSubmitCode}
-            submitButtonDisabled={!hasTypedCode || isJudging}
+            submitButtonDisabled={!hasCode || isJudging}
             submitButtonLabel={isSubmitting ? "Submitting..." : isJudging ? "Judging..." : "Submit"}
           />
         </Box>
