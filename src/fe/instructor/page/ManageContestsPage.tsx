@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
 import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
 import CodeRoundedIcon from "@mui/icons-material/CodeRounded";
@@ -71,10 +71,17 @@ interface ManagedProblemRecord {
 const EMPTY_CONTESTS: ManagedContestRecord[] = [];
 const EMPTY_PROBLEMS: ManagedProblemRecord[] = [];
 
+function getInitialManageContentTab(tab: string | null): ManageContentTab {
+  return tab === "contests" || tab === "problems" ? tab : DEFAULT_MANAGE_CONTENT_TAB;
+}
+
 export default function ManageContestsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const utils = trpc.useUtils();
-  const [selectedTab, setSelectedTab] = useState<ManageContentTab>(DEFAULT_MANAGE_CONTENT_TAB);
+  const [selectedTab, setSelectedTab] = useState<ManageContentTab>(() =>
+    getInitialManageContentTab(searchParams.get("tab")),
+  );
   const [contestSearchQuery, setContestSearchQuery] = useState("");
   const [problemSearchQuery, setProblemSearchQuery] = useState("");
   const [selectedContestStatus, setSelectedContestStatus] =

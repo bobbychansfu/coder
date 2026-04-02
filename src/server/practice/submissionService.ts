@@ -95,6 +95,8 @@ export async function getPracticeProblemById(problemId: string): Promise<Practic
   const problem = await prisma.problem.findFirst({
     where: {
       id: problemId,
+      isDraft: false,
+      manageStatus: "ACTIVE",
       source: { in: ["PRACTICE", "BOTH"] },
     },
     select: {
