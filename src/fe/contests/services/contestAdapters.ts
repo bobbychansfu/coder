@@ -1,7 +1,8 @@
-import type { ContestStatus, DifficultyLevel } from "@/fe/shared/types/contest";
+import type { ContestStatus } from "@/fe/shared/types/contest";
 import type { ContestDetail, ContestDetailStatus, ContestProblem } from "@/fe/contests/data/contestDetails";
 import type { ContestListItem } from "@/fe/contests/data/contests";
 import type {
+  BackendContestScoreboardRow,
   BackendContestProblemStatus,
   BackendContestSummary,
   ContestProblemStatusResponse,
@@ -103,6 +104,17 @@ function toContestProblem(row: BackendContestProblemStatus, index: number): Cont
   };
 }
 
+function toScoreboardRow(row: BackendContestScoreboardRow) {
+  return {
+    rank: row.rank,
+    name: row.name,
+    solved: row.solved,
+    score: row.score,
+    problems: row.problems,
+    isCurrentUser: row.isCurrentUser,
+  };
+}
+
 function dedupeContests(contests: BackendContestSummary[]) {
   const seen = new Set<string>();
 
@@ -125,7 +137,6 @@ export function toContestListItem(contest: BackendContestSummary): ContestListIt
     id: contest.id,
     title: contest.name,
     status: mapContestListStatus(contest.status),
-    difficulty: "Medium" satisfies DifficultyLevel,
   };
 }
 
@@ -148,7 +159,7 @@ export function toContestDetail(
     problemsCount: problems.length,
     participantsLabel: `${contest.participants} registered`,
     problems,
-    scoreboard: [],
+    scoreboard: (liveDetail?.scoreboard ?? []).map(toScoreboardRow),
     clarifications: [],
   };
 }

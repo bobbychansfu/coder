@@ -1,11 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
+import { can } from "@/lib/authz";
 import { dbHelpers } from "@/lib/db-helpers";
+
+function isContestViewableByRegisteredUser(contest: { published: boolean; status: string }) {
+  return contest.published && contest.status !== "DRAFT";
+}
+
+async function findContestForViewer(computingId: string, role: string, contestId: string) {
+  if (can(role as "student" | "ta" | "instructor" | "admin").canManageContest) {
+    return dbHelpers.findContest(contestId);
+  }
+
+  return dbHelpers.findSpecificContestForUser(computingId, contestId, "contestant");
+}
 
 export async function handleRegisterContest(
   request: NextRequest,
   cid: string
 ) {
+  void request;
+
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -13,6 +28,19 @@ export async function handleRegisterContest(
     }
 
     const computingId = user.computingId;
+    const existingContest = await dbHelpers.findSpecificContestForUser(computingId, cid, "contestant");
+
+    if (!existingContest) {
+      const joinableContest = await dbHelpers.findJoinableContestForUser(
+        computingId,
+        cid,
+        "contestant",
+      );
+
+      if (!joinableContest) {
+        return NextResponse.json({ error: "Contest is not open for registration" }, { status: 403 });
+      }
+    }
 
     await dbHelpers.insertParticipate(computingId, cid, "contestant");
     const registeredContests = await dbHelpers.findContestsForUser(computingId, "contestant");
@@ -85,6 +113,8 @@ export async function handleGetContestDetails(
   request: NextRequest,
   cid: string
 ) {
+  void request;
+
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -93,10 +123,16 @@ export async function handleGetContestDetails(
 
     const computingId = user.computingId;
     const role = user.role;
+    const contest = await findContestForViewer(computingId, role, cid);
 
-    const contest = await dbHelpers.findContest(cid);
+    if (!contest) {
+      return NextResponse.json(
+        { error: can(role).canManageContest ? "Contest not found" : "Not registered for contest" },
+        { status: can(role).canManageContest ? 404 : 403 },
+      );
+    }
 
-    if (!contest || !contest.published || contest.status === "DRAFT") {
+    if (!isContestViewableByRegisteredUser(contest)) {
       return NextResponse.json({ error: "Contest not found" }, { status: 404 });
     }
 
@@ -104,8 +140,9 @@ export async function handleGetContestDetails(
       computingId,
       cid
     );
+    const scoreboard = await dbHelpers.findScoreboardRowsForContest(cid, computingId);
 
-    return NextResponse.json({ computingId, contestProblemsStatus, role });
+    return NextResponse.json({ computingId, contestProblemsStatus, scoreboard, role });
   } catch (error: any) {
     console.error(error);
     return NextResponse.json({ error: "Internal server error", details: error.message }, { status: 500 });
@@ -116,13 +153,23 @@ export async function handleGetClosedContestInfo(
   request: NextRequest,
   cid: string
 ) {
+  void request;
+
   try {
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const contest = await dbHelpers.findContest(cid);
+    const contest = await findContestForViewer(user.computingId, user.role, cid);
+
+    if (!contest) {
+      return NextResponse.json(
+        { error: can(user.role).canManageContest ? "Contest not found" : "Not registered for contest" },
+        { status: can(user.role).canManageContest ? 404 : 403 },
+      );
+    }
+
     return NextResponse.json({ contest });
   } catch (error: any) {
     console.error(error);

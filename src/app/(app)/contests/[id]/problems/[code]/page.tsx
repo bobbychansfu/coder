@@ -5,17 +5,42 @@ import {
   type ContestProblemDetailResponse,
   type ContestProblemSubmissionsResponse,
 } from "@/fe/contests/services/contestProblem";
-import { getContestSummaries, toContestDetail } from "@/fe/contests/services/contestAdapters";
+import { toContestDetail } from "@/fe/contests/services/contestAdapters";
 import {
+  type BackendContestSummary,
   getContestProblemDetail,
   getContestProblemStatus,
   getContestProblemSubmissions,
   getStudentContestInfoForRoute,
 } from "@/fe/contests/services/contestApi";
+import { can } from "@/lib/authz";
+import { dbHelpers } from "@/lib/db-helpers";
 import { getCurrentUser } from "@/lib/session";
 
 interface ContestProblemRouteProps {
   params: Promise<{ id: string; code: string }>;
+}
+
+function toBackendContestSummary(
+  contest: NonNullable<Awaited<ReturnType<typeof dbHelpers.findContest>>>,
+): BackendContestSummary {
+  return {
+    id: contest.id,
+    slug: contest.slug,
+    name: contest.name,
+    status: contest.status,
+    startsAt: contest.startsAt.toISOString(),
+    endsAt: contest.endsAt?.toISOString() ?? null,
+    durationMinutes: contest.durationMinutes,
+    participants: contest.participants,
+    published: contest.published,
+  };
+}
+
+function isBackendContestSummary(
+  contest: BackendContestSummary | NonNullable<Awaited<ReturnType<typeof dbHelpers.findContest>>>,
+): contest is BackendContestSummary {
+  return typeof contest.startsAt === "string";
 }
 
 export const dynamicParams = true;
@@ -29,15 +54,20 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
 
   const { id, code } = await params;
   const contestId = id ?? "";
-  const contestInfoResponse = await getStudentContestInfoForRoute(contestId, user.role);
+  let contestSummary = null;
 
-  if (!contestInfoResponse.ok || !contestInfoResponse.data) {
-    notFound();
+  if (can(user.role).canManageContest) {
+    contestSummary = await dbHelpers.findContest(contestId);
+  } else {
+    const contestInfoResponse = await getStudentContestInfoForRoute(contestId, user.role);
+
+    if (!contestInfoResponse.ok || !contestInfoResponse.data) {
+      notFound();
+    }
+
+    contestSummary =
+      contestInfoResponse.data.contests.find((contest) => contest.id === contestId) ?? null;
   }
-
-  const contestSummary = getContestSummaries(contestInfoResponse.data).find(
-    (contest) => contest.id === contestId,
-  );
 
   if (!contestSummary) {
     notFound();
@@ -49,7 +79,10 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
     notFound();
   }
 
-  const contest = toContestDetail(contestSummary, contestProblemStatusResponse.data);
+  const normalizedContestSummary = isBackendContestSummary(contestSummary)
+    ? contestSummary
+    : toBackendContestSummary(contestSummary);
+  const contest = toContestDetail(normalizedContestSummary, contestProblemStatusResponse.data);
   const problemCode = (code ?? contest.problems[0]?.code ?? "A").toUpperCase();
   const problemIndex = contest.problems.findIndex((item) => item.code.toUpperCase() === problemCode);
   const problem = problemIndex >= 0 ? contest.problems[problemIndex] : undefined;
@@ -75,6 +108,7 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
   return (
     <ProblemSubmissionPage
       contestId={contest.id}
+      contestStatus={contest.status}
       detail={adaptContestProblemDetail(
         problem,
         problemDetailResponse.data as ContestProblemDetailResponse,

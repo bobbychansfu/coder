@@ -1,16 +1,19 @@
-.link {
-  text-decoration: none;
-  color: inherit;
-  display: block;
-}
-
 .card {
   min-height: 135px;
+}
+
+.cardContent {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+  align-items: flex-start;
 }
 
 .meta {
   gap: 8px;
   flex-wrap: wrap;
+  justify-content: flex-start;
 }
 
 .status {
@@ -41,4 +44,57 @@
   background-color: #eceef2;
   color: #030213;
   border: 1px solid #e5e7eb;
+}
+
+.actionRow {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-end;
+  margin-top: 20px;
+  width: 100%;
+}
+
+.actionButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 126px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: -0.1504px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, color 0.2s ease-in-out;
+  margin-left: auto;
+}
+
+.actionButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.actionPrimary {
+  background-color: #e7000b;
+  color: #ffffff;
+}
+
+.actionPrimary:hover:not(:disabled) {
+  background-color: #c7000a;
+}
+
+.actionSecondary {
+  background-color: #ffffff;
+  border-color: #d1d5db;
+  color: #111827;
+}
+
+.actionSecondary:hover {
+  background-color: #f9fafb;
+  border-color: #9ca3af;
 }

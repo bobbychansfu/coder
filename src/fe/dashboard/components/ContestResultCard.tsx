@@ -10,7 +10,6 @@ interface ContestResultCardProps {
   title: string;
   date: string;
   participants: number;
-  difficulty: "Easy" | "Medium" | "Hard";
   status: ContestStatus;
   rank?: number | null;
   problemsSolved?: string;
@@ -22,7 +21,6 @@ export default function ContestResultCard({
   title,
   date,
   participants,
-  difficulty,
   status,
   rank,
   problemsSolved,
@@ -53,11 +51,6 @@ export default function ContestResultCard({
         <div className={styles.headerContent}>
           <div className={styles.titleRow}>
             <div className={styles.title}>{title}</div>
-            <span
-              className={`${styles.difficultyBadge} ${styles[`difficulty${difficulty}`]}`}
-            >
-              {difficulty}
-            </span>
             <span className={`${styles.statusBadge} ${statusClassName}`}>
               {status}
             </span>

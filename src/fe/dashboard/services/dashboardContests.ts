@@ -1,7 +1,6 @@
 import type {
   ContestAlert as DashboardContestAlert,
   ContestStatus,
-  DifficultyLevel,
   UpcomingContest,
 } from "@/fe/shared/types/contest";
 import type { BackendContestSummary, StudentContestInfoResponse } from "@/fe/contests/services/contestApi";
@@ -11,7 +10,6 @@ export interface DashboardContestHistoryItem {
   title: string;
   date: string;
   participants: number;
-  difficulty: DifficultyLevel;
   status: ContestStatus;
 }
 
@@ -114,6 +112,7 @@ export function mapStudentDashboardContests(
   const visibleContests = dedupeContests([...payload.contests, ...payload.contestsOpen]).sort(
     sortByStartAscending,
   );
+  const myContests = payload.contests.slice().sort(sortByStartDescending);
 
   const upcomingContests = visibleContests
     .filter((contest) => contest.status === "UPCOMING" || contest.status === "ACTIVE")
@@ -126,12 +125,11 @@ export function mapStudentDashboardContests(
       readinessState: contest.status === "ACTIVE" ? "Ready" : undefined,
     })) satisfies UpcomingContest[];
 
-  const recentContests = visibleContests.slice().sort(sortByStartDescending).slice(0, 3).map((contest) => ({
+  const recentContests = myContests.slice(0, 3).map((contest) => ({
     id: contest.id,
     title: contest.name,
     date: formatContestDate(contest.startsAt),
     participants: contest.participants,
-    difficulty: "Medium" as DifficultyLevel,
     status: mapContestStatus(contest.status),
   }));
 

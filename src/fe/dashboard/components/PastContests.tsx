@@ -34,7 +34,6 @@ export default function PastContests({ contests = [] }: PastContestsProps) {
                 title={contest.title}
                 date={contest.date}
                 participants={contest.participants}
-                difficulty={contest.difficulty}
                 status={contest.status}
               />
             </Link>

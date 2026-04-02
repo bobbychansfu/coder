@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
+import { can } from "@/lib/authz";
 import { dbHelpers } from "@/lib/db-helpers";
 import { syncStudentGamification } from "@/server/gamification/persistence";
 import path from "path";
@@ -135,6 +136,38 @@ function formatMemoryFromJudgeResponse(result: JudgeSubmissionResponse, judgeOut
   );
 }
 
+function isContestViewableByRegisteredUser(contest: { published: boolean; status: string }) {
+  return contest.published && contest.status !== "DRAFT";
+}
+
+function isContestOpenForSubmission(
+  contest: { published: boolean; status: string; startsAt: Date; endsAt: Date | null },
+) {
+  if (!isContestViewableByRegisteredUser(contest) || contest.status !== "ACTIVE") {
+    return false;
+  }
+
+  const now = new Date();
+
+  if (contest.startsAt > now) {
+    return false;
+  }
+
+  if (contest.endsAt && contest.endsAt <= now) {
+    return false;
+  }
+
+  return true;
+}
+
+async function findContestForViewer(computingId: string, role: string, contestId: string) {
+  if (can(role as "student" | "ta" | "instructor" | "admin").canManageContest) {
+    return dbHelpers.findContest(contestId);
+  }
+
+  return dbHelpers.findSpecificContestForUser(computingId, contestId, "contestant");
+}
+
 export async function handleGetProblemDetails(
   _request: NextRequest,
   cid: string,
@@ -151,6 +184,19 @@ export async function handleGetProblemDetails(
 
     if (!/^[a-zA-Z0-9_-]+$/.test(pid)) {
       return NextResponse.json({ error: "Invalid problem ID" }, { status: 400 });
+    }
+
+    const contest = await findContestForViewer(computingId, role, cid);
+
+    if (!contest) {
+      return NextResponse.json(
+        { error: can(role).canManageContest ? "Contest not found" : "Not registered for contest" },
+        { status: can(role).canManageContest ? 404 : 403 },
+      );
+    }
+
+    if (!isContestViewableByRegisteredUser(contest)) {
+      return NextResponse.json({ error: "Contest not found" }, { status: 404 });
     }
 
     const problem = await dbHelpers.findProblemWithDetails(pid);
@@ -210,6 +256,11 @@ export async function handleSubmitCode(
     }
 
     const computingId = user.computingId;
+    const role = user.role;
+
+    if (can(role).canManageContest) {
+      return NextResponse.json({ error: "Only student participants can submit" }, { status: 403 });
+    }
 
     let language: string = "";
     let connection_id: string = "";
@@ -237,9 +288,25 @@ export async function handleSubmitCode(
       return NextResponse.json({ error: "No code submitted" }, { status: 400 });
     }
 
-    const contest = await dbHelpers.findSpecificContestForUser(computingId, cid, "contestant");
+    const contest = await findContestForViewer(computingId, role, cid);
     if (!contest) {
       return NextResponse.json({ error: "Not registered for contest" }, { status: 403 });
+    }
+
+    if (!isContestViewableByRegisteredUser(contest)) {
+      return NextResponse.json({ error: "Contest not found" }, { status: 404 });
+    }
+
+    if (!isContestOpenForSubmission(contest)) {
+      return NextResponse.json(
+        {
+          error:
+            contest.status === "ENDED" || (contest.endsAt && contest.endsAt <= new Date())
+              ? "Contest has ended"
+              : "Contest is not accepting submissions",
+        },
+        { status: 403 },
+      );
     }
 
     await dbHelpers.createProblemStatus(computingId, cid, pid);
@@ -258,9 +325,6 @@ export async function handleSubmitCode(
       submission: code,
       language: codingLanguage,
     });
-
-    const now = new Date();
-    const endsAt = contest.endsAt ? new Date(contest.endsAt) : null;
 
     const JUDGE_URL = process.env.JUDGE_URL || "http://127.0.0.1:8000";
     let judgeResponse: JudgeSubmissionResponse;
@@ -300,25 +364,14 @@ export async function handleSubmitCode(
     }
     await syncStudentGamification(computingId);
 
-    if (endsAt && endsAt < now) {
-      return NextResponse.json({
-        message: "Contest has ended, submission recorded",
-        sid: submission.id,
-        score,
-        status: submissionStatus,
-        runtime: formatRuntimeFromJudgeResponse(judgeResponse, judgeOutput),
-        memory: formatMemoryFromJudgeResponse(judgeResponse, judgeOutput),
-      });
-    } else {
-      return NextResponse.json({
-        message: "Submission received",
-        sid: submission.id,
-        score,
-        status: submissionStatus,
-        runtime: formatRuntimeFromJudgeResponse(judgeResponse, judgeOutput),
-        memory: formatMemoryFromJudgeResponse(judgeResponse, judgeOutput),
-      });
-    }
+    return NextResponse.json({
+      message: "Submission received",
+      sid: submission.id,
+      score,
+      status: submissionStatus,
+      runtime: formatRuntimeFromJudgeResponse(judgeResponse, judgeOutput),
+      memory: formatMemoryFromJudgeResponse(judgeResponse, judgeOutput),
+    });
   } catch (error: unknown) {
     console.error(error);
     return NextResponse.json({ error: "Internal server error", details: getErrorMessage(error) }, { status: 500 });
@@ -334,6 +387,21 @@ export async function handleGetSubmissionsForProblem(
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const contest = await findContestForViewer(user.computingId, user.role, cid);
+
+    if (!contest) {
+      return NextResponse.json(
+        {
+          error: can(user.role).canManageContest ? "Contest not found" : "Not registered for contest",
+        },
+        { status: can(user.role).canManageContest ? 404 : 403 },
+      );
+    }
+
+    if (!isContestViewableByRegisteredUser(contest)) {
+      return NextResponse.json({ error: "Contest not found" }, { status: 404 });
     }
 
     const subs = await dbHelpers.findSubmissionsForProblem(user.computingId, cid, pid);

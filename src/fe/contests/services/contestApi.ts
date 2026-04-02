@@ -26,6 +26,21 @@ interface BackendProblemStatus {
   score: number;
 }
 
+interface BackendScoreboardCell {
+  points?: number;
+  time?: string;
+  penalty?: number;
+}
+
+export interface BackendContestScoreboardRow {
+  rank: number;
+  name: string;
+  solved: number;
+  score: number;
+  problems: Record<string, BackendScoreboardCell>;
+  isCurrentUser?: boolean;
+}
+
 interface BackendContestProblem {
   id: string;
   title: string;
@@ -44,6 +59,7 @@ export interface BackendContestProblemStatus {
 export interface ContestProblemStatusResponse {
   computingId: string;
   contestProblemsStatus: BackendContestProblemStatus[];
+  scoreboard: BackendContestScoreboardRow[];
   role: string;
 }
 
@@ -155,27 +171,10 @@ export async function registerContest(contestId: string) {
 }
 
 export async function getStudentContestInfoForRoute(contestId: string, role: string) {
-  const initialResponse = await getStudentContestInfo();
+  void contestId;
+  void role;
 
-  if (!initialResponse.ok || !initialResponse.data) {
-    return initialResponse;
-  }
-
-  const shouldAutoRegister =
-    role === "student" &&
-    initialResponse.data.contestsOpen.some((contest) => contest.id === contestId);
-
-  if (!shouldAutoRegister) {
-    return initialResponse;
-  }
-
-  const registerResponse = await registerContest(contestId);
-
-  if (!registerResponse.ok) {
-    return initialResponse;
-  }
-
-  return getStudentContestInfo(`contest-${contestId}`);
+  return getStudentContestInfo();
 }
 
 export async function getContestProblemStatus(contestId: string) {
@@ -191,5 +190,4 @@ export async function getContestProblemSubmissions(contestId: string, problemId:
     `/api/s/submissions/${contestId}/${problemId}`,
   );
 }
-
 

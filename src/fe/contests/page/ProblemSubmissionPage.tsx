@@ -10,6 +10,7 @@ import PageHeader from "@/fe/shared/components/PageHeader";
 import ProblemHeader from "@/fe/shared/components/problem/ProblemHeader";
 import ProblemDetails from "@/fe/shared/components/problem/ProblemDetails";
 import SolutionEditor from "@/fe/shared/components/problem/SolutionEditor";
+import type { ContestDetailStatus } from "@/fe/contests/data/contestDetails";
 import {
   DEFAULT_CODE_LANGUAGE,
   removePersistedCodeDraft,
@@ -33,6 +34,7 @@ interface ProblemNavigator {
 
 interface ProblemSubmissionPageProps {
   contestId: string;
+  contestStatus?: ContestDetailStatus;
   detail: ProblemDetail;
   navigator?: ProblemNavigator;
 }
@@ -115,6 +117,7 @@ function sleep(ms: number) {
 
 export default function ProblemSubmissionPage({
   contestId,
+  contestStatus,
   detail,
   navigator,
 }: ProblemSubmissionPageProps) {
@@ -122,6 +125,7 @@ export default function ProblemSubmissionPage({
     <ProblemSubmissionPageContent
       key={`${contestId}:${detail.code}`}
       contestId={contestId}
+      contestStatus={contestStatus}
       detail={detail}
       navigator={navigator}
     />
@@ -134,6 +138,7 @@ function getContestDraftStorageKey(contestId: string, problemCode: string) {
 
 function ProblemSubmissionPageContent({
   contestId,
+  contestStatus,
   detail,
   navigator,
 }: ProblemSubmissionPageProps) {
@@ -157,6 +162,13 @@ function ProblemSubmissionPageContent({
   const code = effectiveDrafts[effectiveLanguage] ?? detail.starterCodes?.[effectiveLanguage] ?? "";
   const hasCode = code.trim().length > 0;
   const isJudging = submitState === "submitting";
+  const submissionsLockedReason =
+    contestStatus === "upcoming"
+      ? "Submissions open when this contest starts."
+      : contestStatus === "closed"
+        ? "This contest has ended. You can review problems and submissions, but new submissions are disabled."
+        : null;
+  const submissionsLocked = submissionsLockedReason !== null;
   const displayedRunResult = runResult;
   const detailWithHistory = {
     ...detail,
@@ -384,9 +396,18 @@ function ProblemSubmissionPageContent({
             }}
             onSubmitCode={() => void submitContestCode("submit")}
             onSecondaryAction={() => void submitContestCode("run")}
-            secondaryButtonDisabled={!hasCode || isJudging || !detail.problemId}
+            footerContent={
+              submissionsLockedReason ? (
+                <Box px="20px" pb="4px">
+                  <Typography variant="body2" color="text.secondary">
+                    {submissionsLockedReason}
+                  </Typography>
+                </Box>
+              ) : undefined
+            }
+            secondaryButtonDisabled={!hasCode || isJudging || !detail.problemId || submissionsLocked}
             secondaryButtonLabel={submitState === "submitting" ? "Submitting..." : "Run Code"}
-            submitButtonDisabled={!hasCode || isJudging || !detail.problemId}
+            submitButtonDisabled={!hasCode || isJudging || !detail.problemId || submissionsLocked}
             submitButtonLabel={submitState === "submitting" ? "Submitting..." : "Submit"}
             submitButtonStartIcon={<SendRoundedIcon fontSize="small" />}
             showAiHint

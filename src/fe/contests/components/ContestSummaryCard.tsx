@@ -1,48 +1,67 @@
 "use client";
 
 import Link from "next/link";
-import type { DifficultyLevel } from "@/fe/shared/types/contest";
 import sharedStyles from "@/fe/shared/components/problem/ProblemCard.module.css";
 import styles from "../styles/ContestSummaryCard.module.css";
 
 interface ContestSummaryCardProps {
   title: string;
   status: string;
-  difficulty: DifficultyLevel;
-  href: string;
+  href?: string;
+  actionLabel: string;
+  actionKind: "link" | "button";
+  actionVariant?: "primary" | "secondary";
+  onAction?: () => void;
+  actionDisabled?: boolean;
 }
 
 export default function ContestSummaryCard({
   title,
   status,
-  difficulty,
   href,
+  actionLabel,
+  actionKind,
+  actionVariant = "secondary",
+  onAction,
+  actionDisabled = false,
 }: ContestSummaryCardProps) {
-  const normalizedDifficulty = difficulty.toLowerCase();
-  const difficultyClassName =
-    normalizedDifficulty === "easy"
-      ? sharedStyles.tileBadgeEasy
-      : normalizedDifficulty === "medium"
-        ? sharedStyles.tileBadgeMedium
-        : sharedStyles.tileBadgeHard;
   const normalizedStatus = status.toLowerCase();
   const statusClassName = normalizedStatus.includes("progress") || normalizedStatus.includes("active")
     ? styles.statusInProgress
     : normalizedStatus.includes("closed") || normalizedStatus.includes("ended")
       ? styles.statusClosed
       : styles.statusUpcoming;
+  const actionClassName = [
+    styles.actionButton,
+    actionVariant === "primary" ? styles.actionPrimary : styles.actionSecondary,
+  ].join(" ");
 
   return (
-    <Link href={href} className={styles.link}>
-      <div className={`${sharedStyles.cardTile} ${sharedStyles.cardCompact} ${styles.card}`}>
+    <div className={`${sharedStyles.cardTile} ${sharedStyles.cardCompact} ${styles.card}`}>
+      <div className={styles.cardContent}>
         <div className={sharedStyles.tileHeader}>
           <div className={sharedStyles.tileTitle}>{title}</div>
         </div>
         <div className={`${sharedStyles.tileMeta} ${styles.meta}`}>
-          <span className={`${sharedStyles.tileBadge} ${difficultyClassName}`}>{difficulty}</span>
           <span className={`${styles.status} ${statusClassName}`}>{status}</span>
         </div>
       </div>
-    </Link>
+      <div className={styles.actionRow}>
+        {actionKind === "link" && href ? (
+          <Link href={href} className={actionClassName}>
+            {actionLabel}
+          </Link>
+        ) : (
+          <button
+            type="button"
+            className={actionClassName}
+            onClick={onAction}
+            disabled={actionDisabled}
+          >
+            {actionLabel}
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
