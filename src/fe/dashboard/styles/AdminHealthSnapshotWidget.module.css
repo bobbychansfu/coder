@@ -1,0 +1,45 @@
+.emptyState {
+  border: 1px solid #eaecf0;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 14px;
+  font-size: 13px;
+  line-height: 18px;
+  color: #4a5565;
+}
+
+.snapshotList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.snapshotCard {
+  border: 1px solid #eaecf0;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.snapshotLabel {
+  margin: 0 0 6px;
+  font-size: 12px;
+  line-height: 16px;
+  color: #6a7282;
+}
+
+.snapshotValue {
+  margin: 0 0 4px;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.snapshotCaption {
+  margin: 0;
+  font-size: 12px;
+  line-height: 16px;
+  color: #4a5565;
+  white-space: pre-line;
+}

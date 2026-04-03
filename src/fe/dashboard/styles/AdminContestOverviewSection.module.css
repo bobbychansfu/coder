@@ -1,0 +1,202 @@
+.sectionBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: #1a1a1a;
+}
+
+.emptyState {
+  border: 1px solid #eaecf0;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 14px;
+  font-size: 13px;
+  line-height: 18px;
+  color: #4a5565;
+}
+
+.contestList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.contestCard {
+  border: 1px solid rgba(17, 24, 39, 0.1);
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: all 0.2s;
+}
+
+.contestCard:hover {
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+  border-color: rgba(15, 23, 42, 0.16);
+}
+
+.contestHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.contestIconWrapper {
+  background-color: #b42318;
+  border-radius: 8px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.contestIcon {
+  color: #ffffff;
+  font-size: 24px;
+}
+
+.contestHeaderContent {
+  flex: 1;
+}
+
+.contestTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.contestTitle {
+  margin: 0;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.contestMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.contestMetaItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  line-height: 18px;
+  color: #4a5565;
+}
+
+.contestMetaIcon {
+  font-size: 14px;
+  color: #4a5565;
+}
+
+.contestStats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #eaecf0;
+}
+
+.contestStat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.contestStatLabel {
+  font-size: 12px;
+  line-height: 16px;
+  color: #6a7282;
+}
+
+.contestStatValue {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.statusChip,
+.visibilityChip {
+  height: fit-content;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+}
+
+.statusChip[data-status="draft"],
+.statusChip[data-status="upcoming"] {
+  background: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+}
+
+.statusChip[data-status="active"] {
+  background: #f97316;
+  color: #ffffff;
+}
+
+.statusChip[data-status="ended"] {
+  background: #f9fafb;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+}
+
+.visibilityChip[data-visibility="public"] {
+  background: #ecfdf3;
+  color: #027a48;
+}
+
+.visibilityChip[data-visibility="private"] {
+  background: #fef2f2;
+  color: #b42318;
+}
+
+.visibilityChip[data-visibility="course-only"] {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+@media (max-width: 900px) {
+  .contestStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .contestStats {
+    grid-template-columns: 1fr;
+  }
+
+  .contestMeta {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
