@@ -108,7 +108,7 @@ export async function loadAdminDashboardSnapshot(
     client.user.count({ where: { role: "STUDENT" } }),
     client.user.count({
       where: {
-        role: { notIn: NON_INSTRUCTOR_DASHBOARD_ROLES },
+        role: { notIn: [...NON_INSTRUCTOR_DASHBOARD_ROLES] },
       },
     }),
     client.user.count({ where: { role: "ADMIN" } }),
@@ -150,7 +150,7 @@ export async function loadAdminDashboardSnapshot(
     }),
     client.user.count({
       where: {
-        role: { notIn: NON_INSTRUCTOR_DASHBOARD_ROLES },
+        role: { notIn: [...NON_INSTRUCTOR_DASHBOARD_ROLES] },
         createdAt: { gte: last7Days },
       },
     }),
