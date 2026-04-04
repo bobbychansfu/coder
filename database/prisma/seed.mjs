@@ -651,6 +651,7 @@ async function main() {
       name: "Week 3 Lab Contest",
       classSection: "Section A",
       status: "UPCOMING",
+      published: true,
       visibility: "PRIVATE",
       startsAt: new Date("2026-01-25T09:00:00.000Z"),
       durationMinutes: 120,
@@ -663,6 +664,7 @@ async function main() {
       name: "Trees & Graphs Challenge",
       classSection: "Section B",
       status: "ACTIVE",
+      published: true,
       visibility: "PUBLIC",
       startsAt: new Date("2026-01-23T09:00:00.000Z"),
       durationMinutes: 180,
@@ -675,6 +677,7 @@ async function main() {
       name: "Arrays and Strings Basics",
       classSection: "Section A",
       status: "ENDED",
+      published: true,
       visibility: "PRIVATE",
       startsAt: new Date("2026-01-18T09:00:00.000Z"),
       durationMinutes: 120,
@@ -687,6 +690,7 @@ async function main() {
       name: "Sorting Algorithms Sprint",
       classSection: "Section B",
       status: "ENDED",
+      published: true,
       visibility: "PRIVATE",
       startsAt: new Date("2026-01-11T09:00:00.000Z"),
       durationMinutes: 150,
@@ -698,6 +702,7 @@ async function main() {
       name: "Dynamic Programming Intensive",
       classSection: "Section C",
       status: "DRAFT",
+      published: false,
       visibility: "COURSE_ONLY",
       startsAt: new Date("2026-02-02T09:00:00.000Z"),
       durationMinutes: 180,
@@ -709,6 +714,7 @@ async function main() {
       name: "Graph Algorithms Week",
       classSection: "Section C",
       status: "UPCOMING",
+      published: true,
       visibility: "PUBLIC",
       startsAt: new Date("2026-02-10T09:00:00.000Z"),
       durationMinutes: 120,
@@ -781,37 +787,6 @@ async function main() {
 
   await prisma.contestExperimentGroup.createMany({
     data: experimentGroupRows,
-  });
-
-  await prisma.announcement.createMany({
-    data: [
-      {
-        title: "Platform Maintenance",
-        message: "Maintenance window on Sunday from 2:00 AM to 4:00 AM PST.",
-        scope: "PLATFORM",
-        authorId: userByComputingId.get("admin")?.id ?? null,
-      },
-      {
-        title: "Research Analytics Enabled",
-        message: "Instructor analytics dashboards are available for Spring term.",
-        scope: "PLATFORM",
-        authorId: userByComputingId.get("admin")?.id ?? null,
-      },
-      {
-        title: "Week 3 Lab Reminder",
-        message: "Week 3 Lab Contest opens tomorrow at 9:00 AM.",
-        scope: "CONTEST",
-        contestId: contestBySlug.get("week-3-lab-contest")?.id ?? null,
-        authorId: userByComputingId.get("sjohnson")?.id ?? null,
-      },
-      {
-        title: "Graphs Challenge Live",
-        message: "Trees & Graphs Challenge is now active.",
-        scope: "CONTEST",
-        contestId: contestBySlug.get("trees-graphs-challenge")?.id ?? null,
-        authorId: userByComputingId.get("mchen")?.id ?? null,
-      },
-    ],
   });
 
   const studentUsers = users.filter((user) => user.role === "STUDENT");
@@ -1256,6 +1231,10 @@ async function main() {
       await prisma.practiceRunRecord.create({
         data: {
           sessionId: session.id,
+          userId: student.id,
+          problemId: problem.id,
+          source: "practice",
+          status: "done",
           isSubmit: false,
           language: codingLanguage,
           code: sampleCode(run.language, run.verdict),
@@ -1271,6 +1250,10 @@ async function main() {
       await prisma.practiceRunRecord.create({
         data: {
           sessionId: session.id,
+          userId: student.id,
+          problemId: problem.id,
+          source: "practice",
+          status: "done",
           isSubmit: true,
           language: codingLanguage,
           code: sampleCode(run.language, run.verdict),

@@ -16,6 +16,27 @@ import { test, expect, type Page, type Response } from "@playwright/test";
 
 const JUDGING_TIMEOUT = 60_000; // Gemini can take up to ~30s
 
+function formatVerdictLabel(verdict: string | null) {
+  const normalized = verdict?.trim().toLowerCase();
+
+  switch (normalized) {
+    case "accepted":
+      return "Accepted";
+    case "wrong_answer":
+    case "wrong answer":
+      return "Wrong Answer";
+    case "partial":
+      return "Partial";
+    case "runtime_error":
+    case "runtime error":
+      return "Runtime Error";
+    case "failed":
+      return "Failed";
+    default:
+      return verdict;
+  }
+}
+
 async function devLoginAsStudent(page: Page) {
   const res = await page.request.post("/api/auth/dev-login", {
     data: { email: "dylan.04@sfu.ca", role: "student" },
@@ -97,7 +118,7 @@ test("AI judging full flow: login -> submit -> SSE -> verdict persisted", async 
   console.log(`[verify] SSE stream opened: ${streamReq.url()}`);
 
   // ── 9. UI shows queued/running state ─────────────────────────────────────────
-  await expect(page.getByText("Output")).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByText("Output", { exact: true })).toBeVisible({ timeout: 5_000 });
   await expect(
     page.getByText(/queued for gemini judging|judging your code/i),
   ).toBeVisible({ timeout: 5_000 });
@@ -147,6 +168,26 @@ test("AI judging full flow: login -> submit -> SSE -> verdict persisted", async 
   expect(["done", "failed"]).toContain(persisted.status);
   expect(persisted.judgedBy).toBe("gemini");
   expect(persisted.verdict).not.toBeNull();
+
+  // ── 12. Reload the problem page and verify saved result rehydrates in the UI ──
+  await page.reload();
+  await expect(page.locator(".monaco-editor")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText("Output", { exact: true })).toBeVisible({ timeout: 5_000 });
+
+  const reloadedOutputBlock = page.locator("[class*='outputBlock']").first();
+  await expect(
+    page.getByText(/queued for gemini judging|judging your code/i),
+  ).not.toBeVisible({ timeout: 120_000 });
+
+  if (persisted.feedback) {
+    await expect(reloadedOutputBlock).toContainText(persisted.feedback.slice(0, 20), {
+      timeout: 10_000,
+    });
+  } else if (persisted.verdict) {
+    await expect(reloadedOutputBlock).toContainText(formatVerdictLabel(persisted.verdict) ?? "", {
+      timeout: 10_000,
+    });
+  }
 
   console.log("[verify] ALL CHECKS PASSED");
 });

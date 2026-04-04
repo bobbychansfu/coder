@@ -4,16 +4,10 @@ import EmojiEventsOutlinedIcon from "@mui/icons-material/EmojiEventsOutlined";
 
 export type ManageContentTab = "contests" | "problems";
 
-export type ManagedContestStatus =
-  | "active"
-  | "upcoming"
-  | "draft"
-  | "ended"
-  | "archived"
-  | "deleted";
+export type ManagedContestStatus = "active" | "upcoming" | "draft" | "ended" | "archived";
 
 export type ManagedContestStatusFilter = "all" | ManagedContestStatus;
-export type ManagedProblemStatus = "active" | "archived" | "deleted";
+export type ManagedProblemStatus = "public" | "contest-only" | "draft" | "archived";
 export type ManagedProblemStatusFilter = "all" | ManagedProblemStatus;
 export type ManagedProblemDifficulty = "easy" | "medium" | "hard";
 
@@ -56,29 +50,29 @@ export const MANAGE_CONTEST_STATUS_FILTERS: FilterChipOption<ManagedContestStatu
   { value: "draft", label: "Draft" },
   { value: "ended", label: "Ended" },
   { value: "archived", label: "Archived" },
-  { value: "deleted", label: "Deleted" },
 ];
 
 export const MANAGED_CONTEST_STATUS_LABELS: Record<ManagedContestStatus, string> = {
-  active: "active",
-  upcoming: "upcoming",
-  draft: "draft",
-  ended: "ended",
-  archived: "archived",
-  deleted: "deleted",
+  active: "Active",
+  upcoming: "Upcoming",
+  draft: "Draft",
+  ended: "Ended",
+  archived: "Archived",
 };
 
 export const MANAGE_PROBLEM_STATUS_FILTERS: FilterChipOption<ManagedProblemStatusFilter>[] = [
   { value: "all", label: "All" },
-  { value: "active", label: "Active" },
+  { value: "public", label: "Public" },
+  { value: "contest-only", label: "Contest-only" },
+  { value: "draft", label: "Draft" },
   { value: "archived", label: "Archived" },
-  { value: "deleted", label: "Deleted" },
 ];
 
 export const MANAGED_PROBLEM_STATUS_LABELS: Record<ManagedProblemStatus, string> = {
-  active: "active",
-  archived: "archived",
-  deleted: "deleted",
+  public: "Public",
+  "contest-only": "Contest-only",
+  draft: "Draft",
+  archived: "Archived",
 };
 
 export const DEFAULT_MANAGE_CONTENT_TAB: ManageContentTab = "problems";
@@ -88,7 +82,7 @@ export const MANAGE_CONTENT_VIEW_CONFIG: Record<ManageContentTab, ManageContentV
     searchPlaceholder: "Search contests...",
     emptyTitle: "No contests found",
     emptyDescription: "Try a different search or pick another status filter.",
-    tableHeaders: ["Contest", "Status", "Schedule", "Actions"],
+    tableHeaders: ["Contest", "Status", "Schedule", "Enrolled", "Submitted", "Actions"],
   },
   problems: {
     searchPlaceholder: "Search problems...",

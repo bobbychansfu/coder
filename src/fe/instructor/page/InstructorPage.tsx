@@ -18,12 +18,10 @@ import type { ActivityItemData, StatCardData, ToolCardData } from "@/fe/shared/t
 import { ROUTES } from "@/fe/shared/constants/routes";
 import {
   instructorActions,
-  overviewStats,
-  recentActivity,
   type InstructorActionTone,
-  type OverviewTone,
   type ActivityTone,
 } from "@/fe/instructor/data";
+import { trpc } from "@/lib/trpc/client";
 
 // Icon mappings for instructor action cards
 const actionIconMap: Record<InstructorActionTone, SvgIconComponent> = {
@@ -33,24 +31,58 @@ const actionIconMap: Record<InstructorActionTone, SvgIconComponent> = {
   warning: EmojiEventsOutlinedIcon,
 };
 
-// Icon mappings for instructor overview cards
-const overviewIconMap: Record<OverviewTone, SvgIconComponent> = {
-  contests: EmojiEventsOutlinedIcon,
-  participants: GroupOutlinedIcon,
-  problems: FactCheckOutlinedIcon,
-};
-
 // Icon mappings for instructor activity items
-const activityIconMap: Record<ActivityTone, SvgIconComponent> = {
+const activityToneIconMap: Record<ActivityTone, SvgIconComponent> = {
   success: DescriptionOutlinedIcon,
   info: TrendingUpOutlinedIcon,
   highlight: GroupAddOutlinedIcon,
 };
 
+function formatRelativeTime(isoString: string): string {
+  const diffMs = Date.now() - new Date(isoString).getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return "just now";
+  if (diffMins < 60) return `${diffMins} minute${diffMins === 1 ? "" : "s"} ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 30) return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+  const diffMonths = Math.floor(diffDays / 30);
+  return `${diffMonths} month${diffMonths === 1 ? "" : "s"} ago`;
+}
+
+function getActivityDescription(
+  type: "problem" | "contest",
+  title: string,
+  status: string,
+): string {
+  if (type === "problem") {
+    if (status === "draft") return `Problem "${title}" saved as draft`;
+    if (status === "archived") return `Problem "${title}" archived`;
+    if (status === "contest-only") return `Problem "${title}" set to contest-only`;
+    return `Problem "${title}" published`;
+  }
+  if (status === "draft") return `Contest "${title}" saved as draft`;
+  if (status === "archived") return `Contest "${title}" archived`;
+  if (status === "upcoming") return `Contest "${title}" scheduled`;
+  if (status === "active") return `Contest "${title}" is now active`;
+  if (status === "ended") return `Contest "${title}" ended`;
+  return `Contest "${title}" updated`;
+}
+
+function getActivityTone(status: string): ActivityTone {
+  if (status === "archived" || status === "draft") return "info";
+  return "success";
+}
+
 export default function InstructorPage() {
   const router = useRouter();
 
-  // Map instructor data to DashboardPage format
+  const overviewQuery = trpc.instructorManageContent.getInstructorOverview.useQuery(undefined, {
+    retry: false,
+    refetchOnWindowFocus: true,
+  });
+
   const actions: ToolCardData[] = instructorActions.map((action) => ({
     id: action.id,
     title: action.title,
@@ -66,25 +98,67 @@ export default function InstructorPage() {
             ? () => router.push(ROUTES.instructorCreateProblem)
             : action.id === "create-contest"
               ? () => router.push(ROUTES.instructorCreateContest)
-        : undefined,
+              : undefined,
   }));
 
-  const stats: StatCardData[] = overviewStats.map((stat) => ({
-    id: stat.id,
-    label: stat.label,
-    value: stat.value,
-    caption: stat.caption,
-    tone: stat.tone,
-    icon: overviewIconMap[stat.tone],
-  }));
+  const activeContests = overviewQuery.data?.activeContestsCount ?? 0;
+  const problemsCreated = overviewQuery.data?.problemsCreatedCount ?? 0;
 
-  const activity: ActivityItemData[] = recentActivity.map((item) => ({
-    id: item.id,
-    description: item.description,
-    timestamp: item.timestamp,
-    tone: item.tone,
-    icon: activityIconMap[item.tone],
-  }));
+  const stats: StatCardData[] = [
+    {
+      id: "active-contests",
+      label: "Active Contests",
+      value: overviewQuery.isLoading ? "—" : String(activeContests),
+      caption:
+        activeContests === 0
+          ? "No active contests"
+          : `${activeContests} contest${activeContests === 1 ? "" : "s"} currently in progress`,
+      tone: "contests",
+      icon: EmojiEventsOutlinedIcon,
+    },
+    {
+      id: "total-participants",
+      label: "Total Participants",
+      value: "147",
+      caption: "Across all contests",
+      tone: "participants",
+      icon: GroupOutlinedIcon,
+    },
+    {
+      id: "problems-created",
+      label: "Problems Created",
+      value: overviewQuery.isLoading ? "—" : String(problemsCreated),
+      caption:
+        problemsCreated === 0
+          ? "No problems yet"
+          : `${problemsCreated} problem${problemsCreated === 1 ? "" : "s"} in your library`,
+      tone: "problems",
+      icon: FactCheckOutlinedIcon,
+    },
+  ];
+
+  const recentItems = overviewQuery.data?.recentActivity ?? [];
+  const activity: ActivityItemData[] =
+    recentItems.length > 0
+      ? recentItems.map((item) => {
+          const tone = getActivityTone(item.status);
+          return {
+            id: item.id,
+            description: getActivityDescription(item.type, item.title, item.status),
+            timestamp: formatRelativeTime(item.updatedAt),
+            tone,
+            icon: activityToneIconMap[tone],
+          };
+        })
+      : [
+          {
+            id: "empty",
+            description: "No recent activity. Create a problem or contest to get started.",
+            timestamp: "",
+            tone: "info" as ActivityTone,
+            icon: activityToneIconMap["info"],
+          },
+        ];
 
   return (
     <ManagementLayout

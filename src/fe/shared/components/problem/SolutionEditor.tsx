@@ -7,6 +7,7 @@ import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import ExpandLessRoundedIcon from "@mui/icons-material/ExpandLessRounded";
+import PlayArrowRoundedIcon from "@mui/icons-material/PlayArrowRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import { LANGUAGE_OPTIONS } from "@/fe/shared/constants/options";
 import styles from "@/fe/contests/styles/ProblemSubmissionPage.module.css";
@@ -23,6 +24,10 @@ interface SolutionEditorProps {
   onSubmitCode?: () => void;
   submitButtonDisabled?: boolean;
   submitButtonLabel?: string;
+  submitButtonStartIcon?: ReactNode;
+  secondaryButtonLabel?: string;
+  secondaryButtonDisabled?: boolean;
+  onSecondaryAction?: () => void;
   headerLeading?: ReactNode;
   footerContent?: ReactNode;
   showAiHint?: boolean;
@@ -54,6 +59,10 @@ export default function SolutionEditor({
   onSubmitCode,
   submitButtonDisabled = false,
   submitButtonLabel = "Submit",
+  submitButtonStartIcon,
+  secondaryButtonLabel,
+  secondaryButtonDisabled = false,
+  onSecondaryAction,
   headerLeading,
   footerContent,
   showAiHint = false,
@@ -206,11 +215,24 @@ export default function SolutionEditor({
       {footerContent ?? aiHintPanel}
 
       <Box className={styles.buttonRow}>
+        {secondaryButtonLabel ? (
+          <Button
+            className={styles.runButton}
+            variant="outlined"
+            startIcon={<PlayArrowRoundedIcon fontSize="small" />}
+            onClick={onSecondaryAction}
+            disabled={secondaryButtonDisabled}
+          >
+            {secondaryButtonLabel}
+          </Button>
+        ) : null}
         <Button
           className={styles.submitButton}
           variant="contained"
           disableElevation
-          startIcon={<SendRoundedIcon fontSize="small" />}
+          startIcon={
+            submitButtonStartIcon ?? <SendRoundedIcon fontSize="small" />
+          }
           onClick={onSubmitCode}
           disabled={submitButtonDisabled}
           sx={{ backgroundColor: "#dc2626", "&:hover": { backgroundColor: "#ef4444" } }}

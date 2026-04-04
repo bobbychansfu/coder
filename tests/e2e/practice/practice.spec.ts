@@ -11,6 +11,20 @@ async function loginAsStudent(page: Page) {
   expect(response.status()).toBe(200);
 }
 
+async function loginAsInstructor(page: Page) {
+  const response = await page.request.post("/api/auth/dev-login", {
+    data: { email: "sarah.johnson@sfu.ca", role: "instructor" },
+  });
+  expect(response.status()).toBe(200);
+}
+
+async function loginAsAdmin(page: Page) {
+  const response = await page.request.post("/api/auth/dev-login", {
+    data: { email: "admin@sfu.ca", role: "admin" },
+  });
+  expect(response.status()).toBe(200);
+}
+
 /** Wait for MUI loading spinner to disappear (targets only the root progressbar). */
 async function waitForLoadingDone(page: Page) {
   await expect(page.getByRole("progressbar").first()).not.toBeVisible({ timeout: 15000 });
@@ -174,7 +188,7 @@ test.describe("Practice problem submission page", () => {
     }
   });
 
-  test("Submit button stays disabled until the user types", async ({ page }) => {
+  test("Submit button is enabled when starter code is present", async ({ page }) => {
     if (!firstProblemCode) test.skip();
 
     await page.goto(`/practice/${firstProblemCode}`);
@@ -182,10 +196,28 @@ test.describe("Practice problem submission page", () => {
 
     const submitBtn = page.getByRole("button", { name: /^submit$/i });
     await expect(submitBtn).toBeVisible();
-    await expect(submitBtn).toBeDisabled();
-
-    await typeInMonaco(page, "\n// typed by e2e");
     await expect(submitBtn).toBeEnabled({ timeout: 10000 });
+  });
+
+  test("typed practice answer survives a page refresh", async ({ page }) => {
+    if (!firstProblemCode) test.skip();
+
+    const persistedMarker = `persisted draft ${Date.now()}`;
+
+    await page.goto(`/practice/${firstProblemCode}`);
+    await expect(page.locator(".monaco-editor")).toBeVisible({ timeout: 15000 });
+
+    await page.locator(".monaco-editor .view-lines").first().click();
+    await page.keyboard.press("Control+a");
+    await page.keyboard.press("Delete");
+    await typeInMonaco(page, persistedMarker);
+    await expect(page.locator(".monaco-editor .view-lines")).toContainText(persistedMarker);
+
+    await page.reload();
+    await expect(page.locator(".monaco-editor")).toBeVisible({ timeout: 15000 });
+    await expect(page.locator(".monaco-editor .view-lines")).toContainText(persistedMarker, {
+      timeout: 10000,
+    });
   });
 
   test("clicking Submit posts to the practice submission endpoint", async ({ page }) => {
@@ -213,7 +245,7 @@ test.describe("Practice problem submission page", () => {
     await submitBtn.click();
 
     // "Output" label renders immediately when hasRun=true
-    await expect(page.getByText("Output")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText("Output", { exact: true })).toBeVisible({ timeout: 5000 });
     await expect(
       page.getByText(/queued for gemini judging|judging your code/i),
     ).toBeVisible({ timeout: 5000 });
@@ -264,6 +296,11 @@ test.describe("Practice problem submission page", () => {
     if (!firstProblemCode) test.skip();
 
     await page.goto(`/practice/${firstProblemCode}`);
+    await expect(page.locator(".monaco-editor")).toBeVisible({ timeout: 15000 });
+    // If a prior test left a submission in "queued"/"running" state, wait for it to resolve.
+    await expect(page.getByText(/queued for gemini judging|judging your code/i)).not.toBeVisible({
+      timeout: 30000,
+    });
     await typeInMonaco(page, "\n// typed by e2e");
     const submitBtn = page.getByRole("button", { name: /^submit$/i });
     await expect(submitBtn).toBeEnabled({ timeout: 10000 });
@@ -278,5 +315,42 @@ test.describe("Practice problem submission page", () => {
 
     expect(input).not.toHaveProperty("sessionId");
     expect(input).not.toHaveProperty("timestamp");
+  });
+});
+
+test.describe("Practice list page for instructor", () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsInstructor(page);
+  });
+
+  test("loads problem list for authenticated instructor", async ({ page }) => {
+    await page.goto("/practice");
+    await expect(page).toHaveURL("/practice");
+    await expect(page.getByRole("heading", { name: "Practice Problems" })).toBeVisible();
+  });
+});
+
+test.describe("Student workflow guards", () => {
+  test("rejects practice submissions from non-student roles", async ({ page }) => {
+    await loginAsInstructor(page);
+
+    const response = await page.request.post("/api/practice/submissions", {
+      data: {
+        problemId: "not-used-because-role-check-runs-first",
+        language: "cpp",
+        code: "int main() { return 0; }",
+      },
+    });
+
+    expect(response.status()).toBe(403);
+  });
+
+  test("redirects admin users to the admin area instead of the student dashboard", async ({
+    page,
+  }) => {
+    await loginAsAdmin(page);
+
+    await page.goto("/dashboard");
+    await expect(page).toHaveURL(/\/admin$/);
   });
 });

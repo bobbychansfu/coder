@@ -315,21 +315,27 @@
 }
 
 .generatePanel {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 16px;
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   padding: 16px;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 8px;
   background: #f9fafb;
 }
 
+.generateRow {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
 .generateButton {
-  align-self: start;
-  margin-top: 25px;
   height: 36px;
   padding: 8px 12px !important;
+  flex-shrink: 0;
+  min-width: 196px;
+  white-space: nowrap;
 }
 
 .generationFeedback {
@@ -968,12 +974,17 @@
 @media (max-width: 900px) {
   .twoColumnGrid,
   .previewTwoColumnGrid,
-  .generatePanel,
   .previewExampleGrid {
     grid-template-columns: 1fr;
   }
 
+  .generateRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .generateButton {
+    min-width: unset;
     width: 100%;
   }
 }

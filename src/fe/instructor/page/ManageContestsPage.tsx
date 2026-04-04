@@ -1,18 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
 import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
 import CodeRoundedIcon from "@mui/icons-material/CodeRounded";
-import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import EmojiEventsOutlinedIcon from "@mui/icons-material/EmojiEventsOutlined";
 import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
 import type { SvgIconComponent } from "@mui/icons-material";
-import { Box, Chip, Typography } from "@mui/material";
+import { Box, Chip, CircularProgress, Typography } from "@mui/material";
 
-import { managedContests, managedProblems } from "@/fe/instructor/data";
 import {
   DEFAULT_MANAGE_CONTENT_TAB,
   MANAGED_CONTEST_STATUS_LABELS,
@@ -37,6 +35,7 @@ import ScrollbarHider from "@/fe/shared/components/ui/ScrollbarHider";
 import UnderlineTabs from "@/fe/shared/components/ui/UnderlineTabs";
 import { ROUTES } from "@/fe/shared/constants/routes";
 import type { CompactStatTone, MenuActionItem } from "@/fe/shared/types/common";
+import { trpc } from "@/lib/trpc/client";
 import styles from "@/fe/instructor/styles/ManageContestsPage.module.css";
 
 interface ManageContentStatSummary {
@@ -47,17 +46,88 @@ interface ManageContentStatSummary {
   tone: CompactStatTone;
 }
 
+interface ManagedContestRecord {
+  id: string;
+  title: string;
+  owner: string;
+  section: string;
+  status: ManagedContestStatus;
+  startAt: string;
+  endAt: string;
+  problemsCount: number;
+  enrolledCount: number;
+  submittedCount: number;
+}
+
+interface ManagedProblemRecord {
+  id: string;
+  title: string;
+  points: number;
+  status: ManagedProblemStatus;
+  difficulty: ManagedProblemDifficulty;
+  tags: string[];
+}
+
+const EMPTY_CONTESTS: ManagedContestRecord[] = [];
+const EMPTY_PROBLEMS: ManagedProblemRecord[] = [];
+
+function getInitialManageContentTab(tab: string | null): ManageContentTab {
+  return tab === "contests" || tab === "problems" ? tab : DEFAULT_MANAGE_CONTENT_TAB;
+}
+
 export default function ManageContestsPage() {
   const router = useRouter();
-  const [selectedTab, setSelectedTab] = useState<ManageContentTab>(DEFAULT_MANAGE_CONTENT_TAB);
-  const [contestRecords, setContestRecords] = useState(managedContests);
-  const [problemRecords, setProblemRecords] = useState(managedProblems);
+  const searchParams = useSearchParams();
+  const utils = trpc.useUtils();
+  const [selectedTab, setSelectedTab] = useState<ManageContentTab>(() =>
+    getInitialManageContentTab(searchParams.get("tab")),
+  );
   const [contestSearchQuery, setContestSearchQuery] = useState("");
   const [problemSearchQuery, setProblemSearchQuery] = useState("");
   const [selectedContestStatus, setSelectedContestStatus] =
     useState<ManagedContestStatusFilter>("all");
   const [selectedProblemStatus, setSelectedProblemStatus] =
     useState<ManagedProblemStatusFilter>("all");
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const { data, isLoading, error } = trpc.instructorManageContent.getManageContent.useQuery(
+    undefined,
+    {
+      retry: false,
+      refetchOnWindowFocus: true,
+      refetchInterval: 60_000,
+      refetchIntervalInBackground: false,
+    },
+  );
+
+  const contestStatusMutation = trpc.instructorManageContent.updateContestManageStatus.useMutation({
+    onSuccess: async () => {
+      setActionError(null);
+      await Promise.all([
+        utils.instructorManageContent.getManageContent.invalidate(),
+        utils.instructorManageContent.getInstructorOverview.invalidate(),
+      ]);
+    },
+    onError: (mutationError) => {
+      setActionError(mutationError.message);
+    },
+  });
+
+  const problemStatusMutation = trpc.instructorManageContent.updateProblemManageStatus.useMutation({
+    onSuccess: async () => {
+      setActionError(null);
+      await Promise.all([
+        utils.instructorManageContent.getManageContent.invalidate(),
+        utils.instructorManageContent.getInstructorOverview.invalidate(),
+      ]);
+    },
+    onError: (mutationError) => {
+      setActionError(mutationError.message);
+    },
+  });
+
+  const contestRecords = (data?.contests ?? EMPTY_CONTESTS) as ManagedContestRecord[];
+  const problemRecords = (data?.problems ?? EMPTY_PROBLEMS) as ManagedProblemRecord[];
 
   const stats = useMemo<ManageContentStatSummary[]>(
     () => [
@@ -76,21 +146,19 @@ export default function ManageContestsPage() {
         tone: "blue",
       },
       {
+        id: "public-problems",
+        label: "Public Problems",
+        value: problemRecords.filter((problem) => problem.status === "public").length,
+        icon: CodeRoundedIcon,
+        tone: "orange",
+      },
+      {
         id: "archived",
         label: "Archived",
         value:
           contestRecords.filter((contest) => contest.status === "archived").length +
           problemRecords.filter((problem) => problem.status === "archived").length,
         icon: ArchiveOutlinedIcon,
-        tone: "orange",
-      },
-      {
-        id: "deleted",
-        label: "Deleted",
-        value:
-          contestRecords.filter((contest) => contest.status === "deleted").length +
-          problemRecords.filter((problem) => problem.status === "deleted").length,
-        icon: DeleteOutlineRoundedIcon,
         tone: "gray",
       },
     ],
@@ -128,20 +196,14 @@ export default function ManageContestsPage() {
     });
   }, [problemRecords, problemSearchQuery, selectedProblemStatus]);
 
-  const handleUpdateContestStatus = (contestId: string, nextStatus: ManagedContestStatus) => {
-    setContestRecords((current) =>
-      current.map((contest) =>
-        contest.id === contestId ? { ...contest, status: nextStatus } : contest,
-      ),
-    );
+  const handleArchiveContest = async (contestId: string) => {
+    setActionError(null);
+    await contestStatusMutation.mutateAsync({ contestId, manageStatus: "ARCHIVED" });
   };
 
-  const handleUpdateProblemStatus = (problemId: string, nextStatus: ManagedProblemStatus) => {
-    setProblemRecords((current) =>
-      current.map((problem) =>
-        problem.id === problemId ? { ...problem, status: nextStatus } : problem,
-      ),
-    );
+  const handleArchiveProblem = async (problemId: string) => {
+    setActionError(null);
+    await problemStatusMutation.mutateAsync({ problemId, manageStatus: "ARCHIVED" });
   };
 
   const getContestStatusClassName = (status: ManagedContestStatus) => {
@@ -156,8 +218,6 @@ export default function ManageContestsPage() {
         return styles.statusEnded;
       case "archived":
         return styles.statusArchived;
-      case "deleted":
-        return styles.statusDeleted;
       default:
         return "";
     }
@@ -165,12 +225,14 @@ export default function ManageContestsPage() {
 
   const getProblemStatusClassName = (status: ManagedProblemStatus) => {
     switch (status) {
-      case "active":
-        return styles.statusActive;
+      case "public":
+        return styles.statusPublic;
+      case "contest-only":
+        return styles.statusContestOnly;
+      case "draft":
+        return styles.statusDraft;
       case "archived":
         return styles.statusArchived;
-      case "deleted":
-        return styles.statusDeleted;
       default:
         return "";
     }
@@ -195,6 +257,11 @@ export default function ManageContestsPage() {
   const currentStatusOptions =
     selectedTab === "contests" ? MANAGE_CONTEST_STATUS_FILTERS : MANAGE_PROBLEM_STATUS_FILTERS;
   const currentViewConfig = MANAGE_CONTENT_VIEW_CONFIG[selectedTab];
+  const isContestUpdatePending = (contestId: string) =>
+    contestStatusMutation.isPending && contestStatusMutation.variables?.contestId === contestId;
+  const isProblemUpdatePending = (problemId: string) =>
+    problemStatusMutation.isPending && problemStatusMutation.variables?.problemId === problemId;
+  const pageError = error?.message ?? actionError;
 
   return (
     <>
@@ -205,7 +272,7 @@ export default function ManageContestsPage() {
         <Box className={styles.hero}>
           <Typography className={styles.pageTitle}>Manage Problems &amp; Contests</Typography>
           <Typography className={styles.pageSubtitle}>
-            Edit, archive, or remove your contests and problems
+            Review the real publishing state of your problems and contests
           </Typography>
         </Box>
 
@@ -228,6 +295,12 @@ export default function ManageContestsPage() {
             onChange={(value) => setSelectedTab(value as ManageContentTab)}
             className={styles.tabs}
           />
+
+          {pageError ? (
+            <Box className={styles.errorBanner}>
+              <Typography className={styles.errorText}>{pageError}</Typography>
+            </Box>
+          ) : null}
 
           <Box className={styles.controlsRow}>
             <div className={styles.searchWrap}>
@@ -261,7 +334,11 @@ export default function ManageContestsPage() {
           </Box>
 
           <Box className={styles.tableCard}>
-            {selectedTab === "contests" ? (
+            {isLoading ? (
+              <Box className={styles.loadingState}>
+                <CircularProgress size={28} />
+              </Box>
+            ) : selectedTab === "contests" ? (
               filteredContests.length > 0 ? (
                 <table className={styles.table}>
                   <thead>
@@ -290,7 +367,7 @@ export default function ManageContestsPage() {
                             <Box className={styles.contestMetaRow}>
                               <PersonOutlineRoundedIcon className={styles.inlineIcon} />
                               <Typography className={styles.contestMeta}>
-                                {contest.owner} · {contest.section}
+                                {contest.owner} | {contest.section}
                               </Typography>
                             </Box>
                           </Box>
@@ -313,9 +390,19 @@ export default function ManageContestsPage() {
                               <Typography className={styles.scheduleText}>{contest.startAt}</Typography>
                             </Box>
                             <Typography className={styles.scheduleSubtext}>
-                              → {contest.endAt}
+                              Ends {contest.endAt}
                             </Typography>
                           </Box>
+                        </td>
+
+                        <td className={styles.bodyCell}>
+                          <Typography className={styles.mobileCellLabel}>Enrolled</Typography>
+                          <Typography className={styles.scheduleText}>{contest.enrolledCount}</Typography>
+                        </td>
+
+                        <td className={styles.bodyCell}>
+                          <Typography className={styles.mobileCellLabel}>Submitted</Typography>
+                          <Typography className={styles.scheduleText}>{contest.submittedCount}</Typography>
                         </td>
 
                         <td className={`${styles.bodyCell} ${styles.actionsCell}`}>
@@ -327,24 +414,22 @@ export default function ManageContestsPage() {
                                 id: "edit",
                                 label: "Edit Contest",
                                 icon: EditOutlinedIcon,
-                                disabled: contest.status === "deleted",
-                                onClick: () => router.push(ROUTES.instructorCreateContest),
+                                disabled:
+                                  contest.status === "archived" ||
+                                  isContestUpdatePending(contest.id),
+                                onClick: () =>
+                                  router.push(
+                                    `${ROUTES.instructorCreateContest}?contestId=${contest.id}`,
+                                  ),
                               },
                               {
                                 id: "archive",
                                 label: "Archive",
                                 icon: ArchiveOutlinedIcon,
                                 disabled:
-                                  contest.status === "archived" || contest.status === "deleted",
-                                onClick: () => handleUpdateContestStatus(contest.id, "archived"),
-                              },
-                              {
-                                id: "delete",
-                                label: "Delete",
-                                icon: DeleteOutlineRoundedIcon,
-                                disabled: contest.status === "deleted",
-                                danger: true,
-                                onClick: () => handleUpdateContestStatus(contest.id, "deleted"),
+                                  contest.status === "archived" ||
+                                  isContestUpdatePending(contest.id),
+                                onClick: () => void handleArchiveContest(contest.id),
                               },
                             ] satisfies MenuActionItem[]}
                           />
@@ -438,24 +523,22 @@ export default function ManageContestsPage() {
                               id: "edit",
                               label: "Edit Problem",
                               icon: EditOutlinedIcon,
-                              disabled: problem.status === "deleted",
-                              onClick: () => router.push(ROUTES.instructorCreateProblem),
+                              disabled:
+                                problem.status === "archived" ||
+                                isProblemUpdatePending(problem.id),
+                              onClick: () =>
+                                router.push(
+                                  `${ROUTES.instructorCreateProblem}?problemId=${problem.id}`,
+                                ),
                             },
                             {
                               id: "archive",
                               label: "Archive",
                               icon: ArchiveOutlinedIcon,
                               disabled:
-                                problem.status === "archived" || problem.status === "deleted",
-                              onClick: () => handleUpdateProblemStatus(problem.id, "archived"),
-                            },
-                            {
-                              id: "delete",
-                              label: "Delete",
-                              icon: DeleteOutlineRoundedIcon,
-                              disabled: problem.status === "deleted",
-                              danger: true,
-                              onClick: () => handleUpdateProblemStatus(problem.id, "deleted"),
+                                problem.status === "archived" ||
+                                isProblemUpdatePending(problem.id),
+                              onClick: () => void handleArchiveProblem(problem.id),
                             },
                           ] satisfies MenuActionItem[]}
                         />

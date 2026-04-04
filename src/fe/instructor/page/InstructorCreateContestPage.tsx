@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import FlagOutlinedIcon from "@mui/icons-material/FlagOutlined";
 import EmojiEventsOutlinedIcon from "@mui/icons-material/EmojiEventsOutlined";
 import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
 import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
@@ -17,6 +18,7 @@ import {
   Button,
   Card,
   CardContent,
+  CircularProgress,
   Dialog,
   DialogContent,
   IconButton,
@@ -36,18 +38,20 @@ import SubpageActionButtons, {
 import {
   contestAiHintConfig,
   contestAuthoringCopy,
-  contestDrafts,
   contestFormDraft,
   contestPreviewFallback,
-  contestProblemLibrary,
   type ContestDifficulty,
   type ContestFormDraft,
   type ContestProblemRecord,
 } from "@/fe/instructor/data/contestAuthoring";
 import AuthoringPageShell from "@/fe/shared/components/authoring/AuthoringPageShell";
+import { ROUTES } from "@/fe/shared/constants/routes";
 import { VISIBILITY_OPTIONS } from "@/fe/shared/constants/options";
+import { trpc } from "@/lib/trpc/client";
 import subpageStyles from "@/fe/instructor/styles/InstructorSubpageHeader.module.css";
 import styles from "@/fe/instructor/styles/InstructorCreateContestPage.module.css";
+
+const MANAGE_CONTESTS_TAB_ROUTE = `${ROUTES.instructorManageContests}?tab=contests`;
 
 function formatPreviewDate(dateValue: string, timeValue: string) {
   if (!dateValue) {
@@ -72,7 +76,7 @@ function formatPreviewDate(dateValue: string, timeValue: string) {
 
 function formatStatusDate(dateValue: string) {
   if (!dateValue) {
-    return "—";
+    return "Not set";
   }
 
   const date = new Date(`${dateValue}T00:00`);
@@ -82,6 +86,20 @@ function formatStatusDate(dateValue: string) {
   }
 
   return new Intl.DateTimeFormat("en-US").format(date);
+}
+
+function formatDraftUpdatedAt(isoValue: string) {
+  const date = new Date(isoValue);
+
+  if (Number.isNaN(date.getTime())) {
+    return isoValue;
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "numeric",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
 }
 
 function toVisibilityLabel(value: string) {
@@ -95,6 +113,14 @@ function formatProblemTags(problem: ContestProblemRecord) {
   return problem.tags.join(", ");
 }
 
+function getProblemSourcePriority(problem: ContestProblemRecord) {
+  return problem.source === "contest-only" ? 0 : 1;
+}
+
+function getProblemSourceLabel(problem: ContestProblemRecord) {
+  return problem.source === "contest-only" ? "Contest-only" : "Public";
+}
+
 function getDifficultyBadgeClassName(difficulty: ContestDifficulty) {
   const toneClassMap: Record<ContestDifficulty, string> = {
     easy: styles.difficultyEasy,
@@ -105,20 +131,83 @@ function getDifficultyBadgeClassName(difficulty: ContestDifficulty) {
   return `${styles.difficultyBadge} ${toneClassMap[difficulty]}`;
 }
 
+interface SelectableContestProblemRecord extends ContestProblemRecord {
+  isDraft?: boolean;
+}
+
+function toSelectableContestProblemRecord(problem: {
+  id: string;
+  title: string;
+  difficulty: ContestDifficulty;
+  points: number;
+  tags: string[];
+  source?: string | null;
+  isDraft?: boolean;
+}): SelectableContestProblemRecord {
+  return {
+    id: problem.id,
+    title: problem.title,
+    difficulty: problem.difficulty,
+    points: problem.points,
+    tags: problem.tags,
+    source: problem.source === "contest-only" ? "contest-only" : "public",
+    isDraft: problem.isDraft,
+  };
+}
+
+interface ContestDraftListItem {
+  id: string;
+  title: string;
+  updatedAt: string;
+  status: "Draft";
+  problemsCount: number;
+  durationMinutes: number | null;
+}
+
 export default function InstructorCreateContestPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initializedContestIdRef = useRef<string | null>(null);
+  const utils = trpc.useUtils();
+  const contestId = searchParams.get("contestId");
+  const isEditMode = Boolean(contestId);
   const [formValues, setFormValues] = useState<ContestFormDraft>(contestFormDraft);
   const [selectedProblemIds, setSelectedProblemIds] = useState<string[]>([]);
   const [pendingProblemIds, setPendingProblemIds] = useState<string[]>([]);
   const [selectProblemsOpen, setSelectProblemsOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [aiHintEnabled, setAiHintEnabled] = useState(false);
-
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const contestQuery = trpc.contestAuthoring.getContestById.useQuery(
+    { contestId: contestId ?? "" },
+    { enabled: isEditMode, retry: false },
+  );
+  const problemLibraryQuery = trpc.contestAuthoring.listProblemLibrary.useQuery(undefined, {
+    retry: false,
+  });
+  const draftContestsQuery = trpc.contestAuthoring.listDraftContests.useQuery(undefined, {
+    retry: false,
+  });
+  const createContestMutation = trpc.contestAuthoring.createContest.useMutation();
+  const updateContestMutation = trpc.contestAuthoring.updateContest.useMutation();
+  const deleteDraftMutation = trpc.instructorManageContent.updateContestManageStatus.useMutation({
+    onSuccess: async () => {
+      await Promise.all([
+        utils.contestAuthoring.listDraftContests.invalidate(),
+        utils.instructorManageContent.getManageContent.invalidate(),
+        utils.instructorManageContent.getInstructorOverview.invalidate(),
+      ]);
+    },
+    onError: (mutationError) => {
+      setSaveError(mutationError.message);
+    },
+  });
   const headerActions: SubpageActionButtonItem[] = [
     {
       id: "save-draft",
       label: contestAuthoringCopy.saveDraftLabel,
       icon: SaveOutlinedIcon,
+      onClick: () => void handleSaveDraft(),
     },
     {
       id: "preview",
@@ -128,28 +217,92 @@ export default function InstructorCreateContestPage() {
     },
   ];
 
+  useEffect(() => {
+    if (!contestQuery.data) {
+      return;
+    }
+
+    if (initializedContestIdRef.current === contestQuery.data.id) {
+      return;
+    }
+
+    queueMicrotask(() => {
+      setFormValues({
+        contestName: contestQuery.data.contestName,
+        description: contestQuery.data.description,
+        startDate: contestQuery.data.startDate,
+        startTime: contestQuery.data.startTime,
+        endDate: contestQuery.data.endDate,
+        endTime: contestQuery.data.endTime,
+        visibility: contestQuery.data.visibility,
+      });
+      setSelectedProblemIds(contestQuery.data.selectedProblemIds);
+      setAiHintEnabled(contestQuery.data.aiHintEnabled);
+      initializedContestIdRef.current = contestQuery.data.id;
+    });
+  }, [contestQuery.data]);
+
+  useEffect(() => {
+    if (isEditMode) {
+      return;
+    }
+
+    initializedContestIdRef.current = null;
+
+    queueMicrotask(() => {
+      setFormValues(contestFormDraft);
+      setSelectedProblemIds([]);
+      setPendingProblemIds([]);
+      setAiHintEnabled(false);
+      setSaveError(null);
+    });
+  }, [isEditMode]);
+
+  const availableProblems = useMemo(() => {
+    const problemMap = new Map<string, SelectableContestProblemRecord>();
+
+    (problemLibraryQuery.data ?? []).forEach((problem) => {
+      problemMap.set(problem.id, toSelectableContestProblemRecord(problem));
+    });
+    (contestQuery.data?.selectedProblems ?? []).forEach((problem) => {
+      problemMap.set(problem.id, toSelectableContestProblemRecord(problem));
+    });
+
+    return Array.from(problemMap.values()).sort((left, right) => {
+      const priorityDifference = getProblemSourcePriority(left) - getProblemSourcePriority(right);
+
+      if (priorityDifference !== 0) {
+        return priorityDifference;
+      }
+
+      return left.title.localeCompare(right.title);
+    });
+  }, [contestQuery.data?.selectedProblems, problemLibraryQuery.data]);
+
   const selectedProblems = useMemo(
     () =>
       selectedProblemIds
-        .map((problemId) => contestProblemLibrary.find((problem) => problem.id === problemId))
+        .map((problemId) => availableProblems.find((problem) => problem.id === problemId))
         .filter((problem): problem is ContestProblemRecord => Boolean(problem)),
-    [selectedProblemIds],
+    [availableProblems, selectedProblemIds],
   );
+
+  const draftContests = (draftContestsQuery.data ?? []) as ContestDraftListItem[];
 
   const previewProblems = selectedProblems.length
     ? selectedProblems.slice(0, 3)
-    : contestProblemLibrary.filter((problem) =>
-        ["valid-palindrome", "longest-increasing-subsequence", "graph-shortest-path"].includes(
-          problem.id,
-        ),
-      );
+    : availableProblems.slice(0, 3);
 
   const contestStatusRows: StatusSummaryRow[] = aiHintEnabled
     ? [
         {
           id: "status",
           label: "Status",
-          value: <span className={styles.statusNewBadge}>New</span>,
+          value: (
+            <span className={styles.statusNewBadge}>
+              {isEditMode ? "Editing" : "New"}
+            </span>
+          ),
         },
         {
           id: "problems",
@@ -183,14 +336,18 @@ export default function InstructorCreateContestPage() {
         {
           id: "drafts",
           label: "Drafts",
-          value: <Typography className={styles.statusValue}>{contestDrafts.length}</Typography>,
+          value: <Typography className={styles.statusValue}>{draftContests.length}</Typography>,
         },
       ]
     : [
         {
           id: "status",
           label: "Status",
-          value: <span className={styles.statusNewBadge}>New</span>,
+          value: (
+            <span className={styles.statusNewBadge}>
+              {isEditMode ? "Editing" : "New"}
+            </span>
+          ),
         },
         {
           id: "problems",
@@ -210,7 +367,7 @@ export default function InstructorCreateContestPage() {
         {
           id: "drafts",
           label: "Drafts",
-          value: <Typography className={styles.statusValue}>{contestDrafts.length}</Typography>,
+          value: <Typography className={styles.statusValue}>{draftContests.length}</Typography>,
         },
       ];
 
@@ -220,6 +377,21 @@ export default function InstructorCreateContestPage() {
     formatPreviewDate(formValues.startDate, formValues.startTime) || contestPreviewFallback.start;
   const previewEnd =
     formatPreviewDate(formValues.endDate, formValues.endTime) || contestPreviewFallback.end;
+  const pageTitle = isEditMode ? "Edit Contest" : contestAuthoringCopy.pageTitle;
+  const pageSubtitle = isEditMode
+    ? "Update an existing programming contest for your students"
+    : contestAuthoringCopy.pageSubtitle;
+  const publishLabel = isEditMode ? "Save Changes" : contestAuthoringCopy.publishLabel;
+  const isSaving = createContestMutation.isPending || updateContestMutation.isPending;
+  const pageError =
+    saveError ??
+    contestQuery.error?.message ??
+    problemLibraryQuery.error?.message ??
+    draftContestsQuery.error?.message ??
+    null;
+  const isPageLoading =
+    (isEditMode && contestQuery.isLoading && !contestQuery.data) ||
+    (problemLibraryQuery.isLoading && availableProblems.length === 0);
 
   const updateField = (field: keyof ContestFormDraft, value: string) => {
     setFormValues((prev) => ({ ...prev, [field]: value }));
@@ -245,14 +417,116 @@ export default function InstructorCreateContestPage() {
     setSelectedProblemIds((prev) => prev.filter((id) => id !== problemId));
   };
 
+  const handleEditDraftContest = (draftContestId: string) => {
+    router.push(`${ROUTES.instructorCreateContest}?contestId=${draftContestId}`);
+  };
+
+  const handleDeleteDraftContest = async (draftContestId: string) => {
+    setSaveError(null);
+
+    try {
+      await deleteDraftMutation.mutateAsync({
+        contestId: draftContestId,
+        manageStatus: "DELETED",
+      });
+
+      if (contestId === draftContestId) {
+        router.push(ROUTES.instructorCreateContest);
+      }
+    } catch {
+      // Error state is handled by the mutation onError callback.
+    }
+  };
+
+  const handlePublish = async () => {
+    setSaveError(null);
+
+    try {
+      if (isEditMode && contestId) {
+        await updateContestMutation.mutateAsync({
+          contestId,
+          data: {
+            ...formValues,
+            isDraft: false,
+            aiHintEnabled,
+            selectedProblemIds,
+          },
+        });
+      } else {
+        await createContestMutation.mutateAsync({
+          ...formValues,
+          isDraft: false,
+          aiHintEnabled,
+          selectedProblemIds,
+        });
+      }
+
+      await Promise.all([
+        utils.instructorManageContent.getManageContent.invalidate(),
+        utils.instructorManageContent.getInstructorOverview.invalidate(),
+        utils.contestAuthoring.listDraftContests.invalidate(),
+        utils.contestAuthoring.getContestById.invalidate({ contestId: contestId ?? "" }),
+      ]);
+
+      router.push(MANAGE_CONTESTS_TAB_ROUTE);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Unable to save the contest.");
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    if (!formValues.contestName.trim()) {
+      setSaveError("Contest name is required to save a draft.");
+      return;
+    }
+
+    setSaveError(null);
+
+    try {
+      if (isEditMode && contestId) {
+        await updateContestMutation.mutateAsync({
+          contestId,
+          data: {
+            ...formValues,
+            isDraft: true,
+            aiHintEnabled,
+            selectedProblemIds,
+          },
+        });
+        await Promise.all([
+          utils.instructorManageContent.getManageContent.invalidate(),
+          utils.instructorManageContent.getInstructorOverview.invalidate(),
+          utils.contestAuthoring.listDraftContests.invalidate(),
+          utils.contestAuthoring.getContestById.invalidate({ contestId }),
+        ]);
+        router.push(MANAGE_CONTESTS_TAB_ROUTE);
+      } else {
+        await createContestMutation.mutateAsync({
+          ...formValues,
+          isDraft: true,
+          aiHintEnabled,
+          selectedProblemIds,
+        });
+        await Promise.all([
+          utils.instructorManageContent.getManageContent.invalidate(),
+          utils.instructorManageContent.getInstructorOverview.invalidate(),
+          utils.contestAuthoring.listDraftContests.invalidate(),
+        ]);
+        router.push(MANAGE_CONTESTS_TAB_ROUTE);
+      }
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Unable to save draft.");
+    }
+  };
+
   return (
     <>
       <AuthoringPageShell
         onBack={() => router.back()}
         backLabel={contestAuthoringCopy.backButtonLabel}
         backButtonClassName={subpageStyles.backButton}
-        title={contestAuthoringCopy.pageTitle}
-        subtitle={contestAuthoringCopy.pageSubtitle}
+        title={pageTitle}
+        subtitle={pageSubtitle}
         actions={
           <SubpageActionButtons
             items={headerActions}
@@ -263,8 +537,30 @@ export default function InstructorCreateContestPage() {
         }
         main={
           <>
+            {pageError ? (
+              <Box
+                sx={{
+                  border: "1px solid #fecaca",
+                  borderRadius: "12px",
+                  backgroundColor: "#fef2f2",
+                  px: 2,
+                  py: 1.5,
+                }}
+              >
+                <Typography sx={{ color: "#b91c1c", fontSize: 13, fontWeight: 500 }}>
+                  {pageError}
+                </Typography>
+              </Box>
+            ) : null}
+
             <Card className={styles.card} elevation={0}>
               <CardContent className={styles.cardContent}>
+                {isPageLoading ? (
+                  <Box display="flex" justifyContent="center" py={6}>
+                    <CircularProgress size={28} />
+                  </Box>
+                ) : null}
+
                 <Box className={styles.sectionHeader}>
                   <Typography className={styles.sectionTitle}>
                     {contestAuthoringCopy.basicInfoTitle}
@@ -568,32 +864,48 @@ export default function InstructorCreateContestPage() {
                 </Box>
 
                 <Box className={styles.draftsList}>
-                  {contestDrafts.map((draft) => (
-                    <DraftRecordItem
-                      key={draft.id}
-                      title={draft.title}
-                      topMeta={
-                        <Box className={styles.draftMetaTop}>
-                          <span className={styles.draftStatusChip}>{draft.status}</span>
-                          <Typography className={styles.draftDate}>{draft.date}</Typography>
-                        </Box>
-                      }
-                      bottomMeta={
-                        <Typography className={styles.draftMetaBottom}>
-                          {`${draft.problemsCount} problem(s)`}
-                          {"   "}
-                          {`${draft.durationMinutes} min`}
-                        </Typography>
-                      }
-                      itemClassName={styles.draftItem}
-                      mainClassName={styles.draftMain}
-                      titleClassName={styles.draftTitle}
-                      actionsClassName={styles.draftActions}
-                      iconButtonClassName={styles.draftIconButton}
-                      editIconClassName={styles.draftActionIcon}
-                      deleteIconClassName={styles.draftActionIconDanger}
-                    />
-                  ))}
+                  {draftContestsQuery.isLoading && draftContests.length === 0 ? (
+                    <Typography className={styles.sectionDescription}>
+                      Loading contest drafts...
+                    </Typography>
+                  ) : draftContests.length === 0 ? (
+                    <Typography className={styles.sectionDescription}>
+                      No saved contest drafts yet.
+                    </Typography>
+                  ) : (
+                    draftContests.map((draft) => (
+                      <DraftRecordItem
+                        key={draft.id}
+                        title={draft.title}
+                        topMeta={
+                          <Box className={styles.draftMetaTop}>
+                            <span className={styles.draftStatusChip}>{draft.status}</span>
+                            <Typography className={styles.draftDate}>
+                              {formatDraftUpdatedAt(draft.updatedAt)}
+                            </Typography>
+                          </Box>
+                        }
+                        bottomMeta={
+                          <Typography className={styles.draftMetaBottom}>
+                            {`${draft.problemsCount} problem(s)`}
+                            {"   "}
+                            {draft.durationMinutes ? `${draft.durationMinutes} min` : "No duration"}
+                          </Typography>
+                        }
+                        itemClassName={styles.draftItem}
+                        mainClassName={styles.draftMain}
+                        titleClassName={styles.draftTitle}
+                        actionsClassName={styles.draftActions}
+                        iconButtonClassName={styles.draftIconButton}
+                        editIconClassName={styles.draftActionIcon}
+                        deleteIconClassName={styles.draftActionIconDanger}
+                        onEdit={() => handleEditDraftContest(draft.id)}
+                        onDelete={() => void handleDeleteDraftContest(draft.id)}
+                        editAriaLabel={`Edit draft ${draft.title}`}
+                        deleteAriaLabel={`Delete draft ${draft.title}`}
+                      />
+                    ))
+                  )}
                 </Box>
               </CardContent>
             </Card>
@@ -646,8 +958,13 @@ export default function InstructorCreateContestPage() {
               </CardContent>
             </Card>
 
-            <Button className={styles.publishButton} variant="contained">
-              {contestAuthoringCopy.publishLabel}
+            <Button
+              className={styles.publishButton}
+              variant="contained"
+              disabled={isSaving || isPageLoading}
+              onClick={() => void handlePublish()}
+            >
+              {isSaving ? "Saving..." : publishLabel}
             </Button>
           </>
         }
@@ -680,8 +997,9 @@ export default function InstructorCreateContestPage() {
           </Box>
 
           <Box className={styles.modalProblemList}>
-            {contestProblemLibrary.map((problem) => {
+            {availableProblems.map((problem) => {
               const isSelected = pendingProblemIds.includes(problem.id);
+              const showContestOnlyBadge = problem.source === "contest-only";
 
               return (
                 <button
@@ -690,13 +1008,26 @@ export default function InstructorCreateContestPage() {
                   className={`${styles.modalProblemButton} ${isSelected ? styles.modalProblemButtonSelected : ""}`}
                   onClick={() => togglePendingProblem(problem.id)}
                 >
+                  <Box className={styles.modalProblemTitleRow}>
                     <Typography className={styles.modalProblemTitle}>{problem.title}</Typography>
-                    <Box className={styles.modalProblemMeta}>
-                      <span className={getDifficultyBadgeClassName(problem.difficulty)}>
-                        {problem.difficulty}
+                    {showContestOnlyBadge ? (
+                      <span className={styles.contestOnlyBadge}>
+                        <FlagOutlinedIcon className={styles.contestOnlyBadgeIcon} />
+                        {getProblemSourceLabel(problem)}
                       </span>
-                      <Typography className={styles.problemMetaText}>{`${problem.points} points`}</Typography>
-                      <Typography className={styles.problemSeparator}>•</Typography>
+                    ) : null}
+                  </Box>
+                  <Box className={styles.modalProblemMeta}>
+                    <span className={getDifficultyBadgeClassName(problem.difficulty)}>
+                      {problem.difficulty}
+                    </span>
+                    {!showContestOnlyBadge ? (
+                      <Typography className={styles.problemMetaText}>
+                        {getProblemSourceLabel(problem)}
+                      </Typography>
+                    ) : null}
+                    <Typography className={styles.problemMetaText}>{`${problem.points} points`}</Typography>
+                    <Typography className={styles.problemSeparator}>-</Typography>
                     <Typography className={styles.problemMetaText}>
                       {formatProblemTags(problem)}
                     </Typography>
@@ -806,7 +1137,7 @@ export default function InstructorCreateContestPage() {
                     AI Hint Experiment Active
                   </Typography>
                   <Typography className={styles.previewExperimentBody}>
-                    {`Group A: hints after ${contestAiHintConfig.groupAHintAfterMinutes} min · Group B: hints after ${contestAiHintConfig.groupBHintAfterMinutes} min`}
+                    {`Group A: hints after ${contestAiHintConfig.groupAHintAfterMinutes} min - Group B: hints after ${contestAiHintConfig.groupBHintAfterMinutes} min`}
                   </Typography>
                 </Box>
               </Box>

@@ -7,17 +7,53 @@ import PageHeader from "@/fe/shared/components/PageHeader";
 import ProblemHeader from "@/fe/shared/components/problem/ProblemHeader";
 import ProblemDetails from "@/fe/shared/components/problem/ProblemDetails";
 import SolutionEditor from "@/fe/shared/components/problem/SolutionEditor";
+import {
+  DEFAULT_CODE_LANGUAGE,
+  readPersistedCodeDraft,
+  removePersistedCodeDraft,
+  writePersistedCodeDraft,
+  type SupportedCodeLanguage,
+} from "@/fe/shared/services/codeDraftStorage";
 import { trpc } from "@/lib/trpc/client";
-import type { PracticeSubmissionPayload } from "@/lib/practiceSubmission";
+import {
+  normalizePracticeSubmissionTestcases,
+  type PracticeSubmissionPayload,
+} from "@/lib/practiceSubmission";
 import styles from "@/fe/contests/styles/ProblemSubmissionPage.module.css";
 
 interface PracticeProblemSubmissionPageProps {
   problemCode: string;
 }
 
-type SupportedLanguage = "cplusplus" | "java" | "typescript" | "javascript" | "python";
+type SupportedLanguage = SupportedCodeLanguage;
 
-const DEFAULT_LANGUAGE: SupportedLanguage = "cplusplus";
+const DEFAULT_LANGUAGE: SupportedLanguage = DEFAULT_CODE_LANGUAGE;
+const PRACTICE_DRAFT_STORAGE_KEY_PREFIX = "practice-submission-draft:";
+
+function getPracticeDraftStorageKey(problemCode: string) {
+  return `${PRACTICE_DRAFT_STORAGE_KEY_PREFIX}${problemCode}`;
+}
+
+function formatVerdictLabel(verdict: string | null | undefined) {
+  const normalized = verdict?.trim().toLowerCase();
+
+  switch (normalized) {
+    case "accepted":
+      return "Accepted";
+    case "wrong_answer":
+    case "wrong answer":
+      return "Wrong Answer";
+    case "partial":
+      return "Partial";
+    case "runtime_error":
+    case "runtime error":
+      return "Runtime Error";
+    case "failed":
+      return "Failed";
+    default:
+      return null;
+  }
+}
 
 interface RunResult {
   submissionId: string;
@@ -26,6 +62,24 @@ interface RunResult {
   feedback: string | null;
   errorMessage: string | null;
   testcases: PracticeSubmissionPayload["testcases"];
+}
+
+function buildRunResult(input: {
+  submissionId: string;
+  status: RunResult["status"];
+  verdict: string | null | undefined;
+  feedback: string | null;
+  errorMessage: string | null;
+  testcases: PracticeSubmissionPayload["testcases"];
+}): RunResult {
+  return {
+    submissionId: input.submissionId,
+    status: input.status,
+    verdict: formatVerdictLabel(input.verdict),
+    feedback: input.feedback,
+    errorMessage: input.errorMessage,
+    testcases: input.testcases,
+  };
 }
 
 export default function PracticeProblemSubmissionPage({
@@ -51,6 +105,8 @@ function PracticeProblemSubmissionPageContent({
     Promise<{ sessionId: string; problemId: string } | null> | null
   >(null);
   const submissionEventSourceRef = useRef<EventSource | null>(null);
+  const [isDraftStorageReady, setIsDraftStorageReady] = useState(false);
+  const [hasPersistedDraft, setHasPersistedDraft] = useState(false);
 
   const { data: detail, isLoading: detailLoading, error: detailError } =
     trpc.practice.getProblemDetail.useQuery({ problemCode }, { retry: false });
@@ -59,14 +115,17 @@ function PracticeProblemSubmissionPageContent({
     { problemCode },
     { enabled: !!detail },
   );
+  const { data: latestRunRecord } = trpc.practice.getLatestRunRecord.useQuery(
+    { problemCode },
+    { enabled: !!detail, retry: false },
+  );
 
   const { mutateAsync: openSessionMutateAsync } = trpc.practiceExecution.openSession.useMutation();
   const [submitState, setSubmitState] = useState<"idle" | "submitting" | "queued" | "running" | "done" | "failed">("idle");
   const isSubmitting = submitState === "submitting";
   const isJudging = submitState === "submitting" || submitState === "queued" || submitState === "running";
-  const typedCode = drafts[language] ?? "";
   const code = drafts[language] ?? detail?.starterCodes?.[language] ?? "";
-  const hasTypedCode = typedCode.trim().length > 0;
+  const hasCode = code.trim().length > 0;
   const displayedRunResult = runResult;
 
   const closeSubmissionStream = useCallback(() => {
@@ -76,28 +135,17 @@ function PracticeProblemSubmissionPageContent({
 
   const applySubmissionUpdate = useCallback(
     async (payload: PracticeSubmissionPayload) => {
-      const verdictLabel =
-        payload.verdict === "accepted"
-          ? "Accepted"
-          : payload.verdict === "wrong_answer"
-            ? "Wrong Answer"
-            : payload.verdict === "partial"
-              ? "Partial"
-              : payload.verdict === "runtime_error"
-                ? "Runtime Error"
-                : payload.verdict === "failed"
-                  ? "Failed"
-                  : null;
-
       setSubmitState(payload.status);
-      setRunResult({
-        submissionId: payload.submissionId,
-        status: payload.status,
-        verdict: verdictLabel,
-        feedback: payload.feedback,
-        errorMessage: payload.errorMessage,
-        testcases: payload.testcases,
-      });
+      setRunResult(
+        buildRunResult({
+          submissionId: payload.submissionId,
+          status: payload.status,
+          verdict: payload.verdict,
+          feedback: payload.feedback,
+          errorMessage: payload.errorMessage,
+          testcases: payload.testcases,
+        }),
+      );
 
       if (payload.status === "done" || payload.status === "failed") {
         closeSubmissionStream();
@@ -204,8 +252,79 @@ function PracticeProblemSubmissionPageContent({
 
   useEffect(() => () => closeSubmissionStream(), [closeSubmissionStream]);
 
+  useEffect(() => {
+    const persistedDraft = readPersistedCodeDraft(getPracticeDraftStorageKey(problemCode));
+
+    if (persistedDraft) {
+      setLanguage(persistedDraft.language);
+      setDrafts(persistedDraft.drafts);
+    }
+
+    setHasPersistedDraft(Boolean(persistedDraft));
+    setIsDraftStorageReady(true);
+  }, [problemCode]);
+
+  useEffect(() => {
+    if (!isDraftStorageReady) {
+      return;
+    }
+
+    const hasDraftContent = Object.keys(drafts).length > 0;
+
+    if (!hasDraftContent && language === DEFAULT_LANGUAGE) {
+      removePersistedCodeDraft(getPracticeDraftStorageKey(problemCode));
+      return;
+    }
+
+    writePersistedCodeDraft(getPracticeDraftStorageKey(problemCode), {
+      language,
+      drafts,
+    });
+  }, [drafts, isDraftStorageReady, language, problemCode]);
+
+  useEffect(() => {
+    if (
+      !isDraftStorageReady ||
+      hasPersistedDraft ||
+      !latestRunRecord ||
+      hasRun ||
+      runResult ||
+      Object.keys(drafts).length > 0
+    ) {
+      return;
+    }
+
+    setLanguage(latestRunRecord.language as SupportedLanguage);
+    setDrafts({ [latestRunRecord.language]: latestRunRecord.code });
+    setHasRun(true);
+    setTab("submissions");
+    setSubmitState(latestRunRecord.status);
+    setRunResult(
+      buildRunResult({
+        submissionId: latestRunRecord.id,
+        status: latestRunRecord.status,
+        verdict: latestRunRecord.verdict,
+        feedback: latestRunRecord.feedback,
+        errorMessage: latestRunRecord.errorMessage,
+        testcases: normalizePracticeSubmissionTestcases(latestRunRecord.testcases),
+      }),
+    );
+
+    if (latestRunRecord.status === "queued" || latestRunRecord.status === "running") {
+      openSubmissionStream(latestRunRecord.id);
+    }
+  }, [
+    drafts,
+    hasPersistedDraft,
+    hasRun,
+    isDraftStorageReady,
+    latestRunRecord,
+    openSubmissionStream,
+    runResult,
+  ]);
+
   const handleSubmitCode = async () => {
-    if (!hasTypedCode) return;
+    if (!hasCode) return;
 
     const currentSession = await ensureSessionInfo();
 
@@ -238,25 +357,29 @@ function PracticeProblemSubmissionPageContent({
       }
 
       setSubmitState("queued");
-      setRunResult({
-        submissionId: payload.submissionId,
-        status: "queued",
-        verdict: null,
-        feedback: null,
-        errorMessage: null,
-        testcases: [],
-      });
+      setRunResult(
+        buildRunResult({
+          submissionId: payload.submissionId,
+          status: "queued",
+          verdict: null,
+          feedback: null,
+          errorMessage: null,
+          testcases: [],
+        }),
+      );
       openSubmissionStream(payload.submissionId);
     } catch (error) {
       setSubmitState("failed");
-      setRunResult({
-        submissionId: "",
-        status: "failed",
-        verdict: "Failed",
-        feedback: null,
-        errorMessage: error instanceof Error ? error.message : "Failed to submit code.",
-        testcases: [],
-      });
+      setRunResult(
+        buildRunResult({
+          submissionId: "",
+          status: "failed",
+          verdict: "failed",
+          feedback: null,
+          errorMessage: error instanceof Error ? error.message : "Failed to submit code.",
+          testcases: [],
+        }),
+      );
     }
   };
 
@@ -348,7 +471,7 @@ function PracticeProblemSubmissionPageContent({
               }))
             }
             onSubmitCode={handleSubmitCode}
-            submitButtonDisabled={!hasTypedCode || isJudging}
+            submitButtonDisabled={!hasCode || isJudging}
             submitButtonLabel={isSubmitting ? "Submitting..." : isJudging ? "Judging..." : "Submit"}
           />
         </Box>

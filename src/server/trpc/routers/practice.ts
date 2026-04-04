@@ -1,12 +1,13 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { router, studentProcedure } from "../init";
+import { practiceViewProcedure, router } from "../init";
 import { prisma as _prisma } from "@/lib/prisma";
 import {
   APP_LANGUAGES,
   codingLanguageToAppLanguage,
   codingLanguageToLabel,
 } from "../../coding-language";
+import { normalizePracticeSubmissionTestcases } from "@/lib/practiceSubmission";
 import { mapPracticeRunRecordToSubmissionPayload } from "@/server/practice/submissionService";
 
 export type PrismaClient = typeof _prisma;
@@ -31,8 +32,13 @@ export async function getProblemByCode(
   ctx: { prisma: PrismaClient },
   problemCode: string,
 ): Promise<{ id: string; code: string }> {
-  const problem = await ctx.prisma.problem.findUnique({
-    where: { code: problemCode },
+  const problem = await ctx.prisma.problem.findFirst({
+    where: {
+      code: problemCode,
+      isDraft: false,
+      manageStatus: "ACTIVE",
+      source: { in: ["PRACTICE", "BOTH"] },
+    },
     select: { id: true, code: true },
   });
   if (!problem) throw new TRPCError({ code: "NOT_FOUND", message: "Problem not found" });
@@ -61,7 +67,7 @@ function mapRunVerdictToStatus(verdict: string): "accepted" | "wrong" | "tle" {
 // ---------------------------------------------------------------------------
 
 export const practiceRouter = router({
-  listProblems: studentProcedure
+  listProblems: practiceViewProcedure
     .input(
       z.object({
         difficulty: z.string().optional(),
@@ -91,6 +97,8 @@ export const practiceRouter = router({
 
       const problems = await ctx.prisma.problem.findMany({
         where: {
+          isDraft: false,
+          manageStatus: "ACTIVE",
           source: { in: ["PRACTICE", "BOTH"] },
           ...(andClauses.length > 0 ? { AND: andClauses } : {}),
         },
@@ -127,14 +135,21 @@ export const practiceRouter = router({
       }));
     }),
 
-  getProblemDetail: studentProcedure
+  getProblemDetail: practiceViewProcedure
     .input(z.object({ problemCode: z.string() }))
     .query(async ({ ctx, input }) => {
       const problem = await ctx.prisma.problem.findUnique({
         where: { code: input.problemCode },
         include: { topics: true, starterCodes: true },
       });
-      if (!problem) throw new TRPCError({ code: "NOT_FOUND", message: "Problem not found" });
+      if (
+        !problem ||
+        problem.isDraft ||
+        problem.manageStatus !== "ACTIVE" ||
+        !["PRACTICE", "BOTH"].includes(problem.source)
+      ) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Problem not found" });
+      }
 
       return {
         id: problem.id,
@@ -178,7 +193,7 @@ export const practiceRouter = router({
       };
     }),
 
-  getRunHistory: studentProcedure
+  getRunHistory: practiceViewProcedure
     .input(z.object({ problemCode: z.string() }))
     .query(async ({ ctx, input }) => {
       const dbUser = await getDbUser(ctx);
@@ -201,41 +216,29 @@ export const practiceRouter = router({
       }));
     }),
 
-  getRunRecord: studentProcedure
-    .input(z.object({ problemCode: z.string(), recordId: z.string() }))
+  getLatestRunRecord: practiceViewProcedure
+    .input(z.object({ problemCode: z.string() }))
     .query(async ({ ctx, input }) => {
       const dbUser = await getDbUser(ctx);
       const problem = await getProblemByCode(ctx, input.problemCode);
 
       const record = await ctx.prisma.practiceRunRecord.findFirst({
-        where: {
-          id: input.recordId,
-          session: {
-            userId: dbUser.id,
-            problemId: problem.id,
-          },
-        },
+        where: { session: { userId: dbUser.id, problemId: problem.id } },
+        orderBy: { createdAt: "desc" },
       });
 
-      if (!record) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Run record not found" });
-      }
+      if (!record) return null;
 
       return {
         id: record.id,
-        isSubmit: record.isSubmit,
+        language: codingLanguageToAppLanguage(record.language),
+        code: record.code,
         status: mapPracticeRunRecordToSubmissionPayload(record).status,
         verdict: record.verdict,
-        score: record.score,
         feedback: record.feedback,
-        testcases: Array.isArray(record.testcases) ? record.testcases : [],
-        judgedBy: record.judgedBy,
         errorMessage: record.errorMessage,
-        compilePassed: record.compilePassed,
-        stdout: record.stdout,
-        stderr: record.stderr,
-        runtimeMs: record.runtimeMs,
-        createdAt: record.createdAt,
+        testcases: normalizePracticeSubmissionTestcases(record.testcases),
       };
     }),
+
 });

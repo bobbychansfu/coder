@@ -52,21 +52,13 @@ export interface ContestAuthoringCopy {
 
 export type ContestDifficulty = "easy" | "medium" | "hard";
 
-export interface ContestDraftRecord {
-  id: string;
-  title: string;
-  date: string;
-  status: string;
-  problemsCount: number;
-  durationMinutes: number;
-}
-
 export interface ContestProblemRecord {
   id: string;
   title: string;
   difficulty: ContestDifficulty;
   points: number;
   tags: string[];
+  source?: "public" | "contest-only";
 }
 
 export interface ContestFormDraft {
@@ -76,7 +68,7 @@ export interface ContestFormDraft {
   startTime: string;
   endDate: string;
   endTime: string;
-  visibility: string;
+  visibility: "course-only" | "public" | "private";
 }
 
 export interface ContestPreviewFallback {
@@ -97,7 +89,7 @@ export interface ContestAiHintConfig {
 }
 
 export const contestAuthoringCopy: ContestAuthoringCopy = {
-  backButtonLabel: "Back to Contests",
+  backButtonLabel: "Back",
   pageTitle: "Create Contest",
   pageSubtitle: "Set up a new programming contest for your students",
   saveDraftLabel: "Save Draft",
@@ -149,25 +141,6 @@ export const contestAuthoringCopy: ContestAuthoringCopy = {
   previewReadonlyCopy: "This is a read-only preview of the student-facing contest page.",
   previewProblemsTitle: "Problems",
 };
-
-export const contestDrafts: ContestDraftRecord[] = [
-  {
-    id: "draft-week5-lab",
-    title: "Week 5 Lab Contest",
-    date: "2/19/2026",
-    status: "Draft",
-    problemsCount: 4,
-    durationMinutes: 120,
-  },
-  {
-    id: "draft-recursion-challenge",
-    title: "Recursion Challenge",
-    date: "2/17/2026",
-    status: "Draft",
-    problemsCount: 0,
-    durationMinutes: 90,
-  },
-];
 
 export const contestProblemLibrary: ContestProblemRecord[] = [
   {

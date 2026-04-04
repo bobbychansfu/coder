@@ -14,6 +14,9 @@ export async function POST(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (user.role !== "student") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const dbUserId = await findDbUserIdByComputingId(user.computingId);
   if (!dbUserId) {
