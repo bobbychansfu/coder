@@ -46,8 +46,11 @@ enum SubmissionStatus {
   ACCEPTED
   WRONG_ANSWER
   TIME_LIMIT_EXCEEDED
+  MEMORY_LIMIT_EXCEEDED
   RUNTIME_ERROR
   COMPILE_ERROR
+  COMPILATION_ERROR
+  SYSTEM_ERROR
 }
 
 enum CodingLanguage {
@@ -398,7 +401,10 @@ model Submission {
   status      SubmissionStatus
   score       Int              @default(0)
   judgeOutput String?
+  judgeStatusRaw String?
+  judgeCallbackPayload Json?
   createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 
   userId    String
   contestId String

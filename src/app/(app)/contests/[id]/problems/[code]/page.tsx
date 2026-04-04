@@ -4,7 +4,7 @@ import {
   adaptContestProblemDetail,
   type ContestProblemDetailResponse,
   type ContestProblemSubmissionsResponse,
-} from "@/fe/contests/services/contestProblem";
+} from "@/lib/contestProblemAdapter";
 import { toContestDetail } from "@/fe/contests/services/contestAdapters";
 import {
   type BackendContestSummary,

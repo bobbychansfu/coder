@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Box, ButtonBase, CircularProgress, Typography } from "@mui/material";
 import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
@@ -22,7 +22,7 @@ import type { ProblemDetail, SubmissionRecord } from "@/fe/contests/data/problem
 import {
   adaptContestSubmissionRecords,
   type ContestProblemSubmissionsResponse,
-} from "@/fe/contests/services/contestProblem";
+} from "@/lib/contestProblemAdapter";
 import styles from "@/fe/contests/styles/ProblemSubmissionPage.module.css";
 
 interface ProblemNavigator {
@@ -43,8 +43,7 @@ type SupportedLanguage = SupportedCodeLanguage;
 
 const DEFAULT_LANGUAGE: SupportedLanguage = DEFAULT_CODE_LANGUAGE;
 const CONTEST_DRAFT_STORAGE_KEY_PREFIX = "contest-submission-draft:";
-const SUBMISSION_POLL_INTERVAL_MS = 1_500;
-const SUBMISSION_POLL_ATTEMPTS = 8;
+const SUBMISSION_REFRESH_INTERVAL_MS = 3_000;
 
 interface RunResult {
   submissionId: string;
@@ -83,9 +82,16 @@ function formatVerdictLabel(verdict: string | null | undefined) {
     case "runtime_error":
     case "runtime error":
       return "Runtime Error";
+    case "memory_limit_exceeded":
+    case "memory limit exceeded":
+      return "Memory Limit Exceeded";
     case "compile_error":
+    case "compilation_error":
     case "compile error":
       return "Compile Error";
+    case "system_error":
+    case "system error":
+      return "System Error";
     case "failed":
       return "Failed";
     default:
@@ -109,10 +115,6 @@ function buildRunResult(input: {
     errorMessage: input.errorMessage,
     testcases: input.testcases,
   };
-}
-
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export default function ProblemSubmissionPage({
@@ -193,7 +195,7 @@ function ProblemSubmissionPageContent({
     });
   }, [effectiveDrafts, effectiveLanguage, persistedDraft, storageKey]);
 
-  const refetchSubmissions = async (): Promise<SubmissionRecord[]> => {
+  const refetchSubmissions = useEffectEvent(async (): Promise<SubmissionRecord[]> => {
     if (!detail.problemId) {
       return [];
     }
@@ -211,21 +213,63 @@ function ProblemSubmissionPageContent({
     const records = adaptContestSubmissionRecords(payload);
     setSubmissions(records);
     return records;
-  };
+  });
 
-  const pollForSubmissionSettlement = async (submissionId: string) => {
-    for (let attempt = 0; attempt < SUBMISSION_POLL_ATTEMPTS; attempt += 1) {
-      await sleep(SUBMISSION_POLL_INTERVAL_MS);
-      const records = await refetchSubmissions();
-      const submittedRecord = records.find((record) => record.id === submissionId);
-
-      if (submittedRecord && submittedRecord.status !== "pending") {
-        return submittedRecord;
-      }
+  useEffect(() => {
+    if (!submissions.some((submission) => submission.status === "pending")) {
+      return;
     }
 
-    return null;
-  };
+    const intervalId = window.setInterval(() => {
+      void refetchSubmissions().catch(() => {
+        // Keep the latest local state if a background refresh fails.
+      });
+    }, SUBMISSION_REFRESH_INTERVAL_MS);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [refetchSubmissions, submissions]);
+
+  useEffect(() => {
+    if (!runResult?.submissionId) {
+      return;
+    }
+
+    const latestSubmission = submissions.find((submission) => submission.id === runResult.submissionId);
+    if (!latestSubmission || latestSubmission.status === "pending") {
+      return;
+    }
+
+    const verdictLabel = formatVerdictLabel(latestSubmission.status);
+    const feedback =
+      latestSubmission.judgeOutput?.trim() ||
+      (verdictLabel ? `Final verdict: ${verdictLabel}.` : "Final verdict received.");
+
+    setRunResult((current) => {
+      if (!current || current.submissionId !== latestSubmission.id) {
+        return current;
+      }
+
+      if (
+        current.status === "done" &&
+        current.verdict === verdictLabel &&
+        current.feedback === feedback &&
+        current.errorMessage === null
+      ) {
+        return current;
+      }
+
+      return buildRunResult({
+        submissionId: latestSubmission.id,
+        status: "done",
+        verdict: latestSubmission.status,
+        feedback,
+        errorMessage: null,
+        testcases: [],
+      });
+    });
+  }, [runResult?.submissionId, submissions]);
 
   const submitContestCode = async (mode: "run" | "submit") => {
     if (!hasCode || !detail.problemId) {
@@ -257,24 +301,20 @@ function ProblemSubmissionPageContent({
 
       const refreshedSubmissions = await refetchSubmissions();
       const submittedRecord = refreshedSubmissions.find((record) => record.id === payload.sid);
-      const finalRecord =
-        submittedRecord?.status === "pending"
-          ? await pollForSubmissionSettlement(payload.sid)
-          : submittedRecord ?? null;
-      const finalVerdict = finalRecord?.status ?? payload.status ?? null;
+      const queuedVerdict = submittedRecord?.status ?? payload.status ?? "pending";
 
       setSubmitState("done");
       setRunResult(
         buildRunResult({
           submissionId: payload.sid,
           status: "done",
-          verdict: finalVerdict,
+          verdict: queuedVerdict,
           feedback:
             mode === "run"
-              ? payload.message
+              ? `${payload.message} The submission will keep refreshing while the Judge is processing it.`
               : navigator?.nextHref
-                ? `${payload.message} You can use the navigator to continue to the next problem.`
-                : payload.message,
+                ? `${payload.message} You can use the navigator to continue to the next problem while this verdict stays pending.`
+                : `${payload.message} Submission history will refresh automatically.`,
           errorMessage: null,
           testcases: [],
         }),

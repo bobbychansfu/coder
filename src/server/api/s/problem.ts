@@ -2,15 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
 import { can } from "@/lib/authz";
 import { dbHelpers } from "@/lib/db-helpers";
-import { syncStudentGamification } from "@/server/gamification/persistence";
 import path from "path";
 import { promises as fs } from "fs";
 import {
   appLanguageToCodingLanguage,
-  appLanguageToJudgeLanguage,
   codingLanguageToLabel,
 } from "@/server/coding-language";
-import { SubmissionStatus } from "@prisma/client";
+import {
+  getContestJudgeLanguage,
+  isJudgeQueueAcknowledgement,
+  normalizeContestJudgeStatus,
+  readJudgeQueueStatus,
+  resolveContestJudgeProblemId,
+} from "@/server/judge/contestJudge";
 
 interface SubmitCodeBody {
   language?: string;
@@ -20,9 +24,6 @@ interface SubmitCodeBody {
 }
 
 interface JudgeSubmissionResponse {
-  score?: number;
-  status?: string;
-  judge_output?: string;
   runtime?: string | number;
   runtime_ms?: string | number;
   memory?: string | number;
@@ -32,46 +33,6 @@ interface JudgeSubmissionResponse {
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
-}
-
-function normalizeJudgeStatusToSubmissionStatus(
-  status: string | null | undefined,
-  score: number,
-): SubmissionStatus {
-  const normalized = status?.trim().toUpperCase();
-
-  switch (normalized) {
-    case "AC":
-    case "ACCEPTED":
-      return "ACCEPTED";
-    case "WA":
-    case "WRONG_ANSWER":
-    case "WRONG ANSWER":
-      return "WRONG_ANSWER";
-    case "TLE":
-    case "TIME_LIMIT_EXCEEDED":
-    case "TIME LIMIT EXCEEDED":
-      return "TIME_LIMIT_EXCEEDED";
-    case "RE":
-    case "ERR":
-    case "RUNTIME_ERROR":
-    case "RUNTIME ERROR":
-    case "IERR":
-    case "INTERNALERROR":
-    case "INTERNAL ERROR":
-      return "RUNTIME_ERROR";
-    case "CE":
-    case "CERR":
-    case "COMPILE_ERROR":
-    case "COMPILE ERROR":
-      return "COMPILE_ERROR";
-    case "PENDING":
-    case "QUEUED":
-    case "RUNNING":
-      return "PENDING";
-    default:
-      return score > 0 ? "ACCEPTED" : "WRONG_ANSWER";
-  }
 }
 
 function parseMetricValue(
@@ -166,6 +127,18 @@ async function findContestForViewer(computingId: string, role: string, contestId
   }
 
   return dbHelpers.findSpecificContestForUser(computingId, contestId, "contestant");
+}
+
+async function syncPendingContestSubmissionsFromJudge(args: {
+  computingId: string;
+  contestId: string;
+  problemId: string;
+}) {
+  return dbHelpers.findSubmissionsForProblem(
+    args.computingId,
+    args.contestId,
+    args.problemId,
+  );
 }
 
 export async function handleGetProblemDetails(
@@ -312,9 +285,9 @@ export async function handleSubmitCode(
     await dbHelpers.createProblemStatus(computingId, cid, pid);
 
     const codingLanguage = appLanguageToCodingLanguage(language);
-    const judgeLanguage = appLanguageToJudgeLanguage(language);
+    const judgeLanguage = getContestJudgeLanguage(language);
 
-    if (!codingLanguage || !judgeLanguage) {
+    if (!codingLanguage) {
       return NextResponse.json({ error: "Unsupported language" }, { status: 400 });
     }
 
@@ -326,51 +299,113 @@ export async function handleSubmitCode(
       language: codingLanguage,
     });
 
+    await dbHelpers.updateProblemStatus(computingId, cid, pid, {
+      tries: 1,
+    });
+
+    const problem = await dbHelpers.findProblem(pid);
+    if (!problem) {
+      await dbHelpers.updateSubmission(submission.id, {
+        status: "SYSTEM_ERROR",
+        judgeOutput: "Problem not found locally while preparing Judge submission.",
+        score: 0,
+        judgeStatusRaw: "LOCAL_PROBLEM_NOT_FOUND",
+      });
+      return NextResponse.json({ error: "Problem not found" }, { status: 404 });
+    }
+
+    const judgeProblemId = resolveContestJudgeProblemId(problem);
+    if (!judgeProblemId) {
+      await dbHelpers.updateSubmission(submission.id, {
+        status: "SYSTEM_ERROR",
+        judgeOutput: `No verified Judge mapping is configured for local problem code "${problem.code}".`,
+        score: 0,
+        judgeStatusRaw: "UNMAPPED_JUDGE_PROBLEM",
+      });
+      return NextResponse.json(
+        { error: "This contest problem is not wired to the external Judge yet." },
+        { status: 400 },
+      );
+    }
+
+    if (!judgeLanguage) {
+      await dbHelpers.updateSubmission(submission.id, {
+        status: "SYSTEM_ERROR",
+        judgeOutput: "The verified SFU Judge integration currently supports Python submissions only.",
+        score: 0,
+        judgeStatusRaw: "UNSUPPORTED_JUDGE_LANGUAGE",
+      });
+      return NextResponse.json(
+        { error: "The verified SFU Judge integration currently supports Python submissions only." },
+        { status: 400 },
+      );
+    }
+
     const JUDGE_URL = process.env.JUDGE_URL || "http://127.0.0.1:8000";
-    let judgeResponse: JudgeSubmissionResponse;
+    let judgeResponse: unknown;
+    let judgeResponseText = "";
     try {
       const response = await fetch(`${JUDGE_URL}/judge_submission`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sid: submission.id,
-          pid,
+          pid: judgeProblemId,
+          cid,
           language: judgeLanguage,
-          connection_id,
+          connection_id: connection_id || "",
           submission: code,
         }),
       });
-      judgeResponse = await response.json();
+
+      judgeResponseText = await response.text();
+      try {
+        judgeResponse = judgeResponseText ? JSON.parse(judgeResponseText) : null;
+      } catch {
+        judgeResponse = judgeResponseText;
+      }
+
+      if (!response.ok) {
+        await dbHelpers.updateSubmission(submission.id, {
+          status: "SYSTEM_ERROR",
+          judgeOutput: judgeResponseText || `Judge returned HTTP ${response.status}.`,
+          score: 0,
+          judgeStatusRaw: `HTTP_${response.status}`,
+        });
+        return NextResponse.json(
+          { error: "Judge rejected the submission.", details: judgeResponseText || response.statusText },
+          { status: 502 },
+        );
+      }
     } catch (error: unknown) {
       console.error("Judge request failed:", error);
+      await dbHelpers.updateSubmission(submission.id, {
+        status: "SYSTEM_ERROR",
+        judgeOutput: getErrorMessage(error),
+        score: 0,
+        judgeStatusRaw: "JUDGE_REQUEST_FAILED",
+      });
       return NextResponse.json({ error: "Failed to reach judge", details: getErrorMessage(error) }, { status: 500 });
     }
 
-    const problem = await dbHelpers.findProblem(pid);
-    const score = judgeResponse.score || 0;
-    const judgeOutput = judgeResponse.judge_output?.trim() || "";
-    const submissionStatus = normalizeJudgeStatusToSubmissionStatus(judgeResponse.status, score);
-
-    await dbHelpers.updateSubmission(submission.id, submissionStatus, judgeOutput, score);
-    await dbHelpers.updateProblemStatus(computingId, cid, pid, {
-      status: submissionStatus === "ACCEPTED" ? "correct" : "wrong",
-      score,
-      tries: 1,
-    });
-
-    await dbHelpers.updateUserPointsAndProblems(computingId, score, score > 0 ? 1 : 0);
-    if (problem) {
-      await dbHelpers.addNewActivity(computingId, "submission", `Submitted a solution for ${problem.title} and received ${score} points`);
+    if (!isJudgeQueueAcknowledgement(judgeResponse)) {
+      await dbHelpers.updateSubmission(submission.id, {
+        status: "SYSTEM_ERROR",
+        judgeOutput: judgeResponseText || "Judge did not acknowledge the submission queue request.",
+        score: 0,
+        judgeStatusRaw: readJudgeQueueStatus(judgeResponse) ?? "UNEXPECTED_QUEUE_RESPONSE",
+      });
+      return NextResponse.json(
+        { error: "Judge did not acknowledge the submission queue request.", details: judgeResponse ?? null },
+        { status: 502 },
+      );
     }
-    await syncStudentGamification(computingId);
 
     return NextResponse.json({
-      message: "Submission received",
+      message: "Submission queued for judging.",
       sid: submission.id,
-      score,
-      status: submissionStatus,
-      runtime: formatRuntimeFromJudgeResponse(judgeResponse, judgeOutput),
-      memory: formatMemoryFromJudgeResponse(judgeResponse, judgeOutput),
+      status: "PENDING",
+      queueStatus: readJudgeQueueStatus(judgeResponse),
     });
   } catch (error: unknown) {
     console.error(error);
@@ -404,7 +439,11 @@ export async function handleGetSubmissionsForProblem(
       return NextResponse.json({ error: "Contest not found" }, { status: 404 });
     }
 
-    const subs = await dbHelpers.findSubmissionsForProblem(user.computingId, cid, pid);
+    const subs = await syncPendingContestSubmissionsFromJudge({
+      computingId: user.computingId,
+      contestId: cid,
+      problemId: pid,
+    });
     const problem = await dbHelpers.findProblem(pid);
 
     return NextResponse.json({

@@ -1,5 +1,5 @@
 import { prisma } from "./prisma";
-import { ContestStatus, UserRole, SubmissionStatus, CodingLanguage } from "@prisma/client";
+import { Prisma, ContestStatus, UserRole, SubmissionStatus, CodingLanguage } from "@prisma/client";
 
 const JOINABLE_CONTEST_STATUSES: ContestStatus[] = ["UPCOMING", "ACTIVE"];
 
@@ -389,6 +389,26 @@ export const dbHelpers = {
     });
   },
 
+  findSubmissionWithRelations: async (submissionId: string) => {
+    return prisma.submission.findUnique({
+      where: { id: submissionId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            computingId: true,
+          },
+        },
+        problem: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+      },
+    });
+  },
+
   findSubmissionsForProblem: async (computingId: string, contestId: string, problemId: string) => {
     return prisma.submission.findMany({
       where: {
@@ -696,16 +716,22 @@ export const dbHelpers = {
 
   updateSubmission: async (
     submissionId: string,
-    status: SubmissionStatus,
-    judgeOutput: string,
-    score: number
+    data: {
+      status: SubmissionStatus;
+      judgeOutput: string;
+      score: number;
+      judgeStatusRaw?: string | null;
+      judgeCallbackPayload?: Prisma.InputJsonValue | typeof Prisma.JsonNull;
+    }
   ) => {
     return prisma.submission.update({
       where: { id: submissionId },
       data: {
-        status,
-        judgeOutput,
-        score,
+        status: data.status,
+        judgeOutput: data.judgeOutput,
+        score: data.score,
+        judgeStatusRaw: data.judgeStatusRaw ?? null,
+        judgeCallbackPayload: data.judgeCallbackPayload,
       },
     });
   },
