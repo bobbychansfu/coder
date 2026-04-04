@@ -94,22 +94,17 @@ export function buildAdminDashboardResponse(
     snapshot.roleCounts.instructors +
     snapshot.roleCounts.admins;
 
-  const activeContests = snapshot.contests.filter((contest) => contest.status === "ACTIVE");
-  const upcomingContests = snapshot.contests.filter((contest) => contest.status === "UPCOMING");
-  const publishedContests = snapshot.contests.filter((contest) => contest.published);
-  const draftUnpublishedContests = snapshot.contests.filter(
-    (contest) => contest.status === "DRAFT" && !contest.published,
-  );
-  const previous24HourSubmissions = Math.max(
-    0,
-    snapshot.submissionsLast24Hours - snapshot.acceptedSubmissionsLast24Hours,
-  );
+  const activeContests = snapshot.contestCounts.active;
+  const upcomingContests = snapshot.contestCounts.upcoming;
   const metricsUpdatedAt = new Date(
     Math.max(
       0,
-      ...snapshot.contests.map((contest) => contest.updatedAt.getTime()),
-      ...snapshot.recentAnnouncements.map((announcement) => announcement.createdAt.getTime()),
-      ...snapshot.recentUsers.map((user) => user.createdAt.getTime()),
+      snapshot.contests.reduce((max, contest) => Math.max(max, contest.updatedAt.getTime()), 0),
+      snapshot.recentAnnouncements.reduce(
+        (max, announcement) => Math.max(max, announcement.createdAt.getTime()),
+        0,
+      ),
+      snapshot.recentUsers.reduce((max, user) => Math.max(max, user.createdAt.getTime()), 0),
     ),
   );
 
@@ -147,8 +142,8 @@ export function buildAdminDashboardResponse(
     role: "admin",
     metadata: {
       totalUsers,
-      activeContests: activeContests.length,
-      upcomingContests: upcomingContests.length,
+      activeContests,
+      upcomingContests,
       problemBankSize: snapshot.problemBankSize,
       submissionsLast24Hours: snapshot.submissionsLast24Hours,
       pendingSubmissions: snapshot.pendingSubmissions,
@@ -221,13 +216,13 @@ export function buildAdminDashboardResponse(
           id: "publication-coverage",
           label: "Publication Coverage",
           value:
-            snapshot.contests.length === 0
+            snapshot.contestCounts.total === 0
               ? "0/0"
-              : `${publishedContests.length}/${snapshot.contests.length}`,
+              : `${snapshot.contestCounts.published}/${snapshot.contestCounts.total}`,
           caption:
-            draftUnpublishedContests.length > 0
-              ? `${draftUnpublishedContests.length} draft contests still unpublished`
-              : formatDeltaLabel(activeContests.length, upcomingContests.length, "contest mix"),
+            snapshot.contestCounts.draftUnpublished > 0
+              ? `${snapshot.contestCounts.draftUnpublished} draft contests still unpublished`
+              : formatDeltaLabel(activeContests, upcomingContests, "contest mix"),
         },
         {
           id: "submission-flow",
@@ -235,7 +230,7 @@ export function buildAdminDashboardResponse(
           value: String(snapshot.submissionsLast24Hours),
           caption: formatDeltaLabel(
             snapshot.submissionsLast24Hours,
-            previous24HourSubmissions,
+            snapshot.submissionsPrevious24Hours,
             "submission pace",
           ),
         },

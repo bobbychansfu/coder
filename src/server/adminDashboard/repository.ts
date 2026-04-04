@@ -6,6 +6,7 @@ import {
 } from "./roleCompatibility";
 
 type PrismaClient = typeof prisma;
+const ADMIN_DASHBOARD_CONTEST_LIMIT = 12;
 
 export interface AdminDashboardSnapshot {
   admin: {
@@ -18,7 +19,15 @@ export interface AdminDashboardSnapshot {
     admins: number;
   };
   problemBankSize: number;
+  contestCounts: {
+    total: number;
+    active: number;
+    upcoming: number;
+    published: number;
+    draftUnpublished: number;
+  };
   submissionsLast24Hours: number;
+  submissionsPrevious24Hours: number;
   pendingSubmissions: number;
   acceptedSubmissionsLast24Hours: number;
   failureSubmissionsLast24Hours: number;
@@ -86,6 +95,7 @@ export async function loadAdminDashboardSnapshot(
 
   const now = new Date();
   const last24Hours = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const last48Hours = new Date(now.getTime() - 48 * 60 * 60 * 1000);
   const last7Days = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
   const [
@@ -93,7 +103,13 @@ export async function loadAdminDashboardSnapshot(
     instructors,
     admins,
     problemBankSize,
+    totalContests,
+    activeContestsCount,
+    upcomingContestsCount,
+    publishedContestsCount,
+    draftUnpublishedContestsCount,
     submissionsLast24Hours,
+    submissionsPrevious24Hours,
     pendingSubmissions,
     acceptedSubmissionsLast24Hours,
     failureSubmissionsLast24Hours,
@@ -113,9 +129,27 @@ export async function loadAdminDashboardSnapshot(
     }),
     client.user.count({ where: { role: "ADMIN" } }),
     client.problem.count(),
+    client.contest.count(),
+    client.contest.count({ where: { status: "ACTIVE" } }),
+    client.contest.count({ where: { status: "UPCOMING" } }),
+    client.contest.count({ where: { published: true } }),
+    client.contest.count({
+      where: {
+        status: "DRAFT",
+        published: false,
+      },
+    }),
     client.submission.count({
       where: {
         createdAt: { gte: last24Hours },
+      },
+    }),
+    client.submission.count({
+      where: {
+        createdAt: {
+          gte: last48Hours,
+          lt: last24Hours,
+        },
       },
     }),
     client.submission.count({
@@ -161,6 +195,7 @@ export async function loadAdminDashboardSnapshot(
       },
     }),
     client.contest.findMany({
+      take: ADMIN_DASHBOARD_CONTEST_LIMIT,
       orderBy: [{ updatedAt: "desc" }],
       select: {
         id: true,
@@ -233,7 +268,15 @@ export async function loadAdminDashboardSnapshot(
       admins,
     },
     problemBankSize,
+    contestCounts: {
+      total: totalContests,
+      active: activeContestsCount,
+      upcoming: upcomingContestsCount,
+      published: publishedContestsCount,
+      draftUnpublished: draftUnpublishedContestsCount,
+    },
     submissionsLast24Hours,
+    submissionsPrevious24Hours,
     pendingSubmissions,
     acceptedSubmissionsLast24Hours,
     failureSubmissionsLast24Hours,
