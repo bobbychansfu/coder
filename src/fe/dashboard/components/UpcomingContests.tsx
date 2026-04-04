@@ -8,36 +8,42 @@ import styles from "../styles/UpcomingContests.module.css";
 
 interface UpcomingContestsProps {
   contests?: UpcomingContest[];
+  title?: string;
   emptyMessage?: string;
   hideCourseCode?: boolean;
 }
 
 export default function UpcomingContests({
   contests = mockUpcomingContests,
+  title = "Upcoming Contests",
   emptyMessage = "No upcoming contests right now.",
   hideCourseCode = false,
 }: UpcomingContestsProps) {
   return (
-    <DashboardWidget title="Upcoming Contests" icon={AccessTimeIcon}>
+    <DashboardWidget title={title} icon={AccessTimeIcon}>
       <div className={styles.list}>
-        {contests.length === 0 && <div className={styles.empty}>{emptyMessage}</div>}
+        {contests.length === 0 && <div className={styles.emptyState}>{emptyMessage}</div>}
         {contests.map((contest) => (
-          <div key={contest.id}>
-            <div className={styles.contestTitle}>{contest.title}</div>
-            {!hideCourseCode && contest.courseCode && (
-              <div className={styles.courseCode}>{contest.courseCode}</div>
-            )}
+          <article key={contest.id} className={styles.contestCard}>
+            <div className={styles.contestHeader}>
+              <div className={styles.contestHeaderText}>
+                <div className={styles.contestTitle}>{contest.title}</div>
+                {!hideCourseCode && contest.courseCode ? (
+                  <div className={styles.courseCode}>{contest.courseCode}</div>
+                ) : null}
+              </div>
+              {contest.readinessState ? (
+                <span
+                  className={styles.readinessChip}
+                  data-state={contest.readinessState.toLowerCase().replaceAll(" ", "-")}
+                >
+                  {contest.readinessState}
+                </span>
+              ) : null}
+            </div>
             <div className={styles.date}>{contest.date}</div>
             <div className={styles.timeUntil}>{contest.timeUntil}</div>
-            {contest.readinessState && (
-              <span
-                className={styles.readinessBadge}
-                data-readiness={contest.readinessState.toLowerCase().replace(/\s+/g, "-")}
-              >
-                {contest.readinessState}
-              </span>
-            )}
-          </div>
+          </article>
         ))}
       </div>
     </DashboardWidget>
