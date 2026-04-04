@@ -17,6 +17,19 @@ function titleCaseContestStatus(
   }
 }
 
+function titleCaseUpcomingContestStatus(
+  status: "DRAFT" | "UPCOMING" | "ACTIVE",
+): "Draft" | "Upcoming" | "Active" {
+  switch (status) {
+    case "DRAFT":
+      return "Draft";
+    case "UPCOMING":
+      return "Upcoming";
+    case "ACTIVE":
+      return "Active";
+  }
+}
+
 function titleCaseVisibility(
   visibility: "PUBLIC" | "PRIVATE" | "COURSE_ONLY",
 ): "Public" | "Private" | "Course Only" {
@@ -146,7 +159,11 @@ export function buildAdminDashboardResponse(
     schedule: {
       upcoming: snapshot.contests
         .filter(
-          (contest) =>
+          (
+            contest,
+          ): contest is AdminDashboardSnapshot["contests"][number] & {
+            status: "DRAFT" | "UPCOMING" | "ACTIVE";
+          } =>
             contest.status === "DRAFT" ||
             contest.status === "UPCOMING" ||
             contest.status === "ACTIVE",
@@ -159,7 +176,7 @@ export function buildAdminDashboardResponse(
           classSection: contest.classSection,
           startsAt: contest.startsAt.toISOString(),
           endsAt: contest.endsAt?.toISOString() ?? null,
-          status: titleCaseContestStatus(contest.status),
+          status: titleCaseUpcomingContestStatus(contest.status),
           readinessState: buildReadinessState(contest),
         })),
     },

@@ -22,3 +22,7 @@ export const studentProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "student") throw new TRPCError({ code: "FORBIDDEN" });
   return next({ ctx: { ...ctx, user: ctx.user } });
 });
+export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+  return next({ ctx: { ...ctx, user: ctx.user } });
+});
