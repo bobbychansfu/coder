@@ -1,5 +1,4 @@
 import MoreVertRoundedIcon from "@mui/icons-material/MoreVertRounded";
-import Groups2OutlinedIcon from "@mui/icons-material/Groups2Outlined";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import SupervisorAccountOutlinedIcon from "@mui/icons-material/SupervisorAccountOutlined";
@@ -28,7 +27,6 @@ const roleChipConfig: Record<
     className: styles.roleChipInstructor,
     icon: SupervisorAccountOutlinedIcon,
   },
-  ta: { label: "Ta", className: styles.roleChipTa, icon: Groups2OutlinedIcon },
   admin: { label: "Admin", className: styles.roleChipAdmin, icon: ShieldOutlinedIcon },
 };
 
