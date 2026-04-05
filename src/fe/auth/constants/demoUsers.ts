@@ -1,4 +1,4 @@
-export type DemoRole = "INSTRUCTOR" | "TA" | "STUDENT" | "ADMIN";
+export type DemoRole = "INSTRUCTOR" | "STUDENT" | "ADMIN";
 
 export interface DemoUser {
   label: string;
@@ -13,12 +13,6 @@ export const demoUsers: DemoUser[] = [
     email: "sarah.johnson@sfu.ca",
     role: "INSTRUCTOR",
     computingId: "sjohnson",
-  },
-  {
-    label: "Demo TA",
-    email: "dev.patel@sfu.ca",
-    role: "TA",
-    computingId: "dpatel",
   },
   {
     label: "Demo Student",
