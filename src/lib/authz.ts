@@ -4,7 +4,7 @@ const ROLE_LEVEL: Record<Role, number> = {
   student: 0,
   instructor: 1,
   admin: 2,
-}
+};
 
 export function isRole(value: unknown): value is Role {
   return value === "student" || value === "instructor" || value === "admin";

@@ -1,4 +1,6 @@
-export type AdminUserRole = "student" | "instructor" | "admin";
+import type { Role } from "@/lib/authz";
+
+export type AdminUserRole = Role;
 
 export interface AdminUserRecord {
   id: string;
