@@ -39,13 +39,13 @@ export default function AdminUserManagementPage() {
     const totalUsers = adminUsers.length;
     const studentCount = adminUsers.filter((u) => u.role === "student").length;
     const instructorCount = adminUsers.filter((u) => u.role === "instructor").length;
-    const taCount = adminUsers.filter((u) => u.role === "ta").length;
+    const adminCount = adminUsers.filter((u) => u.role === "admin").length;
 
     return [
       { id: "total-users", label: "Total Users", value: String(totalUsers) },
       { id: "students", label: "Students", value: String(studentCount) },
       { id: "instructors", label: "Instructors", value: String(instructorCount) },
-      { id: "tas", label: "TAs", value: String(taCount) },
+      { id: "admins", label: "Admins", value: String(adminCount) },
     ];
   }, []);
 
@@ -59,7 +59,7 @@ export default function AdminUserManagementPage() {
 
       <SubpageHeader
         title="User Management"
-        subtitle="Manage instructors, TAs, and admin roles. Students authenticate via SFU FAS."
+        subtitle="Manage instructors and admin roles. Students authenticate via SFU FAS."
         actions={
           <Button
             className={styles.addButton}
