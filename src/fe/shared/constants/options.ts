@@ -82,6 +82,11 @@ export const SUBMISSION_STATUS_CONFIG = {
     color: "#e7000b",
     icon: CancelOutlinedIcon,
   },
+  system_error: {
+    label: "System Error",
+    color: "#e7000b",
+    icon: CancelOutlinedIcon,
+  },
   compile_error: {
     label: "Compile Error",
     color: "#e7000b",

@@ -83,6 +83,9 @@ interface ApiResponse<T> {
   ok: boolean;
   status: number;
   data: T | null;
+  errorMessage?: string;
+  errorReason?: "auth/session" | "base_url" | "non_ok_response" | "network" | "unknown";
+  requestUrl?: string;
 }
 
 async function getApiOrigin() {
@@ -108,27 +111,58 @@ async function getForwardedCookieHeader() {
 }
 
 async function fetchContestApi<T>(path: string): Promise<ApiResponse<T>> {
-  const origin = await getApiOrigin();
-  const cookieHeader = await getForwardedCookieHeader();
+  let requestUrl = "";
 
-  const response = await fetch(`${origin}${path}`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      ...(cookieHeader ? { Cookie: cookieHeader } : {}),
-    },
-    cache: "no-store",
-  });
+  try {
+    const origin = await getApiOrigin();
+    requestUrl = `${origin}${path}`;
+    const cookieHeader = await getForwardedCookieHeader();
 
-  if (!response.ok) {
-    return { ok: false, status: response.status, data: null };
+    const response = await fetch(requestUrl, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      const errorReason =
+        response.status === 401 || response.status === 403
+          ? "auth/session"
+          : "non_ok_response";
+
+      return {
+        ok: false,
+        status: response.status,
+        data: null,
+        errorReason,
+        errorMessage: `GET ${path} returned ${response.status}.`,
+        requestUrl,
+      };
+    }
+
+    return {
+      ok: true,
+      status: response.status,
+      data: (await response.json()) as T,
+      requestUrl,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown fetch error";
+    const errorReason =
+      message.includes("Missing request host header") ? "base_url" : "network";
+
+    return {
+      ok: false,
+      status: 500,
+      data: null,
+      errorReason,
+      errorMessage: message,
+      requestUrl,
+    };
   }
-
-  return {
-    ok: true,
-    status: response.status,
-    data: (await response.json()) as T,
-  };
 }
 
 async function mutateContestApi<T>(
@@ -190,4 +224,3 @@ export async function getContestProblemSubmissions(contestId: string, problemId:
     `/api/s/submissions/${contestId}/${problemId}`,
   );
 }
-

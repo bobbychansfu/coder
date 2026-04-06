@@ -30,6 +30,7 @@ interface ContestsPageProps {
   showCreateContest: boolean;
   showManageContest: boolean;
   showViewAllSubmissions: boolean;
+  pageErrorMessage?: string;
 }
 
 type ContestSectionMode = "registered" | "available";
@@ -60,6 +61,7 @@ export default function ContestsPage({
   availableContests = [],
   isStudent = false,
   showCreateContest,
+  pageErrorMessage,
 }: ContestsPageProps) {
   const router = useRouter();
   const [studentMyContests, setStudentMyContests] = useState(myContests);
@@ -214,6 +216,7 @@ export default function ContestsPage({
           onChange={setSearchQuery}
         />
       </div>
+      {pageErrorMessage ? <p className={sectionStyles.registerError}>{pageErrorMessage}</p> : null}
       {registerError ? <p className={sectionStyles.registerError}>{registerError}</p> : null}
       {isStudent ? (
         <section className={sectionStyles.section}>
@@ -226,19 +229,27 @@ export default function ContestsPage({
           {renderContestGrid(filteredStudentContests, studentView)}
         </section>
       ) : (
-        <div className={gridStyles.grid}>
-          {filteredInitialContests.map((contest) => (
-            <ContestSummaryCard
-              key={contest.id}
-              title={contest.title}
-              status={contest.status}
-              href={`/contests/${contest.id}`}
-              actionLabel={getRegisteredActionLabel(contest.status)}
-              actionKind="link"
-              actionVariant="secondary"
-            />
-          ))}
-        </div>
+        filteredInitialContests.length === 0 ? (
+          <div className={sectionStyles.emptyState}>
+            {pageErrorMessage
+              ? "The instructor contests list could not be loaded during server-side rendering. Check the error message above for the exact reason."
+              : "No contests are available for your current filters."}
+          </div>
+        ) : (
+          <div className={gridStyles.grid}>
+            {filteredInitialContests.map((contest) => (
+              <ContestSummaryCard
+                key={contest.id}
+                title={contest.title}
+                status={contest.status}
+                href={`/contests/${contest.id}`}
+                actionLabel={getRegisteredActionLabel(contest.status)}
+                actionKind="link"
+                actionVariant="secondary"
+              />
+            ))}
+          </div>
+        )
       )}
       <Dialog
         open={Boolean(contestToConfirm)}
