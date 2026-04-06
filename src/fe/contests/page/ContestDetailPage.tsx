@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Box } from "@mui/material";
 import PageHeader from "@/fe/shared/components/PageHeader";
 import TabSwitcher from "@/fe/shared/components/ui/TabSwitcher";
+import { useTimedRouterRefresh } from "@/fe/shared/hooks/useTimedRouterRefresh";
 import ContestDataHub from "@/fe/contests/components/ContestDataHub";
 import ProblemsTab from "@/fe/contests/components/ProblemsTab";
 import ScoreboardTab from "@/fe/contests/components/ScoreboardTab";
@@ -18,6 +19,7 @@ interface ContestDetailPageProps {
 
 export default function ContestDetailPage({ contest }: ContestDetailPageProps) {
   const router = useRouter();
+  useTimedRouterRefresh(contest.status !== "closed");
   const [tab, setTab] = useState<string>("problems");
   const problemColumns = contest.problems.map((problem) => problem.code);
   const hasScoreboard = contest.scoreboard.length > 0;

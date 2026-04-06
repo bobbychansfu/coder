@@ -4,6 +4,8 @@ import type {
   UpcomingContest,
 } from "@/fe/shared/types/contest";
 import type { BackendContestSummary, StudentContestInfoResponse } from "@/fe/contests/services/contestApi";
+import { sortBackendContestSummaries } from "@/fe/contests/services/contestOrdering";
+import { getEffectiveContestStatus } from "@/lib/contestStatus";
 
 export interface DashboardContestHistoryItem {
   id: string;
@@ -16,7 +18,7 @@ export interface DashboardContestHistoryItem {
 export interface StudentDashboardContestSummary {
   upcomingContests: UpcomingContest[];
   recentContests: DashboardContestHistoryItem[];
-  alert: (DashboardContestAlert & { contestId: string }) | null;
+  alert: (DashboardContestAlert & { contestId: string; requiresRegistration: boolean }) | null;
 }
 
 function toTimestamp(value: string) {
@@ -39,8 +41,9 @@ function formatTimeUntil(contest: BackendContestSummary) {
   const now = Date.now();
   const startsAt = toTimestamp(contest.startsAt);
   const endsAt = contest.endsAt ? toTimestamp(contest.endsAt) : null;
+  const effectiveStatus = getEffectiveContestStatus(contest);
 
-  if (contest.status === "ACTIVE") {
+  if (effectiveStatus === "ACTIVE") {
     if (endsAt && endsAt > now) {
       return `Ends in ${formatDuration(endsAt - now)}`;
     }
@@ -74,8 +77,8 @@ function formatDuration(diffMs: number) {
   return `${days} day${days === 1 ? "" : "s"}`;
 }
 
-function mapContestStatus(status: BackendContestSummary["status"]): ContestStatus {
-  switch (status) {
+function mapContestStatus(contest: BackendContestSummary): ContestStatus {
+  switch (getEffectiveContestStatus(contest)) {
     case "ACTIVE":
       return "In Progress";
     case "ENDED":
@@ -83,6 +86,26 @@ function mapContestStatus(status: BackendContestSummary["status"]): ContestStatu
     default:
       return "Upcoming";
   }
+}
+
+function buildHighlightedContestDescription(contest: BackendContestSummary) {
+  const endsAt = contest.endsAt ? toTimestamp(contest.endsAt) : null;
+
+  if (endsAt === null || !Number.isFinite(endsAt)) {
+    return `${contest.name} is in progress right now.`;
+  }
+
+  const remaining = endsAt - Date.now();
+
+  if (remaining <= 0) {
+    return `${contest.name} is in progress right now.`;
+  }
+
+  if (remaining <= 60 * 60_000) {
+    return `${contest.name} is almost done.`;
+  }
+
+  return `${contest.name} ends in ${formatDuration(remaining)}.`;
 }
 
 function dedupeContests(contests: BackendContestSummary[]) {
@@ -98,31 +121,27 @@ function dedupeContests(contests: BackendContestSummary[]) {
   });
 }
 
-function sortByStartAscending(left: BackendContestSummary, right: BackendContestSummary) {
-  return toTimestamp(left.startsAt) - toTimestamp(right.startsAt);
-}
-
-function sortByStartDescending(left: BackendContestSummary, right: BackendContestSummary) {
-  return toTimestamp(right.startsAt) - toTimestamp(left.startsAt);
-}
-
 export function mapStudentDashboardContests(
   payload: StudentContestInfoResponse,
 ): StudentDashboardContestSummary {
-  const visibleContests = dedupeContests([...payload.contests, ...payload.contestsOpen]).sort(
-    sortByStartAscending,
+  const registeredContestIds = new Set(payload.contests.map((contest) => contest.id));
+  const visibleContests = sortBackendContestSummaries(
+    dedupeContests([...payload.contests, ...payload.contestsOpen]),
   );
-  const myContests = payload.contests.slice().sort(sortByStartDescending);
+  const myContests = sortBackendContestSummaries(payload.contests);
 
   const upcomingContests = visibleContests
-    .filter((contest) => contest.status === "UPCOMING" || contest.status === "ACTIVE")
+    .filter((contest) => {
+      const effectiveStatus = getEffectiveContestStatus(contest);
+      return effectiveStatus === "UPCOMING" || effectiveStatus === "ACTIVE";
+    })
     .slice(0, 3)
     .map((contest) => ({
       id: contest.id,
       title: contest.name,
       date: formatContestDate(contest.startsAt),
       timeUntil: formatTimeUntil(contest),
-      readinessState: contest.status === "ACTIVE" ? "Ready" : undefined,
+      readinessState: getEffectiveContestStatus(contest) === "ACTIVE" ? "Ready" : undefined,
     })) satisfies UpcomingContest[];
 
   const recentContests = myContests.slice(0, 3).map((contest) => ({
@@ -130,11 +149,11 @@ export function mapStudentDashboardContests(
     title: contest.name,
     date: formatContestDate(contest.startsAt),
     participants: contest.participants,
-    status: mapContestStatus(contest.status),
+    status: mapContestStatus(contest),
   }));
 
   const highlightedContest =
-    visibleContests.find((contest) => contest.status === "ACTIVE") ?? null;
+    visibleContests.find((contest) => getEffectiveContestStatus(contest) === "ACTIVE") ?? null;
 
   return {
     upcomingContests,
@@ -143,12 +162,10 @@ export function mapStudentDashboardContests(
       ? {
           contestId: highlightedContest.id,
           title: "Contest in Progress!",
-          description: `${highlightedContest.name} is currently active.`,
+          description: buildHighlightedContestDescription(highlightedContest),
           isActive: true,
+          requiresRegistration: !registeredContestIds.has(highlightedContest.id),
         }
       : null,
   };
 }
-
-
-

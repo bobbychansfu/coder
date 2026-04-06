@@ -4,6 +4,8 @@ export interface ContestListItem {
   id: string;
   title: string;
   status: ContestStatus;
+  startsAt?: string;
+  endsAt?: string | null;
 }
 
 export const contestList: ContestListItem[] = [

@@ -1,7 +1,19 @@
 import { prisma } from "./prisma";
-import { ContestStatus, UserRole, SubmissionStatus, CodingLanguage } from "@prisma/client";
+import { UserRole, SubmissionStatus, CodingLanguage } from "@prisma/client";
+import { getEffectiveContestStatus, isJoinableContestStatus } from "./contestStatus";
 
-const JOINABLE_CONTEST_STATUSES: ContestStatus[] = ["UPCOMING", "ACTIVE"];
+const NON_PRIVATE_CONTEST_VISIBILITY = { not: "PRIVATE" as const };
+
+function withParticipantCount<T extends { participations: Array<{ role: string }> }>(
+  contest: T,
+) {
+  const { participations, ...contestRecord } = contest;
+
+  return {
+    ...contestRecord,
+    participants: participations.filter((participation) => participation.role === "contestant").length,
+  };
+}
 
 export const dbHelpers = {
   // ********************
@@ -63,6 +75,7 @@ export const dbHelpers = {
       where: {
         manageStatus: "ACTIVE",
         published: true,
+        visibility: NON_PRIVATE_CONTEST_VISIBILITY,
         status: {
           not: "DRAFT",
         },
@@ -81,10 +94,55 @@ export const dbHelpers = {
       orderBy: { createdAt: "desc" },
     });
 
-    return contests.map(({ participations, ...contest }) => ({
-      ...contest,
-      participants: participations.filter((participation) => participation.role === "contestant").length,
-    }));
+    return contests.map(withParticipantCount);
+  },
+
+  findPublishedContests: async () => {
+    const contests = await prisma.contest.findMany({
+      where: {
+        manageStatus: "ACTIVE",
+        published: true,
+        status: {
+          not: "DRAFT",
+        },
+      },
+      include: {
+        participations: {
+          select: { role: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return contests.map(withParticipantCount);
+  },
+
+  findPublishedContestsForViewer: async (computingId: string, viewerRole: string) => {
+    const contests = await prisma.contest.findMany({
+      where: {
+        manageStatus: "ACTIVE",
+        published: true,
+        status: {
+          not: "DRAFT",
+        },
+        ...(viewerRole === "admin"
+          ? {}
+          : {
+              OR: [
+                { visibility: NON_PRIVATE_CONTEST_VISIBILITY },
+                { instructor: { is: { computingId } } },
+              ],
+            }),
+      },
+      include: {
+        participations: {
+          select: { role: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return contests.map(withParticipantCount);
   },
 
   findSpecificContestForUser: async (computingId: string, contestId: string, role: string) => {
@@ -92,6 +150,7 @@ export const dbHelpers = {
       where: {
         id: contestId,
         manageStatus: "ACTIVE",
+        visibility: NON_PRIVATE_CONTEST_VISIBILITY,
         participations: {
           some: {
             user: { computingId },
@@ -110,12 +169,7 @@ export const dbHelpers = {
       return null;
     }
 
-    const { participations, ...contestRecord } = contest;
-
-    return {
-      ...contestRecord,
-      participants: participations.filter((participation) => participation.role === "contestant").length,
-    };
+    return withParticipantCount(contest);
   },
 
   findOpenContestsForUser: async (computingId: string, role: string) => {
@@ -124,9 +178,7 @@ export const dbHelpers = {
       where: {
         manageStatus: "ACTIVE",
         published: true,
-        status: {
-          in: JOINABLE_CONTEST_STATUSES,
-        },
+        visibility: NON_PRIVATE_CONTEST_VISIBILITY,
         participations: {
           none: {
             user: { computingId },
@@ -142,10 +194,9 @@ export const dbHelpers = {
       orderBy: { createdAt: "desc" },
     });
 
-    return contests.map(({ participations, ...contest }) => ({
-      ...contest,
-      participants: participations.filter((participation) => participation.role === "contestant").length,
-    }));
+    return contests
+      .map(withParticipantCount)
+      .filter((contest) => isJoinableContestStatus(getEffectiveContestStatus(contest)));
   },
 
   findJoinableContestForUser: async (computingId: string, contestId: string, role: string) => {
@@ -154,9 +205,7 @@ export const dbHelpers = {
         id: contestId,
         manageStatus: "ACTIVE",
         published: true,
-        status: {
-          in: JOINABLE_CONTEST_STATUSES,
-        },
+        visibility: NON_PRIVATE_CONTEST_VISIBILITY,
         participations: {
           none: {
             user: { computingId },
@@ -175,12 +224,11 @@ export const dbHelpers = {
       return null;
     }
 
-    const { participations, ...contestRecord } = contest;
+    const contestRecord = withParticipantCount(contest);
 
-    return {
-      ...contestRecord,
-      participants: participations.filter((participation) => participation.role === "contestant").length,
-    };
+    return isJoinableContestStatus(getEffectiveContestStatus(contestRecord))
+      ? contestRecord
+      : null;
   },
 
   findContest: async (contestId: string) => {
@@ -200,12 +248,35 @@ export const dbHelpers = {
       return null;
     }
 
-    const { participations, ...contestRecord } = contest;
+    return withParticipantCount(contest);
+  },
 
-    return {
-      ...contestRecord,
-      participants: participations.filter((participation) => participation.role === "contestant").length,
-    };
+  findContestForViewer: async (contestId: string, computingId: string, viewerRole: string) => {
+    const contest = await prisma.contest.findFirst({
+      where: {
+        id: contestId,
+        manageStatus: "ACTIVE",
+        ...(viewerRole === "admin"
+          ? {}
+          : {
+              OR: [
+                { visibility: NON_PRIVATE_CONTEST_VISIBILITY },
+                { instructor: { is: { computingId } } },
+              ],
+            }),
+      },
+      include: {
+        participations: {
+          select: { role: true },
+        },
+      },
+    });
+
+    if (!contest) {
+      return null;
+    }
+
+    return withParticipantCount(contest);
   },
 
   findContestsProblemsStatusForUser: async (computingId: string, contestId: string) => {
@@ -763,9 +834,5 @@ export const dbHelpers = {
     });
   },
 };
-
-
-
-
 
 

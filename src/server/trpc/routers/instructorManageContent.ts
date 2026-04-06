@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { ManageLifecycleStatus } from "@prisma/client";
 import { can } from "@/lib/authz";
 import type { ManagedContestStatus, ManagedProblemStatus } from "@/fe/shared/constants/manageContent";
+import { getEffectiveContestStatus } from "@/lib/contestStatus";
 import type { Context } from "../init";
 import { publicProcedure, router } from "../init";
 
@@ -87,6 +88,9 @@ export const instructorManageContentRouter = router({
           id: true,
           name: true,
           status: true,
+          startsAt: true,
+          endsAt: true,
+          durationMinutes: true,
           manageStatus: true,
           updatedAt: true,
         },
@@ -114,12 +118,14 @@ export const instructorManageContentRouter = router({
       }),
     ]);
 
-    const activeContestsCount = contests.filter(
-      (c) =>
-        c.manageStatus !== "ARCHIVED" &&
-        c.manageStatus !== "DELETED" &&
-        (c.status === "ACTIVE" || c.status === "UPCOMING"),
-    ).length;
+    const activeContestsCount = contests.filter((contest) => {
+      if (contest.manageStatus === "ARCHIVED" || contest.manageStatus === "DELETED") {
+        return false;
+      }
+
+      const effectiveStatus = getEffectiveContestStatus(contest);
+      return effectiveStatus === "ACTIVE" || effectiveStatus === "UPCOMING";
+    }).length;
 
     const problemsCreatedCount = problems.filter(
       (p) => p.manageStatus !== "ARCHIVED" && p.manageStatus !== "DELETED",
@@ -146,7 +152,10 @@ export const instructorManageContentRouter = router({
 
     const recentActivity = [
       ...contests.slice(0, 5).flatMap((c) => {
-        const status = getContestDisplayStatus(c.status, c.manageStatus);
+        const status = getContestDisplayStatus(
+          getEffectiveContestStatus(c),
+          c.manageStatus,
+        );
         if (!status) {
           return [];
         }
@@ -249,7 +258,10 @@ export const instructorManageContentRouter = router({
 
     return {
       contests: contests.flatMap((contest) => {
-        const status = getContestDisplayStatus(contest.status, contest.manageStatus);
+        const status = getContestDisplayStatus(
+          getEffectiveContestStatus(contest),
+          contest.manageStatus,
+        );
         if (!status) {
           return [];
         }

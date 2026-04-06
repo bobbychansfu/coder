@@ -28,7 +28,11 @@ export default function ContestResultCard({
   timeTaken,
 }: ContestResultCardProps) {
   const statusClassName =
-    status === "In Progress" ? styles.statusInProgress : styles.statusClosed;
+    status === "In Progress"
+      ? styles.statusInProgress
+      : status === "Upcoming"
+        ? styles.statusUpcoming
+        : styles.statusClosed;
   const statItems = [
     problemsSolved ? { label: "Problems Solved", value: problemsSolved } : null,
     score ? { label: "Score", value: score } : null,

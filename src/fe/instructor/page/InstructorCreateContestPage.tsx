@@ -53,6 +53,52 @@ import styles from "@/fe/instructor/styles/InstructorCreateContestPage.module.cs
 
 const MANAGE_CONTESTS_TAB_ROUTE = `${ROUTES.instructorManageContests}?tab=contests`;
 
+function padDatePart(value: number) {
+  return String(value).padStart(2, "0");
+}
+
+function toLocalDateInputValue(isoValue: string | null | undefined) {
+  if (!isoValue) {
+    return "";
+  }
+
+  const date = new Date(isoValue);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return `${date.getFullYear()}-${padDatePart(date.getMonth() + 1)}-${padDatePart(date.getDate())}`;
+}
+
+function toLocalTimeInputValue(isoValue: string | null | undefined) {
+  if (!isoValue) {
+    return "";
+  }
+
+  const date = new Date(isoValue);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return `${padDatePart(date.getHours())}:${padDatePart(date.getMinutes())}`;
+}
+
+function getLocalDateTimeOffsetMinutes(dateValue: string, timeValue: string) {
+  if (!dateValue.trim() || !timeValue.trim()) {
+    return undefined;
+  }
+
+  const localDateTime = new Date(`${dateValue}T${timeValue}`);
+
+  if (Number.isNaN(localDateTime.getTime())) {
+    return undefined;
+  }
+
+  return localDateTime.getTimezoneOffset();
+}
+
 function formatPreviewDate(dateValue: string, timeValue: string) {
   if (!dateValue) {
     return null;
@@ -230,10 +276,10 @@ export default function InstructorCreateContestPage() {
       setFormValues({
         contestName: contestQuery.data.contestName,
         description: contestQuery.data.description,
-        startDate: contestQuery.data.startDate,
-        startTime: contestQuery.data.startTime,
-        endDate: contestQuery.data.endDate,
-        endTime: contestQuery.data.endTime,
+        startDate: toLocalDateInputValue(contestQuery.data.startsAtIso),
+        startTime: toLocalTimeInputValue(contestQuery.data.startsAtIso),
+        endDate: toLocalDateInputValue(contestQuery.data.endsAtIso),
+        endTime: toLocalTimeInputValue(contestQuery.data.endsAtIso),
         visibility: contestQuery.data.visibility,
       });
       setSelectedProblemIds(contestQuery.data.selectedProblemIds);
@@ -397,6 +443,18 @@ export default function InstructorCreateContestPage() {
     setFormValues((prev) => ({ ...prev, [field]: value }));
   };
 
+  const buildContestMutationInput = (isDraft: boolean) => ({
+    ...formValues,
+    startUtcOffsetMinutes: getLocalDateTimeOffsetMinutes(formValues.startDate, formValues.startTime),
+    endUtcOffsetMinutes:
+      formValues.endDate.trim() && formValues.endTime.trim()
+        ? getLocalDateTimeOffsetMinutes(formValues.endDate, formValues.endTime)
+        : null,
+    isDraft,
+    aiHintEnabled,
+    selectedProblemIds,
+  });
+
   const openSelectProblems = () => {
     setPendingProblemIds(selectedProblemIds);
     setSelectProblemsOpen(true);
@@ -445,20 +503,10 @@ export default function InstructorCreateContestPage() {
       if (isEditMode && contestId) {
         await updateContestMutation.mutateAsync({
           contestId,
-          data: {
-            ...formValues,
-            isDraft: false,
-            aiHintEnabled,
-            selectedProblemIds,
-          },
+          data: buildContestMutationInput(false),
         });
       } else {
-        await createContestMutation.mutateAsync({
-          ...formValues,
-          isDraft: false,
-          aiHintEnabled,
-          selectedProblemIds,
-        });
+        await createContestMutation.mutateAsync(buildContestMutationInput(false));
       }
 
       await Promise.all([
@@ -486,12 +534,7 @@ export default function InstructorCreateContestPage() {
       if (isEditMode && contestId) {
         await updateContestMutation.mutateAsync({
           contestId,
-          data: {
-            ...formValues,
-            isDraft: true,
-            aiHintEnabled,
-            selectedProblemIds,
-          },
+          data: buildContestMutationInput(true),
         });
         await Promise.all([
           utils.instructorManageContent.getManageContent.invalidate(),
@@ -501,12 +544,7 @@ export default function InstructorCreateContestPage() {
         ]);
         router.push(MANAGE_CONTESTS_TAB_ROUTE);
       } else {
-        await createContestMutation.mutateAsync({
-          ...formValues,
-          isDraft: true,
-          aiHintEnabled,
-          selectedProblemIds,
-        });
+        await createContestMutation.mutateAsync(buildContestMutationInput(true));
         await Promise.all([
           utils.instructorManageContent.getManageContent.invalidate(),
           utils.instructorManageContent.getInstructorOverview.invalidate(),

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
 import { can, normalizeRole } from "@/lib/authz";
+import { getEffectiveContestStatus } from "@/lib/contestStatus";
 import { dbHelpers } from "@/lib/db-helpers";
 import path from "path";
 import { promises as fs } from "fs";
@@ -128,9 +129,19 @@ function resolveJudgeProblemId(problem: JudgeProblemMapping): string | null {
 }
 
 function isContestOpenForSubmission(
-  contest: { published: boolean; status: string; startsAt: Date; endsAt: Date | null },
+  contest: {
+    published: boolean;
+    status: "DRAFT" | "UPCOMING" | "ACTIVE" | "ENDED";
+    startsAt: Date;
+    endsAt: Date | null;
+    durationMinutes?: number | null;
+  },
 ) {
-  if (!isContestViewableByRegisteredUser(contest) || contest.status !== "ACTIVE") {
+  if (!isContestViewableByRegisteredUser(contest)) {
+    return false;
+  }
+
+  if (getEffectiveContestStatus(contest) !== "ACTIVE") {
     return false;
   }
 
@@ -150,7 +161,7 @@ function isContestOpenForSubmission(
 async function findContestForViewer(computingId: string, role: string, contestId: string) {
   const normalizedRole = normalizeRole(role);
   if (normalizedRole && can(normalizedRole).canManageContest) {
-    return dbHelpers.findContest(contestId);
+    return dbHelpers.findContestForViewer(contestId, computingId, role);
   }
 
   return dbHelpers.findSpecificContestForUser(computingId, contestId, "contestant");
@@ -286,11 +297,15 @@ export async function handleSubmitCode(
     }
 
     if (!isContestOpenForSubmission(contest)) {
+      const effectiveStatus = getEffectiveContestStatus(contest);
+
       return NextResponse.json(
         {
           error:
-            contest.status === "ENDED" || (contest.endsAt && contest.endsAt <= new Date())
+            effectiveStatus === "ENDED" || (contest.endsAt && contest.endsAt <= new Date())
               ? "Contest has ended"
+              : effectiveStatus === "UPCOMING"
+                ? "Contest has not started yet"
               : "Contest is not accepting submissions",
         },
         { status: 403 },

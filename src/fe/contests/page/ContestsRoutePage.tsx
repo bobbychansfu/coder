@@ -1,33 +1,14 @@
 import { redirect } from "next/navigation";
 import type { ContestListItem } from "@/fe/contests/data/contests";
 import ContestsPage from "@/fe/contests/page/ContestsPage";
-import { getContestSummaries, toContestListItem } from "@/fe/contests/services/contestAdapters";
-import type {
-  BackendContestSummary,
-  StudentContestInfoResponse,
-} from "@/fe/contests/services/contestApi";
+import { toContestListItem } from "@/fe/contests/services/contestAdapters";
 import { can } from "@/lib/authz";
 import { dbHelpers } from "@/lib/db-helpers";
 import { getCurrentUser } from "@/lib/session";
+import { getStudentContestInfoPayload, toBackendContestSummary } from "@/server/api/s/studentContestInfo";
 
 function mapContestList(contests: Parameters<typeof toContestListItem>[0][]): ContestListItem[] {
   return contests.map(toContestListItem);
-}
-
-type ContestListRecord = Awaited<ReturnType<typeof dbHelpers.findContestsForUser>>[number];
-
-function toBackendContestSummary(contest: ContestListRecord): BackendContestSummary {
-  return {
-    id: contest.id,
-    slug: contest.slug,
-    name: contest.name,
-    status: contest.status,
-    startsAt: contest.startsAt.toISOString(),
-    endsAt: contest.endsAt?.toISOString() ?? null,
-    durationMinutes: contest.durationMinutes,
-    participants: contest.participants,
-    published: contest.published,
-  };
 }
 
 export default async function ContestsRoutePage() {
@@ -38,21 +19,28 @@ export default async function ContestsRoutePage() {
   }
 
   const permissions = can(user.role);
-  let contestInfoPayload: StudentContestInfoResponse | null = null;
+  let initialContests: ContestListItem[] = [];
+  let myContests: ContestListItem[] = [];
+  let availableContests: ContestListItem[] = [];
   let pageErrorMessage: string | undefined;
 
   try {
-    const [registeredContests, openContests] = await Promise.all([
-      dbHelpers.findContestsForUser(user.computingId, "contestant"),
-      dbHelpers.findOpenContestsForUser(user.computingId, "contestant"),
-    ]);
+    if (user.role === "student") {
+      const contestInfoPayload = await getStudentContestInfoPayload(user);
 
-    contestInfoPayload = {
-      computingId: user.computingId,
-      role: user.role,
-      contests: registeredContests.map(toBackendContestSummary),
-      contestsOpen: openContests.map(toBackendContestSummary),
-    };
+      initialContests = mapContestList([
+        ...contestInfoPayload.contests,
+        ...contestInfoPayload.contestsOpen,
+      ]);
+      myContests = mapContestList(contestInfoPayload.contests);
+      availableContests = mapContestList(contestInfoPayload.contestsOpen);
+    } else {
+      const publishedContests = await dbHelpers.findPublishedContestsForViewer(
+        user.computingId,
+        user.role,
+      );
+      initialContests = mapContestList(publishedContests.map(toBackendContestSummary));
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown server-side data load error.";
     pageErrorMessage = `Unable to load contests during SSR. Reason: server-side data load. ${message}`;
@@ -65,12 +53,6 @@ export default async function ContestsRoutePage() {
       nextPublicBackendUrl: process.env.NEXT_PUBLIC_BACKEND_URL ?? null,
     });
   }
-
-  const initialContests = contestInfoPayload
-    ? getContestSummaries(contestInfoPayload).map(toContestListItem)
-    : [];
-  const myContests = contestInfoPayload ? mapContestList(contestInfoPayload.contests) : [];
-  const availableContests = contestInfoPayload ? mapContestList(contestInfoPayload.contestsOpen) : [];
 
   return (
     <ContestsPage
