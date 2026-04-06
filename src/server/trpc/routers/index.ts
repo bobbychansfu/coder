@@ -2,6 +2,7 @@ import { router } from "../init";
 import { adminDashboardRouter } from "./adminDashboard";
 import { contestAuthoringRouter } from "./contestAuthoring";
 import { dashboardMetadataRouter } from "./dashboardMetadata";
+import { instructorAnalysisRouter } from "./instructorAnalysis";
 import { instructorManageContentRouter } from "./instructorManageContent";
 import { problemAuthoringRouter } from "./problemAuthoring";
 import { instructorDashboardRouter } from "./instructorDashboard";
@@ -14,6 +15,7 @@ export const appRouter = router({
   adminDashboard: adminDashboardRouter,
   dashboardMetadata: dashboardMetadataRouter,
   instructorDashboard: instructorDashboardRouter,
+  instructorAnalysis: instructorAnalysisRouter,
   contestAuthoring: contestAuthoringRouter,
   problemAuthoring: problemAuthoringRouter,
   instructorManageContent: instructorManageContentRouter,
