@@ -1,4 +1,5 @@
 import { router } from "../init";
+import { adminDashboardRouter } from "./adminDashboard";
 import { contestAuthoringRouter } from "./contestAuthoring";
 import { dashboardMetadataRouter } from "./dashboardMetadata";
 import { instructorManageContentRouter } from "./instructorManageContent";
@@ -10,6 +11,7 @@ import { practiceExecutionRouter } from "./practiceExecution";
 export const appRouter = router({
   practice: practiceRouter,
   practiceExecution: practiceExecutionRouter,
+  adminDashboard: adminDashboardRouter,
   dashboardMetadata: dashboardMetadataRouter,
   instructorDashboard: instructorDashboardRouter,
   contestAuthoring: contestAuthoringRouter,

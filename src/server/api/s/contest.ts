@@ -8,7 +8,7 @@ function isContestViewableByRegisteredUser(contest: { published: boolean; status
 }
 
 async function findContestForViewer(computingId: string, role: string, contestId: string) {
-  if (can(role as "student" | "ta" | "instructor" | "admin").canManageContest) {
+  if (can(role as "student" | "instructor" | "admin").canManageContest) {
     return dbHelpers.findContest(contestId);
   }
 

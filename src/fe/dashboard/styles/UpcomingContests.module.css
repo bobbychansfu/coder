@@ -1,14 +1,35 @@
 .list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
-.empty {
-  font-family: Inter, sans-serif;
+.emptyState {
+  border: 1px solid #eaecf0;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 14px;
   font-size: 13px;
   line-height: 18px;
   color: #4a5565;
+}
+
+.contestCard {
+  border: 1px solid #eaecf0;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 14px;
+}
+
+.contestHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.contestHeaderText {
+  min-width: 0;
 }
 
 .contestTitle {
@@ -40,28 +61,26 @@
   margin-top: 8px;
 }
 
-.readinessBadge {
-  display: inline-flex;
-  margin-top: 8px;
+.readinessChip {
   border-radius: 999px;
-  padding: 6px 10px;
-  font-family: Inter, sans-serif;
-  font-size: 12px;
+  padding: 2px 8px;
+  font-size: 11px;
   line-height: 16px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
-.readinessBadge[data-readiness="ready"] {
+.readinessChip[data-state="ready"] {
   background: #ecfdf3;
   color: #027a48;
 }
 
-.readinessBadge[data-readiness="needs-attention"] {
+.readinessChip[data-state="needs-attention"] {
   background: #fff7ed;
   color: #c2410c;
 }
 
-.readinessBadge[data-readiness="blocked"] {
+.readinessChip[data-state="blocked"] {
   background: #fef2f2;
   color: #b42318;
 }

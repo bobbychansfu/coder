@@ -1,4 +1,6 @@
-export type AdminUserRole = "student" | "instructor" | "ta" | "admin";
+import type { Role } from "@/lib/authz";
+
+export type AdminUserRole = Role;
 
 export interface AdminUserRecord {
   id: string;
@@ -18,7 +20,6 @@ export const adminRoleOptions: AdminUserRoleOption[] = [
   { value: "all", label: "All Roles" },
   { value: "student", label: "Student" },
   { value: "instructor", label: "Instructor" },
-  { value: "ta", label: "TA" },
   { value: "admin", label: "Admin" },
 ];
 
@@ -54,14 +55,6 @@ export const adminUsers: AdminUserRecord[] = [
     role: "instructor",
     courses: 1,
     lastActive: "30 min ago",
-  },
-  {
-    id: "user-jessica-liu",
-    name: "Jessica Liu",
-    email: "jessica.l@sfu.ca",
-    role: "ta",
-    courses: 1,
-    lastActive: "1 day ago",
   },
   {
     id: "user-admin",

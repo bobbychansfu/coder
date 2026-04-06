@@ -93,9 +93,9 @@ function rolePrefix(role: Role, intent: RoleIntent = "general"): ApiPrefix {
     return "/s";
   }
 
-  if (role === "ta" || role === "instructor") {
+  if (role === "instructor") {
     if (intent === "admin") {
-      throw new ApiClientError("TA/Instructor cannot call /a/* endpoints.", {
+      throw new ApiClientError("Instructor cannot call /a/* endpoints.", {
         status: 403,
         url: intent,
         details: "Use general (/s) or privileged (/i) endpoints.",
@@ -241,6 +241,5 @@ export function createRoleApi(role: Role) {
 }
 
 export const studentApi = createRoleApi("student");
-export const taApi = createRoleApi("ta");
 export const instructorApi = createRoleApi("instructor");
 export const adminApi = createRoleApi("admin");
