@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getEffectiveContestStatus } from "@/lib/contestStatus";
 import {
   NON_INSTRUCTOR_DASHBOARD_ROLES,
   normalizeAdminDashboardRole,
@@ -43,6 +44,7 @@ export interface AdminDashboardSnapshot {
     visibility: "PUBLIC" | "PRIVATE" | "COURSE_ONLY";
     startsAt: Date;
     endsAt: Date | null;
+    durationMinutes: number | null;
     participants: number;
     published: boolean;
     updatedAt: Date;
@@ -104,8 +106,7 @@ export async function loadAdminDashboardSnapshot(
     admins,
     problemBankSize,
     totalContests,
-    activeContestsCount,
-    upcomingContestsCount,
+    contestStatusRecords,
     publishedContestsCount,
     draftUnpublishedContestsCount,
     submissionsLast24Hours,
@@ -130,8 +131,14 @@ export async function loadAdminDashboardSnapshot(
     client.user.count({ where: { role: "ADMIN" } }),
     client.problem.count(),
     client.contest.count(),
-    client.contest.count({ where: { status: "ACTIVE" } }),
-    client.contest.count({ where: { status: "UPCOMING" } }),
+    client.contest.findMany({
+      select: {
+        status: true,
+        startsAt: true,
+        endsAt: true,
+        durationMinutes: true,
+      },
+    }),
     client.contest.count({ where: { published: true } }),
     client.contest.count({
       where: {
@@ -205,6 +212,7 @@ export async function loadAdminDashboardSnapshot(
         visibility: true,
         startsAt: true,
         endsAt: true,
+        durationMinutes: true,
         participants: true,
         published: true,
         updatedAt: true,
@@ -256,6 +264,13 @@ export async function loadAdminDashboardSnapshot(
       },
     }),
   ]);
+
+  const activeContestsCount = contestStatusRecords.filter(
+    (contest) => getEffectiveContestStatus(contest) === "ACTIVE",
+  ).length;
+  const upcomingContestsCount = contestStatusRecords.filter(
+    (contest) => getEffectiveContestStatus(contest) === "UPCOMING",
+  ).length;
 
   return {
     admin: {

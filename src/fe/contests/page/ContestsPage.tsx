@@ -1,14 +1,16 @@
 "use client";
 
-import { startTransition, useMemo, useState } from "react";
+import { startTransition, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from "@mui/material";
 import FilterPanel from "@/fe/shared/components/filters/FilterPanel";
 import ListPageLayout from "@/fe/shared/components/layout/ListPageLayout";
 import SearchInput from "@/fe/shared/components/forms/SearchInput";
 import TabSwitcher from "@/fe/shared/components/ui/TabSwitcher";
+import { useTimedRouterRefresh } from "@/fe/shared/hooks/useTimedRouterRefresh";
 import type { ContestListItem } from "@/fe/contests/data/contests";
 import ContestSummaryCard from "@/fe/contests/components/ContestSummaryCard";
+import { sortContestListItems } from "@/fe/contests/services/contestOrdering";
 import sectionStyles from "@/fe/contests/styles/ContestsPage.module.css";
 import gridStyles from "@/fe/shared/styles/Grid.module.css";
 import layoutStyles from "@/fe/shared/styles/ListPageLayout.module.css";
@@ -17,8 +19,8 @@ const STATUS_FILTER_LABEL = "Status";
 const DEFAULT_STATUS_FILTER = "All";
 const BASE_STATUS_FILTERS = [
   { label: DEFAULT_STATUS_FILTER, active: true },
-  { label: "Upcoming" },
   { label: "In Progress" },
+  { label: "Upcoming" },
   { label: "Closed" },
 ];
 
@@ -30,6 +32,7 @@ interface ContestsPageProps {
   showCreateContest: boolean;
   showManageContest: boolean;
   showViewAllSubmissions: boolean;
+  pageErrorMessage?: string;
 }
 
 type ContestSectionMode = "registered" | "available";
@@ -60,8 +63,10 @@ export default function ContestsPage({
   availableContests = [],
   isStudent = false,
   showCreateContest,
+  pageErrorMessage,
 }: ContestsPageProps) {
   const router = useRouter();
+  useTimedRouterRefresh(isStudent);
   const [studentMyContests, setStudentMyContests] = useState(myContests);
   const [studentAvailableContests, setStudentAvailableContests] = useState(availableContests);
   const [studentView, setStudentView] = useState<ContestSectionMode>("registered");
@@ -70,6 +75,14 @@ export default function ContestsPage({
   const [registerError, setRegisterError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState(DEFAULT_STATUS_FILTER);
+
+  useEffect(() => {
+    setStudentMyContests(myContests);
+  }, [myContests]);
+
+  useEffect(() => {
+    setStudentAvailableContests(availableContests);
+  }, [availableContests]);
 
   const handleRegister = async (contest: ContestListItem) => {
     setPendingContestId(contest.id);
@@ -163,7 +176,15 @@ export default function ContestsPage({
     searchQuery,
     normalizedStatusFilter,
   );
+  const orderedStudentContests = useMemo(
+    () => sortContestListItems(filteredStudentContests),
+    [filteredStudentContests],
+  );
   const filteredInitialContests = filterContests(initialContests, searchQuery, normalizedStatusFilter);
+  const orderedInitialContests = useMemo(
+    () => sortContestListItems(filteredInitialContests),
+    [filteredInitialContests],
+  );
   const activeStudentDescription =
     studentView === "registered"
       ? "Contests you have already joined through a Participation record."
@@ -214,6 +235,7 @@ export default function ContestsPage({
           onChange={setSearchQuery}
         />
       </div>
+      {pageErrorMessage ? <p className={sectionStyles.registerError}>{pageErrorMessage}</p> : null}
       {registerError ? <p className={sectionStyles.registerError}>{registerError}</p> : null}
       {isStudent ? (
         <section className={sectionStyles.section}>
@@ -223,22 +245,30 @@ export default function ContestsPage({
             </h2>
             <p className={sectionStyles.sectionDescription}>{activeStudentDescription}</p>
           </div>
-          {renderContestGrid(filteredStudentContests, studentView)}
+          {renderContestGrid(orderedStudentContests, studentView)}
         </section>
       ) : (
-        <div className={gridStyles.grid}>
-          {filteredInitialContests.map((contest) => (
-            <ContestSummaryCard
-              key={contest.id}
-              title={contest.title}
-              status={contest.status}
-              href={`/contests/${contest.id}`}
-              actionLabel={getRegisteredActionLabel(contest.status)}
-              actionKind="link"
-              actionVariant="secondary"
-            />
-          ))}
-        </div>
+        orderedInitialContests.length === 0 ? (
+          <div className={sectionStyles.emptyState}>
+            {pageErrorMessage
+              ? "The instructor contests list could not be loaded during server-side rendering. Check the error message above for the exact reason."
+              : "No contests are available for your current filters."}
+          </div>
+        ) : (
+          <div className={gridStyles.grid}>
+            {orderedInitialContests.map((contest) => (
+              <ContestSummaryCard
+                key={contest.id}
+                title={contest.title}
+                status={contest.status}
+                href={`/contests/${contest.id}`}
+                actionLabel={getRegisteredActionLabel(contest.status)}
+                actionKind="link"
+                actionVariant="secondary"
+              />
+            ))}
+          </div>
+        )
       )}
       <Dialog
         open={Boolean(contestToConfirm)}

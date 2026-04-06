@@ -9,6 +9,7 @@ type SubmissionStatus =
   | "WRONG_ANSWER"
   | "TIME_LIMIT_EXCEEDED"
   | "RUNTIME_ERROR"
+  | "SYSTEM_ERROR"
   | "COMPILE_ERROR";
 
 interface ContestProblemTopic {
@@ -107,6 +108,8 @@ function mapSubmissionStatus(status: SubmissionStatus): SubmissionRecord["status
       return "pending";
     case "COMPILE_ERROR":
       return "compile_error";
+    case "SYSTEM_ERROR":
+      return "system_error";
     case "RUNTIME_ERROR":
       return "runtime_error";
     case "WRONG_ANSWER":

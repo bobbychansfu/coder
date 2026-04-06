@@ -50,6 +50,9 @@ CLAUDE.local.md
 gemini/
 GEMINI.md
 
+# codex local metadata
+.codex
+
 # Playwright
 playwright-report/
 test-results/

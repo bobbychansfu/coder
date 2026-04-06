@@ -8,14 +8,13 @@ import {
 import { toContestDetail } from "@/fe/contests/services/contestAdapters";
 import {
   type BackendContestSummary,
-  getContestProblemDetail,
-  getContestProblemStatus,
-  getContestProblemSubmissions,
-  getStudentContestInfoForRoute,
+  type ContestProblemStatusResponse,
 } from "@/fe/contests/services/contestApi";
-import { can } from "@/lib/authz";
+import { can, normalizeRole } from "@/lib/authz";
+import { getEffectiveContestStatus } from "@/lib/contestStatus";
 import { dbHelpers } from "@/lib/db-helpers";
 import { getCurrentUser } from "@/lib/session";
+import { codingLanguageToLabel } from "@/server/coding-language";
 
 interface ContestProblemRouteProps {
   params: Promise<{ id: string; code: string }>;
@@ -28,7 +27,7 @@ function toBackendContestSummary(
     id: contest.id,
     slug: contest.slug,
     name: contest.name,
-    status: contest.status,
+    status: getEffectiveContestStatus(contest),
     startsAt: contest.startsAt.toISOString(),
     endsAt: contest.endsAt?.toISOString() ?? null,
     durationMinutes: contest.durationMinutes,
@@ -41,6 +40,37 @@ function isBackendContestSummary(
   contest: BackendContestSummary | NonNullable<Awaited<ReturnType<typeof dbHelpers.findContest>>>,
 ): contest is BackendContestSummary {
   return typeof contest.startsAt === "string";
+}
+
+function isContestViewableByRegisteredUser(contest: { published: boolean; status: string }) {
+  return contest.published && contest.status !== "DRAFT";
+}
+
+async function getContestProblemStatusDirect(
+  computingId: string,
+  contestId: string,
+  role: string,
+): Promise<ContestProblemStatusResponse | null> {
+  const normalizedRole = normalizeRole(role);
+  const contest = normalizedRole && can(normalizedRole).canManageContest
+    ? await dbHelpers.findContestForViewer(contestId, computingId, role)
+    : await dbHelpers.findSpecificContestForUser(computingId, contestId, "contestant");
+
+  if (!contest || !isContestViewableByRegisteredUser(contest)) {
+    return null;
+  }
+
+  const [contestProblemsStatus, scoreboard] = await Promise.all([
+    dbHelpers.findContestsProblemsStatusForUser(computingId, contestId),
+    dbHelpers.findScoreboardRowsForContest(contestId, computingId),
+  ]);
+
+  return {
+    computingId,
+    contestProblemsStatus,
+    scoreboard,
+    role,
+  };
 }
 
 export const dynamicParams = true;
@@ -57,32 +87,33 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
   let contestSummary = null;
 
   if (can(user.role).canManageContest) {
-    contestSummary = await dbHelpers.findContest(contestId);
+    contestSummary = await dbHelpers.findContestForViewer(contestId, user.computingId, user.role);
   } else {
-    const contestInfoResponse = await getStudentContestInfoForRoute(contestId, user.role);
-
-    if (!contestInfoResponse.ok || !contestInfoResponse.data) {
-      notFound();
-    }
-
-    contestSummary =
-      contestInfoResponse.data.contests.find((contest) => contest.id === contestId) ?? null;
+    contestSummary = await dbHelpers.findSpecificContestForUser(
+      user.computingId,
+      contestId,
+      "contestant",
+    );
   }
 
-  if (!contestSummary) {
+  if (!contestSummary || !isContestViewableByRegisteredUser(contestSummary)) {
     notFound();
   }
 
-  const contestProblemStatusResponse = await getContestProblemStatus(contestId);
+  const contestProblemStatus = await getContestProblemStatusDirect(
+    user.computingId,
+    contestId,
+    user.role,
+  );
 
-  if (!contestProblemStatusResponse.ok || !contestProblemStatusResponse.data) {
+  if (!contestProblemStatus) {
     notFound();
   }
 
   const normalizedContestSummary = isBackendContestSummary(contestSummary)
     ? contestSummary
     : toBackendContestSummary(contestSummary);
-  const contest = toContestDetail(normalizedContestSummary, contestProblemStatusResponse.data);
+  const contest = toContestDetail(normalizedContestSummary, contestProblemStatus);
   const problemCode = (code ?? contest.problems[0]?.code ?? "A").toUpperCase();
   const problemIndex = contest.problems.findIndex((item) => item.code.toUpperCase() === problemCode);
   const problem = problemIndex >= 0 ? contest.problems[problemIndex] : undefined;
@@ -96,14 +127,39 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
     problemIndex >= 0 && problemIndex < contest.problems.length - 1
       ? contest.problems[problemIndex + 1]
       : undefined;
-  const [problemDetailResponse, problemSubmissionsResponse] = await Promise.all([
-    getContestProblemDetail(contestId, problem.problemId),
-    getContestProblemSubmissions(contestId, problem.problemId),
+  const [problemDetail, submissions] = await Promise.all([
+    dbHelpers.findProblemWithDetails(problem.problemId),
+    dbHelpers.findSubmissionsForProblem(user.computingId, contestId, problem.problemId),
   ]);
 
-  if (!problemDetailResponse.ok || !problemDetailResponse.data) {
+  if (!problemDetail) {
     notFound();
   }
+
+  const problemDetailPayload: ContestProblemDetailResponse = {
+    computingId: user.computingId,
+    cid: contestId,
+    pid: problem.problemId,
+    problem: problemDetail,
+    downloadContents: [],
+    role: user.role,
+    htmlContents: [],
+  };
+  const problemSubmissionsPayload: ContestProblemSubmissionsResponse = {
+    computingId: user.computingId,
+    problem: problemDetail,
+    submissions: submissions.map((submission) => ({
+      id: submission.id,
+      status: submission.status,
+      language: submission.language,
+      languageLabel: codingLanguageToLabel(submission.language),
+      createdAt: submission.createdAt.toISOString(),
+      score: submission.score,
+      runtime: null,
+      memory: null,
+      judgeOutput: submission.judgeOutput ?? "",
+    })),
+  };
 
   return (
     <ProblemSubmissionPage
@@ -111,10 +167,8 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
       contestStatus={contest.status}
       detail={adaptContestProblemDetail(
         problem,
-        problemDetailResponse.data as ContestProblemDetailResponse,
-        problemSubmissionsResponse.ok
-          ? (problemSubmissionsResponse.data as ContestProblemSubmissionsResponse)
-          : null,
+        problemDetailPayload,
+        problemSubmissionsPayload,
       )}
       navigator={{
         position: problemIndex + 1,

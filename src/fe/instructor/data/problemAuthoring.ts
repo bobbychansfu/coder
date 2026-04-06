@@ -63,6 +63,7 @@ export interface ProblemMetadataDraft {
   title: string;
   difficulty: string;
   points: string;
+  judgeProblemId: string;
   tags: string[];
   source: string;
 }
@@ -156,6 +157,7 @@ export const problemMetadataDraft: ProblemMetadataDraft = {
   title: "",
   difficulty: "medium",
   points: "100",
+  judgeProblemId: "",
   tags: [],
   source: "public",
 };
@@ -183,4 +185,3 @@ export const starterCodeDraft: Record<StarterLanguage, string> = {
   typescript: "",
   javascript: "",
 };
-

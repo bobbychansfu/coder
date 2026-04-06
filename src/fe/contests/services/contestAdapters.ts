@@ -8,9 +8,10 @@ import type {
   ContestProblemStatusResponse,
   StudentContestInfoResponse,
 } from "./contestApi";
+import { getEffectiveContestStatus } from "@/lib/contestStatus";
 
-function mapContestListStatus(status: BackendContestSummary["status"]): ContestStatus {
-  switch (status) {
+function mapContestListStatus(contest: BackendContestSummary): ContestStatus {
+  switch (getEffectiveContestStatus(contest)) {
     case "ACTIVE":
       return "In Progress";
     case "ENDED":
@@ -20,8 +21,8 @@ function mapContestListStatus(status: BackendContestSummary["status"]): ContestS
   }
 }
 
-function mapContestDetailStatus(status: BackendContestSummary["status"]): ContestDetailStatus {
-  switch (status) {
+function mapContestDetailStatus(contest: BackendContestSummary): ContestDetailStatus {
+  switch (getEffectiveContestStatus(contest)) {
     case "ACTIVE":
       return "in progress";
     case "ENDED":
@@ -136,7 +137,9 @@ export function toContestListItem(contest: BackendContestSummary): ContestListIt
   return {
     id: contest.id,
     title: contest.name,
-    status: mapContestListStatus(contest.status),
+    status: mapContestListStatus(contest),
+    startsAt: contest.startsAt,
+    endsAt: contest.endsAt,
   };
 }
 
@@ -152,7 +155,7 @@ export function toContestDetail(
   return {
     id: contest.id,
     title: contest.name,
-    status: mapContestDetailStatus(contest.status),
+    status: mapContestDetailStatus(contest),
     startTime: formatContestStartTime(contest.startsAt),
     startTimeISO: contest.startsAt,
     durationMinutes: getDurationMinutes(contest),

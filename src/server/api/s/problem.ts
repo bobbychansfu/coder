@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
-import { can } from "@/lib/authz";
+import { can, normalizeRole } from "@/lib/authz";
+import { getEffectiveContestStatus } from "@/lib/contestStatus";
 import { dbHelpers } from "@/lib/db-helpers";
-import { syncStudentGamification } from "@/server/gamification/persistence";
 import path from "path";
 import { promises as fs } from "fs";
 import {
@@ -10,7 +10,11 @@ import {
   appLanguageToJudgeLanguage,
   codingLanguageToLabel,
 } from "@/server/coding-language";
-import { SubmissionStatus } from "@prisma/client";
+import { applyContestJudgeResult } from "@/server/contestJudging";
+import {
+  normalizeJudgeStatusToSubmissionStatus,
+  parseJudgeResult,
+} from "@/server/judge";
 
 interface SubmitCodeBody {
   language?: string;
@@ -21,7 +25,9 @@ interface SubmitCodeBody {
 
 interface JudgeSubmissionResponse {
   score?: number;
+  Score?: number;
   status?: string;
+  Status?: string;
   judge_output?: string;
   runtime?: string | number;
   runtime_ms?: string | number;
@@ -30,48 +36,14 @@ interface JudgeSubmissionResponse {
   memory_mb?: string | number;
 }
 
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "Unknown error";
+interface JudgeProblemMapping {
+  id: string;
+  code: string;
+  judgeProblemId: string | null;
 }
 
-function normalizeJudgeStatusToSubmissionStatus(
-  status: string | null | undefined,
-  score: number,
-): SubmissionStatus {
-  const normalized = status?.trim().toUpperCase();
-
-  switch (normalized) {
-    case "AC":
-    case "ACCEPTED":
-      return "ACCEPTED";
-    case "WA":
-    case "WRONG_ANSWER":
-    case "WRONG ANSWER":
-      return "WRONG_ANSWER";
-    case "TLE":
-    case "TIME_LIMIT_EXCEEDED":
-    case "TIME LIMIT EXCEEDED":
-      return "TIME_LIMIT_EXCEEDED";
-    case "RE":
-    case "ERR":
-    case "RUNTIME_ERROR":
-    case "RUNTIME ERROR":
-    case "IERR":
-    case "INTERNALERROR":
-    case "INTERNAL ERROR":
-      return "RUNTIME_ERROR";
-    case "CE":
-    case "CERR":
-    case "COMPILE_ERROR":
-    case "COMPILE ERROR":
-      return "COMPILE_ERROR";
-    case "PENDING":
-    case "QUEUED":
-    case "RUNNING":
-      return "PENDING";
-    default:
-      return score > 0 ? "ACCEPTED" : "WRONG_ANSWER";
-  }
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "Unknown error";
 }
 
 function parseMetricValue(
@@ -140,10 +112,36 @@ function isContestViewableByRegisteredUser(contest: { published: boolean; status
   return contest.published && contest.status !== "DRAFT";
 }
 
+function looksLikeJudgeProblemId(value: string | null | undefined): value is string {
+  return typeof value === "string" && /^\d+$/.test(value.trim());
+}
+
+function resolveJudgeProblemId(problem: JudgeProblemMapping): string | null {
+  if (looksLikeJudgeProblemId(problem.judgeProblemId)) {
+    return problem.judgeProblemId.trim();
+  }
+
+  if (looksLikeJudgeProblemId(problem.code)) {
+    return problem.code.trim();
+  }
+
+  return null;
+}
+
 function isContestOpenForSubmission(
-  contest: { published: boolean; status: string; startsAt: Date; endsAt: Date | null },
+  contest: {
+    published: boolean;
+    status: "DRAFT" | "UPCOMING" | "ACTIVE" | "ENDED";
+    startsAt: Date;
+    endsAt: Date | null;
+    durationMinutes?: number | null;
+  },
 ) {
-  if (!isContestViewableByRegisteredUser(contest) || contest.status !== "ACTIVE") {
+  if (!isContestViewableByRegisteredUser(contest)) {
+    return false;
+  }
+
+  if (getEffectiveContestStatus(contest) !== "ACTIVE") {
     return false;
   }
 
@@ -161,8 +159,9 @@ function isContestOpenForSubmission(
 }
 
 async function findContestForViewer(computingId: string, role: string, contestId: string) {
-  if (can(role as "student" | "instructor" | "admin").canManageContest) {
-    return dbHelpers.findContest(contestId);
+  const normalizedRole = normalizeRole(role);
+  if (normalizedRole && can(normalizedRole).canManageContest) {
+    return dbHelpers.findContestForViewer(contestId, computingId, role);
   }
 
   return dbHelpers.findSpecificContestForUser(computingId, contestId, "contestant");
@@ -298,14 +297,39 @@ export async function handleSubmitCode(
     }
 
     if (!isContestOpenForSubmission(contest)) {
+      const effectiveStatus = getEffectiveContestStatus(contest);
+
       return NextResponse.json(
         {
           error:
-            contest.status === "ENDED" || (contest.endsAt && contest.endsAt <= new Date())
+            effectiveStatus === "ENDED" || (contest.endsAt && contest.endsAt <= new Date())
               ? "Contest has ended"
+              : effectiveStatus === "UPCOMING"
+                ? "Contest has not started yet"
               : "Contest is not accepting submissions",
         },
         { status: 403 },
+      );
+    }
+
+    const problem = await dbHelpers.findProblem(pid);
+    if (!problem) {
+      return NextResponse.json({ error: "Problem not found" }, { status: 404 });
+    }
+
+    const judgeProblemId = resolveJudgeProblemId(problem);
+    if (!judgeProblemId) {
+      return NextResponse.json(
+        {
+          error:
+            "This contest problem is missing a Judge problem mapping. Configure judgeProblemId (for example, 1036) before submitting.",
+          details: {
+            localProblemId: problem.id,
+            problemCode: problem.code,
+            judgeProblemId: problem.judgeProblemId,
+          },
+        },
+        { status: 409 },
       );
     }
 
@@ -329,43 +353,64 @@ export async function handleSubmitCode(
     const JUDGE_URL = process.env.JUDGE_URL || "http://127.0.0.1:8000";
     let judgeResponse: JudgeSubmissionResponse;
     try {
+      const judgeConnectionId = connection_id || submission.id;
       const response = await fetch(`${JUDGE_URL}/judge_submission`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sid: submission.id,
-          pid,
+          pid: judgeProblemId,
           language: judgeLanguage,
-          connection_id,
+          connection_id: judgeConnectionId,
           submission: code,
         }),
       });
-      judgeResponse = await response.json();
+      console.info("[contest-submit] forwarding to judge", {
+        submissionId: submission.id,
+        contestId: cid,
+        localProblemId: pid,
+        localProblemCode: problem.code,
+        mappedJudgeProblemId: judgeProblemId,
+        language: judgeLanguage,
+      });
+      judgeResponse = (await response.json()) as JudgeSubmissionResponse;
+
+      if (!response.ok) {
+        return NextResponse.json(
+          {
+            error: "Judge rejected submission",
+            details: getErrorMessage(judgeResponse),
+          },
+          { status: response.status },
+        );
+      }
     } catch (error: unknown) {
       console.error("Judge request failed:", error);
       return NextResponse.json({ error: "Failed to reach judge", details: getErrorMessage(error) }, { status: 500 });
     }
 
-    const problem = await dbHelpers.findProblem(pid);
-    const score = judgeResponse.score || 0;
-    const judgeOutput = judgeResponse.judge_output?.trim() || "";
-    const submissionStatus = normalizeJudgeStatusToSubmissionStatus(judgeResponse.status, score);
-
-    await dbHelpers.updateSubmission(submission.id, submissionStatus, judgeOutput, score);
-    await dbHelpers.updateProblemStatus(computingId, cid, pid, {
-      status: submissionStatus === "ACCEPTED" ? "correct" : "wrong",
-      score,
-      tries: 1,
-    });
-
-    await dbHelpers.updateUserPointsAndProblems(computingId, score, score > 0 ? 1 : 0);
-    if (problem) {
-      await dbHelpers.addNewActivity(computingId, "submission", `Submitted a solution for ${problem.title} and received ${score} points`);
-    }
-    await syncStudentGamification(computingId);
+    const normalizedJudgeResult = parseJudgeResult(judgeResponse);
+    const settledSubmission =
+      await applyContestJudgeResult({
+        submissionId: submission.id,
+        status: normalizedJudgeResult.status,
+        score: normalizedJudgeResult.score,
+        judgeOutput: normalizedJudgeResult.judgeOutput,
+      });
+    const submissionStatus =
+      settledSubmission?.submissionStatus ??
+      normalizeJudgeStatusToSubmissionStatus(
+        normalizedJudgeResult.status,
+        normalizedJudgeResult.score,
+      );
+    const score = settledSubmission?.score ?? normalizedJudgeResult.score;
+    const judgeOutput = normalizedJudgeResult.judgeOutput;
 
     return NextResponse.json({
-      message: "Submission received",
+      message:
+        submissionStatus === "PENDING"
+          ? "Submission queued for judging"
+          : "Submission received",
       sid: submission.id,
       score,
       status: submissionStatus,

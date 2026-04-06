@@ -47,6 +47,7 @@ enum SubmissionStatus {
   WRONG_ANSWER
   TIME_LIMIT_EXCEEDED
   RUNTIME_ERROR
+  SYSTEM_ERROR
   COMPILE_ERROR
 }
 
@@ -190,6 +191,7 @@ model Contest {
 model Problem {
   id                 String        @id @default(cuid())
   code               String        @unique
+  judgeProblemId     String?       @unique
   title              String
   statement          String
   inputFormat        String?
