@@ -12,8 +12,10 @@ const contestMutationSchema = z.object({
   description: z.string(),
   startDate: z.string(),
   startTime: z.string(),
+  startUtcOffsetMinutes: z.number().int().optional(),
   endDate: z.string(),
   endTime: z.string(),
+  endUtcOffsetMinutes: z.number().int().nullable().optional(),
   visibility: visibilitySchema,
   aiHintEnabled: z.boolean(),
   isDraft: z.boolean().default(false),
@@ -26,8 +28,10 @@ const contestPatchSchema = z
     description: z.string().optional(),
     startDate: z.string().optional(),
     startTime: z.string().optional(),
+    startUtcOffsetMinutes: z.number().int().optional(),
     endDate: z.string().optional(),
     endTime: z.string().optional(),
+    endUtcOffsetMinutes: z.number().int().nullable().optional(),
     visibility: visibilitySchema.optional(),
     aiHintEnabled: z.boolean().optional(),
     isDraft: z.boolean().optional(),
@@ -67,16 +71,51 @@ function toDbVisibility(value: z.infer<typeof visibilitySchema>) {
   }
 }
 
-function formatDateInput(value: Date) {
-  return value.toISOString().slice(0, 10);
-}
-
-function formatTimeInput(value: Date) {
-  return value.toISOString().slice(11, 16);
-}
-
 function parseDateTime(dateValue: string, timeValue: string, label: string) {
   const parsed = new Date(`${dateValue}T${timeValue}`);
+
+  if (Number.isNaN(parsed.getTime())) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: `Invalid ${label}.`,
+    });
+  }
+
+  return parsed;
+}
+
+function parseDateTimeWithOffset(
+  dateValue: string,
+  timeValue: string,
+  label: string,
+  utcOffsetMinutes?: number | null,
+) {
+  if (utcOffsetMinutes === undefined || utcOffsetMinutes === null) {
+    return parseDateTime(dateValue, timeValue, label);
+  }
+
+  const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateValue);
+  const timeMatch = /^(\d{2}):(\d{2})$/.exec(timeValue);
+
+  if (!dateMatch || !timeMatch) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: `Invalid ${label}.`,
+    });
+  }
+
+  const [, year, month, day] = dateMatch;
+  const [, hour, minute] = timeMatch;
+  const parsed = new Date(
+    Date.UTC(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      Number(hour),
+      Number(minute),
+    ) +
+      utcOffsetMinutes * 60_000,
+  );
 
   if (Number.isNaN(parsed.getTime())) {
     throw new TRPCError({
@@ -100,6 +139,19 @@ function computeContestStatus(startsAt: Date, endsAt: Date | null) {
   }
 
   return "ACTIVE" as const;
+}
+
+function hasImplicitDraftSchedule(contest: {
+  status: "DRAFT" | "UPCOMING" | "ACTIVE" | "ENDED";
+  startsAt: Date;
+  endsAt: Date | null;
+  updatedAt: Date;
+}) {
+  if (contest.status !== "DRAFT" || contest.endsAt) {
+    return false;
+  }
+
+  return Math.abs(contest.startsAt.getTime() - contest.updatedAt.getTime()) < 60_000;
 }
 
 function hasOwnKey<T extends object>(
@@ -195,9 +247,8 @@ export const contestAuthoringRouter = router({
 
     const problems = await ctx.prisma.problem.findMany({
       where: {
-        manageStatus: {
-          not: "DELETED",
-        },
+        manageStatus: "ACTIVE",
+        isDraft: false,
       },
       include: {
         topics: {
@@ -254,10 +305,8 @@ export const contestAuthoringRouter = router({
         id: contest.id,
         contestName: contest.name,
         description: contest.description ?? "",
-        startDate: formatDateInput(contest.startsAt),
-        startTime: formatTimeInput(contest.startsAt),
-        endDate: contest.endsAt ? formatDateInput(contest.endsAt) : "",
-        endTime: contest.endsAt ? formatTimeInput(contest.endsAt) : "",
+        startsAtIso: hasImplicitDraftSchedule(contest) ? null : contest.startsAt.toISOString(),
+        endsAtIso: contest.endsAt?.toISOString() ?? null,
         visibility: toUiVisibility(contest.visibility),
         aiHintEnabled: contest.aiHintEnabled,
         status: contest.status,
@@ -295,11 +344,21 @@ export const contestAuthoringRouter = router({
       }
 
       const startsAt = hasStartSchedule
-        ? parseDateTime(input.startDate, input.startTime, "start date/time")
+        ? parseDateTimeWithOffset(
+            input.startDate,
+            input.startTime,
+            "start date/time",
+            input.startUtcOffsetMinutes,
+          )
         : new Date();
       const hasEnd = input.endDate.trim() || input.endTime.trim();
       const endsAt = hasEnd
-        ? parseDateTime(input.endDate.trim(), input.endTime.trim(), "end date/time")
+        ? parseDateTimeWithOffset(
+            input.endDate.trim(),
+            input.endTime.trim(),
+            "end date/time",
+            input.endUtcOffsetMinutes,
+          )
         : null;
 
       if (endsAt && endsAt <= startsAt) {
@@ -313,9 +372,8 @@ export const contestAuthoringRouter = router({
         const problems = await ctx.prisma.problem.findMany({
           where: {
             id: { in: input.selectedProblemIds },
-            manageStatus: {
-              not: "DELETED",
-            },
+            manageStatus: "ACTIVE",
+            isDraft: false,
           },
           select: { id: true },
         });
@@ -323,7 +381,7 @@ export const contestAuthoringRouter = router({
         if (problems.length !== input.selectedProblemIds.length) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "One or more selected problems cannot be used in this contest.",
+            message: "Only active, non-draft problems can be used in this contest.",
           });
         }
       }
@@ -381,9 +439,11 @@ export const contestAuthoringRouter = router({
         select: {
           id: true,
           instructorId: true,
+          status: true,
           manageStatus: true,
           startsAt: true,
           endsAt: true,
+          updatedAt: true,
         },
       });
 
@@ -402,48 +462,78 @@ export const contestAuthoringRouter = router({
         throw new TRPCError({ code: "FORBIDDEN" });
       }
 
+      const remainsDraft = input.data.isDraft ?? contest.status === "DRAFT";
       const hasStartDate = hasOwnKey(input.data, "startDate");
       const hasStartTime = hasOwnKey(input.data, "startTime");
       const hasEndDate = hasOwnKey(input.data, "endDate");
       const hasEndTime = hasOwnKey(input.data, "endTime");
-      const scheduleChanged = hasStartDate || hasStartTime || hasEndDate || hasEndTime;
+      const startScheduleChanged = hasStartDate || hasStartTime;
+      const endScheduleChanged = hasEndDate || hasEndTime;
+      const scheduleChanged = startScheduleChanged || endScheduleChanged;
 
       const startDateValue = hasStartDate
         ? (input.data.startDate ?? "").trim()
-        : formatDateInput(contest.startsAt);
+        : "";
       const startTimeValue = hasStartTime
         ? (input.data.startTime ?? "").trim()
-        : formatTimeInput(contest.startsAt);
+        : "";
 
-      if (!startDateValue || !startTimeValue) {
+      const clearsStartSchedule = !startDateValue && !startTimeValue;
+
+      if (
+        startScheduleChanged &&
+        !clearsStartSchedule &&
+        (!startDateValue || !startTimeValue)
+      ) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Start date and start time are required.",
         });
       }
 
-      const startsAt = parseDateTime(startDateValue, startTimeValue, "start date/time");
+      if (startScheduleChanged && clearsStartSchedule && !remainsDraft) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Start date and start time are required.",
+        });
+      }
 
-      const existingEndDateValue = contest.endsAt ? formatDateInput(contest.endsAt) : "";
-      const existingEndTimeValue = contest.endsAt ? formatTimeInput(contest.endsAt) : "";
+      const startsAt = startScheduleChanged
+        ? clearsStartSchedule
+          ? new Date()
+          : parseDateTimeWithOffset(
+              startDateValue,
+              startTimeValue,
+              "start date/time",
+              input.data.startUtcOffsetMinutes,
+            )
+        : contest.startsAt;
+
       const endDateValue = hasEndDate
         ? (input.data.endDate ?? "").trim()
-        : existingEndDateValue;
+        : "";
       const endTimeValue = hasEndTime
         ? (input.data.endTime ?? "").trim()
-        : existingEndTimeValue;
+        : "";
       const hasEnd = Boolean(endDateValue || endTimeValue);
 
-      if (hasEnd && (!endDateValue || !endTimeValue)) {
+      if (endScheduleChanged && hasEnd && (!endDateValue || !endTimeValue)) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Both end date and end time are required when updating the end schedule.",
         });
       }
 
-      const endsAt = hasEnd
-        ? parseDateTime(endDateValue, endTimeValue, "end date/time")
-        : null;
+      const endsAt = endScheduleChanged
+        ? hasEnd
+          ? parseDateTimeWithOffset(
+              endDateValue,
+              endTimeValue,
+              "end date/time",
+              input.data.endUtcOffsetMinutes,
+            )
+          : null
+        : contest.endsAt;
 
       if (scheduleChanged && endsAt && endsAt <= startsAt) {
         throw new TRPCError({
@@ -456,9 +546,8 @@ export const contestAuthoringRouter = router({
         const problems = await ctx.prisma.problem.findMany({
           where: {
             id: { in: input.data.selectedProblemIds },
-            manageStatus: {
-              not: "DELETED",
-            },
+            manageStatus: "ACTIVE",
+            isDraft: false,
           },
           select: { id: true },
         });
@@ -466,7 +555,7 @@ export const contestAuthoringRouter = router({
         if (problems.length !== (input.data.selectedProblemIds ?? []).length) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "One or more selected problems cannot be used in this contest.",
+            message: "Only active, non-draft problems can be used in this contest.",
           });
         }
       }
@@ -536,6 +625,3 @@ export const contestAuthoringRouter = router({
       return { id: input.contestId };
     }),
 });
-
-
-

@@ -6,6 +6,7 @@ import {
   type ContestProblemStatusResponse,
 } from "@/fe/contests/services/contestApi";
 import { can, normalizeRole } from "@/lib/authz";
+import { getEffectiveContestStatus } from "@/lib/contestStatus";
 import { dbHelpers } from "@/lib/db-helpers";
 import { getCurrentUser } from "@/lib/session";
 
@@ -20,7 +21,7 @@ function toBackendContestSummary(
     id: contest.id,
     slug: contest.slug,
     name: contest.name,
-    status: contest.status,
+    status: getEffectiveContestStatus(contest),
     startsAt: contest.startsAt.toISOString(),
     endsAt: contest.endsAt?.toISOString() ?? null,
     durationMinutes: contest.durationMinutes,
@@ -42,7 +43,7 @@ async function getContestProblemStatusDirect(
 ): Promise<ContestProblemStatusResponse | null> {
   const normalizedRole = normalizeRole(role);
   const contest = normalizedRole && can(normalizedRole).canManageContest
-    ? await dbHelpers.findContest(contestId)
+    ? await dbHelpers.findContestForViewer(contestId, computingId, role)
     : await dbHelpers.findSpecificContestForUser(computingId, contestId, "contestant");
 
   if (!contest || !contest.published || contest.status === "DRAFT") {
@@ -76,7 +77,7 @@ export default async function ContestDetailRoute({ params }: ContestDetailRouteP
   let contest = null;
 
   if (can(user.role).canManageContest) {
-    contest = await dbHelpers.findContest(contestId);
+    contest = await dbHelpers.findContestForViewer(contestId, user.computingId, user.role);
   } else {
     const registeredContests = await dbHelpers.findContestsForUser(user.computingId, "contestant");
     contest = registeredContests.find((item) => item.id === contestId) ?? null;

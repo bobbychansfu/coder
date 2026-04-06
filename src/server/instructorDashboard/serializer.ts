@@ -1,7 +1,23 @@
 import type { InstructorDashboardResponse } from "@/lib/trpc/types/instructorDashboard";
+import { getEffectiveContestStatus } from "@/lib/contestStatus";
 import type { InstructorDashboardSnapshot } from "./repository";
 
 function titleCaseContestStatus(
+  status: "DRAFT" | "UPCOMING" | "ACTIVE" | "ENDED",
+): "Draft" | "Upcoming" | "Active" | "Ended" {
+  switch (status) {
+    case "DRAFT":
+      return "Draft";
+    case "UPCOMING":
+      return "Upcoming";
+    case "ACTIVE":
+      return "Active";
+    case "ENDED":
+      return "Ended";
+  }
+}
+
+function titleCaseUpcomingContestStatus(
   status: "DRAFT" | "UPCOMING" | "ACTIVE",
 ): "Draft" | "Upcoming" | "Active" {
   switch (status) {
@@ -116,19 +132,30 @@ export function buildInstructorDashboardResponse(
   ).size;
 
   const scheduleItems = contests
-    .filter(
-      (contest) =>
-        contest.status === "UPCOMING" || contest.status === "ACTIVE" || contest.status === "DRAFT",
-    )
+    .filter((contest) => {
+      if (contest.status === "DRAFT") {
+        return true;
+      }
+
+      const effectiveStatus = getEffectiveContestStatus(contest);
+      return effectiveStatus === "UPCOMING" || effectiveStatus === "ACTIVE";
+    })
     .slice(0, 4)
     .map((contest) => {
       const readinessItems = buildReadinessItems(contest);
+      const displayStatus: "DRAFT" | "UPCOMING" | "ACTIVE" =
+        contest.status === "DRAFT"
+          ? "DRAFT"
+          : getEffectiveContestStatus(contest) === "ACTIVE"
+            ? "ACTIVE"
+            : "UPCOMING";
+
       return {
         id: contest.id,
         title: contest.name,
         startsAt: contest.startsAt.toISOString(),
         endsAt: contest.endsAt?.toISOString() ?? null,
-        status: titleCaseContestStatus(contest.status as "DRAFT" | "UPCOMING" | "ACTIVE"),
+        status: titleCaseUpcomingContestStatus(displayStatus),
         readinessState: buildReadinessState(readinessItems),
       };
     });
@@ -212,14 +239,9 @@ export function buildInstructorDashboardResponse(
             id: contest.id,
             title: contest.name,
             startsAt: contest.startsAt.toISOString(),
-            status:
-              contest.status === "DRAFT"
-                ? "Draft"
-                : contest.status === "UPCOMING"
-                  ? "Upcoming"
-                  : contest.status === "ACTIVE"
-                    ? "Active"
-                    : "Ended",
+            status: titleCaseContestStatus(
+              contest.status === "DRAFT" ? "DRAFT" : getEffectiveContestStatus(contest),
+            ),
             participants: getContestantCount(contest),
             problemsCount: contest.contestProblems.length,
             groupsAssignedCount: assignedGroups.size,

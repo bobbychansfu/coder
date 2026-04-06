@@ -8,12 +8,16 @@ interface ContestAlertProps {
   title: string;
   description: string;
   onJoin?: () => void;
+  actionLabel?: string;
+  actionDisabled?: boolean;
 }
 
 export default function ContestAlert({
   title,
   description,
   onJoin,
+  actionLabel = "Join Now",
+  actionDisabled = false,
 }: ContestAlertProps) {
   return (
     <div className={styles.alert}>
@@ -26,8 +30,8 @@ export default function ContestAlert({
           <div className={styles.description}>{description}</div>
         </div>
       </div>
-      <button className={styles.button} onClick={onJoin}>
-        Join Now
+      <button className={styles.button} onClick={onJoin} disabled={actionDisabled}>
+        {actionLabel}
         <ArrowForwardIcon className={styles.arrowIcon} />
       </button>
     </div>

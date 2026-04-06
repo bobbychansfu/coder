@@ -1,4 +1,5 @@
 import { formatAdminRoleSummaryLines } from "@/lib/adminDashboard/roleSummary";
+import { getEffectiveContestStatus } from "@/lib/contestStatus";
 import type { AdminDashboardResponse } from "@/lib/trpc/types/adminDashboard";
 import type { AdminDashboardSnapshot } from "./repository";
 
@@ -153,27 +154,34 @@ export function buildAdminDashboardResponse(
     },
     schedule: {
       upcoming: snapshot.contests
-        .filter(
-          (
-            contest,
-          ): contest is AdminDashboardSnapshot["contests"][number] & {
-            status: "DRAFT" | "UPCOMING" | "ACTIVE";
-          } =>
-            contest.status === "DRAFT" ||
-            contest.status === "UPCOMING" ||
-            contest.status === "ACTIVE",
-        )
+        .filter((contest) => {
+          if (contest.status === "DRAFT") {
+            return true;
+          }
+
+          const effectiveStatus = getEffectiveContestStatus(contest);
+          return effectiveStatus === "UPCOMING" || effectiveStatus === "ACTIVE";
+        })
         .sort((left, right) => left.startsAt.getTime() - right.startsAt.getTime())
         .slice(0, 4)
-        .map((contest) => ({
-          id: contest.id,
-          title: contest.name,
-          classSection: contest.classSection,
-          startsAt: contest.startsAt.toISOString(),
-          endsAt: contest.endsAt?.toISOString() ?? null,
-          status: titleCaseUpcomingContestStatus(contest.status),
-          readinessState: buildReadinessState(contest),
-        })),
+        .map((contest) => {
+          const displayStatus: "DRAFT" | "UPCOMING" | "ACTIVE" =
+            contest.status === "DRAFT"
+              ? "DRAFT"
+              : getEffectiveContestStatus(contest) === "ACTIVE"
+                ? "ACTIVE"
+                : "UPCOMING";
+
+          return {
+            id: contest.id,
+            title: contest.name,
+            classSection: contest.classSection,
+            startsAt: contest.startsAt.toISOString(),
+            endsAt: contest.endsAt?.toISOString() ?? null,
+            status: titleCaseUpcomingContestStatus(displayStatus),
+            readinessState: buildReadinessState(contest),
+          };
+        }),
     },
     contests: {
       overview: snapshot.contests.slice(0, 5).map((contest) => ({
@@ -183,7 +191,9 @@ export function buildAdminDashboardResponse(
           ? `${contest.instructor.firstName} ${contest.instructor.lastName}`
           : "Unassigned",
         startsAt: contest.startsAt.toISOString(),
-        status: titleCaseContestStatus(contest.status),
+        status: titleCaseContestStatus(
+          contest.status === "DRAFT" ? "DRAFT" : getEffectiveContestStatus(contest),
+        ),
         visibility: titleCaseVisibility(contest.visibility),
         participants: contest.participants,
         problemsCount: contest._count.contestProblems,

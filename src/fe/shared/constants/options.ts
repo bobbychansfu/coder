@@ -17,9 +17,9 @@ export const DIFFICULTY_OPTIONS = [
 ];
 
 export const VISIBILITY_OPTIONS = [
-  { value: "contest-only", label: "contest-only" },
-  { value: "public", label: "public" },
-  { value: "draft", label: "draft" },
+  { value: "course-only", label: "Course Only" },
+  { value: "public", label: "Public" },
+  { value: "private", label: "Private" },
 ];
 
 export const PROBLEM_SOURCE_OPTIONS = [
