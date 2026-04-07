@@ -11,12 +11,13 @@ export interface DashboardContestHistoryItem {
   date: string;
   participants: number;
   status: ContestStatus;
+  actionLabel?: "Attend Contest" | "Join Now";
 }
 
 export interface StudentDashboardContestSummary {
   upcomingContests: UpcomingContest[];
   recentContests: DashboardContestHistoryItem[];
-  alert: (DashboardContestAlert & { contestId: string }) | null;
+  alert: (DashboardContestAlert & { contestId: string; actionLabel: "Join Now" }) | null;
 }
 
 function toTimestamp(value: string) {
@@ -117,13 +118,22 @@ export function mapStudentDashboardContests(
   const upcomingContests = visibleContests
     .filter((contest) => contest.status === "UPCOMING" || contest.status === "ACTIVE")
     .slice(0, 3)
-    .map((contest) => ({
-      id: contest.id,
-      title: contest.name,
-      date: formatContestDate(contest.startsAt),
-      timeUntil: formatTimeUntil(contest),
-      readinessState: contest.status === "ACTIVE" ? "Ready" : undefined,
-    })) satisfies UpcomingContest[];
+    .map((contest) => {
+      const isParticipating = myContests.some((registeredContest) => registeredContest.id === contest.id);
+
+      return {
+        id: contest.id,
+        title: contest.name,
+        date: formatContestDate(contest.startsAt),
+        timeUntil: formatTimeUntil(contest),
+        readinessState: contest.status === "ACTIVE" ? "Ready" : undefined,
+        actionLabel: isParticipating
+          ? contest.status === "ACTIVE"
+            ? "Join Now"
+            : "Registered"
+          : "Register",
+      };
+    }) satisfies UpcomingContest[];
 
   const recentContests = myContests.slice(0, 3).map((contest) => ({
     id: contest.id,
@@ -131,7 +141,13 @@ export function mapStudentDashboardContests(
     date: formatContestDate(contest.startsAt),
     participants: contest.participants,
     status: mapContestStatus(contest.status),
-  }));
+    actionLabel:
+      contest.status === "ACTIVE"
+        ? "Join Now"
+        : contest.status === "UPCOMING"
+          ? "Attend Contest"
+          : undefined,
+  })) satisfies DashboardContestHistoryItem[];
 
   const highlightedContest =
     visibleContests.find((contest) => contest.status === "ACTIVE") ?? null;
@@ -140,15 +156,14 @@ export function mapStudentDashboardContests(
     upcomingContests,
     recentContests,
     alert: highlightedContest
-      ? {
+        ? {
           contestId: highlightedContest.id,
           title: "Contest in Progress!",
           description: `${highlightedContest.name} is currently active.`,
           isActive: true,
+          actionLabel: "Join Now",
         }
       : null,
   };
 }
-
-
 
