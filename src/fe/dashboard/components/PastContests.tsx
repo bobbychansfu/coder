@@ -1,9 +1,8 @@
 "use client";
 
-import type { KeyboardEvent } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ContestResultCard from "./ContestResultCard";
+import type { MouseEvent } from "react";
 import { buildContestRoute } from "@/fe/shared/constants/routes";
 import type { DashboardContestHistoryItem } from "@/fe/dashboard/services/dashboardContests";
 import styles from "../styles/PastContests.module.css";
@@ -19,24 +18,13 @@ export default function PastContests({
   emptyMessage = "No contest activity yet.",
   onContestEntry,
 }: PastContestsProps) {
-  const router = useRouter();
-
-  function handleContestOpen(contest: DashboardContestHistoryItem): void {
-    if (contest.actionLabel) {
-      onContestEntry?.(contest.id);
-      return;
-    }
-
-    router.push(buildContestRoute(contest.id));
-  }
-
-  function handleCardKeyDown(
-    event: KeyboardEvent<HTMLDivElement>,
+  function handleContestClick(
+    event: MouseEvent<HTMLAnchorElement>,
     contest: DashboardContestHistoryItem,
   ): void {
-    if (event.key === "Enter" || event.key === " ") {
+    if (contest.actionLabel) {
       event.preventDefault();
-      handleContestOpen(contest);
+      onContestEntry?.(contest.id);
     }
   }
 
@@ -53,15 +41,13 @@ export default function PastContests({
       ) : (
         <div className={styles.list}>
           {contests.map((contest) => (
-            <div
+            <Link
               key={contest.id}
+              href={buildContestRoute(contest.id)}
               className={styles.cardLink}
               aria-label={`Open contest ${contest.title}`}
               data-testid={`my-contest-${contest.id}`}
-              role="link"
-              tabIndex={0}
-              onClick={() => handleContestOpen(contest)}
-              onKeyDown={(event) => handleCardKeyDown(event, contest)}
+              onClick={(event) => handleContestClick(event, contest)}
             >
               <ContestResultCard
                 title={contest.title}
@@ -69,7 +55,7 @@ export default function PastContests({
                 participants={contest.participants}
                 status={contest.status}
               />
-            </div>
+            </Link>
           ))}
         </div>
       )}

@@ -39,6 +39,7 @@ export default function DashboardPage({ contestSummary }: DashboardPageProps) {
   const [pendingContestId, setPendingContestId] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const pendingContest = useMemo(() => {
     if (!pendingContestId || !contestSummary) {
@@ -83,31 +84,38 @@ export default function DashboardPage({ contestSummary }: DashboardPageProps) {
   }
 
   async function confirmContestEntry(): Promise<void> {
-    if (!pendingContestId || !pendingAction) {
+    if (!pendingContestId || !pendingAction || isSubmitting) {
       return;
     }
 
     setActionError(null);
+    setIsSubmitting(true);
 
-    if (pendingAction === "register") {
-      const response = await fetch(`/api/s/contest/register/${pendingContestId}`, {
-        method: "POST",
-        credentials: "include",
-      });
+    try {
+      if (pendingAction === "register") {
+        const response = await fetch(`/api/s/contest/register/${pendingContestId}`, {
+          method: "POST",
+          credentials: "include",
+        });
 
-      if (!response.ok) {
-        const payload = await response.json().catch(() => null);
-        setActionError(payload?.error ?? "Unable to register for this contest right now.");
+        if (!response.ok) {
+          const payload = await response.json().catch(() => null);
+          setActionError(payload?.error ?? "Unable to register for this contest right now.");
+          return;
+        }
+
+        setIsSubmitting(false);
+        closeContestConfirmation();
+        router.refresh();
         return;
       }
 
+      setIsSubmitting(false);
       closeContestConfirmation();
-      router.refresh();
-      return;
+      router.push(buildContestRoute(pendingContestId));
+    } finally {
+      setIsSubmitting(false);
     }
-
-    closeContestConfirmation();
-    router.push(buildContestRoute(pendingContestId));
   }
 
   return (
@@ -162,11 +170,16 @@ export default function DashboardPage({ contestSummary }: DashboardPageProps) {
           {actionError ? <div className={styles.errorBanner}>{actionError}</div> : null}
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeContestConfirmation} color="inherit">
+          <Button onClick={closeContestConfirmation} color="inherit" disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button onClick={() => void confirmContestEntry()} variant="contained" color="warning">
-            Confirm
+          <Button
+            onClick={() => void confirmContestEntry()}
+            variant="contained"
+            color="warning"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Confirming..." : "Confirm"}
           </Button>
         </DialogActions>
       </Dialog>
