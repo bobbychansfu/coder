@@ -150,7 +150,7 @@ export function mapStudentDashboardContests(
   })) satisfies DashboardContestHistoryItem[];
 
   const highlightedContest =
-    visibleContests.find((contest) => contest.status === "ACTIVE") ?? null;
+    myContests.find((contest) => contest.status === "ACTIVE") ?? null;
 
   return {
     upcomingContests,
@@ -166,4 +166,3 @@ export function mapStudentDashboardContests(
       : null,
   };
 }
-
