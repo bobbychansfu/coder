@@ -38,6 +38,8 @@ export interface SubmissionRecord {
     | "accepted"
     | "wrong"
     | "tle"
+    | "partial"
+    | "failed"
     | "runtime_error"
     | "system_error"
     | "compile_error";
