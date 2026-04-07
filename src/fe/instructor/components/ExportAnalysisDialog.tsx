@@ -5,6 +5,24 @@ import type { ExportFormat, ExportSectionKey } from "@/fe/instructor/page/resear
 import { EXPORT_SECTION_LABELS } from "@/fe/instructor/page/researchAnalytics.helpers";
 import styles from "@/fe/instructor/styles/ResearchAnalyticsPage.module.css";
 
+const EXPORT_DIALOG_COLORS = {
+  border: "rgba(217, 119, 6, 0.14)",
+  divider: "rgba(217, 119, 6, 0.08)",
+  checkbox: "#d97706",
+  checkboxActive: "#ea580c",
+  title: "#111827",
+  label: "#374151",
+  strongLabel: "#111827",
+  formatLabel: "#c2410c",
+  selectBackground: "#fffaf3",
+  selectBorder: "rgba(217, 119, 6, 0.2)",
+  selectBorderHover: "rgba(234, 88, 12, 0.35)",
+  selectBorderFocus: "#ea580c",
+  cancel: "#6b7280",
+  exportButton: "#f59e0b",
+  exportButtonHover: "#ea580c",
+};
+
 interface ExportAnalysisDialogProps {
   open: boolean;
   exportFormat: ExportFormat;
@@ -39,7 +57,7 @@ export default function ExportAnalysisDialog({
       PaperProps={{
         sx: {
           borderRadius: 2,
-          border: "1px solid rgba(217, 119, 6, 0.14)",
+          border: `1px solid ${EXPORT_DIALOG_COLORS.border}`,
           boxShadow: "0 18px 40px rgba(15, 23, 42, 0.1)",
           background: "linear-gradient(180deg, #fffdf9 0%, #ffffff 22%)",
         },
@@ -47,9 +65,9 @@ export default function ExportAnalysisDialog({
     >
       <DialogTitle
         sx={{
-          color: "#111827",
+          color: EXPORT_DIALOG_COLORS.title,
           fontWeight: 700,
-          borderBottom: "1px solid rgba(217, 119, 6, 0.08)",
+          borderBottom: `1px solid ${EXPORT_DIALOG_COLORS.divider}`,
           pb: 1.5,
         }}
       >
@@ -70,9 +88,9 @@ export default function ExportAnalysisDialog({
                 indeterminate={!allSectionsSelected && someSectionsSelected}
                 onChange={onToggleAll}
                 sx={{
-                  color: "#d97706",
+                  color: EXPORT_DIALOG_COLORS.checkbox,
                   "&.Mui-checked, &.MuiCheckbox-indeterminate": {
-                    color: "#ea580c",
+                    color: EXPORT_DIALOG_COLORS.checkboxActive,
                   },
                 }}
               />
@@ -82,7 +100,7 @@ export default function ExportAnalysisDialog({
             sx={{
               margin: 0,
               "& .MuiFormControlLabel-label": {
-                color: "#111827",
+                color: EXPORT_DIALOG_COLORS.strongLabel,
                 fontWeight: 600,
               },
             }}
@@ -95,9 +113,9 @@ export default function ExportAnalysisDialog({
                   checked={selectedSections[section]}
                   onChange={() => onToggleSection(section)}
                   sx={{
-                    color: "#d97706",
+                    color: EXPORT_DIALOG_COLORS.checkbox,
                     "&.Mui-checked": {
-                      color: "#ea580c",
+                      color: EXPORT_DIALOG_COLORS.checkboxActive,
                     },
                   }}
                 />
@@ -107,7 +125,7 @@ export default function ExportAnalysisDialog({
               sx={{
                 margin: 0,
                 "& .MuiFormControlLabel-label": {
-                  color: "#374151",
+                  color: EXPORT_DIALOG_COLORS.label,
                 },
               }}
             />
@@ -120,7 +138,7 @@ export default function ExportAnalysisDialog({
         >
           <Typography
             className={styles.exportFormatLabel}
-            sx={{ color: "#c2410c", fontWeight: 700 }}
+            sx={{ color: EXPORT_DIALOG_COLORS.formatLabel, fontWeight: 700 }}
           >
             File format
           </Typography>
@@ -129,16 +147,16 @@ export default function ExportAnalysisDialog({
               value={exportFormat}
               onChange={(event) => onExportFormatChange(event.target.value as ExportFormat)}
               sx={{
-                backgroundColor: "#fffaf3",
-                color: "#111827",
+                backgroundColor: EXPORT_DIALOG_COLORS.selectBackground,
+                color: EXPORT_DIALOG_COLORS.title,
                 "& .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "rgba(217, 119, 6, 0.2)",
+                  borderColor: EXPORT_DIALOG_COLORS.selectBorder,
                 },
                 "&:hover .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "rgba(234, 88, 12, 0.35)",
+                  borderColor: EXPORT_DIALOG_COLORS.selectBorderHover,
                 },
                 "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#ea580c",
+                  borderColor: EXPORT_DIALOG_COLORS.selectBorderFocus,
                 },
               }}
             >
@@ -152,11 +170,14 @@ export default function ExportAnalysisDialog({
       <DialogActions
         sx={{
           padding: "0 24px 20px",
-          borderTop: "1px solid rgba(217, 119, 6, 0.08)",
+          borderTop: `1px solid ${EXPORT_DIALOG_COLORS.divider}`,
           pt: 2,
         }}
       >
-        <Button onClick={onClose} sx={{ color: "#6b7280", textTransform: "none" }}>
+        <Button
+          onClick={onClose}
+          sx={{ color: EXPORT_DIALOG_COLORS.cancel, textTransform: "none" }}
+        >
           Cancel
         </Button>
         <Button
@@ -167,10 +188,10 @@ export default function ExportAnalysisDialog({
             textTransform: "none",
             borderRadius: "10px",
             boxShadow: "none",
-            backgroundColor: "#f59e0b",
+            backgroundColor: EXPORT_DIALOG_COLORS.exportButton,
             color: "#ffffff",
             "&:hover": {
-              backgroundColor: "#ea580c",
+              backgroundColor: EXPORT_DIALOG_COLORS.exportButtonHover,
               boxShadow: "none",
             },
           }}

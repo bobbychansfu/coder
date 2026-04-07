@@ -26,6 +26,14 @@ import ScrollbarHider from "@/fe/shared/components/ui/ScrollbarHider";
 import subpageStyles from "@/fe/instructor/styles/InstructorSubpageHeader.module.css";
 import styles from "@/fe/instructor/styles/ResearchAnalyticsPage.module.css";
 
+const EXPORT_BUTTON_COLORS = {
+  border: "rgba(217, 119, 6, 0.22)",
+  background: "#fffaf3",
+  text: "#c2410c",
+  borderHover: "rgba(234, 88, 12, 0.35)",
+  backgroundHover: "#fff2e2",
+};
+
 export default function ResearchAnalyticsPage() {
   const router = useRouter();
   const copy = researchAnalyticsCopy;
@@ -82,12 +90,12 @@ export default function ResearchAnalyticsPage() {
                   sx={{
                     textTransform: "none",
                     borderRadius: "10px",
-                    borderColor: "rgba(217, 119, 6, 0.22)",
-                    backgroundColor: "#fffaf3",
-                    color: "#c2410c",
+                    borderColor: EXPORT_BUTTON_COLORS.border,
+                    backgroundColor: EXPORT_BUTTON_COLORS.background,
+                    color: EXPORT_BUTTON_COLORS.text,
                     "&:hover": {
-                      borderColor: "rgba(234, 88, 12, 0.35)",
-                      backgroundColor: "#fff2e2",
+                      borderColor: EXPORT_BUTTON_COLORS.borderHover,
+                      backgroundColor: EXPORT_BUTTON_COLORS.backgroundHover,
                     },
                   }}
                 >
@@ -108,7 +116,7 @@ export default function ResearchAnalyticsPage() {
 
           <Box className={styles.sectionBlock}>
             <ComparisonAnalyticsSection
-              title="Contest Comparison"
+              title={copy.contestComparisonTitle}
               leftLabel={comparisons.leftContestLabel}
               rightLabel={comparisons.rightContestLabel}
               rows={comparisons.contestComparisonRows}
@@ -118,7 +126,7 @@ export default function ResearchAnalyticsPage() {
 
           <Box className={styles.sectionBlock}>
             <ComparisonAnalyticsSection
-              title="Group Comparison"
+              title={copy.groupComparisonTitle}
               leftLabel={comparisons.leftGroupLabel}
               rightLabel={comparisons.rightGroupLabel}
               rows={comparisons.groupComparisonRows}
@@ -128,7 +136,7 @@ export default function ResearchAnalyticsPage() {
 
           <Box className={styles.sectionBlock}>
             <ComparisonAnalyticsSection
-              title="Student Comparison"
+              title={copy.studentComparisonTitle}
               leftLabel={comparisons.leftStudentLabel}
               rightLabel={comparisons.rightStudentLabel}
               rows={comparisons.studentComparisonRows}
@@ -138,7 +146,7 @@ export default function ResearchAnalyticsPage() {
 
           <Box className={styles.sectionBlock}>
             <SolveTimeDistributionCard
-              title="Gamification Statistics"
+              title={copy.gamificationStatisticsTitle}
               description=""
               xLabels={comparisons.activeGamificationTrend.xLabels}
               series={comparisons.activeGamificationTrend.series}
@@ -161,7 +169,7 @@ export default function ResearchAnalyticsPage() {
 
           <Box className={styles.sectionBlock}>
             <HintEngagementTimelineCard
-              title="AI Hint Statistics"
+              title={copy.aiHintStatisticsTitle}
               description=""
               yAxisLabel="Overall cohort metric"
               xLabels={comparisons.activeAiHintTrend.xLabels}
