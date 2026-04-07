@@ -9,9 +9,29 @@ export default function LogoutPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // TODO: Clear auth tokens, session, etc.
-    // For now, just redirect to login
-    router.push("/login");
+    let cancelled = false;
+
+    const logout = async () => {
+      try {
+        await fetch("/api/auth/logout", {
+          method: "POST",
+          credentials: "include",
+        });
+      } catch {
+        // Ignore logout transport failures and continue navigation.
+      } finally {
+        if (!cancelled) {
+          router.replace("/login");
+          router.refresh();
+        }
+      }
+    };
+
+    void logout();
+
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
   return (

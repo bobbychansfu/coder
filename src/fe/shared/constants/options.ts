@@ -72,6 +72,16 @@ export const SUBMISSION_STATUS_CONFIG = {
     color: "#e7000b",
     icon: CancelOutlinedIcon,
   },
+  partial: {
+    label: "Partial",
+    color: "#f59e0b",
+    icon: AccessTimeOutlinedIcon,
+  },
+  failed: {
+    label: "Failed",
+    color: "#e7000b",
+    icon: CancelOutlinedIcon,
+  },
   tle: {
     label: "Time Limit Exceeded",
     color: "#f54900",
