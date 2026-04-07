@@ -72,6 +72,11 @@
   background-color: #e55a28;
 }
 
+.button:disabled {
+  background-color: #f59e79;
+  cursor: wait;
+}
+
 .arrowIcon {
   font-size: 18px;
 }

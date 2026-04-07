@@ -179,6 +179,68 @@
   text-align: center;
 }
 
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.fieldInput {
+  height: 42px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0 12px;
+  font-size: 14px;
+  line-height: 20px;
+  color: #0a0a0a;
+  background: #ffffff;
+}
+
+.fieldInput:focus {
+  outline: 2px solid rgba(220, 38, 38, 0.18);
+  outline-offset: 1px;
+  border-color: #dc2626;
+}
+
+.secondaryLink {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 42px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 600;
+  background: #ffffff;
+}
+
+.inlineLink {
+  color: #b91c1c;
+  text-decoration: none;
+  font-weight: 600;
+}
+
 @media (max-width: 520px) {
   .brandTitle {
     font-size: 34px;
@@ -187,5 +249,9 @@
 
   .card {
     padding: 18px;
+  }
+
+  .formRow {
+    grid-template-columns: 1fr;
   }
 }

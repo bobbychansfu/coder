@@ -14,6 +14,7 @@ import PastContests from "@/fe/dashboard/components/PastContests";
 import UpcomingContests from "@/fe/dashboard/components/UpcomingContests";
 import ThisWeek from "@/fe/dashboard/components/ThisWeek";
 import RecentBadges from "@/fe/dashboard/components/RecentBadges";
+import { useTimedRouterRefresh } from "@/fe/shared/hooks/useTimedRouterRefresh";
 import {
   EMPTY_STUDENT_DASHBOARD_METADATA,
   useStudentDashboardMetadata,
@@ -31,6 +32,7 @@ type PendingAction = "register" | "enter";
 
 export default function DashboardPage({ contestSummary }: DashboardPageProps) {
   const router = useRouter();
+  useTimedRouterRefresh(true);
   const { metadata, isLoading, isError } = useStudentDashboardMetadata();
   const resolvedMetadata = metadata ?? EMPTY_STUDENT_DASHBOARD_METADATA;
   const alert = !isLoading ? contestSummary?.alert ?? null : null;
@@ -126,7 +128,7 @@ export default function DashboardPage({ contestSummary }: DashboardPageProps) {
             <ContestAlert
               title={alert.title}
               description={alert.description}
-              buttonLabel={alert.actionLabel}
+              actionLabel={alert.actionLabel}
               onJoin={() => openContestConfirmation(alert.contestId, "enter")}
             />
           )}

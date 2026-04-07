@@ -3,10 +3,10 @@ import ContestDetailPage from "@/fe/contests/page/ContestDetailPage";
 import { toContestDetail } from "@/fe/contests/services/contestAdapters";
 import {
   type BackendContestSummary,
-  getContestProblemStatus,
-  getStudentContestInfoForRoute,
+  type ContestProblemStatusResponse,
 } from "@/fe/contests/services/contestApi";
-import { can } from "@/lib/authz";
+import { can, normalizeRole } from "@/lib/authz";
+import { getEffectiveContestStatus } from "@/lib/contestStatus";
 import { dbHelpers } from "@/lib/db-helpers";
 import { getCurrentUser } from "@/lib/session";
 
@@ -21,7 +21,7 @@ function toBackendContestSummary(
     id: contest.id,
     slug: contest.slug,
     name: contest.name,
-    status: contest.status,
+    status: getEffectiveContestStatus(contest),
     startsAt: contest.startsAt.toISOString(),
     endsAt: contest.endsAt?.toISOString() ?? null,
     durationMinutes: contest.durationMinutes,
@@ -34,6 +34,33 @@ function isBackendContestSummary(
   contest: BackendContestSummary | NonNullable<Awaited<ReturnType<typeof dbHelpers.findContest>>>,
 ): contest is BackendContestSummary {
   return typeof contest.startsAt === "string";
+}
+
+async function getContestProblemStatusDirect(
+  computingId: string,
+  contestId: string,
+  role: string,
+): Promise<ContestProblemStatusResponse | null> {
+  const normalizedRole = normalizeRole(role);
+  const contest = normalizedRole && can(normalizedRole).canManageContest
+    ? await dbHelpers.findContestForViewer(contestId, computingId, role)
+    : await dbHelpers.findSpecificContestForUser(computingId, contestId, "contestant");
+
+  if (!contest || !contest.published || contest.status === "DRAFT") {
+    return null;
+  }
+
+  const [contestProblemsStatus, scoreboard] = await Promise.all([
+    dbHelpers.findContestsProblemsStatusForUser(computingId, contestId),
+    dbHelpers.findScoreboardRowsForContest(contestId, computingId),
+  ]);
+
+  return {
+    computingId,
+    contestProblemsStatus,
+    scoreboard,
+    role,
+  };
 }
 
 export const dynamicParams = true;
@@ -50,22 +77,25 @@ export default async function ContestDetailRoute({ params }: ContestDetailRouteP
   let contest = null;
 
   if (can(user.role).canManageContest) {
-    contest = await dbHelpers.findContest(contestId);
+    contest = await dbHelpers.findContestForViewer(contestId, user.computingId, user.role);
   } else {
-    const contestInfoResponse = await getStudentContestInfoForRoute(contestId, user.role);
-
-    if (!contestInfoResponse.ok || !contestInfoResponse.data) {
-      notFound();
-    }
-
-    contest = contestInfoResponse.data.contests.find((item) => item.id === contestId) ?? null;
+    const registeredContests = await dbHelpers.findContestsForUser(user.computingId, "contestant");
+    contest = registeredContests.find((item) => item.id === contestId) ?? null;
   }
 
   if (!contest) {
     notFound();
   }
 
-  const contestProblemStatusResponse = await getContestProblemStatus(contestId);
+  const contestProblemStatus = await getContestProblemStatusDirect(
+    user.computingId,
+    contestId,
+    user.role,
+  );
+  if (!contestProblemStatus) {
+    notFound();
+  }
+
   const normalizedContest = isBackendContestSummary(contest)
     ? contest
     : toBackendContestSummary(contest);
@@ -74,7 +104,7 @@ export default async function ContestDetailRoute({ params }: ContestDetailRouteP
     <ContestDetailPage
       contest={toContestDetail(
         normalizedContest,
-        contestProblemStatusResponse.ok ? contestProblemStatusResponse.data : null,
+        contestProblemStatus,
       )}
     />
   );

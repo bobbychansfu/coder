@@ -39,10 +39,13 @@ export async function handleUpdateProfile(request: NextRequest) {
     const updatedUser = await dbHelpers.findUserByComputingId(user.computingId);
 
     return NextResponse.json({ message: "Profile updated", user: updatedUser });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(error);
     return NextResponse.json(
-      { error: "Failed to update profile", details: error.message },
+      {
+        error: "Failed to update profile",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 400 }
     );
   }

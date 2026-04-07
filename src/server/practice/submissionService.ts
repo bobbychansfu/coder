@@ -221,6 +221,56 @@ export async function createPracticeSubmission(args: {
   return record;
 }
 
+export async function judgePracticeSubmissionEphemerally(args: {
+  problemId: string;
+  language: AppLanguage;
+  code: string;
+}): Promise<PracticeSubmissionPayload> {
+  const problem = await getPracticeProblemById(args.problemId);
+  if (!problem) {
+    throw new Error("Problem not found.");
+  }
+
+  const provider = getJudgingProvider();
+  const startedAt = Date.now();
+  const submissionId = `ephemeral-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
+  logInfo("ephemeral submission started", {
+    submissionId,
+    problemId: args.problemId,
+    language: args.language,
+  });
+
+  const result = await provider.judgeSubmission({
+    submissionId,
+    language: args.language === "cplusplus" ? "cpp" : args.language,
+    code: args.code,
+    problem,
+    visibleTests: buildVisibleTests(problem),
+  });
+
+  logInfo("ephemeral submission done", {
+    submissionId,
+    problemId: args.problemId,
+    language: args.language,
+    verdict: result.verdict,
+    score: result.score,
+    latencyMs: Date.now() - startedAt,
+  });
+
+  return {
+    submissionId,
+    status: "done",
+    score: result.score,
+    verdict: result.verdict,
+    feedback: result.feedback,
+    testcases: result.testcases,
+    judgedBy: provider.name,
+    updatedAt: new Date().toISOString(),
+    errorMessage: null,
+  };
+}
+
 async function runPracticeSubmissionJudging(args: {
   submissionId: string;
   problem: PracticeProblemRecord;

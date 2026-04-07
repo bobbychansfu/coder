@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/session";
 import {
   createPracticeSubmission,
   findDbUserIdByComputingId,
+  judgePracticeSubmissionEphemerally,
   parseSubmissionLanguage,
 } from "@/server/practice/submissionService";
 
@@ -14,13 +15,8 @@ export async function POST(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (user.role !== "student") {
+  if (user.role !== "student" && user.role !== "instructor") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
-  const dbUserId = await findDbUserIdByComputingId(user.computingId);
-  if (!dbUserId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   let body: unknown;
@@ -53,6 +49,24 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    if (user.role === "instructor") {
+      const payload = await judgePracticeSubmissionEphemerally({
+        problemId,
+        language,
+        code,
+      });
+
+      return NextResponse.json({
+        ...payload,
+        persisted: false,
+      });
+    }
+
+    const dbUserId = await findDbUserIdByComputingId(user.computingId);
+    if (!dbUserId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const submission = await createPracticeSubmission({
       userId: dbUserId,
       problemId,
@@ -63,6 +77,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       submissionId: submission.id,
       status: "queued",
+      persisted: true,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create submission";

@@ -139,12 +139,17 @@ test.describe("Practice — Python AI judging", () => {
 
     // ── Submission created ────────────────────────────────────────────────────
     const submitRequest = await submitRequestPromise;
-    const submitBody = (await submitRequest.response()?.then((r) => r.json())) as {
+    const submitResponse = await submitRequest.response();
+    expect(submitResponse).not.toBeNull();
+    if (!submitResponse) {
+      throw new Error("Submit request did not receive a response");
+    }
+    const submitBody = (await submitResponse.json()) as {
       submissionId?: string;
       status?: string;
-    } | null;
-    expect(submitBody?.submissionId).toBeTruthy();
-    const submissionId = submitBody!.submissionId!;
+    };
+    expect(submitBody.submissionId).toBeTruthy();
+    const submissionId = submitBody.submissionId!;
     console.log(`[python-e2e] submission created: ${submissionId}`);
 
     // ── SSE stream opened ─────────────────────────────────────────────────────

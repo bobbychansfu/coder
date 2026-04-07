@@ -39,10 +39,17 @@ const problemExampleSchema = z.object({
   explanation: z.string(),
 });
 
+const judgeProblemIdSchema = z
+  .string()
+  .trim()
+  .regex(/^\d+$/, "Judge problem id must be numeric.")
+  .or(z.literal(""));
+
 const problemMutationSchema = z.object({
   title: z.string().trim().min(1, "Problem title is required."),
   difficulty: difficultySchema,
   points: z.number().int().nonnegative(),
+  judgeProblemId: judgeProblemIdSchema.default(""),
   tags: z.array(z.string()).default([]),
   isDraft: z.boolean().default(false),
   source: problemSourceSchema.default("public"),
@@ -62,6 +69,7 @@ const problemPatchSchema = z
     title: z.string().trim().min(1, "Problem title is required.").optional(),
     difficulty: difficultySchema.optional(),
     points: z.number().int().nonnegative().optional(),
+    judgeProblemId: judgeProblemIdSchema.optional(),
     tags: z.array(z.string()).optional(),
     isDraft: z.boolean().optional(),
     source: problemSourceSchema.optional(),
@@ -194,6 +202,39 @@ async function ensureUniqueProblemCode(
 
     attempt += 1;
   }
+}
+
+async function ensureJudgeProblemIdAvailable(
+  ctx: Context,
+  judgeProblemId: string | undefined,
+  excludeProblemId?: string,
+) {
+  const normalizedJudgeProblemId = judgeProblemId?.trim();
+
+  if (!normalizedJudgeProblemId) {
+    return;
+  }
+
+  const existing = await ctx.prisma.problem.findFirst({
+    where: {
+      judgeProblemId: normalizedJudgeProblemId,
+      ...(excludeProblemId ? { id: { not: excludeProblemId } } : {}),
+    },
+    select: {
+      id: true,
+      code: true,
+      title: true,
+    },
+  });
+
+  if (!existing) {
+    return;
+  }
+
+  throw new TRPCError({
+    code: "BAD_REQUEST",
+    message: `Judge Problem ID ${normalizedJudgeProblemId} is already assigned to "${existing.title}" (${existing.code}). Edit that problem instead, or clear its Judge Problem ID first.`,
+  });
 }
 
 function normalizeDifficulty(value: z.infer<typeof difficultySchema>) {
@@ -480,6 +521,7 @@ export const problemAuthoringRouter = router({
         title: problem.title,
         difficulty: problem.difficulty.toLowerCase() as z.infer<typeof difficultySchema>,
         points: problem.points ?? 0,
+        judgeProblemId: problem.judgeProblemId ?? "",
         tags: problem.topics.map((topic) => topic.name),
         source: (problem.source === "CONTEST" ? "contest-only" : "public") as z.infer<typeof problemSourceSchema>,
         statement: problem.statement,
@@ -505,6 +547,7 @@ export const problemAuthoringRouter = router({
     .mutation(async ({ ctx, input }) => {
       const dbUser = await getAuthoringUserOrThrow(ctx);
       const code = await ensureUniqueProblemCode(ctx, input.title);
+      await ensureJudgeProblemIdAvailable(ctx, input.judgeProblemId);
       const tags = normalizeTags(input.tags);
       const starterCodeRows = buildStarterCodeRows(input.starterCodes);
       const primaryExample = getPrimaryExample(input.examples);
@@ -513,6 +556,7 @@ export const problemAuthoringRouter = router({
         data: {
           code,
           title: input.title.trim(),
+          judgeProblemId: input.judgeProblemId.trim() || null,
           statement: input.statement.trim(),
           inputFormat: input.inputFormat.trim(),
           outputFormat: input.outputFormat.trim(),
@@ -590,11 +634,19 @@ export const problemAuthoringRouter = router({
         throw new TRPCError({ code: "FORBIDDEN" });
       }
 
+      if (hasOwnKey(input.data, "judgeProblemId")) {
+        await ensureJudgeProblemIdAvailable(ctx, input.data.judgeProblemId, input.problemId);
+      }
+
       await ctx.prisma.$transaction(async (tx) => {
         const problemUpdateData: Prisma.ProblemUpdateInput = {};
 
         if (hasOwnKey(input.data, "title")) {
           problemUpdateData.title = input.data.title?.trim();
+        }
+
+        if (hasOwnKey(input.data, "judgeProblemId")) {
+          problemUpdateData.judgeProblemId = input.data.judgeProblemId?.trim() || null;
         }
 
         if (hasOwnKey(input.data, "statement")) {

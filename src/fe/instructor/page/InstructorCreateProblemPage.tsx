@@ -177,6 +177,7 @@ export default function InstructorCreateProblemPage() {
         title: problemQuery.data.title,
         difficulty: problemQuery.data.difficulty,
         points: String(problemQuery.data.points),
+        judgeProblemId: problemQuery.data.judgeProblemId,
         tags: problemQuery.data.tags,
         source: problemQuery.data.source,
       });
@@ -517,6 +518,7 @@ export default function InstructorCreateProblemPage() {
             title: metadataValues.title,
             difficulty: metadataValues.difficulty as "easy" | "medium" | "hard",
             points,
+            judgeProblemId: metadataValues.judgeProblemId,
             tags: metadataValues.tags,
             isDraft: false,
             source: metadataValues.source as "contest-only" | "public",
@@ -533,6 +535,7 @@ export default function InstructorCreateProblemPage() {
           title: metadataValues.title,
           difficulty: metadataValues.difficulty as "easy" | "medium" | "hard",
           points,
+          judgeProblemId: metadataValues.judgeProblemId,
           tags: metadataValues.tags,
           isDraft: false,
           source: metadataValues.source as "contest-only" | "public",
@@ -580,6 +583,7 @@ export default function InstructorCreateProblemPage() {
             title: metadataValues.title,
             difficulty: metadataValues.difficulty as "easy" | "medium" | "hard",
             points,
+            judgeProblemId: metadataValues.judgeProblemId,
             tags: metadataValues.tags,
             isDraft: true,
             source: metadataValues.source as "contest-only" | "public",
@@ -603,6 +607,7 @@ export default function InstructorCreateProblemPage() {
           title: metadataValues.title,
           difficulty: metadataValues.difficulty as "easy" | "medium" | "hard",
           points,
+          judgeProblemId: metadataValues.judgeProblemId,
           tags: metadataValues.tags,
           isDraft: true,
           source: metadataValues.source as "contest-only" | "public",
@@ -735,6 +740,23 @@ export default function InstructorCreateProblemPage() {
                           className={styles.inputField}
                         />
                       </Box>
+                    </Box>
+
+                    <Box className={styles.fieldBlock}>
+                      <Typography className={styles.fieldLabel}>Judge Problem ID</Typography>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        placeholder="e.g., 1036"
+                        value={metadataValues.judgeProblemId}
+                        onChange={(event) =>
+                          updateMetadataField(
+                            "judgeProblemId",
+                            event.target.value.replace(/[^\d]/g, ""),
+                          )
+                        }
+                        className={styles.inputField}
+                      />
                     </Box>
 
                     <Box className={styles.fieldBlock}>

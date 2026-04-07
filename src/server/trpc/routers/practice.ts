@@ -56,10 +56,24 @@ function formatTimeAgo(date: Date): string {
   return `${days} day${days !== 1 ? "s" : ""} ago`;
 }
 
-function mapRunVerdictToStatus(verdict: string): "accepted" | "wrong" | "tle" {
-  if (verdict === "Accepted") return "accepted";
-  if (verdict === "Time Limit Exceeded") return "tle";
-  return "wrong";
+function mapRunVerdictToStatus(
+  verdict: string,
+): "accepted" | "wrong" | "tle" | "partial" | "failed" | "runtime_error" {
+  switch (verdict.trim().toLowerCase()) {
+    case "accepted":
+      return "accepted";
+    case "time limit exceeded":
+      return "tle";
+    case "partial":
+      return "partial";
+    case "runtime error":
+      return "runtime_error";
+    case "failed":
+      return "failed";
+    case "wrong answer":
+    default:
+      return "wrong";
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -183,7 +197,7 @@ export const practiceRouter = router({
         ) as Partial<Record<(typeof APP_LANGUAGES)[number], string>>,
         submissions: [] as {
           id: string;
-          status: "accepted" | "wrong" | "tle";
+          status: "accepted" | "wrong" | "tle" | "partial" | "failed" | "runtime_error";
           language: string;
           runtime: string;
           memory: string;

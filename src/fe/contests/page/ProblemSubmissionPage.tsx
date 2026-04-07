@@ -44,7 +44,7 @@ type SupportedLanguage = SupportedCodeLanguage;
 const DEFAULT_LANGUAGE: SupportedLanguage = DEFAULT_CODE_LANGUAGE;
 const CONTEST_DRAFT_STORAGE_KEY_PREFIX = "contest-submission-draft:";
 const SUBMISSION_POLL_INTERVAL_MS = 1_500;
-const SUBMISSION_POLL_ATTEMPTS = 8;
+const SUBMISSION_POLL_ATTEMPTS = 40;
 
 interface RunResult {
   submissionId: string;
@@ -83,6 +83,14 @@ function formatVerdictLabel(verdict: string | null | undefined) {
     case "runtime_error":
     case "runtime error":
       return "Runtime Error";
+    case "system_error":
+    case "system error":
+    case "judge_error":
+    case "judge error":
+    case "ierr":
+    case "internal_error":
+    case "internal error":
+      return "System Error";
     case "compile_error":
     case "compile error":
       return "Compile Error";
@@ -227,7 +235,7 @@ function ProblemSubmissionPageContent({
     return null;
   };
 
-  const submitContestCode = async (mode: "run" | "submit") => {
+  const submitContestCode = async () => {
     if (!hasCode || !detail.problemId) {
       return;
     }
@@ -269,12 +277,9 @@ function ProblemSubmissionPageContent({
           submissionId: payload.sid,
           status: "done",
           verdict: finalVerdict,
-          feedback:
-            mode === "run"
-              ? payload.message
-              : navigator?.nextHref
-                ? `${payload.message} You can use the navigator to continue to the next problem.`
-                : payload.message,
+          feedback: navigator?.nextHref
+            ? `${payload.message} You can use the navigator to continue to the next problem.`
+            : payload.message,
           errorMessage: null,
           testcases: [],
         }),
@@ -394,8 +399,7 @@ function ProblemSubmissionPageContent({
                 [effectiveLanguage]: nextCode,
               }));
             }}
-            onSubmitCode={() => void submitContestCode("submit")}
-            onSecondaryAction={() => void submitContestCode("run")}
+            onSubmitCode={() => void submitContestCode()}
             footerContent={
               submissionsLockedReason ? (
                 <Box px="20px" pb="4px">
@@ -405,8 +409,6 @@ function ProblemSubmissionPageContent({
                 </Box>
               ) : undefined
             }
-            secondaryButtonDisabled={!hasCode || isJudging || !detail.problemId || submissionsLocked}
-            secondaryButtonLabel={submitState === "submitting" ? "Submitting..." : "Run Code"}
             submitButtonDisabled={!hasCode || isJudging || !detail.problemId || submissionsLocked}
             submitButtonLabel={submitState === "submitting" ? "Submitting..." : "Submit"}
             submitButtonStartIcon={<SendRoundedIcon fontSize="small" />}

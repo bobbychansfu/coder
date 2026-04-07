@@ -26,6 +26,7 @@ export default function ContestSummaryCard({
   actionDisabled = false,
 }: ContestSummaryCardProps) {
   const normalizedStatus = status.toLowerCase();
+  const actionAriaLabel = `${actionLabel} ${title}`;
   const statusClassName = normalizedStatus.includes("progress") || normalizedStatus.includes("active")
     ? styles.statusInProgress
     : normalizedStatus.includes("closed") || normalizedStatus.includes("ended")
@@ -48,7 +49,7 @@ export default function ContestSummaryCard({
       </div>
       <div className={styles.actionRow}>
         {actionKind === "link" && href ? (
-          <Link href={href} className={actionClassName}>
+          <Link href={href} className={actionClassName} aria-label={actionAriaLabel}>
             {actionLabel}
           </Link>
         ) : (
@@ -57,6 +58,7 @@ export default function ContestSummaryCard({
             className={actionClassName}
             onClick={onAction}
             disabled={actionDisabled}
+            aria-label={actionAriaLabel}
           >
             {actionLabel}
           </button>

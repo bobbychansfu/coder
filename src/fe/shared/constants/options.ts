@@ -17,9 +17,9 @@ export const DIFFICULTY_OPTIONS = [
 ];
 
 export const VISIBILITY_OPTIONS = [
-  { value: "contest-only", label: "contest-only" },
-  { value: "public", label: "public" },
-  { value: "draft", label: "draft" },
+  { value: "course-only", label: "Course Only" },
+  { value: "public", label: "Public" },
+  { value: "private", label: "Private" },
 ];
 
 export const PROBLEM_SOURCE_OPTIONS = [
@@ -72,6 +72,16 @@ export const SUBMISSION_STATUS_CONFIG = {
     color: "#e7000b",
     icon: CancelOutlinedIcon,
   },
+  partial: {
+    label: "Partial",
+    color: "#f59e0b",
+    icon: AccessTimeOutlinedIcon,
+  },
+  failed: {
+    label: "Failed",
+    color: "#e7000b",
+    icon: CancelOutlinedIcon,
+  },
   tle: {
     label: "Time Limit Exceeded",
     color: "#f54900",
@@ -79,6 +89,11 @@ export const SUBMISSION_STATUS_CONFIG = {
   },
   runtime_error: {
     label: "Runtime Error",
+    color: "#e7000b",
+    icon: CancelOutlinedIcon,
+  },
+  system_error: {
+    label: "System Error",
     color: "#e7000b",
     icon: CancelOutlinedIcon,
   },

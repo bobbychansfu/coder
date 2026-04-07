@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
 import { can } from "@/lib/authz";
+import { getEffectiveContestStatus, isJoinableContestStatus } from "@/lib/contestStatus";
 import { dbHelpers } from "@/lib/db-helpers";
 
 function isContestViewableByRegisteredUser(contest: { published: boolean; status: string }) {
@@ -9,7 +10,7 @@ function isContestViewableByRegisteredUser(contest: { published: boolean; status
 
 async function findContestForViewer(computingId: string, role: string, contestId: string) {
   if (can(role as "student" | "instructor" | "admin").canManageContest) {
-    return dbHelpers.findContest(contestId);
+    return dbHelpers.findContestForViewer(contestId, computingId, role);
   }
 
   return dbHelpers.findSpecificContestForUser(computingId, contestId, "contestant");
@@ -37,7 +38,7 @@ export async function handleRegisterContest(
         "contestant",
       );
 
-      if (!joinableContest) {
+      if (!joinableContest || !isJoinableContestStatus(getEffectiveContestStatus(joinableContest))) {
         return NextResponse.json({ error: "Contest is not open for registration" }, { status: 403 });
       }
     }
@@ -46,9 +47,10 @@ export async function handleRegisterContest(
     const registeredContests = await dbHelpers.findContestsForUser(computingId, "contestant");
 
     return NextResponse.json({ message: "Registered successfully", registeredContests });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(error);
-    return NextResponse.json({ error: "Internal server error", details: error.message }, { status: 500 });
+    const details = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: "Internal server error", details }, { status: 500 });
   }
 }
 
@@ -68,9 +70,10 @@ export async function handleUnregisterContest(
     const registeredContests = await dbHelpers.findContestsForUser(computingId, "contestant");
 
     return NextResponse.json({ message: "Unregistered successfully", registeredContests });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(error);
-    return NextResponse.json({ error: "Internal server error", details: error.message }, { status: 500 });
+    const details = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: "Internal server error", details }, { status: 500 });
   }
 }
 
@@ -89,9 +92,14 @@ export async function handleEnterContest(
     const contest = await dbHelpers.findSpecificContestForUser(computingId, cid, "contestant");
 
     if (contest) {
-      const now = new Date();
-      if (contest.startsAt > now) {
+      const effectiveStatus = getEffectiveContestStatus(contest);
+
+      if (effectiveStatus === "UPCOMING") {
         return NextResponse.json({ error: "Contest has not started yet" }, { status: 400 });
+      }
+
+      if (effectiveStatus === "ENDED") {
+        return NextResponse.json({ error: "Contest has ended" }, { status: 400 });
       }
 
       const contestProblems = await dbHelpers.getProblemsForContest(cid);
@@ -103,9 +111,10 @@ export async function handleEnterContest(
     } else {
       return NextResponse.json({ error: "Not registered for contest" }, { status: 403 });
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(error);
-    return NextResponse.json({ error: "Internal server error", details: error.message }, { status: 500 });
+    const details = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: "Internal server error", details }, { status: 500 });
   }
 }
 
@@ -143,9 +152,10 @@ export async function handleGetContestDetails(
     const scoreboard = await dbHelpers.findScoreboardRowsForContest(cid, computingId);
 
     return NextResponse.json({ computingId, contestProblemsStatus, scoreboard, role });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(error);
-    return NextResponse.json({ error: "Internal server error", details: error.message }, { status: 500 });
+    const details = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: "Internal server error", details }, { status: 500 });
   }
 }
 
@@ -171,8 +181,9 @@ export async function handleGetClosedContestInfo(
     }
 
     return NextResponse.json({ contest });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(error);
-    return NextResponse.json({ error: "Internal server error", details: error.message }, { status: 500 });
+    const details = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: "Internal server error", details }, { status: 500 });
   }
 }
