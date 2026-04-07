@@ -20,7 +20,7 @@ export default function ContestAlert({
   actionDisabled = false,
 }: ContestAlertProps) {
   return (
-    <div className={styles.alert}>
+    <div className={styles.alert} data-testid="contest-alert">
       <div className={styles.content}>
         <div className={styles.iconWrapper}>
           <EmojiEventsOutlinedIcon className={styles.icon} />
@@ -30,7 +30,12 @@ export default function ContestAlert({
           <div className={styles.description}>{description}</div>
         </div>
       </div>
-      <button className={styles.button} onClick={onJoin} disabled={actionDisabled}>
+      <button
+        className={styles.button}
+        onClick={onJoin}
+        disabled={actionDisabled}
+        data-testid="contest-alert-action"
+      >
         {actionLabel}
         <ArrowForwardIcon className={styles.arrowIcon} />
       </button>

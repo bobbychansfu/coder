@@ -1,7 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
 import ScrollbarHider from "@/fe/shared/components/ui/ScrollbarHider";
 import StatisticsSection from "@/fe/dashboard/components/StatisticsSection";
 import ContestAlert from "@/fe/dashboard/components/ContestAlert";
@@ -16,11 +21,14 @@ import {
 } from "@/fe/dashboard/services/dashboardMetadata";
 import type { StudentDashboardContestSummary } from "@/fe/dashboard/services/dashboardContests";
 import { buildContestRoute } from "@/fe/shared/constants/routes";
+import type { UpcomingContest } from "@/fe/shared/types/contest";
 import styles from "../styles/DashboardPage.module.css";
 
 interface DashboardPageProps {
   contestSummary?: StudentDashboardContestSummary;
 }
+
+type PendingAction = "register" | "enter";
 
 export default function DashboardPage({ contestSummary }: DashboardPageProps) {
   const router = useRouter();
@@ -28,41 +36,87 @@ export default function DashboardPage({ contestSummary }: DashboardPageProps) {
   const { metadata, isLoading, isError } = useStudentDashboardMetadata();
   const resolvedMetadata = metadata ?? EMPTY_STUDENT_DASHBOARD_METADATA;
   const alert = !isLoading ? contestSummary?.alert ?? null : null;
-  const [isJoiningContest, setIsJoiningContest] = useState(false);
-  const [joinError, setJoinError] = useState<string | null>(null);
+  const [pendingContestId, setPendingContestId] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleJoinContest = async () => {
-    if (!alert || isJoiningContest) {
+  const pendingContest = useMemo(() => {
+    if (!pendingContestId || !contestSummary) {
+      return null;
+    }
+
+    return (
+      contestSummary.recentContests.find((contest) => contest.id === pendingContestId) ??
+      contestSummary.upcomingContests.find((contest) => contest.id === pendingContestId) ??
+      (contestSummary.alert?.contestId === pendingContestId
+        ? {
+            id: contestSummary.alert.contestId,
+            title: contestSummary.alert.title,
+            actionLabel: contestSummary.alert.actionLabel,
+          }
+        : null)
+    );
+  }, [contestSummary, pendingContestId]);
+
+  function openContestConfirmation(contestId: string, action: PendingAction): void {
+    setPendingContestId(contestId);
+    setPendingAction(action);
+    setActionError(null);
+  }
+
+  function handlePastContestEntry(contestId: string): void {
+    openContestConfirmation(contestId, "enter");
+  }
+
+  function handleUpcomingContestAction(contest: UpcomingContest): void {
+    if (contest.actionLabel === "Registered") {
       return;
     }
 
-    setJoinError(null);
+    openContestConfirmation(contest.id, contest.actionLabel === "Register" ? "register" : "enter");
+  }
 
-    if (!alert.requiresRegistration) {
-      router.push(buildContestRoute(alert.contestId));
+  function closeContestConfirmation(): void {
+    setPendingContestId(null);
+    setPendingAction(null);
+    setActionError(null);
+  }
+
+  async function confirmContestEntry(): Promise<void> {
+    if (!pendingContestId || !pendingAction || isSubmitting) {
       return;
     }
 
-    setIsJoiningContest(true);
+    setActionError(null);
+    setIsSubmitting(true);
 
     try {
-      const response = await fetch(`/api/s/contest/register/${alert.contestId}`, {
-        method: "POST",
-        credentials: "include",
-      });
+      if (pendingAction === "register") {
+        const response = await fetch(`/api/s/contest/register/${pendingContestId}`, {
+          method: "POST",
+          credentials: "include",
+        });
 
-      if (!response.ok) {
-        throw new Error("Failed to join contest.");
+        if (!response.ok) {
+          const payload = await response.json().catch(() => null);
+          setActionError(payload?.error ?? "Unable to register for this contest right now.");
+          return;
+        }
+
+        setIsSubmitting(false);
+        closeContestConfirmation();
+        router.refresh();
+        return;
       }
 
-      router.push(buildContestRoute(alert.contestId));
-      router.refresh();
-    } catch {
-      setJoinError("Unable to join the current contest right now.");
+      setIsSubmitting(false);
+      closeContestConfirmation();
+      router.push(buildContestRoute(pendingContestId));
     } finally {
-      setIsJoiningContest(false);
+      setIsSubmitting(false);
     }
-  };
+  }
 
   return (
     <>
@@ -74,8 +128,7 @@ export default function DashboardPage({ contestSummary }: DashboardPageProps) {
               Unable to load student dashboard metadata right now.
             </div>
           )}
-
-          {joinError && <div className={styles.errorBanner}>{joinError}</div>}
+          {actionError ? <div className={styles.errorBanner}>{actionError}</div> : null}
 
           <StatisticsSection stats={resolvedMetadata.statistics} />
 
@@ -83,21 +136,53 @@ export default function DashboardPage({ contestSummary }: DashboardPageProps) {
             <ContestAlert
               title={alert.title}
               description={alert.description}
-              onJoin={handleJoinContest}
-              actionLabel={isJoiningContest ? "Joining..." : "Join Now"}
-              actionDisabled={isJoiningContest}
+              actionLabel={alert.actionLabel}
+              onJoin={() => openContestConfirmation(alert.contestId, "enter")}
             />
           )}
 
-          <PastContests contests={contestSummary?.recentContests ?? []} />
+          <PastContests
+            contests={contestSummary?.recentContests ?? []}
+            onContestEntry={handlePastContestEntry}
+          />
         </div>
 
         <div className={styles.sidebar}>
-          <UpcomingContests contests={contestSummary?.upcomingContests ?? []} />
+          <UpcomingContests
+            contests={contestSummary?.upcomingContests ?? []}
+            onContestAction={handleUpcomingContestAction}
+          />
           <ThisWeek stats={resolvedMetadata.weeklyStats} />
           <RecentBadges badges={resolvedMetadata.badges} />
         </div>
       </div>
+
+      <Dialog open={pendingContest !== null} onClose={closeContestConfirmation} maxWidth="xs" fullWidth>
+        <DialogTitle>Confirm Contest Entry</DialogTitle>
+        <DialogContent>
+          {pendingContest
+            ? pendingAction === "register"
+              ? `You're about to register for ${pendingContest.title}. Please confirm before continuing.`
+              : `You're about to ${
+                  pendingContest.actionLabel === "Attend Contest" ? "enter" : "rejoin"
+                } ${pendingContest.title}. Please confirm before continuing.`
+            : "Please confirm before continuing."}
+          {actionError ? <div className={styles.errorBanner}>{actionError}</div> : null}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeContestConfirmation} color="inherit" disabled={isSubmitting}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => void confirmContestEntry()}
+            variant="contained"
+            color="warning"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Confirming..." : "Confirm"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }
