@@ -11,6 +11,7 @@ interface UpcomingContestsProps {
   title?: string;
   emptyMessage?: string;
   hideCourseCode?: boolean;
+  onContestAction?: (contest: UpcomingContest) => void;
 }
 
 export default function UpcomingContests({
@@ -18,13 +19,14 @@ export default function UpcomingContests({
   title = "Upcoming Contests",
   emptyMessage = "No upcoming contests right now.",
   hideCourseCode = false,
+  onContestAction,
 }: UpcomingContestsProps) {
   return (
     <DashboardWidget title={title} icon={AccessTimeIcon}>
       <div className={styles.list}>
         {contests.length === 0 && <div className={styles.emptyState}>{emptyMessage}</div>}
         {contests.map((contest) => (
-          <article key={contest.id} className={styles.contestCard}>
+          <article key={contest.id} className={styles.contestCard} data-testid={`upcoming-contest-${contest.id}`}>
             <div className={styles.contestHeader}>
               <div className={styles.contestHeaderText}>
                 <div className={styles.contestTitle}>{contest.title}</div>
@@ -43,6 +45,20 @@ export default function UpcomingContests({
             </div>
             <div className={styles.date}>{contest.date}</div>
             <div className={styles.timeUntil}>{contest.timeUntil}</div>
+            {contest.actionLabel ? (
+              <div className={styles.actionRow}>
+                <button
+                  type="button"
+                  className={styles.actionButton}
+                  data-testid="upcoming-contest-action"
+                  disabled={contest.actionLabel === "Registered"}
+                  data-variant={contest.actionLabel === "Register" ? "secondary" : "primary"}
+                  onClick={() => onContestAction?.(contest)}
+                >
+                  {contest.actionLabel}
+                </button>
+              </div>
+            ) : null}
           </article>
         ))}
       </div>

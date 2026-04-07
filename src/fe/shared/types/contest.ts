@@ -22,12 +22,15 @@ export interface UpcomingContest {
   date: string;
   timeUntil: string;
   readinessState?: "Ready" | "Needs Attention" | "Blocked";
+  actionLabel?: "Register" | "Registered" | "Join Now";
 }
 
 export interface ContestAlert {
   title: string;
   description: string;
   isActive: boolean;
+  contestId?: string;
+  actionLabel?: "Join Now";
 }
 
 export interface ContestsResponse {

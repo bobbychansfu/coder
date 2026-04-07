@@ -8,15 +8,17 @@ interface ContestAlertProps {
   title: string;
   description: string;
   onJoin?: () => void;
+  buttonLabel?: string;
 }
 
 export default function ContestAlert({
   title,
   description,
   onJoin,
+  buttonLabel = "Join Now",
 }: ContestAlertProps) {
   return (
-    <div className={styles.alert}>
+    <div className={styles.alert} data-testid="contest-alert">
       <div className={styles.content}>
         <div className={styles.iconWrapper}>
           <EmojiEventsOutlinedIcon className={styles.icon} />
@@ -26,8 +28,8 @@ export default function ContestAlert({
           <div className={styles.description}>{description}</div>
         </div>
       </div>
-      <button className={styles.button} onClick={onJoin}>
-        Join Now
+      <button className={styles.button} onClick={onJoin} data-testid="contest-alert-action">
+        {buttonLabel}
         <ArrowForwardIcon className={styles.arrowIcon} />
       </button>
     </div>
