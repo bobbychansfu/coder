@@ -39,10 +39,13 @@ export async function handleRequestHint(request: NextRequest) {
 
     const data = await response.json();
     return NextResponse.json(data);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(error);
     return NextResponse.json(
-      { error: "Failed to generate hint", details: error.message },
+      {
+        error: "Failed to generate hint",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }
@@ -56,20 +59,22 @@ export async function handleGetHints(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const computing_id = searchParams.get("computing_id") || user.computingId;
     const pid = searchParams.get("pid");
 
     if (!pid) {
       return NextResponse.json({ error: "Missing pid" }, { status: 400 });
     }
 
-    const hints = await dbHelpers.getAllHints(computing_id, pid);
+    const hints = await dbHelpers.getAllHints(user.computingId, pid);
 
     return NextResponse.json({ hints });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(error);
     return NextResponse.json(
-      { error: "Could not retrieve hints", details: error.message },
+      {
+        error: "Could not retrieve hints",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }

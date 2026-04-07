@@ -1,8 +1,7 @@
-export default function SignupPage() {
-  return (
-    <div>
-      <h1>Signup Page</h1>
-      <p>TODO: Implement signup form</p>
-    </div>
-  );
+import SignupPage from "@/fe/auth/page/SignupPage";
+
+export default function SignupRoutePage() {
+  const showDevSignup = process.env.NEXT_PUBLIC_AUTH_MODE === "dev";
+
+  return <SignupPage showDevSignup={showDevSignup} />;
 }

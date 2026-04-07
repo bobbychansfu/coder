@@ -235,7 +235,7 @@ function ProblemSubmissionPageContent({
     return null;
   };
 
-  const submitContestCode = async (mode: "run" | "submit") => {
+  const submitContestCode = async () => {
     if (!hasCode || !detail.problemId) {
       return;
     }
@@ -277,12 +277,9 @@ function ProblemSubmissionPageContent({
           submissionId: payload.sid,
           status: "done",
           verdict: finalVerdict,
-          feedback:
-            mode === "run"
-              ? payload.message
-              : navigator?.nextHref
-                ? `${payload.message} You can use the navigator to continue to the next problem.`
-                : payload.message,
+          feedback: navigator?.nextHref
+            ? `${payload.message} You can use the navigator to continue to the next problem.`
+            : payload.message,
           errorMessage: null,
           testcases: [],
         }),
@@ -402,8 +399,7 @@ function ProblemSubmissionPageContent({
                 [effectiveLanguage]: nextCode,
               }));
             }}
-            onSubmitCode={() => void submitContestCode("submit")}
-            onSecondaryAction={() => void submitContestCode("run")}
+            onSubmitCode={() => void submitContestCode()}
             footerContent={
               submissionsLockedReason ? (
                 <Box px="20px" pb="4px">
@@ -413,8 +409,6 @@ function ProblemSubmissionPageContent({
                 </Box>
               ) : undefined
             }
-            secondaryButtonDisabled={!hasCode || isJudging || !detail.problemId || submissionsLocked}
-            secondaryButtonLabel={submitState === "submitting" ? "Submitting..." : "Run Code"}
             submitButtonDisabled={!hasCode || isJudging || !detail.problemId || submissionsLocked}
             submitButtonLabel={submitState === "submitting" ? "Submitting..." : "Submit"}
             submitButtonStartIcon={<SendRoundedIcon fontSize="small" />}

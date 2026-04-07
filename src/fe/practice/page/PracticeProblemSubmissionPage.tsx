@@ -23,6 +23,7 @@ import styles from "@/fe/contests/styles/ProblemSubmissionPage.module.css";
 
 interface PracticeProblemSubmissionPageProps {
   problemCode: string;
+  persistSubmissions?: boolean;
 }
 
 type SupportedLanguage = SupportedCodeLanguage;
@@ -84,12 +85,20 @@ function buildRunResult(input: {
 
 export default function PracticeProblemSubmissionPage({
   problemCode,
+  persistSubmissions = true,
 }: PracticeProblemSubmissionPageProps) {
-  return <PracticeProblemSubmissionPageContent key={problemCode} problemCode={problemCode} />;
+  return (
+    <PracticeProblemSubmissionPageContent
+      key={problemCode}
+      problemCode={problemCode}
+      persistSubmissions={persistSubmissions}
+    />
+  );
 }
 
 function PracticeProblemSubmissionPageContent({
   problemCode,
+  persistSubmissions = true,
 }: PracticeProblemSubmissionPageProps) {
   const router = useRouter();
   const [tab, setTab] = useState("description");
@@ -113,11 +122,11 @@ function PracticeProblemSubmissionPageContent({
 
   const { data: runHistory, refetch: refetchHistory } = trpc.practice.getRunHistory.useQuery(
     { problemCode },
-    { enabled: !!detail },
+    { enabled: !!detail && persistSubmissions },
   );
   const { data: latestRunRecord } = trpc.practice.getLatestRunRecord.useQuery(
     { problemCode },
-    { enabled: !!detail, retry: false },
+    { enabled: !!detail && persistSubmissions, retry: false },
   );
 
   const { mutateAsync: openSessionMutateAsync } = trpc.practiceExecution.openSession.useMutation();
@@ -242,13 +251,17 @@ function PracticeProblemSubmissionPageContent({
   }, [openSessionMutateAsync, problemCode, sessionInfo]);
 
   useEffect(() => {
+    if (!persistSubmissions) {
+      return;
+    }
+
     if (sessionOpened.current || pendingSessionRequest.current) {
       return;
     }
 
     sessionOpened.current = true;
     void ensureSessionInfo();
-  }, [ensureSessionInfo]);
+  }, [ensureSessionInfo, persistSubmissions]);
 
   useEffect(() => () => closeSubmissionStream(), [closeSubmissionStream]);
 
@@ -284,6 +297,7 @@ function PracticeProblemSubmissionPageContent({
 
   useEffect(() => {
     if (
+      !persistSubmissions ||
       !isDraftStorageReady ||
       hasPersistedDraft ||
       !latestRunRecord ||
@@ -320,18 +334,23 @@ function PracticeProblemSubmissionPageContent({
     isDraftStorageReady,
     latestRunRecord,
     openSubmissionStream,
+    persistSubmissions,
     runResult,
   ]);
 
   const handleSubmitCode = async () => {
-    if (!hasCode) return;
+    if (!hasCode || !detail) return;
 
-    const currentSession = await ensureSessionInfo();
+    const problemId = persistSubmissions
+      ? ((await ensureSessionInfo())?.problemId ?? detail.id)
+      : detail.id;
 
-    if (!currentSession) return;
+    if (!problemId) return;
 
     setHasRun(true);
-    setTab("submissions");
+    if (persistSubmissions) {
+      setTab("submissions");
+    }
     setSubmitState("submitting");
     setRunResult(null);
 
@@ -341,19 +360,35 @@ function PracticeProblemSubmissionPageContent({
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          problemId: currentSession.problemId,
+          problemId,
           language: language === "cplusplus" ? "cpp" : language,
           code,
         }),
       });
 
       const payload = (await response.json()) as
-        | { submissionId: string; status: "queued" }
+        | ({ submissionId: string; status: "queued"; persisted?: true })
+        | (PracticeSubmissionPayload & { persisted: false })
         | { error?: string };
 
       if (!response.ok || !("submissionId" in payload)) {
         const errorMessage = "error" in payload ? payload.error : undefined;
         throw new Error(errorMessage ?? "Failed to create submission.");
+      }
+
+      if ("persisted" in payload && payload.persisted === false) {
+        setSubmitState(payload.status);
+        setRunResult(
+          buildRunResult({
+            submissionId: payload.submissionId,
+            status: payload.status,
+            verdict: payload.verdict,
+            feedback: payload.feedback,
+            errorMessage: payload.errorMessage,
+            testcases: payload.testcases,
+          }),
+        );
+        return;
       }
 
       setSubmitState("queued");
@@ -400,16 +435,25 @@ function PracticeProblemSubmissionPageContent({
   }
 
   const detailWithHistory = { ...detail, submissions: runHistory ?? [] };
+  const persistenceNote = !persistSubmissions ? (
+    <Box px="20px" pb="4px">
+      <Typography variant="body2" color="text.secondary">
+        Instructor AI reviews are temporary and are not saved to submission history.
+      </Typography>
+    </Box>
+  ) : undefined;
 
   const outputSection = hasRun ? (
     <div className={styles.outputSection}>
-      <Typography className={styles.outputTitle}>Output</Typography>
+      <Typography className={styles.outputTitle}>AI Feedback</Typography>
       <div className={styles.outputBlock}>
         {isJudging || displayedRunResult?.status === "queued" || displayedRunResult?.status === "running" ? (
           <Box display="flex" alignItems="center" gap="10px">
             <CircularProgress size={14} sx={{ color: "#f3f4f6" }} />
             <span className={styles.outputText}>
-              {submitState === "queued" ? "Queued for Gemini judging..." : "Judging your code..."}
+              {submitState === "queued"
+                ? "Queued for AI review..."
+                : "Reviewing your code with AI..."}
             </span>
           </Box>
         ) : (
@@ -418,7 +462,7 @@ function PracticeProblemSubmissionPageContent({
               {displayedRunResult?.feedback ??
                 displayedRunResult?.errorMessage ??
                 displayedRunResult?.verdict ??
-                "Code executed (no output)"}
+                "No AI feedback returned."}
             </span>
             {displayedRunResult && displayedRunResult.testcases.length > 0 ? (
               <Box display="flex" flexDirection="column" gap="6px">
@@ -471,6 +515,7 @@ function PracticeProblemSubmissionPageContent({
               }))
             }
             onSubmitCode={handleSubmitCode}
+            footerContent={persistenceNote}
             submitButtonDisabled={!hasCode || isJudging}
             submitButtonLabel={isSubmitting ? "Submitting..." : isJudging ? "Judging..." : "Submit"}
           />
