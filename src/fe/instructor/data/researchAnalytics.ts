@@ -266,7 +266,7 @@ export const consentOptions: FilterOption[] = [
 export const researchAnalyticsCopy: ResearchAnalyticsCopy = {
   backButtonLabel: "Back",
   pageTitle: "Research Analytics Dashboard",
-  pageSubtitle: "A/B testing platform for hint timing systems in competitive programming",
+  pageSubtitle: "",
   exportDataLabel: "Export Data",
   researchFiltersTitle: "Research Filters",
   filterContestLabel: "Contest",
