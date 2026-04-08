@@ -1,32 +1,355 @@
 # Spring 2026 Platform Research and System Guide
 
-Term: Spring 2026  
-Prepared for project continuity, technical reference, and supervisor review
+Term: Spring 2026
+Author: Shilin Mao (Sam)
 
 ---
 
-## Project Scope
+## Personal Work Overview
 
-This document explains the major Spring 2026 workstreams in this repository at the level of system behavior, implementation structure, and design rationale. It focuses on four connected areas:
+The Spring 2026 work summarized in this guide focused on the following areas:
 
-- gamification research and the product ideas derived from that research
-- the role-specific dashboard system
-- the instructor analysis page and its data pipeline
-- the removal of the `TA` role from the active application flow
-
-The goal is not to list completed tasks. The goal is to explain how these parts of the system work, why they were built the way they were, and where the important code paths live.
-
-Related repository documentation:
-
-- `README.md`
-- `docs/frontend.md`
-- `docs/backend.md`
-- `docs/workflow.md`
-- `docs/system design/analytics section.md`
+- gamification research
+- how participation can be measured
+- how participation can be increased
+- how gamification ideas can be applied to this platform
+- the advantages and limitations of AI in this educational context
+- the student dashboard
+- the instructor dashboard
+- the admin dashboard
+- the instructor analysis page
+- the instructor analysis data pipeline
+- the instructor analysis export workflow
 
 ---
 
-## 1. Platform Context and Role Model
+## 1. Gamification Research and Product Implications
+
+The semester began with literature review rather than immediate implementation. The purpose of this phase was to determine which gamification mechanisms were educationally useful, which ones were risky, and which signals were realistic to operationalize in the platform.
+
+The notes collected in `Gamification.pdf` point toward a consistent design principle:
+
+**engagement signals are useful, but they should not be reduced to shallow competition or decorative reward mechanics.**
+
+### 1.1 Competition and rank
+
+**Paper:** Sailer, M., & Homner, L. (2020). *The gamification of learning: A meta-analysis*. *Educational Psychology Review, 32*(1), 77-112.
+
+**Key idea recorded in the notes:** rank / competition
+
+**Observed advantages:**
+
+- can increase engagement
+- can increase participation
+
+**Observed disadvantages:**
+
+- can reduce intrinsic motivation for some learners
+- can create negative pressure
+
+**Design implication for this project:**
+
+Rank is useful as one signal, but should not be the only organizing principle in a student-facing experience. This directly supports the decision to use dashboards that include progress, activity, badges, weekly statistics, and contest state rather than only global rank.
+
+### 1.2 Leaderboards as visibility tools
+
+**Paper:** Ding, L., Er, E., & Orey, M. (2018). *An exploratory study of student engagement in gamified online discussions*. *Computers & Education, 120*, 213-226. https://doi.org/10.1016/j.compedu.2018.02.007
+
+**Key idea recorded in the notes:** leaderboards
+
+**Observed advantages:**
+
+- increase awareness of participation level
+- encourage repeated engagement
+- are checked frequently by students
+
+**Observed disadvantages:**
+
+- may create pressure for lower-ranked students
+- may reduce participation if students feel permanently behind
+
+**Design implication for this project:**
+
+Leaderboard-style feedback is helpful, but must be balanced by other feedback channels. This reinforced the choice to build dashboard metadata around multiple signals instead of only ranking.
+
+### 1.3 Simple engagement metrics such as number of active days
+
+**Paper:** Buckley, P., & Doyle, E. (2016). *Gamification and student motivation*. *Interactive Learning Environments, 24*(6), 1162-1175. https://doi.org/10.1080/10494820.2014.964263
+
+**Key idea recorded in the notes:** number of days
+
+**Observed advantages:**
+
+- easy to implement
+- cheap to compute
+
+**Observed disadvantages:**
+
+- too simple to capture real effort
+- can confuse signal with noise
+
+**Design implication for this project:**
+
+Simple indicators such as active days, login streaks, and weekly counts are good dashboard components, but they should be treated as lightweight engagement signals rather than direct proxies for learning quality.
+
+### 1.4 Leaderboards and badges inside a mobile learning system
+
+**Paper:** Su, C.-H., & Cheng, C.-H. (2015). *A mobile gamification learning system for improving the learning motivation and achievements*. *Journal of Computer Assisted Learning, 31*(3), 268-286. https://doi.org/10.1111/jcal.12088
+
+**Key ideas recorded in the notes:**
+
+- leaderboard (ranking by performance)
+- badges
+
+**Observed advantages of leaderboard-like ranking:**
+
+- easy to implement with sorting
+- makes progress visible
+
+**Observed disadvantages of leaderboard-like ranking:**
+
+- effect is not isolated from other gamification features
+- can discourage lower-ranked users
+
+**Observed advantages of badges:**
+
+- increase short-term motivation
+
+**Observed disadvantages of badges:**
+
+- need careful reward design
+
+**Design implication for this project:**
+
+Badges are appropriate when framed as progress and recognition, not as superficial decoration. This supports the existence of badges on the student dashboard, but also suggests they should be combined with meaningful context such as recent activity and participation.
+
+### 1.5 Task-based challenges
+
+**Paper:** Barata, G., Gama, S., Jorge, J., & Gonçalves, D. J. (2013). *Improving participation and learning with gamification*. In *Proceedings of the First International Conference on Gameful Design, Research, and Applications (Gamification ’13)* (pp. 10-17). ACM. https://doi.org/10.1145/2583008.2583010
+
+**Key idea recorded in the notes:** challenges / task-based gamification
+
+**Observed advantages:**
+
+- directly drives participation
+
+**Observed disadvantages:**
+
+- needs careful task design
+- too many challenges can increase workload
+
+**Design implication for this project:**
+
+Structured participation prompts are promising, but should not overload users. This supports limited, high-signal dashboard prompts rather than constant task pressure.
+
+### 1.6 Social interaction and error tolerance
+
+**Paper:** Simões, J., Díaz Redondo, R., & Fernández Vilas, A. (2013). *A social gamification framework for a K-6 learning platform*. *Computers in Human Behavior, 29*(2), 345-353. https://doi.org/10.1016/j.chb.2012.06.007
+
+**Key ideas recorded in the notes:**
+
+- social interaction as participation
+- no hard penalty / error tolerance
+
+**Observed advantages of social interaction:**
+
+- encourages activity on the platform
+
+**Observed disadvantages of social interaction:**
+
+- social activity is not the same thing as learning
+- hard to compare fairly
+
+**Observed advantages of error tolerance:**
+
+- reduces fear of participation
+
+**Observed disadvantages of error tolerance:**
+
+- needs anti-abuse rules
+- difficult to rank fairly
+
+**Design implication for this project:**
+
+Participation should be encouraged without over-penalizing failure. This supports activity-based summary signals and motivates building learning systems that interpret failed attempts as part of a process, not only as negative outcomes.
+
+### 1.7 Artificial intelligence inside e-learning systems
+
+**Paper:** Urh, M., Vukovic, G., Jereb, E., & Pintar, R. (2015). *The model for introduction of gamification into e-learning in higher education*. *Procedia - Social and Behavioral Sciences, 197*, 388-397. https://doi.org/10.1016/j.sbspro.2015.07.154
+
+**Key idea recorded in the notes:** artificial intelligence
+
+**Observed advantages:**
+
+- strong support for future AI features
+
+**Observed disadvantages:**
+
+- full implementation is complex
+
+**Design implication for this project:**
+
+AI support should be treated as both a user-facing feature and an analytics opportunity. This is directly related to the instructor analysis page, which tracks hint-related behavior and supports interpretation of AI-assisted learning patterns.
+
+### 1.8 Longitudinal, real-world AI study in CS education
+
+**Paper:** Lyu, W., Wang, Y., Chung, T. (Rachel), Sun, Y., & Zhang, Y. (2024). *Evaluating the effectiveness of LLMs in introductory computer science education: A semester-long field study*.
+
+**Key ideas recorded in the notes:**
+
+- longitudinal field study
+- prompt quality correlated with response effectiveness
+
+**Observed advantages:**
+
+- strong external validity
+- real classroom duration
+
+**Observed disadvantages:**
+
+- engagement signals in real courses can be noisy
+- prompt quality is hard to operationalize
+- correlation alone does not prescribe a best prompting strategy
+
+**Design implication for this project:**
+
+AI features in an educational coding platform should not be evaluated only through short demos or isolated sessions. They should be measured over time, with attention to hint usage, prompt behavior, contest timing, and student-level differences. That logic strongly supports the existence of an instructor analysis system.
+
+### 1.9 Research-to-product translation
+
+Taken together, the literature supports the following product decisions:
+
+- student-facing feedback should combine progress, activity, and achievement, not only competition
+- instructor-facing views should focus on interpretable summaries and behavioral patterns
+- AI hint usage should be observable and analyzable
+- educational dashboards should support motivation without over-relying on punitive or purely competitive mechanics
+
+Those conclusions directly shaped the dashboard system and the instructor analysis work described below.
+
+---
+
+## 2. Applying the Research to the Platform
+
+The research findings in the previous section were used as design constraints for the platform rather than being treated as background reading only. The main translation from research into product design was to avoid treating engagement as a single number or a single feature. Instead, the platform uses several complementary signals and surfaces.
+
+### 2.1 Participation is represented through multiple dashboard signals
+
+The literature review suggested that participation cannot be reduced to one metric such as rank or active days. That idea was applied by building a student-facing dashboard that combines several kinds of personal signals at the same time.
+
+Examples currently reflected in the student dashboard include:
+
+- **Total Solved** as a direct learning-progress signal
+- **Participation** as a contest and submission activity signal
+- **Total Score** as a cumulative performance signal
+- **Global Rank** as a competition-related signal
+- **active days in 7d** as a lightweight recent-engagement signal
+- **login streak** as a consistency signal
+- **weekly stats** such as problems solved, contests participated, score earned, and time spent
+- **badges** as a compact achievement signal
+
+Taken together, these choices apply the research finding that participation is multi-dimensional. The dashboard does not assume that one number is enough to explain how engaged a student is.
+
+### 2.2 Competition is used, but it is not the only motivational structure
+
+The papers on rank and leaderboards suggested that competition can help increase engagement, but can also create pressure, especially for lower-ranked students. That finding was applied by allowing leaderboard-style signals to appear in the platform, while preventing them from becoming the only organizing principle of the student experience.
+
+Examples of this design choice include:
+
+- showing **Global Rank** and **Total Score** as only part of the student summary
+- combining rank with **progress-oriented** information such as solved problems and recent activity
+- combining rank with **achievement-oriented** information such as badges
+- using dashboard cards that balance competition, consistency, and participation
+
+This means the platform still uses competition as a motivational tool, but it is embedded inside a broader progress model rather than standing alone.
+
+### 2.3 Gamification ideas were applied through badges, progress summaries, and next-step guidance
+
+The research suggested that badges, challenges, and visible progress can support motivation when they are used carefully. That was applied to the platform in a form that is lightweight and integrated into the dashboard rather than presented as a separate game layer.
+
+The most visible applications are:
+
+- **badges** shown on the student dashboard as short, recognizable achievement markers
+- **weekly summaries** that make progress visible over a recent time window
+- **score and solved counts** that show accumulated effort and success
+- **contest action states** such as registered, joinable, or upcoming, which turn the dashboard into a guided action surface
+
+In other words, the platform does not gamify by adding decorative effects. It gamifies by turning progress, participation, and achievement into visible structures that encourage continued use.
+
+### 2.4 Participation is increased through guidance, not only rewards
+
+The research also suggested that engagement improves when users are guided toward meaningful next steps. That finding was applied especially strongly in the dashboard work.
+
+Examples include:
+
+- the student dashboard is designed to answer what should be done next
+- contest states are made explicit through `Register`, `Registered`, and `Join Now`
+- active-contest alerts are used to draw attention to relevant ongoing activity
+- the dashboard contest confirmation flow adds a deliberate step before entry or registration
+
+This is an important product application of the research: participation is not increased only through points or rankings, but also through clearer workflow guidance.
+
+### 2.5 Role-specific dashboards are also a research application
+
+The research suggested that the same engagement data should not be shown in the same form to every audience. That idea was applied by separating the platform into role-specific dashboards.
+
+This led to:
+
+- a **student dashboard** centered on personal performance, personal participation, and immediate next actions
+- an **instructor dashboard** centered on course-level and contest-level oversight
+- an **admin dashboard** centered on platform health, operations, and activity
+
+This separation is part of the research translation, because it treats engagement and performance as context-dependent rather than universally displayed.
+
+### 2.6 AI is treated as both a platform feature and a research variable
+
+The AI-related papers suggested that AI support should not only be added as a convenience feature. It should also be measurable. That idea was applied by connecting hint-related behavior to the instructor analysis system.
+
+This means AI is reflected in the platform in two ways:
+
+- as a student-facing feature through AI-enabled contest structures and hint interactions
+- as an instructor-facing analytic object through metrics that describe hint timing and post-hint outcomes
+
+This is an important step beyond simply adding an AI button. It allows the platform to study how AI-related interactions affect learning behavior.
+
+### 2.7 The instructor analysis page is the strongest research-to-product translation
+
+The clearest implementation of the research appears in the instructor analysis page. The literature suggested a need for:
+
+- comparison across conditions or groups
+- student-level behavioral metrics
+- timing-aware interpretation of intervention effects
+- structured export for later review and analysis
+
+Those needs were translated into the current analysis system through:
+
+- **contest comparison**
+- **group comparison**
+- **student comparison**
+- **gamification statistics**
+- **AI hint statistics**
+- **export in CSV, JSON, and PDF**
+
+The metric set also reflects the research orientation of the page. For each contest, the page includes:
+
+- Solve rate
+- Mean solve time
+- Median solve time
+- Attempts to solve
+
+For each problem/student view, the page includes:
+
+- Time to first submission
+- Time to first correct submission
+- Post-hint solve probability
+- Attempts before hint
+- Attempts after hint
+- Time to solve after hint
+
+This is the part of the platform where the research most directly becomes a concrete interface.
+
+---
+
+## 3. Platform Context and Role Model
 
 The platform serves three different audiences with different first-screen needs:
 
@@ -49,11 +372,13 @@ Each role needs different information immediately:
 
 ### Student
 
+#### Personal performance and clear next-step guidance
+
 Student users need:
 
-- personal contest access
-- recent progress
-- activity and engagement signals
+- personal contest data such as score, rank, and contests already joined
+- recent progress tied to the student’s own activity
+- activity and engagement signals connected to the student’s own behavior
 - achievements and badges
 - a clear answer to “what should be done next”
 
@@ -93,214 +418,9 @@ This is an important architectural decision because role separation happens at t
 
 ---
 
-## 2. Gamification Research and Product Implications
+## 4. Student Dashboard
 
-The semester began with literature review rather than immediate implementation. The purpose of this phase was to determine which gamification mechanisms were educationally useful, which ones were risky, and which signals were realistic to operationalize in the platform.
-
-The notes collected in `Gamification.pdf` point toward a consistent design principle:
-
-**engagement signals are useful, but they should not be reduced to shallow competition or decorative reward mechanics.**
-
-### 2.1 Competition and rank
-
-**Paper:** Sailer, M., & Homner, L. (2020). *The gamification of learning: A meta-analysis*. *Educational Psychology Review, 32*(1), 77-112.
-
-**Key idea recorded in the notes:** rank / competition
-
-**Observed advantages:**
-
-- can increase engagement
-- can increase participation
-
-**Observed disadvantages:**
-
-- can reduce intrinsic motivation for some learners
-- can create negative pressure
-
-**Design implication for this project:**
-
-Rank is useful as one signal, but should not be the only organizing principle in a student-facing experience. This directly supports the decision to use dashboards that include progress, activity, badges, weekly statistics, and contest state rather than only global rank.
-
-### 2.2 Leaderboards as visibility tools
-
-**Paper:** Ding, L., Er, E., & Orey, M. (2018). *An exploratory study of student engagement in gamified online discussions*. *Computers & Education, 120*, 213-226. https://doi.org/10.1016/j.compedu.2018.02.007
-
-**Key idea recorded in the notes:** leaderboards
-
-**Observed advantages:**
-
-- increase awareness of participation level
-- encourage repeated engagement
-- are checked frequently by students
-
-**Observed disadvantages:**
-
-- may create pressure for lower-ranked students
-- may reduce participation if students feel permanently behind
-
-**Design implication for this project:**
-
-Leaderboard-style feedback is helpful, but must be balanced by other feedback channels. This reinforced the choice to build dashboard metadata around multiple signals instead of only ranking.
-
-### 2.3 Simple engagement metrics such as number of active days
-
-**Paper:** Buckley, P., & Doyle, E. (2016). *Gamification and student motivation*. *Interactive Learning Environments, 24*(6), 1162-1175. https://doi.org/10.1080/10494820.2014.964263
-
-**Key idea recorded in the notes:** number of days
-
-**Observed advantages:**
-
-- easy to implement
-- cheap to compute
-
-**Observed disadvantages:**
-
-- too simple to capture real effort
-- can confuse signal with noise
-
-**Design implication for this project:**
-
-Simple indicators such as active days, login streaks, and weekly counts are good dashboard components, but they should be treated as lightweight engagement signals rather than direct proxies for learning quality.
-
-### 2.4 Leaderboards and badges inside a mobile learning system
-
-**Paper:** Su, C.-H., & Cheng, C.-H. (2015). *A mobile gamification learning system for improving the learning motivation and achievements*. *Journal of Computer Assisted Learning, 31*(3), 268-286. https://doi.org/10.1111/jcal.12088
-
-**Key ideas recorded in the notes:**
-
-- leaderboard (ranking by performance)
-- badges
-
-**Observed advantages of leaderboard-like ranking:**
-
-- easy to implement with sorting
-- makes progress visible
-
-**Observed disadvantages of leaderboard-like ranking:**
-
-- effect is not isolated from other gamification features
-- can discourage lower-ranked users
-
-**Observed advantages of badges:**
-
-- increase short-term motivation
-
-**Observed disadvantages of badges:**
-
-- need careful reward design
-
-**Design implication for this project:**
-
-Badges are appropriate when framed as progress and recognition, not as superficial decoration. This supports the existence of badges on the student dashboard, but also suggests they should be combined with meaningful context such as recent activity and participation.
-
-### 2.5 Task-based challenges
-
-**Paper:** Barata, G., Gama, S., Jorge, J., & Gonçalves, D. J. (2013). *Improving participation and learning with gamification*. In *Proceedings of the First International Conference on Gameful Design, Research, and Applications (Gamification ’13)* (pp. 10-17). ACM. https://doi.org/10.1145/2583008.2583010
-
-**Key idea recorded in the notes:** challenges / task-based gamification
-
-**Observed advantages:**
-
-- directly drives participation
-
-**Observed disadvantages:**
-
-- needs careful task design
-- too many challenges can increase workload
-
-**Design implication for this project:**
-
-Structured participation prompts are promising, but should not overload users. This supports limited, high-signal dashboard prompts rather than constant task pressure.
-
-### 2.6 Social interaction and error tolerance
-
-**Paper:** Simões, J., Díaz Redondo, R., & Fernández Vilas, A. (2013). *A social gamification framework for a K-6 learning platform*. *Computers in Human Behavior, 29*(2), 345-353. https://doi.org/10.1016/j.chb.2012.06.007
-
-**Key ideas recorded in the notes:**
-
-- social interaction as participation
-- no hard penalty / error tolerance
-
-**Observed advantages of social interaction:**
-
-- encourages activity on the platform
-
-**Observed disadvantages of social interaction:**
-
-- social activity is not the same thing as learning
-- hard to compare fairly
-
-**Observed advantages of error tolerance:**
-
-- reduces fear of participation
-
-**Observed disadvantages of error tolerance:**
-
-- needs anti-abuse rules
-- difficult to rank fairly
-
-**Design implication for this project:**
-
-Participation should be encouraged without over-penalizing failure. This supports activity-based summary signals and motivates building learning systems that interpret failed attempts as part of a process, not only as negative outcomes.
-
-### 2.7 Artificial intelligence inside e-learning systems
-
-**Paper:** Urh, M., Vukovic, G., Jereb, E., & Pintar, R. (2015). *The model for introduction of gamification into e-learning in higher education*. *Procedia - Social and Behavioral Sciences, 197*, 388-397. https://doi.org/10.1016/j.sbspro.2015.07.154
-
-**Key idea recorded in the notes:** artificial intelligence
-
-**Observed advantages:**
-
-- strong support for future AI features
-
-**Observed disadvantages:**
-
-- full implementation is complex
-
-**Design implication for this project:**
-
-AI support should be treated as both a user-facing feature and an analytics opportunity. This is directly related to the instructor analysis page, which tracks hint-related behavior and supports interpretation of AI-assisted learning patterns.
-
-### 2.8 Longitudinal, real-world AI study in CS education
-
-**Paper:** Lyu, W., Wang, Y., Chung, T. (Rachel), Sun, Y., & Zhang, Y. (2024). *Evaluating the effectiveness of LLMs in introductory computer science education: A semester-long field study*.
-
-**Key ideas recorded in the notes:**
-
-- longitudinal field study
-- prompt quality correlated with response effectiveness
-
-**Observed advantages:**
-
-- strong external validity
-- real classroom duration
-
-**Observed disadvantages:**
-
-- engagement signals in real courses can be noisy
-- prompt quality is hard to operationalize
-- correlation alone does not prescribe a best prompting strategy
-
-**Design implication for this project:**
-
-AI features in an educational coding platform should not be evaluated only through short demos or isolated sessions. They should be measured over time, with attention to hint usage, prompt behavior, contest timing, and student-level differences. That logic strongly supports the existence of an instructor analysis system.
-
-### 2.9 Research-to-product translation
-
-Taken together, the literature supports the following product decisions:
-
-- student-facing feedback should combine progress, activity, and achievement, not only competition
-- instructor-facing views should focus on interpretable summaries and behavioral patterns
-- AI hint usage should be observable and analyzable
-- educational dashboards should support motivation without over-relying on punitive or purely competitive mechanics
-
-Those conclusions directly shaped the dashboard system and the instructor analysis work described below.
-
----
-
-## 3. Student Dashboard
-
-### 3.1 Purpose
+### 4.1 Purpose
 
 The student dashboard is the main student-facing landing page after login. It is designed to answer four immediate questions:
 
@@ -314,7 +434,7 @@ The student dashboard is therefore a hybrid page that combines:
 - contest state and contest access logic
 - recent summary metadata for motivation and progress
 
-### 3.2 Route structure
+### 4.2 Route structure
 
 The route is:
 
@@ -332,7 +452,7 @@ The resulting `contestSummary` is passed into:
 
 - `src/fe/dashboard/page/DashboardPage.tsx`
 
-### 3.3 Two distinct data paths
+### 4.3 Two distinct data paths
 
 The student dashboard intentionally uses two separate data paths.
 
@@ -369,7 +489,7 @@ The repository is:
 
 This path is responsible for the motivational and summary layer rather than contest access itself.
 
-### 3.4 What metadata contains
+### 4.4 What metadata contains
 
 The student metadata layer currently produces three major frontend sections:
 
@@ -413,7 +533,7 @@ The page currently surfaces a trimmed set of earned badges, including:
 - color
 - earned date when available
 
-### 3.5 Backend inputs for metadata
+### 4.5 Backend inputs for metadata
 
 The metadata repository reads:
 
@@ -426,7 +546,7 @@ The metadata repository reads:
 
 This is why the student metadata layer functions as an engagement and progress summary rather than a raw event log.
 
-### 3.6 Contest logic
+### 4.6 Contest logic
 
 The student dashboard contest model distinguishes between:
 
@@ -443,7 +563,7 @@ The intended behavior is:
 
 That distinction was reinforced in the contest confirmation flow.
 
-### 3.7 Contest confirmation flow
+### 4.7 Contest confirmation flow
 
 The student dashboard now supports confirm-before-continue behavior for contest actions. This affects:
 
@@ -459,7 +579,7 @@ The action states include:
 
 The purpose is to avoid immediate action without context and to keep contest membership logic visible to the user.
 
-### 3.8 Rendering and freshness model
+### 4.8 Rendering and freshness model
 
 The student dashboard is neither fully real-time nor purely static.
 
@@ -476,9 +596,9 @@ This is appropriate because:
 
 ---
 
-## 4. Instructor Dashboard
+## 5. Instructor Dashboard
 
-### 4.1 Purpose
+### 5.1 Purpose
 
 The instructor dashboard is the instructor-facing operational overview page. It is separate from the instructor analysis page.
 
@@ -490,7 +610,7 @@ Its role is to present:
 - recent announcements
 - compact metrics snapshots
 
-### 4.2 Frontend structure
+### 5.2 Frontend structure
 
 The main page is:
 
@@ -504,7 +624,7 @@ The page renders:
 - `InstructorMetricsSnapshotWidget`
 - a schedule sidebar based on `UpcomingContests`
 
-### 4.3 Current instructor dashboard statistics
+### 5.3 Current instructor dashboard statistics
 
 Mapped in:
 
@@ -524,7 +644,7 @@ The statistics section currently includes:
 - **Last Metrics Sync**  
   A relative timestamp showing how recently the dashboard snapshot was updated.
 
-### 4.4 Other instructor dashboard sections
+### 5.4 Other instructor dashboard sections
 
 #### A. Schedule
 
@@ -562,7 +682,7 @@ The announcements widget shows recent activity items with relative timestamps.
 
 The snapshot widgets present compact derived summaries intended for quick instructor scanning rather than deep analysis.
 
-### 4.5 Backend structure
+### 5.5 Backend structure
 
 The tRPC router is:
 
@@ -590,7 +710,7 @@ It loads:
 - authored problem count
 - recent announcements
 
-### 4.6 Data freshness
+### 5.6 Data freshness
 
 The frontend fetch hook uses:
 
@@ -604,9 +724,9 @@ So the instructor dashboard is a cached operational page, refreshed on a moderat
 
 ---
 
-## 5. Admin Dashboard
+## 6. Admin Dashboard
 
-### 5.1 Purpose
+### 6.1 Purpose
 
 The admin dashboard is a platform-operations page rather than a course page. It answers questions about:
 
@@ -616,7 +736,7 @@ The admin dashboard is a platform-operations page rather than a course page. It 
 - platform activity
 - system health
 
-### 5.2 Frontend structure
+### 6.2 Frontend structure
 
 The main page is:
 
@@ -630,7 +750,7 @@ It renders:
 - `AdminHealthSnapshotWidget`
 - a platform schedule sidebar
 
-### 5.3 Current admin dashboard statistics
+### 6.3 Current admin dashboard statistics
 
 Mapped in:
 
@@ -650,7 +770,7 @@ The statistics section currently includes:
 - **Last Metrics Sync**  
   Relative freshness label, with a subtitle showing submissions in the last 24 hours.
 
-### 5.4 Other admin dashboard sections
+### 6.4 Other admin dashboard sections
 
 #### A. Platform schedule
 
@@ -684,7 +804,7 @@ The activity widget shows recent platform events with relative timestamps.
 
 This widget summarizes compact operational metrics derived from recent submissions, users, and contests.
 
-### 5.5 Backend structure
+### 6.5 Backend structure
 
 The router is:
 
@@ -726,7 +846,7 @@ The contest query is bounded by:
 
 which prevents the dashboard overview from loading an unbounded number of contests for display.
 
-### 5.6 Freshness model
+### 6.6 Freshness model
 
 The frontend hook is:
 
@@ -744,9 +864,9 @@ So the admin dashboard behaves like a cached real-time overview rather than a pr
 
 ---
 
-## 6. Removal of the TA Role
+## 7. Removal of the TA Role
 
-### 6.1 Why this change was necessary
+### 7.1 Why this change was necessary
 
 The repository previously contained active and semi-active traces of a `TA` role across:
 
@@ -758,7 +878,7 @@ The repository previously contained active and semi-active traces of a `TA` role
 
 That situation creates inconsistency because one role can appear to exist in some places while being unsupported or partially supported in others.
 
-### 6.2 What was changed
+### 7.2 What was changed
 
 The active role model was narrowed to:
 
@@ -774,7 +894,7 @@ This required updates across:
 - login quick-access flows
 - admin user-management UI and mock data
 
-### 6.3 Why this was a structural cleanup rather than a cosmetic cleanup
+### 7.3 Why this was a structural cleanup rather than a cosmetic cleanup
 
 Removing a role affects multiple layers simultaneously:
 
@@ -786,7 +906,7 @@ Removing a role affects multiple layers simultaneously:
 
 For that reason, the work was treated as an authorization and consistency cleanup, not a one-file deletion.
 
-### 6.4 Effect on later work
+### 7.4 Effect on later work
 
 The cleanup also simplified later implementation by making the role split clearer:
 
@@ -798,9 +918,9 @@ That cleaner role model reduced ambiguity throughout the platform.
 
 ---
 
-## 7. Instructor Analysis Page
+## 8. Instructor Analysis Page
 
-### 7.1 Why it exists
+### 8.1 Why it exists
 
 After the role cleanup, the instructor side of the platform needed a dedicated analysis page rather than relying only on a general dashboard. The purpose of this page is to support post-contest interpretation of student behavior, group differences, and hint-related outcomes.
 
@@ -809,7 +929,7 @@ It is therefore different from the instructor dashboard:
 - the **instructor dashboard** is an operational overview
 - the **instructor analysis page** is a deeper analytical surface
 
-### 7.2 Route and page structure
+### 8.2 Route and page structure
 
 The main page is:
 
@@ -825,7 +945,7 @@ This page currently presents several distinct blocks:
 - a gamification statistics block
 - an AI hint statistics block
 
-### 7.3 Comparison blocks
+### 8.3 Comparison blocks
 
 The comparison UI is one of the most important characteristics of the page.
 
@@ -886,7 +1006,7 @@ The current comparison rows include:
 - Attempts after hint
 - Time to solve after hint
 
-### 7.4 Comparison selectors
+### 8.4 Comparison selectors
 
 The page currently supports multiple selector combinations.
 
@@ -938,7 +1058,7 @@ The data file also contains policy and consent options:
 
 These exist as structured options in the research analytics data layer and represent part of the analytics vocabulary even if every selector is not always surfaced in the current visible layout.
 
-### 7.5 Other major analysis sections
+### 8.5 Other major analysis sections
 
 #### A. Live instructor analytics card
 
@@ -977,7 +1097,7 @@ The y-axis label is currently:
 
 This block is intended to expose how hint engagement evolves over time.
 
-### 7.6 Export system
+### 8.6 Export system
 
 The analysis page supports export through:
 
@@ -1030,7 +1150,7 @@ PDF export is implemented as a browser print flow:
 
 This is intentionally presentation-oriented rather than machine-oriented.
 
-### 7.7 Backend structure
+### 8.7 Backend structure
 
 The backend route is:
 
@@ -1054,7 +1174,7 @@ The serializer is:
 
 - `src/server/instructorAnalysis/serializer.ts`
 
-### 7.8 Snapshot logic
+### 8.8 Snapshot logic
 
 The current system supports:
 
@@ -1076,7 +1196,7 @@ The repository determines:
 
 The current implementation computes snapshot rows on request rather than reading from precomputed snapshot tables.
 
-### 7.9 Metric meanings
+### 8.9 Metric meanings
 
 The page and backend use the following metric definitions.
 
@@ -1114,7 +1234,7 @@ The page and backend use the following metric definitions.
 - **Time to solve after hint**  
   Time between hint trigger and successful solve.
 
-### 7.10 Current implementation vs the earlier analytics design note
+### 8.10 Current implementation vs the earlier analytics design note
 
 The repository also contains:
 
@@ -1134,117 +1254,7 @@ That document remains useful as a design reference, but it is not the currently 
 
 ---
 
-## 8. Implementation Pattern Used Across These Features
-
-Several consistent implementation patterns appeared across the dashboard and analysis work.
-
-### 8.1 Start from the user-visible surface
-
-The implementation pattern generally followed this order:
-
-1. define what the page must show
-2. identify which role owns that behavior
-3. determine what data must exist on first render
-4. separate server-loaded operational data from client-fetched summary data when useful
-5. add mapper and presentation layers after the data shape is stable
-
-### 8.2 Separate repository, serializer, mapper, and UI responsibilities
-
-Across dashboard and analytics work, responsibilities are split into layers:
-
-- **repository**  
-  Reads database state and constructs raw snapshots or aggregates.
-
-- **serializer**  
-  Shapes backend data into API responses.
-
-- **service / mapper**  
-  Converts backend response types into frontend-friendly view models.
-
-- **page / components**  
-  Decide layout, labels, interaction, and visual grouping.
-
-This layered structure is visible most clearly in:
-
-- admin dashboard
-- instructor dashboard
-- instructor analysis
-- student dashboard metadata
-
-### 8.3 Use hybrid rendering where appropriate
-
-The repository does not force every page into one rendering strategy.
-
-Examples:
-
-- student dashboard contest state is server-side because it affects immediate actionability
-- student metadata is client-fetched because it is summary-oriented and can tolerate slight staleness
-- instructor and admin dashboards use tRPC client queries with stale-time caching
-- instructor analysis computes request-time snapshots and presents them through a comparison-oriented frontend
-
-This hybrid strategy keeps the product responsive without pretending everything is real-time streaming.
-
----
-
-## 9. Main Code Paths
-
-The following paths are the most important entry points for understanding this work.
-
-### Role and auth model
-
-- `src/lib/authz.ts`
-- `src/lib/requireRole.ts`
-- `src/lib/session.ts`
-- `src/server/trpc/init.ts`
-
-### Dashboard route and student dashboard
-
-- `src/app/(app)/dashboard/page.tsx`
-- `src/fe/dashboard/page/DashboardPage.tsx`
-- `src/fe/dashboard/services/dashboardContests.ts`
-- `src/fe/dashboard/services/dashboardMetadata.ts`
-- `src/fe/dashboard/services/dashboardMetadata.mapper.ts`
-- `src/server/dashboardMetadata/repository.ts`
-- `src/server/trpc/routers/dashboardMetadata.ts`
-- `src/server/api/s/studentContestInfo.ts`
-
-### Instructor dashboard
-
-- `src/fe/dashboard/page/InstructorDashboardPage.tsx`
-- `src/fe/dashboard/services/instructorDashboard.ts`
-- `src/fe/dashboard/services/instructorDashboard.mapper.ts`
-- `src/server/instructorDashboard/repository.ts`
-- `src/server/trpc/routers/instructorDashboard.ts`
-
-### Admin dashboard
-
-- `src/fe/dashboard/page/AdminDashboardPage.tsx`
-- `src/fe/dashboard/services/adminDashboard.ts`
-- `src/fe/dashboard/services/adminDashboard.mapper.ts`
-- `src/server/adminDashboard/repository.ts`
-- `src/server/adminDashboard/serializer.ts`
-- `src/server/trpc/routers/adminDashboard.ts`
-
-### Instructor analysis
-
-- `src/fe/instructor/page/ResearchAnalyticsPage.tsx`
-- `src/fe/instructor/components/ExportAnalysisDialog.tsx`
-- `src/fe/instructor/page/researchAnalytics.helpers.ts`
-- `src/fe/instructor/page/useResearchAnalyticsExport.ts`
-- `src/fe/instructor/data/researchAnalytics.ts`
-- `src/lib/types/instructorAnalysis.ts`
-- `src/server/instructorAnalysis/metrics.ts`
-- `src/server/instructorAnalysis/repository.ts`
-- `src/server/instructorAnalysis/serializer.ts`
-- `src/server/trpc/routers/instructorAnalysis.ts`
-
-### Reference research artifact
-
-- `Gamification.pdf`
-
----
-
-## 10. Summary
+## 9. Summary
 
 The Spring 2026 work described here pushed the platform in a consistent direction:
 
