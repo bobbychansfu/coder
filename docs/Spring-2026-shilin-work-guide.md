@@ -9,23 +9,23 @@ Author: Shilin Mao (Sam)
 
 The Spring 2026 work summarized in this guide focused on the following areas:
 
-- [gamification research](#1-gamification-research-and-product-implications)
-- [how participation can be measured](#21-participation-is-represented-through-multiple-dashboard-signals)
-- [how participation can be increased](#24-participation-is-increased-through-guidance-not-only-rewards)
-- [the advantages and limitations of AI in this educational context](#17-artificial-intelligence-inside-e-learning-systems)
+- [gamification research](#1-gamification-research)
+- [how participation can be measured](#2-how-participation-can-be-measured)
+- [how participation can be increased](#3-how-participation-can-be-increased)
+- [the advantages and limitations of AI in this educational context](#4-the-advantages-and-limitations-of-ai-in-this-educational-context)
 - [how gamification ideas can be applied to this platform](#5-applying-gamification-ideas-to-this-platform)
-- [the student dashboard](#4-student-dashboard)
-- [the instructor dashboard](#5-instructor-dashboard)
-- [the admin dashboard](#6-admin-dashboard)
-- [the instructor analysis page](#8-instructor-analysis-page)
-- [the instructor analysis data pipeline](#87-backend-structure)
-- [the instructor analysis export workflow](#86-export-system)
+- [the student dashboard](#6-student-dashboard)
+- [the instructor dashboard](#7-instructor-dashboard)
+- [the admin dashboard](#8-admin-dashboard)
+- [the instructor analysis page](#9-instructor-analysis-page)
+- [the instructor analysis data pipeline](#10-instructor-analysis-data-pipeline)
+- [the instructor analysis export workflow](#11-instructor-analysis-export-workflow)
 
 ### Additional Content
 
-- [removal of the TA role](#9-removal-of-the-ta-role)
-- [platform extension ideas](#10-platform-extension-ideas)
-- [summary](#11-summary)
+- [removal of the TA role](#12-removal-of-the-ta-role)
+- [platform extension ideas](#13-platform-extension-ideas)
+- [summary](#14-summary)
 
 ---
 
@@ -275,134 +275,177 @@ prompt quality was significantly correlated with CodeTutor’s response effectiv
 
 ---
 
-## 2. Applying the Research to the Platform
+## 2. How Participation Can Be Measured
 
-The research findings in the previous section were used as design constraints for the platform rather than being treated as background reading only. The main translation from research into product design was to avoid treating engagement as a single number or a single feature. Instead, the platform uses several complementary signals and surfaces.
+The research notes suggest that participation is measurable, but not by a single universally correct variable. Different papers emphasize different observable proxies.
 
-### 2.1 Participation is represented through multiple dashboard signals
+### 2.1 Visible participation through leaderboard checking
 
-The literature review suggested that participation cannot be reduced to one metric such as rank or active days. That idea was applied by building a student-facing dashboard that combines several kinds of personal signals at the same time.
+The discussion-study paper by Ding, Er, and Orey shows one way of measuring participation: repeated attention to progress indicators.
 
-Examples currently reflected in the student dashboard include:
+The relevant evidence from the notes is:
 
-- **Total Solved** as a direct learning-progress signal
-- **Participation** as a contest and submission activity signal
-- **Total Score** as a cumulative performance signal
-- **Global Rank** as a competition-related signal
-- **active days in 7d** as a lightweight recent-engagement signal
-- **login streak** as a consistency signal
-- **weekly stats** such as problems solved, contests participated, score earned, and time spent
-- **badges** as a compact achievement signal
+Students reported in the survey that on average they check the progress bar (M = 2.89, SD
+= 3.19) and the leader board (M = 2.96, SD = 3.16) three times a week respectively.
 
-Taken together, these choices apply the research finding that participation is multi-dimensional. The dashboard does not assume that one number is enough to explain how engaged a student is.
+This implies that participation can be partly measured through repeated interaction with visible progress signals.
 
-### 2.2 Competition is used, but it is not the only motivational structure
+### 2.2 Participation through number of active days
 
-The papers on rank and leaderboards suggested that competition can help increase engagement, but can also create pressure, especially for lower-ranked students. That finding was applied by allowing leaderboard-style signals to appear in the platform, while preventing them from becoming the only organizing principle of the student experience.
+The Buckley and Doyle paper gives a much simpler operational definition:
 
-Examples of this design choice include:
+We defined participation as the number of unique days that a student made at least one
+trade on the PM.
+The data revealed that the participation variable had violated parametric assumptions due to
+non-normally distributed data, so a Spearman’s rho test was utilized.
+There was a small, positive correlation between intrinsic motivation to know and participation,
+r = 0.194, n = 75, p ≤ .05.
 
-- showing **Global Rank** and **Total Score** as only part of the student summary
-- combining rank with **progress-oriented** information such as solved problems and recent activity
-- combining rank with **achievement-oriented** information such as badges
-- using dashboard cards that balance competition, consistency, and participation
+This is useful because it shows that participation can be measured cheaply, but also that a simple count of active days does not fully describe effort or learning quality.
 
-This means the platform still uses competition as a motivational tool, but it is embedded inside a broader progress model rather than standing alone.
+### 2.3 Participation measurement in this platform
 
-### 2.3 Gamification ideas were applied through badges, progress summaries, and next-step guidance
+Based on the research above, participation in this platform is treated as a combination of signals rather than one variable. Current platform signals include:
 
-The research suggested that badges, challenges, and visible progress can support motivation when they are used carefully. That was applied to the platform in a form that is lightweight and integrated into the dashboard rather than presented as a separate game layer.
+- contest participation
+- recent submissions
+- active days in the last 7 days
+- login streaks
+- points and score accumulation
+- achievements and badges
 
-The most visible applications are:
-
-- **badges** shown on the student dashboard as short, recognizable achievement markers
-- **weekly summaries** that make progress visible over a recent time window
-- **score and solved counts** that show accumulated effort and success
-- **contest action states** such as registered, joinable, or upcoming, which turn the dashboard into a guided action surface
-
-In other words, the platform does not gamify by adding decorative effects. It gamifies by turning progress, participation, and achievement into visible structures that encourage continued use.
-
-### 2.4 Participation is increased through guidance, not only rewards
-
-The research also suggested that engagement improves when users are guided toward meaningful next steps. That finding was applied especially strongly in the dashboard work.
-
-Examples include:
-
-- the student dashboard is designed to answer what should be done next
-- contest states are made explicit through `Register`, `Registered`, and `Join Now`
-- active-contest alerts are used to draw attention to relevant ongoing activity
-- the dashboard contest confirmation flow adds a deliberate step before entry or registration
-
-This is an important product application of the research: participation is not increased only through points or rankings, but also through clearer workflow guidance.
-
-### 2.5 Role-specific dashboards are also a research application
-
-The research suggested that the same engagement data should not be shown in the same form to every audience. That idea was applied by separating the platform into role-specific dashboards.
-
-This led to:
-
-- a **student dashboard** centered on personal performance, personal participation, and immediate next actions
-- an **instructor dashboard** centered on course-level and contest-level oversight
-- an **admin dashboard** centered on platform health, operations, and activity
-
-This separation is part of the research translation, because it treats engagement and performance as context-dependent rather than universally displayed.
-
-### 2.6 AI is treated as both a platform feature and a research variable
-
-The AI-related papers suggested that AI support should not only be added as a convenience feature. It should also be measurable. That idea was applied by connecting hint-related behavior to the instructor analysis system.
-
-This means AI is reflected in the platform in two ways:
-
-- as a student-facing feature through AI-enabled contest structures and hint interactions
-- as an instructor-facing analytic object through metrics that describe hint timing and post-hint outcomes
-
-This is an important step beyond simply adding an AI button. It allows the platform to study how AI-related interactions affect learning behavior.
-
-### 2.7 The instructor analysis page is the strongest research-to-product translation
-
-The clearest implementation of the research appears in the instructor analysis page. The literature suggested a need for:
-
-- comparison across conditions or groups
-- student-level behavioral metrics
-- timing-aware interpretation of intervention effects
-- structured export for later review and analysis
-
-Those needs were translated into the current analysis system through:
-
-- **contest comparison**
-- **group comparison**
-- **student comparison**
-- **gamification statistics**
-- **AI hint statistics**
-- **export in CSV, JSON, and PDF**
-
-The metric set also reflects the research orientation of the page. For each contest, the page includes:
-
-- Solve rate
-- Mean solve time
-- Median solve time
-- Attempts to solve
-
-For each problem/student view, the page includes:
-
-- Time to first submission
-- Time to first correct submission
-- Post-hint solve probability
-- Attempts before hint
-- Attempts after hint
-- Time to solve after hint
-
-This is the part of the platform where the research most directly becomes a concrete interface.
+These signals appear in the student dashboard through statistics cards, weekly stats, and badge displays.
 
 ---
 
-## 3. Platform Context and Role Model
+## 3. How Participation Can Be Increased
+
+The papers suggest several different ways to increase participation. Some rely on competition, some on visibility, some on structured tasks, and some on social or low-penalty design.
+
+### 3.1 Competition and rank
+
+The Sailer and Homner meta-analysis suggests that competition can increase engagement and participation, but only when it is constructive rather than destructive.
+
+The note emphasizes that competition can either support or reduce intrinsic motivation, depending on how it is designed.
+
+### 3.2 Leaderboards
+
+The Ding, Er, and Orey paper and the Su and Cheng paper both support the idea that leaderboards can increase engagement by making progress visible.
+
+At the same time, both lines of evidence point to a risk:
+
+- lower-ranked students may feel pressure
+- rank alone may not support all learners equally well
+
+### 3.3 Badges
+
+The Su and Cheng paper supports badges as a short-term motivational structure:
+
+Students collect badges for achievements, and the badges can be redeemed for real-world
+rewards, such as gifts.
+Students experienced positive learning motivation when using an MGLS and were also
+satisfied with its effectiveness.
+The learning achievement of the experimental group was higher than either of the two control
+groups.
+
+This suggests that badges can increase motivation when they are tied to visible achievement.
+
+### 3.4 Challenges
+
+The Barata et al. paper supports task-based challenges as a direct way to drive activity:
+
+Challenges were tasks students had to complete to be granted XP and achievements.
+There was a significant increase of 133% in challenge posts by student (Mann-Whitney’s U,
+p < 0.001).
+
+This makes challenges a strong participation driver, but also one that can increase workload if used too aggressively.
+
+### 3.5 Social interaction and low-penalty design
+
+The Simões et al. paper contributes two useful participation ideas.
+
+First, social interaction can promote activity:
+
+Users can share their recent activity, comment friends’ profiles, shared images, photos and
+projects.
+A way to engage learners in a collaborative production of knowledge is to promote social
+rewards.
+
+Second, low-penalty design can keep students trying:
+
+Consider the failure as part of the learning process… without penalizing the student.
+Positive failure feedback lead students to keep trying, raising their level of engagement.
+
+These ideas are especially useful in educational settings where repeated participation matters more than one isolated success.
+
+---
+
+## 4. The Advantages and Limitations of AI in This Educational Context
+
+Two papers in the research notes are especially relevant here: the Urh et al. paper on introducing gamification into e-learning in higher education, and the 2024 field study on LLM effectiveness in introductory computer science education.
+
+### 4.1 Advantages of AI
+
+From the Urh et al. note:
+
+Personalization of e-learning should be supported by artificial intelligence.
+Artificial intelligence allows professors to find specific actions, patterns, major mistakes and
+other behavioural characteristics of students.
+
+This supports AI as a way to personalize learning and to reveal useful student behavior patterns.
+
+From the 2024 field-study note:
+
+we conducted a semester-long, between-subjects study
+achieved statistically significant improvements in their final scores
+
+This supports the idea that AI assistance can have real value in an authentic course setting.
+
+### 4.2 Limitations of AI
+
+The notes also make the limitations clear.
+
+From the Urh et al. note:
+
+- AI is promising, but full implementation is complex
+
+From the 2024 field-study note:
+
+- engagement signals can be messy in real courses
+- prompt quality is difficult to operationalize
+- correlation between prompt quality and response effectiveness does not directly yield a best prompting strategy
+
+The relevant research-note lines are:
+
+students turned to CodeTutor for different tasks
+prompt quality was significantly correlated with CodeTutor’s response effectiveness
+
+This is useful because it suggests that AI features should be paired with analytics, not only interface design.
+
+### 4.3 AI in this platform
+
+In this platform, AI is relevant in two different ways:
+
+- as a student-facing feature through AI-enabled hint behavior
+- as an instructor-facing research variable through hint timing and post-hint metrics
+
+That is why AI belongs not only in product design, but also in the instructor analysis system.
+
+---
+
+## 5. Applying Gamification Ideas to This Platform
+
+The research findings above were used as design constraints rather than left as background reading.
+
+### 5.1 Role-specific design
 
 The platform serves three different audiences with different first-screen needs:
 
 - `student`
 - `instructor`
 - `admin`
+
+This role split matters because the dashboard is not treated as a generic homepage. It is treated as the first operational surface after login.
 
 The current active role model is defined in:
 
@@ -413,61 +456,60 @@ Route-level authorization is enforced through:
 - `src/lib/requireRole.ts`
 - `src/server/trpc/init.ts`
 
-This role split matters because the dashboard is not treated as a generic homepage. It is treated as the first operational surface after login.
+### 5.2 Student-facing gamification application
 
-Each role needs different information immediately:
+The student dashboard applies gamification ideas through:
 
-### Student
+- score and point visibility
+- global rank visibility
+- total solved count
+- weekly activity summaries
+- badges
+- clear contest action states
+- next-step guidance
 
-#### Personal performance and clear next-step guidance
+This means gamification in the platform is not only decorative. It is embedded into the student’s main operational view.
 
-Student users need:
+### 5.3 Instructor-facing application
 
-- personal contest data such as score, rank, and contests already joined
-- recent progress tied to the student’s own activity
-- activity and engagement signals connected to the student’s own behavior
-- achievements and badges
-- a clear answer to “what should be done next”
+The instructor-facing application of the research is different. Instead of showing motivation signals for the instructor personally, the platform uses instructor-facing pages to interpret student and contest behavior.
 
-### Instructor
+This includes:
 
-Instructor users need:
-
+- instructor dashboard snapshots
 - contest oversight
-- student/course-level summaries
-- announcement visibility
-- metrics snapshots
-- deeper analysis for post-contest interpretation
+- the instructor analysis page
+- hint-related interpretation
+- group and student comparison
 
-### Admin
+### 5.4 Admin-facing application
 
-Admin users need:
+For admins, the application is even more indirect. The admin dashboard does not use badges or challenge mechanics. Instead, it applies the broader lesson that the right information should be surfaced to the right audience.
 
-- platform-wide usage signals
-- contest operations status
-- user growth and role distribution
-- submission throughput
-- recent platform-level activity
+This leads to:
 
-Because these roles have different decision needs, the platform uses role-specific dashboards instead of one shared dashboard with minor conditional rendering.
+- platform-wide user statistics
+- contest operations monitoring
+- activity snapshots
+- recent announcements and recent users
 
-The main route that performs role branching is:
+### 5.5 Why this matters for the platform
 
-- `src/app/(app)/dashboard/page.tsx`
+The research does not translate into one single “gamification feature.” It translates into:
 
-That route sends:
+- what is shown to students
+- how progress is framed
+- how participation is measured
+- how AI use is interpreted
+- how instructors review outcomes after contests
 
-- admins to `AdminDashboardPage`
-- instructors to `InstructorDashboardPage`
-- students to `DashboardPage`
-
-This is an important architectural decision because role separation happens at the route boundary, not only at the component boundary.
+This is why the research and the implementation belong in the same guide.
 
 ---
 
-## 4. Student Dashboard
+## 6. Student Dashboard
 
-### 4.1 Purpose
+### 6.1 Purpose
 
 The student dashboard is the main student-facing landing page after login. It is designed to answer four immediate questions:
 
@@ -481,7 +523,7 @@ The student dashboard is therefore a hybrid page that combines:
 - contest state and contest access logic
 - recent summary metadata for motivation and progress
 
-### 4.2 Route structure
+### 6.2 Route structure
 
 The route is:
 
@@ -499,7 +541,7 @@ The resulting `contestSummary` is passed into:
 
 - `src/fe/dashboard/page/DashboardPage.tsx`
 
-### 4.3 Two distinct data paths
+### 6.3 Two distinct data paths
 
 The student dashboard intentionally uses two separate data paths.
 
@@ -536,7 +578,7 @@ The repository is:
 
 This path is responsible for the motivational and summary layer rather than contest access itself.
 
-### 4.4 What metadata contains
+### 6.4 What metadata contains
 
 The student metadata layer currently produces three major frontend sections:
 
@@ -580,7 +622,7 @@ The page currently surfaces a trimmed set of earned badges, including:
 - color
 - earned date when available
 
-### 4.5 Backend inputs for metadata
+### 6.5 Backend inputs for metadata
 
 The metadata repository reads:
 
@@ -593,7 +635,7 @@ The metadata repository reads:
 
 This is why the student metadata layer functions as an engagement and progress summary rather than a raw event log.
 
-### 4.6 Contest logic
+### 6.6 Contest logic
 
 The student dashboard contest model distinguishes between:
 
@@ -610,7 +652,7 @@ The intended behavior is:
 
 That distinction was reinforced in the contest confirmation flow.
 
-### 4.7 Contest confirmation flow
+### 6.7 Contest confirmation flow
 
 The student dashboard now supports confirm-before-continue behavior for contest actions. This affects:
 
@@ -626,7 +668,7 @@ The action states include:
 
 The purpose is to avoid immediate action without context and to keep contest membership logic visible to the user.
 
-### 4.8 Rendering and freshness model
+### 6.8 Rendering and freshness model
 
 The student dashboard is neither fully real-time nor purely static.
 
@@ -643,9 +685,9 @@ This is appropriate because:
 
 ---
 
-## 5. Instructor Dashboard
+## 7. Instructor Dashboard
 
-### 5.1 Purpose
+### 7.1 Purpose
 
 The instructor dashboard is the instructor-facing operational overview page. It is separate from the instructor analysis page.
 
@@ -657,7 +699,7 @@ Its role is to present:
 - recent announcements
 - compact metrics snapshots
 
-### 5.2 Frontend structure
+### 7.2 Frontend structure
 
 The main page is:
 
@@ -671,7 +713,7 @@ The page renders:
 - `InstructorMetricsSnapshotWidget`
 - a schedule sidebar based on `UpcomingContests`
 
-### 5.3 Current instructor dashboard statistics
+### 7.3 Current instructor dashboard statistics
 
 Mapped in:
 
@@ -691,7 +733,7 @@ The statistics section currently includes:
 - **Last Metrics Sync**  
   A relative timestamp showing how recently the dashboard snapshot was updated.
 
-### 5.4 Other instructor dashboard sections
+### 7.4 Other instructor dashboard sections
 
 #### A. Schedule
 
@@ -729,7 +771,7 @@ The announcements widget shows recent activity items with relative timestamps.
 
 The snapshot widgets present compact derived summaries intended for quick instructor scanning rather than deep analysis.
 
-### 5.5 Backend structure
+### 7.5 Backend structure
 
 The tRPC router is:
 
@@ -757,7 +799,7 @@ It loads:
 - authored problem count
 - recent announcements
 
-### 5.6 Data freshness
+### 7.6 Data freshness
 
 The frontend fetch hook uses:
 
@@ -771,9 +813,9 @@ So the instructor dashboard is a cached operational page, refreshed on a moderat
 
 ---
 
-## 6. Admin Dashboard
+## 8. Admin Dashboard
 
-### 6.1 Purpose
+### 8.1 Purpose
 
 The admin dashboard is a platform-operations page rather than a course page. It answers questions about:
 
@@ -783,7 +825,7 @@ The admin dashboard is a platform-operations page rather than a course page. It 
 - platform activity
 - system health
 
-### 6.2 Frontend structure
+### 8.2 Frontend structure
 
 The main page is:
 
@@ -797,7 +839,7 @@ It renders:
 - `AdminHealthSnapshotWidget`
 - a platform schedule sidebar
 
-### 6.3 Current admin dashboard statistics
+### 8.3 Current admin dashboard statistics
 
 Mapped in:
 
@@ -817,7 +859,7 @@ The statistics section currently includes:
 - **Last Metrics Sync**  
   Relative freshness label, with a subtitle showing submissions in the last 24 hours.
 
-### 6.4 Other admin dashboard sections
+### 8.4 Other admin dashboard sections
 
 #### A. Platform schedule
 
@@ -851,7 +893,7 @@ The activity widget shows recent platform events with relative timestamps.
 
 This widget summarizes compact operational metrics derived from recent submissions, users, and contests.
 
-### 6.5 Backend structure
+### 8.5 Backend structure
 
 The router is:
 
@@ -893,7 +935,7 @@ The contest query is bounded by:
 
 which prevents the dashboard overview from loading an unbounded number of contests for display.
 
-### 6.6 Freshness model
+### 8.6 Freshness model
 
 The frontend hook is:
 
@@ -911,63 +953,9 @@ So the admin dashboard behaves like a cached real-time overview rather than a pr
 
 ---
 
-## 7. Removal of the TA Role
+## 9. Instructor Analysis Page
 
-### 7.1 Why this change was necessary
-
-The repository previously contained active and semi-active traces of a `TA` role across:
-
-- frontend role unions
-- route checks
-- admin-facing mock or management UI
-- login/development access surfaces
-- dashboard branching logic
-
-That situation creates inconsistency because one role can appear to exist in some places while being unsupported or partially supported in others.
-
-### 7.2 What was changed
-
-The active role model was narrowed to:
-
-- `student`
-- `instructor`
-- `admin`
-
-This required updates across:
-
-- shared role typing in `src/lib/authz.ts`
-- role-aware client helpers
-- route guards
-- login quick-access flows
-- admin user-management UI and mock data
-
-### 7.3 Why this was a structural cleanup rather than a cosmetic cleanup
-
-Removing a role affects multiple layers simultaneously:
-
-- type definitions
-- navigation capability checks
-- route permissions
-- UI conditionals
-- admin role presentation
-
-For that reason, the work was treated as an authorization and consistency cleanup, not a one-file deletion.
-
-### 7.4 Effect on later work
-
-The cleanup also simplified later implementation by making the role split clearer:
-
-- student dashboard behavior could be student-only
-- instructor dashboard and analysis could assume instructor-only behavior
-- admin dashboard logic could use admin-only procedures
-
-That cleaner role model reduced ambiguity throughout the platform.
-
----
-
-## 8. Instructor Analysis Page
-
-### 8.1 Why it exists
+### 9.1 Why it exists
 
 After the role cleanup, the instructor side of the platform needed a dedicated analysis page rather than relying only on a general dashboard. The purpose of this page is to support post-contest interpretation of student behavior, group differences, and hint-related outcomes.
 
@@ -976,7 +964,7 @@ It is therefore different from the instructor dashboard:
 - the **instructor dashboard** is an operational overview
 - the **instructor analysis page** is a deeper analytical surface
 
-### 8.2 Route and page structure
+### 9.2 Route and page structure
 
 The main page is:
 
@@ -992,7 +980,7 @@ This page currently presents several distinct blocks:
 - a gamification statistics block
 - an AI hint statistics block
 
-### 8.3 Comparison blocks
+### 9.3 Comparison blocks
 
 The comparison UI is one of the most important characteristics of the page.
 
@@ -1053,7 +1041,7 @@ The current comparison rows include:
 - Attempts after hint
 - Time to solve after hint
 
-### 8.4 Comparison selectors
+### 9.4 Comparison selectors
 
 The page currently supports multiple selector combinations.
 
@@ -1105,7 +1093,7 @@ The data file also contains policy and consent options:
 
 These exist as structured options in the research analytics data layer and represent part of the analytics vocabulary even if every selector is not always surfaced in the current visible layout.
 
-### 8.5 Other major analysis sections
+### 9.5 Other major analysis sections
 
 #### A. Live instructor analytics card
 
@@ -1144,60 +1132,11 @@ The y-axis label is currently:
 
 This block is intended to expose how hint engagement evolves over time.
 
-### 8.6 Export system
+---
 
-The analysis page supports export through:
+## 10. Instructor Analysis Data Pipeline
 
-- `ExportAnalysisDialog`
-- `useResearchAnalyticsExport`
-
-The export dialog allows section-by-section selection. The current selectable export sections are:
-
-- Contest Data
-- Problem Data
-- Contest Comparison
-- Group Comparison
-- Student Comparison
-- Gamification Statistics
-- AI Hint Statistics
-
-The export dialog also supports:
-
-- `Select All`
-- individual section selection
-- file format selection
-
-The currently supported export formats are:
-
-- `CSV`
-- `JSON`
-- `PDF`
-
-#### CSV export
-
-CSV export serializes selected sections into tabular text. For the instructor-analysis-specific export utility, it includes:
-
-- snapshot metadata
-- contest group metrics
-- problem student metrics
-
-For the comparison dashboard export flow, CSV is constructed section by section from the currently selected export blocks.
-
-#### JSON export
-
-JSON export serializes the selected sections into structured JSON objects. This is the best format for downstream scripting or developer inspection.
-
-#### PDF export
-
-PDF export is implemented as a browser print flow:
-
-- it opens a print window
-- renders selected sections into simple HTML
-- then uses the browser’s print dialog to produce a PDF
-
-This is intentionally presentation-oriented rather than machine-oriented.
-
-### 8.7 Backend structure
+### 10.1 Backend structure
 
 The backend route is:
 
@@ -1221,7 +1160,7 @@ The serializer is:
 
 - `src/server/instructorAnalysis/serializer.ts`
 
-### 8.8 Snapshot logic
+### 10.2 Snapshot logic
 
 The current system supports:
 
@@ -1243,7 +1182,7 @@ The repository determines:
 
 The current implementation computes snapshot rows on request rather than reading from precomputed snapshot tables.
 
-### 8.9 Metric meanings
+### 10.3 Metric meanings
 
 The page and backend use the following metric definitions.
 
@@ -1281,7 +1220,7 @@ The page and backend use the following metric definitions.
 - **Time to solve after hint**  
   Time between hint trigger and successful solve.
 
-### 8.10 Current implementation vs the earlier analytics design note
+### 10.4 Current implementation vs the earlier analytics design note
 
 The repository also contains:
 
@@ -1301,27 +1240,146 @@ That document remains useful as a design reference, but it is not the currently 
 
 ---
 
-## 9. Removal of the TA Role
+## 11. Instructor Analysis Export Workflow
 
-### 9.1 Scope of the change
+### 11.1 Export system
 
-### 9.2 Why the change mattered
+The analysis page supports export through:
 
-### 9.3 Effects on the role model and platform behavior
+- `ExportAnalysisDialog`
+- `useResearchAnalyticsExport`
+
+The export dialog allows section-by-section selection. The current selectable export sections are:
+
+- Contest Data
+- Problem Data
+- Contest Comparison
+- Group Comparison
+- Student Comparison
+- Gamification Statistics
+- AI Hint Statistics
+
+The export dialog also supports:
+
+- `Select All`
+- individual section selection
+- file format selection
+
+The currently supported export formats are:
+
+- `CSV`
+- `JSON`
+- `PDF`
+
+### 11.2 CSV export
+
+CSV export serializes selected sections into tabular text. For the instructor-analysis-specific export utility, it includes:
+
+- snapshot metadata
+- contest group metrics
+- problem student metrics
+
+For the comparison dashboard export flow, CSV is constructed section by section from the currently selected export blocks.
+
+### 11.3 JSON export
+
+JSON export serializes the selected sections into structured JSON objects. This is the best format for downstream scripting or developer inspection.
+
+### 11.4 PDF export
+
+PDF export is implemented as a browser print flow:
+
+- it opens a print window
+- renders selected sections into simple HTML
+- then uses the browser’s print dialog to produce a PDF
+
+This is intentionally presentation-oriented rather than machine-oriented.
 
 ---
 
-## 10. Platform Extension Ideas
+## 12. Removal of the TA Role
 
-### 10.1 Future product directions
+### 12.1 Scope of the change
 
-### 10.2 Future research directions
+The removal of the `TA` role was not treated as a single-page cleanup. It affected the active application flow across:
 
-### 10.3 Future technical directions
+- shared role typing
+- authorization helpers
+- route-level role checks
+- dashboard branching
+- admin-facing role presentation
+- login and development quick-access flows
+
+The practical goal was to make the active role model internally consistent again.
+
+### 12.2 Why the change mattered
+
+The repository had reached a state where `TA` still appeared in some code paths even though the platform’s core user experience was already centered on three main roles:
+
+- `student`
+- `instructor`
+- `admin`
+
+That kind of partial role support is risky because it can create contradictory behavior:
+
+- one screen may still expose the role
+- another screen may no longer support it
+- a route guard may treat it one way while a dashboard branch treats it another way
+
+Removing the role from the active flow made the rest of the platform easier to reason about.
+
+### 12.3 Effects on the role model and platform behavior
+
+After the cleanup, the dashboard system and the role-sensitive parts of the platform became clearer:
+
+- the student dashboard could focus only on student-facing contest and progress behavior
+- the instructor dashboard and instructor analysis page could assume instructor-only behavior
+- the admin dashboard could stay aligned with explicit admin procedures
+
+This also reduced ambiguity in later feature work, especially when touching:
+
+- `src/lib/authz.ts`
+- `src/lib/requireRole.ts`
+- `src/server/trpc/init.ts`
+- role-aware frontend rendering paths
 
 ---
 
-## 11. Summary
+## 13. Platform Extension Ideas
+
+### 13.1 Future product directions
+
+Several product directions follow naturally from the current state of the platform:
+
+- deeper student-facing challenge systems tied to weekly or contest-based goals
+- more explicit progress narratives that explain what a student should do next
+- richer badge semantics so that badges represent meaningful behavior rather than only counts
+- better contest-entry guidance for newly visible but not-yet-joined contests
+- expanded instructor-facing comparison views that can explain changes over time, not only snapshot differences
+
+### 13.2 Future research directions
+
+The current analytics system already supports contest-level and problem-level interpretation, but several research directions remain open:
+
+- more systematic study of hint timing and its relationship to eventual solve behavior
+- longer-term measurement of whether dashboard signals actually improve student participation
+- cleaner comparison of experiment groups across multiple contests rather than one contest at a time
+- stronger operational definitions for prompt quality and AI-supported learning behavior
+- follow-up validation of whether gamification signals remain useful across a full semester rather than only short windows
+
+### 13.3 Future technical directions
+
+From a technical perspective, the most obvious future directions are:
+
+- moving instructor-analysis snapshot computation toward persisted or background-generated snapshots
+- reducing repeated request-time computation for expensive analytics queries
+- expanding test coverage around role-sensitive dashboard behavior
+- continuing to split oversized data or configuration files into smaller modules
+- keeping old branches as reference material only, while re-extracting production work from the latest `main` or student baseline branches
+
+---
+
+## 14. Summary
 
 The Spring 2026 work described here pushed the platform in a consistent direction:
 
