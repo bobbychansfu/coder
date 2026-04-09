@@ -9,339 +9,269 @@ Author: Shilin Mao (Sam)
 
 The Spring 2026 work summarized in this guide focused on the following areas:
 
-- gamification research
-- how participation can be measured
-- how participation can be increased
-- how gamification ideas can be applied to this platform
-- the advantages and limitations of AI in this educational context
-- the student dashboard
-- the instructor dashboard
-- the admin dashboard
-- the instructor analysis page
-- the instructor analysis data pipeline
-- the instructor analysis export workflow
+- [gamification research](#1-gamification-research-and-product-implications)
+- [how participation can be measured](#21-participation-is-represented-through-multiple-dashboard-signals)
+- [how participation can be increased](#24-participation-is-increased-through-guidance-not-only-rewards)
+- [the advantages and limitations of AI in this educational context](#17-artificial-intelligence-inside-e-learning-systems)
+- [how gamification ideas can be applied to this platform](#5-applying-gamification-ideas-to-this-platform)
+- [the student dashboard](#4-student-dashboard)
+- [the instructor dashboard](#5-instructor-dashboard)
+- [the admin dashboard](#6-admin-dashboard)
+- [the instructor analysis page](#8-instructor-analysis-page)
+- [the instructor analysis data pipeline](#87-backend-structure)
+- [the instructor analysis export workflow](#86-export-system)
+
+### Additional Content
+
+- [removal of the TA role](#9-removal-of-the-ta-role)
+- [platform extension ideas](#10-platform-extension-ideas)
+- [summary](#11-summary)
 
 ---
 
-## 1. Gamification Research and Product Implications
+## 1. Gamification Research
 
-The semester began with literature review rather than immediate implementation. The purpose of this phase was to determine which gamification mechanisms were educationally useful, which ones were risky, and which signals were realistic to operationalize in the platform.
+The semester began with literature review rather than immediate implementation. The goal of this phase was to understand which gamification mechanisms were educationally useful, which ones were risky, and which ideas could be translated into a programming-learning platform.
 
-The research reviewed in this section points toward a consistent design principle:
-
-**engagement signals are useful, but they should not be reduced to shallow competition or decorative reward mechanics.**
-
-### 1.1 Competition and rank
+### 1.1 Paper 1
 
 **Paper:** Sailer, M., & Homner, L. (2020). *The gamification of learning: A meta-analysis*. *Educational Psychology Review, 32*(1), 77-112.
 
-**Key idea recorded in the notes:** rank / competition
+**Key Word:** Rank
 
-**Observed advantages:**
+**Advantages:** can raise engagement/participation
 
-- can increase engagement
-- can increase participation
+**Disadvantages:** may reduce intrinsic motivation for some learners; can create negative pressure
 
-**Observed disadvantages:**
+**Original text:**
 
-- can reduce intrinsic motivation for some learners
-- can create negative pressure
+Competition can cause social pressure to increase learners’ level of engagement and can
+have a constructive effect on participation and learning (Burguillo 2010). However, it also has
+the potential to either enhance or undermine intrinsic motivation (Rigby and Ryan 2011). In
+this context, two types of competition can be distinguished. On the one hand, destructive
+competition occurs if succeeding by tearing others down is required, resulting in feelings of
+irrelevance and oppression. On the other hand, constructive competition occurs if it is good-
+natured and encourages cooperation and mutual support (i.e., if competition is aimed at
+improving everyone’s skills instead of defeating someone). In this sense, constructive
+competition has the potential to foster feelings of relatedness, thereby enhancing intrinsic
+motivation (Rigby and Ryan 2011).
 
-**Original note from the research summary:**
+**Additional note from external sources:**
 
-- competition can cause social pressure to increase learners’ level of engagement and can have a constructive effect on participation and learning
-- at the same time, competition can either enhance or undermine intrinsic motivation depending on how it is structured
-- the notes distinguish between destructive competition and constructive competition
-- destructive competition is described as one side succeeding by tearing others down
-- constructive competition is described as goal-oriented and cooperative in spirit, especially when the purpose is to improve everyone’s skills rather than simply defeat someone else
-- in that sense, constructive competition can support relatedness and therefore support intrinsic motivation
+- the meta-analysis reports positive effects of gamification on cognitive, motivational, and behavioral learning outcomes
+- it also notes that outcomes depend on design choices and context rather than on simply adding game elements
+- one moderator emphasized in the paper is that competition combined with collaboration can be more effective than competition used alone
 
-**Additional note from the paper itself:**
-
-- the meta-analysis reports significant positive effects of gamification on **cognitive**, **motivational**, and **behavioral** learning outcomes
-- the paper also notes that these effects are not equally stable across all categories
-- one important moderator highlighted in the paper is that **competition combined with collaboration** can be more effective than competition used in isolation
-- the paper frames gamification as effective overall, but also emphasizes that successful gamification depends on design choices rather than on simply adding game elements
-
-**Design implication for this project:**
-
-Rank is useful as one signal, but should not be the only organizing principle in a student-facing experience. This directly supports the decision to use dashboards that include progress, activity, badges, weekly statistics, and contest state rather than only global rank.
-
-### 1.2 Leaderboards as visibility tools
+### 1.2 Paper 2
 
 **Paper:** Ding, L., Er, E., & Orey, M. (2018). *An exploratory study of student engagement in gamified online discussions*. *Computers & Education, 120*, 213-226. https://doi.org/10.1016/j.compedu.2018.02.007
 
-**Key idea recorded in the notes:** leaderboards
+**Key Word:** Leaderboards
 
-**Observed advantages:**
+**Advantages:** Leaderboards increased students’ awareness of their participation level and encouraged frequent engagement, as students checked them multiple times per week.
 
-- increase awareness of participation level
-- encourage repeated engagement
-- are checked frequently by students
+**Disadvantages:** Leaderboards may create pressure or demotivation for lower-ranked students, potentially discouraging participation.
 
-**Observed disadvantages:**
+**Original text:**
 
-- may create pressure for lower-ranked students
-- may reduce participation if students feel permanently behind
+Students reported in the survey that on average they check the progress bar (M = 2.89, SD
+= 3.19) and the leader board (M = 2.96, SD = 3.16) three times a week respectively.
 
-**Original note from the research summary:**
+**Additional note from external sources:**
 
-- students reported checking both the progress bar and the leaderboard multiple times per week
-- the recorded averages in the notes were approximately 2.89 for progress-bar checking and 2.96 for leaderboard checking
-- this suggests that visible progress indicators and leaderboard elements can become recurring touchpoints in engagement behavior
+- the paper reports that gamified online-discussion design can positively affect engagement
+- it also identifies practical obstacles such as technical issues, peer behavior, and instructor workload
+- the study is useful because it shows that visible progress signals are repeatedly consulted by students in real use
 
-**Additional note from the paper itself:**
-
-- the paper found that the gamification approach positively affected student engagement in online discussions
-- it also identified practical obstacles such as technical issues, peer behavior, and instructor workload
-- the paper specifically reports that gamified discussion design can influence students differently depending on context, rather than improving every part of engagement equally and automatically
-
-**Design implication for this project:**
-
-Leaderboard-style feedback is helpful, but must be balanced by other feedback channels. This reinforced the choice to build dashboard metadata around multiple signals instead of only ranking.
-
-### 1.3 Simple engagement metrics such as number of active days
+### 1.3 Paper 3
 
 **Paper:** Buckley, P., & Doyle, E. (2016). *Gamification and student motivation*. *Interactive Learning Environments, 24*(6), 1162-1175. https://doi.org/10.1080/10494820.2014.964263
 
-**Key idea recorded in the notes:** number of days
+**Key Word:** number of days
 
-**Observed advantages:**
+**Advantages:** Very easy to implement, Cheap to compute
 
-- easy to implement
-- cheap to compute
+**Disadvantages:** Too simple, Cannot tell real effort from noise
 
-**Observed disadvantages:**
+**Original text:**
 
-- too simple to capture real effort
-- can confuse signal with noise
+We defined participation as the number of unique days that a student made at least one
+trade on the PM.
+The data revealed that the participation variable had violated parametric assumptions due to
+non-normally distributed data, so a Spearman’s rho test was utilized.
+There was a small, positive correlation between intrinsic motivation to know and participation,
+r = 0.194, n = 75, p ≤ .05.
 
-**Original note from the research summary:**
+**Additional note from external sources:**
 
-- the paper defined participation as the number of unique days on which a student made at least one trade on the platform studied there
-- the participation variable violated parametric assumptions because it was not normally distributed
-- a Spearman test was used instead
-- the notes recorded a small positive correlation between intrinsic motivation to know and participation, with `r = 0.194`, `n = 75`, and `p < .05`
+- the paper connects gamification to student motivation rather than arguing that gamification automatically improves all outcomes
+- it is a useful reminder that simple engagement variables are operationally convenient but conceptually limited
 
-**Additional note from the paper itself:**
-
-- the paper studies gamification in relation to student motivation rather than claiming that gamification automatically produces better learning
-- one useful takeaway is that simple participation variables are easy to collect, but they should be interpreted carefully because they can hide differences in quality, depth, or purpose of engagement
-
-**Design implication for this project:**
-
-Simple indicators such as active days, login streaks, and weekly counts are good dashboard components, but they should be treated as lightweight engagement signals rather than direct proxies for learning quality.
-
-### 1.4 Leaderboards and badges inside a mobile learning system
+### 1.4 Paper 4
 
 **Paper:** Su, C.-H., & Cheng, C.-H. (2015). *A mobile gamification learning system for improving the learning motivation and achievements*. *Journal of Computer Assisted Learning, 31*(3), 268-286. https://doi.org/10.1111/jcal.12088
 
-**Key ideas recorded in the notes:**
+**Key Word:** Leaderboard (Ranking by performance)
 
-- leaderboard (ranking by performance)
-- badges
+**Advantages:** Easy to implement with sorting, Makes progress visible
 
-**Observed advantages of leaderboard-like ranking:**
+**Disadvantages:** Effect not isolated, Can discourage low-ranked users
 
-- easy to implement with sorting
-- makes progress visible
+**Original text:**
 
-**Observed disadvantages of leaderboard-like ranking:**
+Some of the gamification features, such as leaderboards, badges and missions, are used in
+an MGLS to guide students through multiple activities towards the completion of specific
+learning objectives.
+The students of the experimental group, who used an MGLS, had a better learning
+achievement than either of the control groups in the post-test.
 
-- effect is not isolated from other gamification features
-- can discourage lower-ranked users
+**Additional note from external sources:**
 
-**Observed advantages of badges:**
+- the system studied in the paper combines multiple gamification features inside a structured learning flow
+- this matters because the benefit appears to come from integration with learning objectives, not from isolated UI features alone
 
-- increase short-term motivation
+**Key Word:** Badges
 
-**Observed disadvantages of badges:**
+**Advantages:** Increases short-term motivation
 
-- need careful reward design
+**Disadvantages:** Needs careful reward design
 
-**Original note from the research summary:**
+**Original text:**
 
-- the mobile gamification learning system combined multiple gamification features such as leaderboards, badges, and missions
-- the students in the experimental group using that system had better learning achievement than either of the two control groups in the post-test
-- badges were described as collectible achievement markers that could be redeemed for real-world rewards such as gifts
-- the notes also recorded that students experienced positive learning motivation when using the system and were satisfied with its effectiveness
-- the learning achievement of the experimental group was higher than either of the two control groups
+Students collect badges for achievements, and the badges can be redeemed for real-world
+rewards, such as gifts.
+Students experienced positive learning motivation when using an MGLS and were also
+satisfied with its effectiveness.
+The learning achievement of the experimental group was higher than either of the two control
+groups.
 
-**Additional note from the paper itself:**
+**Additional note from external sources:**
 
-- the paper presents the mobile gamification learning system as a structured combination of location-aware learning activities and gamified incentives
-- its value is not only the presence of badges or leaderboards, but the fact that these elements are integrated into an overall learning flow with explicit objectives
-- this is important for this project because it suggests that game elements work best when attached to meaningful course activity, not when used as isolated decorations
+- the paper suggests that badges work best when tied to visible achievement and meaningful activity
+- it also suggests that badges are more useful as part of a wider system than as a standalone reward mechanic
 
-**Design implication for this project:**
-
-Badges are appropriate when framed as progress and recognition, not as superficial decoration. This supports the existence of badges on the student dashboard, but also suggests they should be combined with meaningful context such as recent activity and participation.
-
-### 1.5 Task-based challenges
+### 1.5 Paper 5
 
 **Paper:** Barata, G., Gama, S., Jorge, J., & Gonçalves, D. J. (2013). *Improving participation and learning with gamification*. In *Proceedings of the First International Conference on Gameful Design, Research, and Applications (Gamification ’13)* (pp. 10-17). ACM. https://doi.org/10.1145/2583008.2583010
 
-**Key idea recorded in the notes:** challenges / task-based gamification
+**Key Word:** Challenges (Task-based Gamification)
 
-**Observed advantages:**
+**Advantages:** Directly drives participation
 
-- directly drives participation
+**Disadvantages:** Needs careful task design, Too many challenges increase workload
 
-**Observed disadvantages:**
+**Original text:**
 
-- needs careful task design
-- too many challenges can increase workload
+Challenges were tasks students had to complete to be granted XP and achievements.
+There was a significant increase of 133% in challenge posts by student (Mann-Whitney’s U,
+p < 0.001).
 
-**Original note from the research summary:**
+**Additional note from external sources:**
 
-- challenges were implemented as tasks students had to complete in order to be granted XP and achievements
-- the notes recorded a significant increase of 133% in challenge posts by students
-- the statistical note recorded in the summary was `Mann-Whitney’s U, p < 0.001`
+- the paper is especially useful because it studies gamification in a real course environment
+- it reports not only more participation, but also stronger online activity and proactivity over time
 
-**Additional note from the paper itself:**
-
-- the paper describes a multi-year course setting in which gamified and non-gamified periods could be compared
-- it reports improvements not only in participation but also in attention to reference materials, online participation, and proactivity
-- this makes the paper especially useful for platform design because it connects gamification to actual course behavior rather than to a short lab task
-
-**Design implication for this project:**
-
-Structured participation prompts are promising, but should not overload users. This supports limited, high-signal dashboard prompts rather than constant task pressure.
-
-### 1.6 Social interaction and error tolerance
+### 1.6 Paper 6
 
 **Paper:** Simões, J., Díaz Redondo, R., & Fernández Vilas, A. (2013). *A social gamification framework for a K-6 learning platform*. *Computers in Human Behavior, 29*(2), 345-353. https://doi.org/10.1016/j.chb.2012.06.007
 
-**Key ideas recorded in the notes:**
+**Key Word:** Social Interaction as Participation
 
-- social interaction as participation
-- no hard penalty / error tolerance
+**Advantages:** Encourages platform activity
 
-**Observed advantages of social interaction:**
+**Disadvantages:** Social activity != learning, Hard to compare fairly
 
-- encourages activity on the platform
+**Original text:**
 
-**Observed disadvantages of social interaction:**
+Users can share their recent activity, comment friends’ profiles, shared images, photos and
+projects.
+A way to engage learners in a collaborative production of knowledge is to promote social
+rewards.
 
-- social activity is not the same thing as learning
-- hard to compare fairly
+**Additional note from external sources:**
 
-**Observed advantages of error tolerance:**
+- the paper presents social gamification as a framework rather than a single mechanic
+- this is useful because it shows how participation can be increased through ecosystems of actions, feedback, and lightweight rewards
 
-- reduces fear of participation
+**Key Word:** No Hard Penalty / Error Tolerance
 
-**Observed disadvantages of error tolerance:**
+**Advantages:** Reduces fear of participation
 
-- needs anti-abuse rules
-- difficult to rank fairly
+**Disadvantages:** Needs anti-abuse rules, Hard to rank effort
 
-**Original note from the research summary:**
+**Original text:**
 
-- the social-gamification framework allowed users to share recent activity, comment on friends’ profiles, and share images, photos, and projects
-- the notes explicitly frame this as one way to engage learners in collaborative production of knowledge through social rewards
-- for error tolerance, the notes emphasize treating failure as part of the learning process rather than penalizing the student
-- positive feedback after failure was described as a way to keep students trying and maintain engagement
+Consider the failure as part of the learning process… without penalizing the student.
+Positive failure feedback lead students to keep trying, raising their level of engagement.
 
-**Two separate design ideas recorded from this paper:**
+**Additional note from external sources:**
 
-- **Social Interaction as Participation**
-- **No Hard Penalty / Error Tolerance**
+- this paper is one of the clearest supports for treating failure as part of an engagement system rather than only as a negative outcome
+- it is especially relevant for educational products where continued effort matters more than one-time correctness
 
-**Additional note from the paper itself:**
-
-- the paper positions social gamification as a framework rather than a single feature
-- this is useful because it suggests that engagement can be shaped through an ecosystem of social actions, lightweight rewards, and tolerant feedback rules instead of through one dominant metric alone
-
-**Design implication for this project:**
-
-Participation should be encouraged without over-penalizing failure. This supports activity-based summary signals and motivates building learning systems that interpret failed attempts as part of a process, not only as negative outcomes.
-
-### 1.7 Artificial intelligence inside e-learning systems
+### 1.7 Paper 7
 
 **Paper:** Urh, M., Vukovic, G., Jereb, E., & Pintar, R. (2015). *The model for introduction of gamification into e-learning in higher education*. *Procedia - Social and Behavioral Sciences, 197*, 388-397. https://doi.org/10.1016/j.sbspro.2015.07.154
 
-**Key idea recorded in the notes:** artificial intelligence
+**Key Word:** Artificial intelligence
 
-**Observed advantages:**
+**Advantages:** Strong support for future AI features
 
-- strong support for future AI features
+**Disadvantages:** Complex to implement fully
 
-**Observed disadvantages:**
+**Original text:**
 
-- full implementation is complex
+Personalization of e-learning should be supported by artificial intelligence.
+Artificial intelligence allows professors to find specific actions, patterns, major mistakes and
+other behavioural characteristics of students.
 
-**Original note from the research summary:**
+**Gamification elements classified in the research notes:**
 
-- the notes state that personalization of e-learning should be supported by artificial intelligence
-- artificial intelligence was described as a way for professors to identify specific actions, patterns, major mistakes, and other behavioral characteristics of students
+- Most commonly used: badges, leaderboard, levels, points, progress bar
+- Commonly used: avatars, challenges, feedback, key / unlock, rewards, rank, tour / narrative
+- Occasionally used: awards, chat, coins, hints / tips, medals, star, timer, trophy, virtual shop
 
-**Gamification-element classifications recorded in the notes:**
+**Additional note from external sources:**
 
-- **Most commonly used:** badges, leaderboard, levels, points, progress bar
-- **Commonly used:** avatars, challenges, feedback, key/unlock, rewards, rank, tour/narrative
-- **Occasionally used:** awards, chat, coins, hints/tips, medals, star, timer, trophy, virtual shop
+- the paper frames AI as part of a structured e-learning model rather than as an isolated plug-in
+- the main implication is that personalization and adaptive interpretation are valuable, but they need clear educational goals and supporting system design
 
-**Additional note from the paper itself:**
-
-- the paper does not present AI as a ready-made solution; it presents AI as part of a broader model for introducing gamification into e-learning
-- the important implication is that personalization and adaptive interpretation are valuable, but they must sit inside a structured educational model with explicit objectives and mechanisms
-
-**Design implication for this project:**
-
-AI support should be treated as both a user-facing feature and an analytics opportunity. This is directly related to the instructor analysis page, which tracks hint-related behavior and supports interpretation of AI-assisted learning patterns.
-
-### 1.8 Longitudinal, real-world AI study in CS education
+### 1.8 Paper 8
 
 **Paper:** Lyu, W., Wang, Y., Chung, T. (Rachel), Sun, Y., & Zhang, Y. (2024). *Evaluating the effectiveness of LLMs in introductory computer science education: A semester-long field study*.
 
-**Key ideas recorded in the notes:**
+**Key Word:** Longitudinal field study (real-world, semester-long)
 
-- longitudinal field study
-- prompt quality correlated with response effectiveness
+**Advantages:** Strong external validity (real course, long duration)
 
-**Observed advantages:**
+**Disadvantages:** Engagement signals can be messy in real courses
 
-- strong external validity
-- real classroom duration
+**Original text:**
 
-**Observed disadvantages:**
+we conducted a semester-long, between-subjects study
+achieved statistically significant improvements in their final scores
 
-- engagement signals in real courses can be noisy
-- prompt quality is hard to operationalize
-- correlation alone does not prescribe a best prompting strategy
+**Additional note from external sources:**
 
-**Original note from the research summary:**
+- the semester-long design gives this paper unusual relevance for real educational platforms
+- compared with short controlled studies, it offers stronger evidence about how AI support behaves over time in normal classroom use
 
-- the paper used a semester-long, between-subjects study
-- the notes recorded statistically significant improvements in final scores
-- the notes also recorded that students turned to CodeTutor for different tasks
-- prompt quality was recorded as significantly correlated with CodeTutor’s response effectiveness
+**Key Word:** Prompt quality correlated with response effectiveness
 
-**Two separate design ideas recorded from this paper:**
+**Advantages:**
 
-- **Longitudinal field study (real-world, semester-long)**
-- **Prompt quality correlated with response effectiveness**
+**Disadvantages:** Needs a way to operationalize “prompt quality”  
+Correlation doesn’t specify best prompting strategy
 
-**Additional note from the paper itself:**
+**Original text:**
 
-- the paper’s semester-long, between-subjects design makes it especially relevant to a real educational platform
-- compared with short controlled studies, it gives stronger evidence about how AI support behaves under normal course conditions over time
-- this strengthens the case for building analytics that can be used repeatedly across a term instead of relying only on single-session observations
+students turned to CodeTutor for different tasks
+prompt quality was significantly correlated with CodeTutor’s response effectiveness
 
-**Design implication for this project:**
+**Additional note from external sources:**
 
-AI features in an educational coding platform should not be evaluated only through short demos or isolated sessions. They should be measured over time, with attention to hint usage, prompt behavior, contest timing, and student-level differences. That logic strongly supports the existence of an instructor analysis system.
-
-### 1.9 Research-to-product translation
-
-Taken together, the literature supports the following product decisions:
-
-- student-facing feedback should combine progress, activity, and achievement, not only competition
-- instructor-facing views should focus on interpretable summaries and behavioral patterns
-- AI hint usage should be observable and analyzable
-- educational dashboards should support motivation without over-relying on punitive or purely competitive mechanics
-
-Those conclusions directly shaped the dashboard system and the instructor analysis work described below.
+- this paper is especially relevant for analytics design because it shows that AI usage should be studied as a behavior pattern, not only as a feature toggle
+- it supports building systems that can observe hint use, prompting behavior, and longer-term performance change
 
 ---
 
@@ -1371,7 +1301,27 @@ That document remains useful as a design reference, but it is not the currently 
 
 ---
 
-## 9. Summary
+## 9. Removal of the TA Role
+
+### 9.1 Scope of the change
+
+### 9.2 Why the change mattered
+
+### 9.3 Effects on the role model and platform behavior
+
+---
+
+## 10. Platform Extension Ideas
+
+### 10.1 Future product directions
+
+### 10.2 Future research directions
+
+### 10.3 Future technical directions
+
+---
+
+## 11. Summary
 
 The Spring 2026 work described here pushed the platform in a consistent direction:
 
