@@ -25,7 +25,6 @@ The Spring 2026 work summarized in this guide focused on the following areas:
 
 - [removal of the TA role](#12-removal-of-the-ta-role)
 - [platform extension ideas](#13-platform-extension-ideas)
-- [summary](#14-summary)
 
 ---
 
@@ -1433,17 +1432,6 @@ Several product directions follow naturally from the current state of the platfo
 - a future friend system to support community interaction and stronger platform-level social engagement
 - a student-side team-selection flow after contest registration, so that a student can choose which team to join and view current team information
 - instructor-side controls for adjusting team membership, so that the instructor role can manage student grouping directly from the platform
+- an email-notification system that uses the platform’s CAS-linked SFU identity model to send platform emails, such as contest reminder messages or other contest-related notices
 
 ---
-
-## 14. Summary
-
-The Spring 2026 work described here pushed the platform in a consistent direction:
-
-- more explicit role separation
-- more meaningful student-facing progress signals
-- clearer instructor-facing operational and analytical surfaces
-- stronger platform-level visibility for admins
-- a cleaner active authorization model after removal of the `TA` role
-
-The common thread across these changes is that educational software should not only display data. It should display the **right level of data to the right role**, using signals that are informed by both implementation constraints and educational research.
