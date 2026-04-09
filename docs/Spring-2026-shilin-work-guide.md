@@ -505,7 +505,79 @@ The research does not translate into one single “gamification feature.” It t
 - how AI use is interpreted
 - how instructors review outcomes after contests
 
-This is why the research and the implementation belong in the same guide.
+### 5.6 Role-specific priorities and extended needs
+
+The platform applies gamification and analytics differently for each role because each role needs a different kind of first-view guidance and a different level of data interpretation.
+
+#### A. Student
+
+The student role is centered on personal information and personal contest data. The most important signals for this role are:
+
+- joined contests
+- current contest state
+- total solved count
+- total score
+- global rank
+- recent activity
+- badges and achievements
+
+For students, the platform should not only display personal performance. It should also provide clear guidance about what to do next. That is why the student-facing design emphasizes:
+
+- visible contest action states
+- next-step cues through dashboard structure
+- progress signals that are easy to interpret
+- motivation through badges, score, rank, and activity summaries
+
+The broader design goal is to encourage self-directed learning rather than passive platform use. In practice, this means the dashboard should help students recognize where they stand, what they have already done, and what the next meaningful action should be.
+
+#### B. Instructor
+
+The instructor role is centered on overall class or contest behavior rather than on personal achievement. The core needs here are:
+
+- seeing overall student performance quickly
+- understanding contest-level trends
+- identifying where student behavior differs across groups or problems
+- accessing research-relevant metrics without manually reconstructing them from raw records
+
+For that reason, the instructor side of the platform is split into two layers:
+
+- the instructor dashboard for operational overview
+- the instructor analysis page for deeper research-oriented interpretation
+
+The analysis page is especially important because it functions as the main research interface for the instructor role. It exposes key metrics such as:
+
+- solve rate
+- mean solve time
+- median solve time
+- attempts to solve
+- time to first submission
+- time to first correct submission
+- post-hint solve probability
+- attempts before hint
+- attempts after hint
+- time to solve after hint
+
+This structure supports the longer-term goal that instructors can hold multiple contests, compare groups and students, and use the resulting data for teaching decisions and later research work.
+
+#### C. Admin
+
+The admin role is centered on platform-wide visibility rather than on one student or one course. The key concerns here are:
+
+- user population by role
+- contest operations across the platform
+- recent activity
+- overall system health
+- whether the platform is producing stable and interpretable data at scale
+
+For admins, the system does not need motivational signals like badges or personal rank. Instead, it needs a clear operational surface that makes platform status legible. That is why the admin dashboard focuses on:
+
+- user counts
+- contest counts and states
+- problem-bank size
+- recent announcements and recent users
+- health and activity snapshots
+
+This role is also important for future platform growth, because admin-level visibility makes it easier to support additional contests, additional instructors, and broader research usage without losing track of system behavior.
 
 ---
 
@@ -1353,31 +1425,14 @@ This also reduced ambiguity in later feature work, especially when touching:
 
 Several product directions follow naturally from the current state of the platform:
 
-- deeper student-facing challenge systems tied to weekly or contest-based goals
-- more explicit progress narratives that explain what a student should do next
 - richer badge semantics so that badges represent meaningful behavior rather than only counts
-- better contest-entry guidance for newly visible but not-yet-joined contests
 - expanded instructor-facing comparison views that can explain changes over time, not only snapshot differences
-
-### 13.2 Future research directions
-
-The current analytics system already supports contest-level and problem-level interpretation, but several research directions remain open:
-
-- more systematic study of hint timing and its relationship to eventual solve behavior
-- longer-term measurement of whether dashboard signals actually improve student participation
-- cleaner comparison of experiment groups across multiple contests rather than one contest at a time
-- stronger operational definitions for prompt quality and AI-supported learning behavior
-- follow-up validation of whether gamification signals remain useful across a full semester rather than only short windows
-
-### 13.3 Future technical directions
-
-From a technical perspective, the most obvious future directions are:
-
-- moving instructor-analysis snapshot computation toward persisted or background-generated snapshots
-- reducing repeated request-time computation for expensive analytics queries
-- expanding test coverage around role-sensitive dashboard behavior
-- continuing to split oversized data or configuration files into smaller modules
-- keeping old branches as reference material only, while re-extracting production work from the latest `main` or student baseline branches
+- a visual circular progress indicator for practice completion so students can immediately see how much practice work has been completed and how much remains, which can strengthen motivation to finish unfinished practice
+- a small celebratory firework effect after submitting a contest or finishing a practice task, in order to provide stronger positive feedback after completion
+- a dedicated top-three presentation for the global ranking system, such as a podium-style display or gold, silver, and bronze profile-frame treatment near the avatar area; if the platform continues using text-only identity display, the top three names could still be distinguished by gold, silver, and bronze text styling
+- a future friend system to support community interaction and stronger platform-level social engagement
+- a student-side team-selection flow after contest registration, so that a student can choose which team to join and view current team information
+- instructor-side controls for adjusting team membership, so that the instructor role can manage student grouping directly from the platform
 
 ---
 
