@@ -56,7 +56,7 @@ improving everyone’s skills instead of defeating someone). In this sense, cons
 competition has the potential to foster feelings of relatedness, thereby enhancing intrinsic
 motivation (Rigby and Ryan 2011).
 
-**Additional note from external sources:**
+**Additional note:**
 
 - the meta-analysis reports positive effects of gamification on cognitive, motivational, and behavioral learning outcomes
 - it also notes that outcomes depend on design choices and context rather than on simply adding game elements
@@ -77,7 +77,7 @@ motivation (Rigby and Ryan 2011).
 Students reported in the survey that on average they check the progress bar (M = 2.89, SD
 = 3.19) and the leader board (M = 2.96, SD = 3.16) three times a week respectively.
 
-**Additional note from external sources:**
+**Additional note:**
 
 - the paper reports that gamified online-discussion design can positively affect engagement
 - it also identifies practical obstacles such as technical issues, peer behavior, and instructor workload
@@ -102,7 +102,7 @@ non-normally distributed data, so a Spearman’s rho test was utilized.
 There was a small, positive correlation between intrinsic motivation to know and participation,
 r = 0.194, n = 75, p ≤ .05.
 
-**Additional note from external sources:**
+**Additional note:**
 
 - the paper connects gamification to student motivation rather than arguing that gamification automatically improves all outcomes
 - it is a useful reminder that simple engagement variables are operationally convenient but conceptually limited
@@ -125,7 +125,7 @@ learning objectives.
 The students of the experimental group, who used an MGLS, had a better learning
 achievement than either of the control groups in the post-test.
 
-**Additional note from external sources:**
+**Additional note:**
 
 - the system studied in the paper combines multiple gamification features inside a structured learning flow
 - this matters because the benefit appears to come from integration with learning objectives, not from isolated UI features alone
@@ -145,7 +145,7 @@ satisfied with its effectiveness.
 The learning achievement of the experimental group was higher than either of the two control
 groups.
 
-**Additional note from external sources:**
+**Additional note:**
 
 - the paper suggests that badges work best when tied to visible achievement and meaningful activity
 - it also suggests that badges are more useful as part of a wider system than as a standalone reward mechanic
@@ -166,7 +166,7 @@ Challenges were tasks students had to complete to be granted XP and achievements
 There was a significant increase of 133% in challenge posts by student (Mann-Whitney’s U,
 p < 0.001).
 
-**Additional note from external sources:**
+**Additional note:**
 
 - the paper is especially useful because it studies gamification in a real course environment
 - it reports not only more participation, but also stronger online activity and proactivity over time
@@ -188,7 +188,7 @@ projects.
 A way to engage learners in a collaborative production of knowledge is to promote social
 rewards.
 
-**Additional note from external sources:**
+**Additional note:**
 
 - the paper presents social gamification as a framework rather than a single mechanic
 - this is useful because it shows how participation can be increased through ecosystems of actions, feedback, and lightweight rewards
@@ -204,7 +204,7 @@ rewards.
 Consider the failure as part of the learning process… without penalizing the student.
 Positive failure feedback lead students to keep trying, raising their level of engagement.
 
-**Additional note from external sources:**
+**Additional note:**
 
 - this paper is one of the clearest supports for treating failure as part of an engagement system rather than only as a negative outcome
 - it is especially relevant for educational products where continued effort matters more than one-time correctness
@@ -225,13 +225,15 @@ Personalization of e-learning should be supported by artificial intelligence.
 Artificial intelligence allows professors to find specific actions, patterns, major mistakes and
 other behavioural characteristics of students.
 
+![Figure 4 and Figure 5 from Paper 7](assets/paper7-gamification-elements.png)
+
 **Gamification elements classified in the research notes:**
 
 - Most commonly used: badges, leaderboard, levels, points, progress bar
 - Commonly used: avatars, challenges, feedback, key / unlock, rewards, rank, tour / narrative
 - Occasionally used: awards, chat, coins, hints / tips, medals, star, timer, trophy, virtual shop
 
-**Additional note from external sources:**
+**Additional note:**
 
 - the paper frames AI as part of a structured e-learning model rather than as an isolated plug-in
 - the main implication is that personalization and adaptive interpretation are valuable, but they need clear educational goals and supporting system design
@@ -251,7 +253,7 @@ other behavioural characteristics of students.
 we conducted a semester-long, between-subjects study
 achieved statistically significant improvements in their final scores
 
-**Additional note from external sources:**
+**Additional note:**
 
 - the semester-long design gives this paper unusual relevance for real educational platforms
 - compared with short controlled studies, it offers stronger evidence about how AI support behaves over time in normal classroom use
@@ -268,7 +270,7 @@ Correlation doesn’t specify best prompting strategy
 students turned to CodeTutor for different tasks
 prompt quality was significantly correlated with CodeTutor’s response effectiveness
 
-**Additional note from external sources:**
+**Additional note:**
 
 - this paper is especially relevant for analytics design because it shows that AI usage should be studied as a behavior pattern, not only as a feature toggle
 - it supports building systems that can observe hint use, prompting behavior, and longer-term performance change
