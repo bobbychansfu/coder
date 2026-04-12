@@ -45,6 +45,18 @@ SWAGGER_PORT="8081"
 
 `DATABASE_URL` is optional. If omitted, backend/Prisma derives it from `POSTGRES_USER`, `POSTGRES_PASSWORD`, `DB_PORT`, and `POSTGRES_DB`.
 
+For local auth and judging, the current template also includes:
+
+```env
+AUTH_MODE="dev"
+NEXT_PUBLIC_AUTH_MODE="dev"
+SESSION_COOKIE_NAME="session"
+DEV_AUTH_COOKIE_SECRET="REPLACE_WITH_A_LONG_RANDOM_SECRET"
+JUDGE_URL="http://judge.cmpt.sfu.ca"
+JUDGING_MODE="gemini"
+GEMINI_API_KEY="REPLACE_WITH_GEMINI_API_KEY"
+```
+
 If port `5432` is already used on your machine, change:
 - `DB_PORT="5433"`
 
@@ -113,30 +125,38 @@ curl -I http://127.0.0.1:3000
 curl -I http://127.0.0.1:8081
 ```
 
-## 7. Local Dev Login (Temporary, Pre-CAS)
+Useful backend route groups now exposed by the Next app:
+- Auth: `/api/auth/*`
+- Practice submissions: `/api/practice/*`
+- Student routes: `/api/s/*`
+- Judge/system routes: `/api/judge-callback`, `/api/m/judge_result`, `/api/cron/sync-contest-status`
 
-Until CAS is integrated, use a dev-only login flow so RBAC, middleware, and page guards can be tested locally.
+## 7. Auth Modes
 
-### 7.1 Suggested Dev Auth Endpoints
+This repo currently supports two auth paths:
+- `AUTH_MODE=dev`
+  - Local/dev quick-access flow using signed session cookies
+  - Backed by `POST /api/auth/dev-login` and `POST /api/auth/dev-signup`
+- `AUTH_MODE=cas`
+  - CAS login flow through `/api/auth/cas/login` and `/api/auth/cas/callback`
+  - The Next server reads session state through `AUTH_BACKEND_BASE_URL + AUTH_ME_PATH`
 
-Implement these backend endpoints in dev mode only (for example, behind `DEV_AUTH_ENABLED=true`):
+### 7.1 Current Dev Auth Endpoints
 
-- `POST /auth/dev/login`
-  - Body: `{ "computingId": "admin" }`
-  - Behavior:
-    - Find `User` by `computingId`
-    - Create session
-    - Set `HttpOnly` session cookie
-    - Return current user profile (`id`, `computingId`, `role`)
-- `GET /me`
-  - Reads session cookie
-  - Returns current user (`id`, `role`, etc.) or `401`
-- `POST /auth/dev/logout`
-  - Clears session cookie
+Available in dev mode only:
+
+- `POST /api/auth/dev-login`
+  - Body: `{ "email": "sarah.johnson@sfu.ca", "role": "instructor" }`
+  - Creates a signed dev session cookie for a configured demo user
+- `POST /api/auth/dev-signup`
+  - Body: `{ "name": "New Student", "computingId": "abc123", "email": "abc123@sfu.ca" }`
+  - Creates a student user and signs them in immediately
+- `POST /api/auth/logout`
+  - Clears the session cookie
 
 Important:
-- Never enable these endpoints in production.
-- Keep `/auth/dev/*` disabled when CAS is live.
+- Never enable dev auth in production.
+- Keep `DEV_AUTH_COOKIE_SECRET` set when `AUTH_MODE=dev`.
 
 ### 7.2 Seeded Test Users
 
@@ -158,29 +178,37 @@ Note:
 Use a cookie jar to simulate browser session:
 
 ```bash
-# Login as admin (dev-only endpoint)
+# Login as instructor (dev-only endpoint)
 curl -i -c /tmp/coder-dev.cookies \
-  -X POST http://localhost:5000/auth/dev/login \
+  -X POST http://localhost:3000/api/auth/dev-login \
   -H "Content-Type: application/json" \
-  -d '{"computingId":"admin"}'
+  -d '{"email":"sarah.johnson@sfu.ca","role":"instructor"}'
 
-# Verify current session user
-curl -i -b /tmp/coder-dev.cookies http://localhost:5000/me
+# Use the session against an app/backend route
+curl -i -b /tmp/coder-dev.cookies http://localhost:3000/api/s/info
 ```
 
 Then open:
 
 - `http://localhost:3000/dashboard`
-- `http://localhost:3000/contests/create` (should pass for instructor/admin; TA depends on flags)
+- `http://localhost:3000/instructor`
+- `http://localhost:3000/practice`
 - `http://localhost:3000/admin/users` (admin only)
 
-### 7.4 Replace With CAS Later
+### 7.4 CAS Mode Notes
 
-When CAS integration is ready:
+When running in CAS mode:
 
-1. Disable/remove `/auth/dev/*` endpoints.
-2. Keep `GET /me` contract stable (frontend already depends on it).
-3. Keep session cookie behavior unchanged (HttpOnly + SameSite + Secure in prod).
+1. Set `AUTH_MODE="cas"` and `NEXT_PUBLIC_AUTH_MODE="cas"`.
+2. Configure:
+   - `AUTH_BACKEND_BASE_URL`
+   - `AUTH_ME_PATH`
+   - `AUTH_BACKEND_CAS_PATH`
+   - `CAS_LOGIN_BASE_URL`
+3. Use:
+   - `GET /api/auth/cas/login`
+   - `POST /api/auth/cas/login`
+   - `GET /api/auth/cas/callback`
 
 ## 8. Fresh Machine Bootstrap
 
@@ -215,6 +243,10 @@ This bypasses Prisma seed and is only for legacy compatibility checks.
 - Docker stack: `docker/docker-compose.yml`
 - Optional SQL overlay: `docker/docker-compose.sql-import.yml`
 - OpenAPI spec: `docs/backendAPI.yaml`
+- API summary: `docs/API Doc.md`
+- Vercel cron schedule: `vercel.json`
+- Next API routes: `src/app/api`
+- Practice submission service: `src/server/practice/submissionService.ts`
 
 ## 11. Troubleshooting
 
@@ -227,3 +259,9 @@ This bypasses Prisma seed and is only for legacy compatibility checks.
 - Local Postgres conflict on `5432`
   - Change `DB_PORT` to `5433`, then run `npm run db:down && npm run db:up`.
   - If `DATABASE_URL` is set, update it to port `5433` too.
+- Swagger UI does not load on a remote VM
+  - `localhost` in your browser usually refers to your own machine, not the VM.
+  - Use SSH port forwarding, or open the OpenAPI file directly at `docs/backendAPI.yaml`.
+- Judge-related routes fail in practice or contest submission
+  - Confirm `JUDGE_URL` is reachable from the machine running the app.
+  - For AI practice judging, confirm `GEMINI_API_KEY` is set when `JUDGING_MODE="gemini"`.

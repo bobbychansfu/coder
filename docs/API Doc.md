@@ -1,6 +1,6 @@
 # API Endpoints Documentation
 
-## Local Swagger/OpenAPI Preview
+## Local Swagger Preview
 
 1. Start local infrastructure:
 
@@ -11,123 +11,171 @@ npm run db:up
 2. Open Swagger UI:
 - `http://localhost:${SWAGGER_PORT}` (default `8081`)
 
-3. Source OpenAPI file:
+3. OpenAPI source of truth:
 - `docs/backendAPI.yaml`
 
-## 🔐 Authentication & Basics
+4. Run the app if you want to try endpoints against a live server:
 
-- `GET /`
-  - [cite_start]**Description:** CAS Login entry point or redirect to frontend. [cite: 31]
-  - **Params:** `ticket` (query)
-- `GET /login/`
-  - [cite_start]**Description:** Render password login page (or redirect). [cite: 32]
-- `POST /login/`
-  - [cite_start]**Description:** Process password-based login. [cite: 33]
-  - **Body:** `uname`, `password`
-- `GET /logout/`
-  - [cite_start]**Description:** Logout the current user. [cite: 33]
+```bash
+npm run dev
+```
 
----
+Default app URL:
+- `http://localhost:3000`
 
-## 👨‍🎓 Student Endpoints (`/s/`)
+## Notes
 
-### General & Profile
+- This document is a quick human-readable summary.
+- The more complete contract lives in `docs/backendAPI.yaml`.
+- Instructor endpoints in Swagger are still marked as planned and may not map to concrete Next.js REST routes yet.
 
-- `GET /s/info`
-  - [cite_start]**Description:** Get summary info for student contests. [cite: 51]
-- `GET /s/profile`
-  - [cite_start]**Description:** Get current user profile details. [cite: 58]
-- `POST /s/update_profile`
-  - [cite_start]**Description:** Update user profile. [cite: 59]
-  - **Body:** `fname`, `lname`, `nickname`
-- `GET /s/achievements`
-  - [cite_start]**Description:** Get list of user achievements. [cite: 61]
-- `GET /s/achievements/:id/icon`
-  - [cite_start]**Description:** Get the icon image for a specific achievement. [cite: 61]
+## Authentication (`/api/auth/*`)
 
-### Contest Workflow
+- `GET /api/auth/cas/login`
+  - Redirects the browser to CAS.
+  - Optional query: `next`
+- `POST /api/auth/cas/login`
+  - Returns a CAS redirect URL in JSON.
+  - Optional body: `{ next }`
+- `GET /api/auth/cas/callback`
+  - Completes CAS login and redirects back into the app.
+  - Query: `ticket`, optional `next`
+- `POST /api/auth/dev-login`
+  - Dev-only login flow.
+  - Body: `{ email, role }`
+- `POST /api/auth/dev-signup`
+  - Dev-only student signup plus login.
+  - Body: `{ name, computingId, email, studentNumber? }`
+- `POST /api/auth/logout`
+  - Clears the session cookie.
 
-- `POST /s/contest/register/:cid`
-  - [cite_start]**Description:** Register for a specific contest. [cite: 52]
-- `GET /s/contest/unregister/:cid`
-  - [cite_start]**Description:** Unregister from a contest. [cite: 52]
-- `GET /s/entercontest/:cid`
-  - [cite_start]**Description:** Enter contest lobby (Checks registration status). [cite: 53]
-- `GET /s/contest/:cid`
-  - [cite_start]**Description:** Get contest details and problem statuses. [cite: 55]
-- `GET /s/closed/:cid`
-  - [cite_start]**Description:** Get info for a closed contest. [cite: 54]
+## Practice (`/api/practice/*`)
 
-### Problem Solving & Submissions
+- `POST /api/practice/submissions`
+  - Creates a practice submission.
+  - Students get a persisted queued submission.
+  - Instructors get an ephemeral judged response.
+  - Body: `{ problemId, language, code }`
+- `GET /api/practice/submissions/:submissionId`
+  - Returns a persisted practice submission for the current student.
+- `GET /api/practice/submissions/:submissionId/stream`
+  - Streams practice submission updates with Server-Sent Events.
 
-- `GET /s/problem/:cid/:pid`
-  - [cite_start]**Description:** Get details for a specific problem. [cite: 55]
-- `POST /s/submit/:cid/:pid`
-  - [cite_start]**Description:** **Submit Code**. [cite: 56]
-  - **Body:** `filecode` OR `textcode`, `language`, `connection_id`
-- `GET /s/submissions/:cid/:pid`
-  - [cite_start]**Description:** Get submission history for a specific problem. [cite: 57]
-- `GET /s/allsubmissions`
-  - [cite_start]**Description:** Get all submissions for the current user. [cite: 58]
+## Student (`/api/s/*`)
 
-### AI Hints
+### Profile and progress
 
-- `POST /s/request_hint`
-  - [cite_start]**Description:** Request an AI-generated hint. [cite: 60]
-  - **Body:** `pid`
-- `GET /s/hints`
-  - [cite_start]**Description:** Retrieve hint history for a problem. [cite: 60]
-  - **Query:** `computing_id`, `pid`
+- `GET /api/s/info`
+  - Returns the current user’s contest summary payload.
+- `GET /api/s/profile`
+  - Returns the current user profile and activity history.
+- `POST /api/s/update_profile`
+  - Updates the current user profile.
+  - Body: `{ fname, lname, nickname, student_number }`
+- `GET /api/s/achievements`
+  - Returns achievements plus topic XP and total XP.
+- `GET /api/s/achievements/:id/icon`
+  - Returns the stored PNG icon for an achievement.
 
----
+### Contest workflow
 
-## 👨‍🏫 Instructor Endpoints (`/i/`)
+- `POST /api/s/contest/register/:cid`
+  - Registers the current user for a contest when registration is open.
+- `GET /api/s/contest/unregister/:cid`
+  - Unregisters the current user from a contest.
+- `GET /api/s/entercontest/:cid`
+  - Validates contest state, initializes problem status rows, and enters the contest.
+- `GET /api/s/contest/:cid`
+  - Returns contest problem status and scoreboard data for the viewer.
+- `GET /api/s/closed/:cid`
+  - Returns closed-contest info for the viewer.
 
-### Dashboard & Contests
+### Problems and submissions
 
-- `GET /i/info`
-  - [cite_start]**Description:** Get instructor dashboard summary. [cite: 37]
-- `GET /i/contests`
-  - [cite_start]**Description:** Get list of all contests (Admin/Instructor view). [cite: 40]
-- `GET /i/contest/create`
-  - [cite_start]**Description:** Get data required to render the create contest form. [cite: 38]
-- `POST /i/contest/create`
-  - [cite_start]**Description:** Create or update a contest. [cite: 39]
-  - **Body:** `name`, `starts_at`, `ends_at`, `published`, `type`, `location`, `newProblems`
-- `GET /i/contest/:cid`
-  - [cite_start]**Description:** Get contest details for editing. [cite: 42]
+- `GET /api/s/problem/:cid/:pid`
+  - Returns contest problem details, rendered HTML, and downloadable assets.
+- `POST /api/s/submit/:cid/:pid`
+  - Submits contest code to the judge.
+  - Accepts JSON or `multipart/form-data`.
+  - Request body supports:
+    - `language`
+    - `textcode` or `code`
+    - `filecode` for multipart uploads
+    - optional `connection_id`
+- `GET /api/s/submissions/:cid/:pid`
+  - Returns submission history for one contest problem.
+- `GET /api/s/allsubmissions`
+  - Returns all submissions for the current user.
 
-### User Management
+### AI hints
 
-- `GET /i/adduser`
-  - [cite_start]**Description:** Get form data for adding a new user. [cite: 43]
-- `POST /i/adduser`
-  - [cite_start]**Description:** Add a new user manually. [cite: 44]
-  - **Body:** `username`, `password`
+- `POST /api/s/request_hint`
+  - Requests an AI-generated hint for a problem.
+  - Body must include `pid`
+- `GET /api/s/hints?pid=:pid`
+  - Returns stored hint history for the current user and problem.
 
-### Monitoring & Grading
+## Instructor (`/api/i/*`)
 
-- `GET /i/problem/:cid/:pid`
-  - [cite_start]**Description:** Get problem details (Instructor view). [cite: 40]
-- `POST /i/submit/:cid/:pid`
-  - [cite_start]**Description:** Submit code (Instructor test run). [cite: 41]
-- `GET /i/submissions/:cid/:pid`
-  - [cite_start]**Description:** View all student submissions for a problem. [cite: 44]
-- `GET /i/allsubmissions`
-  - [cite_start]**Description:** View all submissions globally. [cite: 45]
+- These entries are kept here for reference because they still exist in Swagger.
+- In this project, many instructor REST endpoints are still planning/design contracts rather than concrete `src/app/api` routes.
 
----
+### Dashboard and contests
 
-## 🤖 System & Judging (`/m/`)
+- `GET /api/i/info`
+  - Instructor dashboard summary
+- `GET /api/i/contests`
+  - Instructor/admin contest list
+- `GET /api/i/contest/create`
+  - Data required to render the contest authoring form
+- `POST /api/i/contest/create`
+  - Create a contest
+  - Planned body includes contest metadata plus selected/new problems
+- `GET /api/i/contest/:cid`
+  - Contest details for editing
+- `PATCH /api/i/contests/:contestId`
+  - Partial contest update
 
-- `POST /m/judge_result`
-  - [cite_start]**Description:** Webhook to receive results from the Judge. [cite: 34]
-  - **Body:** `sid`, `status`, `judge_output`, `score`
-- `GET /m/scoreboard/:cid`
-  - [cite_start]**Description:** Get scoreboard data for a contest. [cite: 34]
-- `GET /m/submissions`
-  - [cite_start]**Description:** Retrieve status for multiple submissions (polling). [cite: 35]
-  - **Query:** `sids`
-- `POST /m/report_ai_hint`
-  - [cite_start]**Description:** Callback to report the result of AI hint generation job. [cite: 36]
-  - **Body:** `code`, `feedback`, `validation`, `connection_id`, `is_job_successful`
+### Problems and authoring
+
+- `GET /api/i/problem/:cid/:pid`
+  - Problem details for instructor review
+- `PATCH /api/i/problems/:problemId`
+  - Partial problem update
+
+### Users and submissions
+
+- `GET /api/i/adduser`
+  - Form data for adding a user manually
+- `POST /api/i/adduser`
+  - Add a new user manually
+- `POST /api/i/submit/:cid/:pid`
+  - Instructor test-run submission
+- `GET /api/i/submissions/:cid/:pid`
+  - View submissions for a problem
+- `GET /api/i/allsubmissions`
+  - View all submissions globally
+
+## System and judging
+
+- `POST /api/judge-callback`
+  - Main judge webhook.
+  - Handles both contest submissions and persisted practice submissions.
+  - Body includes `sid`, `status`, `judge_output`, `score`, `connection_id`
+- `POST /api/m/judge_result`
+  - Legacy alias for `/api/judge-callback`
+- `GET /api/cron/sync-contest-status`
+  - Protected cron endpoint that syncs contest `status` with wall-clock time.
+  - Requires `x-cron-secret` header or `secret` query matching `CRON_SECRET`
+
+## Internal transport
+
+- `GET /api/trpc/:trpc`
+- `POST /api/trpc/:trpc`
+  - Internal tRPC transport used by the frontend client.
+  - Not intended as a normal REST integration surface.
+
+## Instructor note
+
+- Swagger still contains `/api/i/*` instructor contracts for planning and reference.
+- Those entries should be treated as design-time API documentation unless a concrete REST route exists under `src/app/api`.
