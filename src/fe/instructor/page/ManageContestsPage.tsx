@@ -140,14 +140,14 @@ export default function ManageContestsPage() {
       },
       {
         id: "total-problems",
-        label: "Total Problems",
+        label: "Your Problems",
         value: problemRecords.length,
         icon: CodeRoundedIcon,
         tone: "blue",
       },
       {
         id: "public-problems",
-        label: "Public Problems",
+        label: "Your Public Problems",
         value: problemRecords.filter((problem) => problem.status === "public").length,
         icon: CodeRoundedIcon,
         tone: "orange",
@@ -270,7 +270,7 @@ export default function ManageContestsPage() {
         <PageHeader onBack={() => router.push(ROUTES.instructor)} backLabel="Back" />
 
         <Box className={styles.hero}>
-          <Typography className={styles.pageTitle}>Manage Problems &amp; Contests</Typography>
+          <Typography className={styles.pageTitle}>Manage Your Problems &amp; Contests</Typography>
           <Typography className={styles.pageSubtitle}>
             Review the real publishing state of your problems and contests
           </Typography>

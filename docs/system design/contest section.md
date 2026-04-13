@@ -1,476 +1,696 @@
-# 🏁 Contest App (LeetCode-style) — MVP System Design Notes  
-**Flexible open window + Per-student timer + Hint guardrails + Async judging + Delayed scoreboard + Clarifications + Matrices Dashboard (SSE auto refresh)**
+# Contest Section - System Design Notes
+**Schedule-based contest registration + contest problem workspace + direct judge integration + live scoreboard aggregation**
 
 ---
 
 ## Table of Contents
-1. [Overview](#1-overview)  
-2. [UI & Product Behavior (Dashboard + Contest Detail)](#2-ui--product-behavior-dashboard--contest-detail)  
-3. [Core Rules (MVP)](#3-core-rules-mvp)  
-4. [Tech Stack](#4-tech-stack)  
-5. [Concepts (Redis / BullMQ / Watermark / SSE)](#5-concepts-redis--bullmq--watermark--sse)  
-6. [System Architecture](#6-system-architecture)  
-7. [Data Model (Minimal Schema)](#7-data-model-minimal-schema)  
-8. [RBAC & API Boundary](#8-rbac--api-boundary)  
-9. [Attempt State Machine](#9-attempt-state-machine)  
-10. [API Design](#10-api-design)  
-11. [Contest Timer Lockdown (Frontend + Backend)](#11-contest-timer-lockdown-frontend--backend)  
-12. [Session Keepalive & Eligibility (Two-stage Grace)](#12-session-keepalive--eligibility-two-stage-grace)  
-13. [Judging (Async) — MVP Safety Guardrails](#13-judging-async--mvp-safety-guardrails)  
-14. [Scoreboard (Delayed Publish) + Ranking Rule](#14-scoreboard-delayed-publish--ranking-rule)  
-15. [fications (MVP1: Instructor/TA Announcements)](#15-clarifications-mvp1-instructorta-announcements)  
-16. [Practice Mode (No Timer, No Judging)](#16-practice-mode-no-timer-no-judging)  
-17. [Matrices Dashboard (Instructor)](#17-matrices-dashboard-instructor)  
-18. [Reliability / Consistency / Scalability](#18-reliability--consistency--scalability)  
-19. [MVP Checklist](#19-mvp-checklist)
+1. [Overview](#1-overview)
+2. [UI & Product Behavior](#2-ui--product-behavior)
+3. [Core Rules (Current Project)](#3-core-rules-current-project)
+4. [Tech Stack](#4-tech-stack)
+5. [System Architecture](#5-system-architecture)
+6. [Data Model](#6-data-model)
+7. [Visibility & RBAC Boundary](#7-visibility--rbac-boundary)
+8. [Contest Lifecycle](#8-contest-lifecycle)
+9. [Student Flow](#9-student-flow)
+10. [API Design](#10-api-design)
+11. [Judging & Submission State](#11-judging--submission-state)
+12. [Scoreboard, Hints, and Announcements](#12-scoreboard-hints-and-announcements)
+13. [Relationship to Practice](#13-relationship-to-practice)
+14. [Reliability / Consistency / Known Gaps](#14-reliability--consistency--known-gaps)
+15. [Current Implementation Checklist](#15-current-implementation-checklist)
 
 ---
 
 ## 1) Overview
-This system provides a **LeetCode-style contest experience**:
 
-- **Flexible open window**: `openAt → closeAt` (e.g., 48 hours)
-- **Per-student attempt timer**: starts when a student clicks **Join** (e.g., 30 minutes)
-- **Run unlimited** (public testcases only)
-- **Submit once per problem** (final submission → async judging)
-- **AI Hint guardrails**:
-  - unlocked **1 minute** after opening a problem
-  - **1 minute cooldown** between hints
-  - optional max hints per problem (MVP recommended: `1` or `3`)
-- **Eligibility policy**: leaving/disconnect is allowed, but can **forfeit** after grace windows
-- **Scoreboard**: visible after contest ends (supports **delayed publish**, e.g., +1 hour)
-clarifications per contest
-- **Matrices Dashboard (Instructor)**: included below (high-level) with a link to the full analytics spec
+The Contest section provides a **shared scheduled contest experience** for registered users.
 
----
+In the current project, contests are:
 
-## 2) UI & Product Behavior (Dashboard + Contest Detail)
+- created and edited by instructors/admins through a tRPC authoring flow
+- exposed to students through App Router pages and `/api/s/*` REST endpoints
+- governed by a **contest-wide schedule** (`startsAt`, `endsAt`, `durationMinutes`)
+- registered per student through `Participation`
+- tracked per problem through `ProblemStatus`
+- judged by forwarding submissions to an external judge service
+- summarized through a live scoreboard derived from stored contest results
 
-### 2.1 Dashboard
-Contests are grouped by status:
-- **In Progress (orange highlight)**  
-  - contest is currently active/open
-  - students can **Join Now** immediately
-- **Upcoming**  
-  - contest not opened yet
-  - students can view metadata (time/duration/problems)
-  - optional “starting soon” notification via SSE
-- **Closed / Ended**  
-  - contest ended
-  - scoreboard may be visible (depending on publish time)
+Important current behavior:
 
-### 2.2 Contest Detail Page
-Tabs:
-- **Problems**
-- **Scoreboard**
-- **Clarifications**
-
-Scoreboard visibility (MVP):
-- Only for ended contests
-- May be hidden until `scoreboard_publish_at` (e.g., closeAt + 1 hour)
-
-Clarifications:
-- Instructor/TA posts announcements
-- Students view read-only feed
+- contests are **not** using a per-student countdown timer in the main student flow
+- students can submit **multiple times** to the same problem while the contest is active
+- scoreboard rows are built from current stored scores, not from delayed snapshot publication
+- practice is now a separate system and should be documented independently
 
 ---
 
-## 3) Core Rules (MVP)
+## 2) UI & Product Behavior
 
-### 3.1 Flexible Window + Per-student Timer
-- Students can join only when `openAt ≤ now ≤ closeAt`
-- On Join, system creates/returns an attempt:
-  - `attemptStartAt = serverNow`
-  - `attemptEndAt = attemptStartAt + durationSec` (e.g., 1800s)
+### 2.1 Contest dashboard
 
-### 3.2 Run / Hint / Submit
-- **Run**: unlimited, public testcases only, does not affect scoreboard
-- **Submit**: only **once per problem per attempt**
-- **Hint**:
-  - `now ≥ problemOpenedAt + 60s`
-  - cooldown: `now ≥ lastHintAt + 60s`
-  - optional cap: `hintCount < maxHints`
+Primary route:
+- `/contests`
 
-### 3.3 Time’s Up
-When `now > attemptEndAt`:
-- UI shows modal “Time’s up”
-- Submit/Hint disabled
-- user is redirected out of contest pages
-- backend rejects late submit/hint requests
+Behavior:
+- shows contests the student is already registered for
+- also shows published contests the student can still join
+- groups contest state using effective schedule status:
+  - `Upcoming`
+  - `In Progress`
+  - `Closed`
+
+### 2.2 Contest detail page
+
+Route:
+- `/contests/[id]`
+
+Behavior:
+- loads the selected contest and the student-facing contest problem list
+- shows:
+  - problem list
+  - current scoreboard
+- only renders the scoreboard tab when there are scoreboard rows to display
+
+### 2.3 Contest problem page
+
+Route:
+- `/contests/[id]/problems/[code]`
+
+Behavior:
+- loads the problem statement and starter code
+- shows student submission history for that contest problem
+- keeps per-problem draft code in browser storage
+- supports previous/next problem navigation
+- allows contest submission while the contest is active
+- disables new submissions when the contest is upcoming or closed
+
+### 2.4 Instructor authoring
+
+Instructor/admin contest authoring is handled separately from student contest play:
+
+- draft list and editor use the `contestAuthoring` tRPC router
+- instructors choose visibility, schedule, AI hint setting, and selected problems
+- publishing a contest makes it visible to the student-facing contest flow
+
+---
+
+## 3) Core Rules (Current Project)
+
+### 3.1 Contest visibility
+
+For the student contest flow, a contest must generally be:
+
+- `manageStatus = ACTIVE`
+- `published = true`
+- `status != DRAFT`
+- non-private for student discovery (`visibility != PRIVATE`)
+
+Instructors and admins can view a broader set of contests through instructor-aware lookups.
+
+### 3.2 Contest status
+
+The effective student-facing status is computed from schedule:
+
+- `DRAFT`
+- `UPCOMING`
+- `ACTIVE`
+- `ENDED`
+
+If `endsAt` is missing, `durationMinutes` can still be used to derive the effective end time.
+
+### 3.3 Registration and entry
+
+Current student flow has two separate concepts:
+
+- **Register**: create a `Participation` row for the student as a contestant
+- **Enter**: initialize per-problem `ProblemStatus` rows for that contest
+
+Students can register for contests that are currently:
+
+- `UPCOMING`
+- `ACTIVE`
+
+### 3.4 Submission behavior
+
+Contest submissions in the current project are:
+
+- allowed only while the contest is effectively `ACTIVE`
+- persisted in `Submission`
+- forwarded to an external judge service
+- allowed multiple times per problem
+
+Unlike the older design draft, the current backend does **not** enforce one final submission per problem.
+
+### 3.5 Problem progress
+
+The main student progress record is `ProblemStatus`:
+
+- default status starts as `not started`
+- later updates become `correct` or `wrong`
+- score is stored per contest/problem/user
+- `tries` increments when a pending submission settles to a non-system final result
 
 ---
 
 ## 4) Tech Stack
 
 ### Frontend
+
 - Next.js App Router + TypeScript
-- React Query (TanStack Query) for server-state caching + invalidation
-- SSE (Server-Sent Events) to push “refresh now” signals
+- React client pages for contest interaction
+- MUI + CSS Modules for UI
+- browser local storage for contest code drafts
 
 ### Backend
-- PostgreSQL (source of truth)
-- Redis + BullMQ (async jobs, delayed jobs)
-- API boundary:
-  - `/s/*` Student APIs
-  - `/i/*` Instructor/TA/Admin APIs
-  - `/m/*` Internal-only APIs (worker writeback)
+
+- PostgreSQL as source of truth
+- Prisma for persistence
+- App Router REST endpoints under `/api/s/*`, `/api/m/*`, and `/api/cron/*`
+- tRPC for instructor contest authoring and analytics surfaces
+
+### Judge integration
+
+- external judge service configured by `JUDGE_URL`
+- direct HTTP submission to `/judge_submission`
+- callback handling through:
+  - `/api/judge-callback`
+  - `/api/m/judge_result`
 
 ---
 
-## 5) Concepts (Redis / BullMQ / Watermark / SSE)
+## 5) System Architecture
 
-### Redis
-In-memory key-value store. Used primarily as BullMQ’s queue backend (and optional locks).
-
-### BullMQ
-A popular Node.js/TS job queue built on Redis:
-- delayed jobs (perfect for closeAt+5m/+15m/+1h)
-- retries/backoff
-- worker concurrency + monitoring
-
-### Watermark (Snapshot Consistency)
-A snapshot uses a single cutoff timestamp `watermark`. All metrics in that snapshot include only events `<= watermark`, so the snapshot is internally consistent.
-
-### SSE
-Server → browser push channel (one-way). Used for:
-- “contest starting soon” notification (students)
-- “snapshot ready” notification (instructors)
-Then frontend refetches data immediately.
-
----
-
-## 6) System Architecture
-- **Web App** (Next.js)
-- **Postgres**: attempts, per-problem state, submissions, hint events, clarifications, snapshots
-- **Redis/BullMQ**:
-  - `judgeQueue`: async judging jobs
-  - `metricsQueue`: delayed snapshot jobs (+5m/+15m)
-  - `scoreboardQueue` (optional): delayed publish (+1h)
-- **SSE Streams**:
-  - Student: `/s/notifications/stream`
-  - Instructor: `/i/matrices/stream?contestId=...`
+- **Contest dashboard / pages**
+  - server-rendered App Router pages load contest data from DB helpers
+- **Student contest API**
+  - exposes registration, contest detail, problem detail, submissions, and hint routes
+- **Contest submission service**
+  - validates user/session/contest state
+  - creates `Submission`
+  - forwards code to the judge
+- **Judge callback handler**
+  - applies final judge status to contest submissions
+  - also supports practice callback updates through the same endpoint
+- **Scoreboard builder**
+  - computes rows from `Participation` + `ProblemStatus`
+- **Contest status sync cron**
+  - keeps stored `Contest.status` aligned with wall-clock schedule
+- **Instructor analytics sidecar**
+  - reads contest experiment/session data for post-contest analytics
 
 ---
 
-## 7) Data Model (Minimal Schema)
+## 6) Data Model
 
-### 7.1 contests
-`contests`
+The current contest system primarily uses the following tables.
+
+### 6.1 `Contest`
+
+Relevant fields:
+
+- `id`
+- `slug`
+- `name`
+- `description`
+- `status`
+- `manageStatus`
+- `visibility`
+- `startsAt`
+- `endsAt`
+- `durationMinutes`
+- `participants`
+- `published`
+- `aiHintEnabled`
+- `instructorId`
+
+Notes:
+
+- `status` is stored but also interpreted through `getEffectiveContestStatus`
+- `participants` is maintained as a counter alongside participation rows
+
+### 6.2 `ContestProblem`
+
+Join table for contest membership:
+
+- `contestId`
+- `problemId`
+- `ordering`
+
+Current usage:
+
+- defines which problems belong to a contest
+- controls the A/B/C-style ordering shown to students
+
+### 6.3 `Participation`
+
+Student registration table:
+
+- `userId`
+- `contestId`
+- `role`
+- `rank`
+- `experimentGroup`
+- `assignmentMethod`
+- `assignedAt`
+
+Current usage:
+
+- `role = contestant` drives student registration
+- instructor analytics can also use experiment-group metadata
+
+### 6.4 `ProblemStatus`
+
+Per-student per-problem contest summary:
+
+- `userId`
+- `contestId`
+- `problemId`
+- `status`
+- `tries`
+- `timePenalty`
+- `score`
+
+Current usage:
+
+- initialized when the student enters the contest
+- updated as contest submissions settle
+- used to build the contest scoreboard
+
+### 6.5 `Submission`
+
+Contest submission history:
+
+- `id`
+- `language`
+- `submission`
+- `status`
+- `score`
+- `judgeOutput`
+- `createdAt`
+- `userId`
+- `contestId`
+- `problemId`
+
+Important current behavior:
+
+- there is **no** unique constraint limiting one submission per problem
+- submission history is preserved per user/problem
+
+### 6.6 `Announcement`
+
+Contest-related announcements exist in schema:
+
 - `id`
 - `title`
-- `open_at`, `close_at`
-- `duration_sec`
-- `status` (`UPCOMING|OPEN|CLOSED`)
-- `scoreboard_publish_at` (nullable)
+- `message`
+- `scope`
+- `authorId`
+- `contestId`
 
-### 7.2 problems
-`problems`
-- `id`, `title`, `difficulty`
-- `statement_md`
-- `public_testcases_json` (Run only)
-- `private_testcases_ref` (Submit judging only, secret)
+Current note:
 
-`contest_problems`
-- `contest_id`, `problem_id`, `order_index`
+- announcements are used by admin/instructor surfaces
+- the current student contest detail API does not yet expose a live contest clarifications feed
 
-### 7.3 per-student attempt
-`contest_attempts`
-- `id`
-- `contest_id`
-- `student_id`
-- `started_at`, `ends_at`
-- `state` (`ACTIVE|OFFLINE|FORFEITED|ENDED`)
-- `last_seen_at`
+### 6.7 `ContestExperimentGroup` and `ContestProblemSession`
 
-**Unique**: `(contest_id, student_id)` (one attempt per student)
+These tables exist for analytics and experimentation support.
 
-### 7.4 per-problem state (rate limits + one-submit)
-`problem_attempt_state`
-- `attempt_id`, `problem_id` (PK)
-- `started_at` (first open time)
-- `run_count`
-- `submitted_at`, `submission_id`
-- `hint_count`, `last_hint_at`
+`ContestExperimentGroup`
+- per-contest group metadata for hint experiments
 
-### 7.5 submissions
-`submissions`
-- `id`
-- `attempt_id`, `contest_id`, `problem_id`, `student_id`
-- `code`, `language`
-- `submitted_at`
-- `status` (`PENDING|DONE|SYSTEM_ERROR`)
-- `verdict`, `judged_at`
+`ContestProblemSession`
+- `startedAt`
+- `firstRunAt`
+- `firstSubmitAt`
+- `hintEligibleAt`
+- `hintTriggeredAt`
+- `solvedAt`
+- `selectedLang`
+- `solved`
 
-**Hard guard**: `UNIQUE(attempt_id, problem_id)` (one submit per problem)
+Current note:
 
-### 7.6 hint_events
-`hint_events`
-- `id`
-- `attempt_id`, `contest_id`, `problem_id`, `student_id`
-- `hint_requested_at` (server time)
-- `hint_delivered_at`
-- `hint_text`
-
-### 7.7 clarifications (MVP1: announcements only)
-`clarifications`
-- `id`
-- `contest_id`
-- `author_user_id` (instructor/TA)
-- `type` (`ANNOUNCEMENT`) *(MVP1)*
-- `content`
-- `created_at`
-- `visibility` (`PUBLIC`) *(MVP1)*
-
-### 7.8 matrices snapshots
-`matrices_snapshots`
-- `contest_id`
-- `snapshot_type` (`PRELIMINARY_5M|FINAL_15M`)
-- `computed_at`
-- `watermark_at`
-- `metrics_data_jsonb`
-
-**Unique**: `(contest_id, snapshot_type)`
-
-### 7.9 scoreboard snapshots
-`scoreboard_snapshots`
-- `contest_id`
-- `published_at`
-- `data_jsonb`
-- `status` (`HIDDEN|PUBLISHED`)
+- these tables support instructor analytics/research features
+- they are **not** the primary state model for the student contest request path today
 
 ---
 
-## 8) RBAC & API Boundary (Minimal)
-Goal: avoid “front-end hides button but backend still callable”.
+## 7) Visibility & RBAC Boundary
 
-- `/s/*` Student APIs: requires logged-in user
-- `/i/*` Instructor APIs: requires `role in {TA, INSTRUCTOR, ADMIN}`
-- `/m/*` Internal-only: requires internal token (e.g., `X-Internal-Token`) or network allowlist
+### Student access
+
+Student contest APIs require an authenticated user.
+
+For student-facing contest access, the backend generally expects:
+
+- the student to be registered through `Participation`
+- the contest to be non-private
+- the contest to be active in lifecycle terms (`manageStatus = ACTIVE`)
+
+### Instructor/admin access
+
+Instructor/admin viewers can inspect contests through `findContestForViewer`, which broadens access beyond normal contestant registration.
+
+### Internal/system access
+
+System routes include:
+
+- `/api/judge-callback`
+- `/api/m/judge_result`
+- `/api/cron/sync-contest-status`
+
+The cron route is protected with `CRON_SECRET`.
 
 ---
 
-## 9) Attempt State Machine
+## 8) Contest Lifecycle
 
-States: `ACTIVE | OFFLINE | FORFEITED | ENDED`
+### 8.1 Authoring
 
-Transitions (MVP):
-- `ACTIVE → OFFLINE` if `now - last_seen_at > 60s`
-- `OFFLINE → ACTIVE` if heartbeat resumes and `now ≤ attemptEndAt`
-- `OFFLINE → FORFEITED` if `now - last_seen_at > 300s` (5 min)
-- `ACTIVE/OFFLINE → ENDED` if `now > attemptEndAt` (or `attemptEndAt + buffer`)
-- `FORFEITED` is terminal (no recovery)
+Instructors/admins create contests through the `contestAuthoring` router.
+
+Current authoring flow supports:
+
+- contest name and description
+- schedule (`startsAt`, `endsAt`)
+- visibility (`PUBLIC`, `PRIVATE`, `COURSE_ONLY`)
+- AI hint toggle
+- selected problem list
+- draft vs published state
+
+### 8.2 Publishing
+
+Publishing a contest means:
+
+- `published = true`
+- `status` becomes one of:
+  - `UPCOMING`
+  - `ACTIVE`
+  - `ENDED`
+
+Draft contests remain hidden from the student flow.
+
+### 8.3 Status synchronization
+
+Contest status is kept aligned with wall-clock time by:
+
+- `getEffectiveContestStatus` during request-time reads
+- `/api/cron/sync-contest-status` for stored status synchronization
+
+### 8.4 Registration and participation
+
+Student participation lifecycle:
+
+1. Discover contest from `/api/s/info`
+2. Register through `/api/s/contest/register/:cid`
+3. Enter through `/api/s/entercontest/:cid`
+4. Work on contest problems while the contest is active
+
+### 8.5 Contest end
+
+Once the contest is ended:
+
+- new submissions are rejected
+- students can still review contest pages and prior submissions
+- scoreboard remains available from stored results
+
+---
+
+## 9) Student Flow
+
+### 9.1 Contest list
+
+`GET /api/s/info`
+
+Returns:
+
+- contests already registered by the student
+- additional contests the student can still join
+
+### 9.2 Register / unregister
+
+Registration endpoints:
+
+- `POST /api/s/contest/register/:cid`
+- `POST /api/s/contest/unregister/:cid`
+
+Behavior:
+
+- registration inserts or removes a `Participation`
+- contestant registration also increments/decrements the contest participant counter
+
+### 9.3 Enter contest
+
+`POST /api/s/entercontest/:cid`
+
+Behavior:
+
+- verifies the user is already registered
+- rejects upcoming or ended contests
+- initializes `ProblemStatus` rows for each contest problem
+- increments the student `competitionsParticipated` counter
+
+### 9.4 Contest detail
+
+`GET /api/s/contest/:cid`
+
+Returns:
+
+- contest problem status rows for the current user
+- scoreboard rows for the contest
+- current user role
+
+### 9.5 Problem detail and submissions
+
+Problem endpoints:
+
+- `GET /api/s/problem/:cid/:pid`
+- `GET /api/s/submissions/:cid/:pid`
+
+Behavior:
+
+- loads the contest problem statement and related metadata
+- creates an initial `ProblemStatus` row if needed
+- returns the student submission history for that problem
+
+### 9.6 Submit solution
+
+`POST /api/s/submit/:cid/:pid`
+
+Behavior:
+
+- accepts JSON or multipart submission input
+- creates a `Submission` row in `PENDING`
+- forwards the submission to the external judge
+- may settle inline immediately or later through the callback flow
 
 ---
 
 ## 10) API Design
 
-### 10.1 Student — Contest
-- `POST /s/contests/:contestId/join`
-  - check open window
-  - create/return attempt
-  - returns `{ attemptId, attemptStartAt, attemptEndAt, serverNow }`
+### 10.1 Student contest routes
 
-- `GET /s/contests/:contestId`
-  - returns contest meta + problems + attempt (if exists) + `serverNow`
+- `GET /api/s/info`
+  - student contest dashboard payload
 
-- `POST /s/contests/:contestId/problems/:problemId/open`
-  - upsert `problem_attempt_state.started_at`
-  - returns state + `serverNow`
+- `POST /api/s/contest/register/:cid`
+  - register current user as a contestant
 
-- `POST /s/contests/:contestId/problems/:problemId/run`
-  - public tests only
-  - increments `run_count`
+- `POST /api/s/contest/unregister/:cid`
+  - remove contestant registration
 
-- `POST /s/contests/:contestId/problems/:problemId/hint`
-  - enforce:
-    - attempt active and not expired
-    - `now ≥ started_at + 60s`
-    - cooldown: `now ≥ last_hint_at + 60s`
-    - optional cap
-  - record `hint_requested_at=now`
-  - returns hint text
+- `POST /api/s/entercontest/:cid`
+  - prepare the user to work on contest problems
 
-- `POST /s/contests/:contestId/submit`
-  - enforce attempt active + time check (`attemptEndAt + 5s buffer` optional)
-  - insert submission (PENDING) with DB unique guard
-  - enqueue judge job
-  - returns `{ submissionId }`
+- `GET /api/s/contest/:cid`
+  - contest problem list and scoreboard
 
-- `POST /s/contests/:contestId/heartbeat`
-  - update `last_seen_at`
-  - returns current attempt state
+- `GET /api/s/closed/:cid`
+  - closed contest metadata route
 
-### 10.2 Student — Scoreboard & Clarifications
-- `GET /s/contests/:contestId/scoreboard`
-  - if `now < scoreboard_publish_at`: `{ status: "HIDDEN", publishAt }`
-  - else: `{ status: "PUBLISHED", rows: [...] }`
+- `GET /api/s/problem/:cid/:pid`
+  - contest problem detail
 
-- `GET /s/contests/:contestId/clarifications`
-  - returns list (public announcements)
+- `POST /api/s/submit/:cid/:pid`
+  - create and judge a contest submission
 
-### 10.3 Instructor/TA — Clarifications
-- `POST /i/contests/:contestId/clarifications`
-  - RBAC required
-  - creates announcement
+- `GET /api/s/submissions/:cid/:pid`
+  - contest submission history for the current user/problem
 
-### 10.4 Internal
-- `POST /m/judging/result`
-  - worker writes verdict/status/judged_at
+### 10.2 Hint routes
 
----
+- `GET /api/s/hints?pid=...`
+  - read stored hint history for the current user/problem
 
-## 11) Contest Timer Lockdown (Frontend + Backend)
+- `POST /api/s/request_hint`
+  - forward a hint request to the judge service using current user context
 
-### 11.1 Frontend time calibration
-- `offsetMs = serverNow - Date.now()`
-- `remainingMs = attemptEndAt - (Date.now() + offsetMs)`
+### 10.3 Judge/system routes
 
-### 11.2 Time’s up UX
-When `remainingMs <= 0`:
-- show modal “Time’s up”
-- disable submit/hint
-- redirect user out of contest pages
+- `POST /api/judge-callback`
+  - judge writeback route for contest and practice submissions
 
-### 11.3 Backend hard enforcement (+ optional network buffer)
-- Submit/Hint must check `now ≤ attemptEndAt`
-- Optional tolerance: allow `attemptEndAt + 5s` to cover last-second network delay
-- reject with `403/409` “Attempt expired”
+- `POST /api/m/judge_result`
+  - alias to the same judge callback handler
+
+- `GET /api/cron/sync-contest-status`
+  - synchronize stored contest statuses with schedule
+
+### 10.4 Instructor authoring routes
+
+Contest authoring is currently handled by tRPC rather than public REST endpoints:
+
+- `contestAuthoring.listDraftContests`
+- `contestAuthoring.listProblemLibrary`
+- `contestAuthoring.getContestById`
+- `contestAuthoring.createContest`
+- `contestAuthoring.updateContest`
 
 ---
 
-## 12) Session Keepalive & Eligibility (Two-stage Grace)
-Goal: allow brief network issues but still enforce “exit impacts eligibility”.
+## 11) Judging & Submission State
 
-- Heartbeat every 10–15 seconds while in contest
-- Stage 1 (OFFLINE): if `now - last_seen_at > 60s`
-- Stage 2 (FORFEITED): if `now - last_seen_at > 300s`
+### 11.1 Submission creation
 
-UI behavior:
-- OFFLINE: show “Disconnected, trying to reconnect…”
-- FORFEITED: show “Attempt forfeited” and exit contest
+When a student submits code:
 
----
+1. backend validates session and contest visibility
+2. backend ensures the contest is effectively `ACTIVE`
+3. backend creates a `Submission` row with `status = PENDING`
+4. backend maps the app language to judge language
+5. backend forwards the request to `JUDGE_URL/judge_submission`
 
-## 13) Judging (Async) — MVP Safety Guardrails
-Because judging runs **untrusted user code**, MVP should include minimum guardrails:
+### 11.2 Result application
 
-- **timeout**: max runtime per run/judge (e.g., 2–5s)
-- **output limit**: cap stdout/stderr
-- *(recommended)* **no network** during execution
+Judge results are normalized through `applyContestJudgeResult`.
 
-Full container sandbox (Docker/Firejail/nsjail) can be a later iteration; MVP focuses on minimal stability.
+Current effects:
 
----
+- `Submission.status` is updated
+- `Submission.score` and `judgeOutput` are stored
+- `ProblemStatus` is upserted/updated
+- `tries` increments when a pending submission settles to a counted final result
+- user points/problems solved may increase
+- user activity and gamification sync may run
 
-## 14) Scoreboard (Delayed Publish) + Ranking Rule
+### 11.3 Callback handling
 
-### 14.1 Publish policy
-- `scoreboard_publish_at = closeAt + 1h` (configurable)
-- Before publish time: UI shows “Scoreboard will be available at …”
+The callback route:
 
-### 14.2 MVP ranking rule
-Only count submissions that are:
-- `status = DONE`
-- `verdict = ACCEPTED`
-
-Ranking:
-1) `Solved` (AC count) **DESC**
-2) Tie-break: `lastAcceptedAt` **ASC** (earlier is better)
-
-Penalty/ICPC scoring is marked **TBD** for later.
-
-### 14.3 Implementation
-Recommended:
-- BullMQ delayed job at `closeAt + 1h`:
-  - compute scoreboard snapshot
-  - write `scoreboard_snapshots(status=PUBLISHED)`
-- UI reads from snapshot table
+- first tries to match a contest `Submission` by `sid`
+- otherwise tries to match a practice submission by `connection_id`
+- returns:
+  - `400` for missing identifiers
+  - `404` if no contest or practice submission is found
+  - `200` when an update is applied
 
 ---
 
-## 15) Clarifications (MVP1: Instructor/TA Announcements)
-MVP1 scope:
-- Only `TA/INSTRUCTOR/ADMIN` can post announcements
-- Students can read-only view list
-- Optional future MVP2: student questions + instructor answers
+## 12) Scoreboard, Hints, and Announcements
+
+### 12.1 Scoreboard
+
+Current scoreboard behavior:
+
+- rows are derived from `Participation` + `ProblemStatus`
+- score is the sum of per-problem stored scores
+- solved count is based on `correct` or positive-score statuses
+- ranks are sorted by:
+  1. preset rank when present
+  2. total score descending
+  3. solved descending
+  4. display name ascending
+
+This is a **live aggregation** approach, not a delayed snapshot publish model.
+
+### 12.2 Hints
+
+Current hint behavior:
+
+- student hint requests are forwarded to the external judge service
+- user context, rank, topics, and related solved-problem context are attached
+- stored hint history can be queried from the local `Hint` table
+
+Important current limitation:
+
+- the request route itself does not apply the older planned cooldown/eligibility rules
+- local hint persistence is not handled in the request route itself
+
+### 12.3 Announcements and clarifications
+
+Contest announcements exist in schema and admin/instructor surfaces, but the current student contest detail payload does not yet expose a live clarifications feed.
+
+So, today:
+
+- scoreboard is live
+- hints are partially integrated
+- clarifications/announcements are not yet a full student-facing contest tab backed by live API data
 
 ---
 
-## 16) Practice Mode (No Timer, No Judging)
-Practice is isolated from contest:
-- no attempt timer
-- no judging queue
-- run only public tests
-- optional drafts saving (future)
+## 13) Relationship to Practice
+
+Practice is now a separate subsystem.
+
+The old design statement "Practice Mode (No Timer, No Judging)" is no longer accurate for this project.
+
+Current state:
+
+- contest and practice share the `Problem` bank
+- contest uses `Participation`, `ProblemStatus`, and `Submission`
+- practice uses `PracticeSession` and `PracticeRunRecord`
+- practice has its own AI-reviewed submission flow and SSE updates
+
+See:
+
+- [practice section.md](./practice%20section.md)
 
 ---
 
-## 17) Matrices Dashboard (Instructor)
+## 14) Reliability / Consistency / Known Gaps
 
-### What it is
-The Matrices Dashboard is an **instructor-only analytics page** that presents aggregated learning/performance metrics for a contest (and optionally per-problem / per-student views).
-
-### Where the full design lives
-✅ Full analytics design details are documented in:
-
-- **`docs/analytics/Analytics Section.md`**
-
-This document includes:
-- metrics list & definitions
-- aggregation logic and grouping rules (group-level / student-level)
-- snapshot schedule and consistency rules
-- UI layout details (tables/charts/filters)
-
-### Integration points (MVP)
-- **Access control**: only `TA/INSTRUCTOR/ADMIN` can view
-- **Data source**: the dashboard reads from snapshot tables (recommended)
-  - `matrices_snapshots` keyed by `(contest_id, snapshot_type)`
-- **Snapshots schedule**:
-  - Preliminary: `closeAt + 5m`
-  - Final: `closeAt + 15m`
-- **Refresh**:
-  - SSE `snapshot_ready` triggers React Query invalidation + refetch
-  - fallback: polling every 60s until `FINAL_15M` is available (limited retries)
+- contest status is interpreted both from stored fields and from effective schedule computation
+- cron helps keep stored `Contest.status` aligned, but request-time code still defensively recomputes status
+- submissions depend on external judge availability
+- scoreboard consistency is based on current DB state, not snapshot publication
+- the student flow currently has **no per-user timer lock**, heartbeat, offline, or forfeiture state machine
+- there is no dedicated contest "run against public tests" endpoint in the current student API
+- contest clarifications are not yet fully wired as a live student-facing feature
+- analytics-oriented tables such as `ContestProblemSession` exist, but they are not the main request-path source of truth for student contest play
 
 ---
 
-## 18) Reliability / Consistency / Scalability
-- DB-level uniqueness prevents double submit (`UNIQUE(attempt_id, problem_id)`)
-- Worker tasks are idempotent (safe retries)
-- Snapshots are consistent via watermark
-- Heavy aggregations happen in background jobs, not in request path
-- Designed for ~200–500 students (MVP target)
+## 15) Current Implementation Checklist
 
----
+### Student contest flow
 
-## 19) MVP Checklist
+- [x] Students can discover registered and joinable contests
+- [x] Students can register and unregister from contests
+- [x] Students can enter registered contests
+- [x] Contest detail pages show problem lists and scoreboard rows
+- [x] Contest problem pages show statements, starter code, and submission history
+- [x] New submissions are blocked for upcoming and ended contests
+- [x] Multiple submissions per contest problem are supported
 
-### Contest flow
-- [ ] Join creates per-student attempt (open window validated)
-- [ ] Client timer uses server time offset
-- [ ] Time’s up modal + redirect; submit/hint disabled
-- [ ] Backend rejects submit/hint after attemptEndAt (+ optional 5s buffer)
-- [ ] Run unlimited (public testcases only)
-- [ ] Hint unlock after 1 min + 1 min cooldown (+ optional cap)
-- [ ] Submit only once per problem (DB unique constraint)
-- [ ] Async judging pipeline updates verdict/status
+### Judging
 
-### Eligibility / session keepalive
-- [ ] Heartbeat every 10–15s
-- [ ] OFFLINE after 60s; FORFEITED after 5 min
+- [x] Contest submissions are persisted before judge handoff
+- [x] Judge responses can settle inline
+- [x] Judge callbacks can update contest submissions later
+- [x] Problem status and student score progress are updated from judge results
 
-### Notifications (SSE)
-- [ ] Student “starting soon” SSE event
-- [ ] Instructor “snapshot ready” SSE event
-- [ ] Polling fallback if SSE drops
+### Authoring and lifecycle
 
-### Scoreboard + Clarifications
-- [ ] Scoreboard hidden until `closeAt + 1h` then published
-- [ ] MVP ranking: solved desc, lastAcceptedAt asc
-- [ ] Clarifications: instructor/TA post; students read-only
+- [x] Instructor/admin authoring supports draft and published contests
+- [x] Contest schedules derive effective status
+- [x] Cron endpoint can resynchronize stored status fields
 
-### Matrices
-- [ ] Link present to `docs/system design/Analytics Section.md`
-- [ ] closeAt+5m preliminary snapshot exists
-- [ ] closeAt+15m final snapshot exists
-- [ ] Instructor UI auto-refresh on SSE
+### Known gaps versus the older design draft
+
+- [ ] Per-student countdown timer
+- [ ] Heartbeat / offline / forfeiture flow
+- [ ] One-final-submission-per-problem enforcement
+- [ ] Live student clarifications feed
+- [ ] Delayed scoreboard publish snapshots in the main contest request path

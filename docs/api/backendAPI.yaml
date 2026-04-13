@@ -8,6 +8,8 @@ servers:
 tags:
   - name: Authentication
     description: Authentication endpoints (/api/auth/*)
+  - name: Practice
+    description: Practice submission endpoints (/api/practice/*)
   - name: Student
     description: Student endpoints (/api/s/*)
   - name: Instructor
@@ -99,7 +101,42 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OkResponse"
+                $ref: "#/components/schemas/DevAuthResponse"
+        "400":
+          description: Invalid request body
+        "401":
+          description: Demo user not found or role mismatch
+        "403":
+          description: Dev auth disabled
+        "500":
+          description: Missing dev auth configuration
+
+  /api/auth/dev-signup:
+    post:
+      tags: [Authentication]
+      summary: Create a dev-mode student account and session
+      description: Available only when `AUTH_MODE=dev`. Creates a new student user, then signs them in with a dev session cookie.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DevSignupRequest"
+      responses:
+        "201":
+          description: Dev signup successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DevAuthResponse"
+        "400":
+          description: Invalid request body
+        "403":
+          description: Dev signup disabled
+        "409":
+          description: Computing ID or email already exists
+        "500":
+          description: Missing dev auth configuration
 
   /api/auth/logout:
     post:
@@ -111,7 +148,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OkResponse"
+                $ref: "#/components/schemas/LogoutResponse"
 
   /api/trpc/{trpc}:
     get:
@@ -148,6 +185,92 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OkResponse"
+
+  /api/practice/submissions:
+    post:
+      tags: [Practice]
+      summary: Create a practice submission
+      description: >
+        Students create persisted practice submissions. Instructors can also call this
+        endpoint, but receive an ephemeral judged response instead of a persisted record.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PracticeSubmissionCreateRequest"
+      responses:
+        "200":
+          description: Submission accepted or judged ephemerally
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/PracticeSubmissionCreateResponse"
+                  - $ref: "#/components/schemas/PracticeSubmissionPayloadWithPersistence"
+        "400":
+          description: Invalid JSON body, missing problemId/code, or unsupported language
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden for unsupported roles
+        "404":
+          description: Problem not found
+        "500":
+          description: Failed to create submission
+
+  /api/practice/submissions/{submissionId}:
+    get:
+      tags: [Practice]
+      summary: Get a persisted practice submission
+      parameters:
+        - in: path
+          name: submissionId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Submission record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PracticeSubmissionPayload"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Students only
+        "404":
+          description: Submission not found
+
+  /api/practice/submissions/{submissionId}/stream:
+    get:
+      tags: [Practice]
+      summary: Stream practice submission updates over SSE
+      parameters:
+        - in: path
+          name: submissionId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Server-sent events stream for submission status updates
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              examples:
+                connected:
+                  value: |
+                    event: connected
+                    data: {"submissionId":"sub_123","status":"queued"}
+        "401":
+          description: Unauthorized
+        "403":
+          description: Students only
+        "404":
+          description: Submission not found
 
   /api/s/info:
     get:
@@ -352,7 +475,7 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/StudentSubmitRequest"
-          application/x-www-form-urlencoded:
+          multipart/form-data:
             schema:
               $ref: "#/components/schemas/StudentSubmitRequest"
       parameters:
@@ -373,6 +496,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OkResponse"
+        "400":
+          description: Missing code or unsupported language
+        "401":
+          description: Unauthorized
+        "403":
+          description: Not registered, contest unavailable, contest closed, or instructor/admin submission blocked
+        "404":
+          description: Contest or problem not found
+        "409":
+          description: Judge problem mapping missing
 
   /api/s/submissions/{cid}/{pid}:
     get:
@@ -436,13 +569,8 @@ paths:
       summary: Retrieve hint history for a problem
       parameters:
         - in: query
-          name: computing_id
-          required: false
-          schema:
-            type: string
-        - in: query
           name: pid
-          required: false
+          required: true
           schema:
             type: string
       responses:
@@ -452,6 +580,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OkResponse"
+        "400":
+          description: Missing pid
 
   /api/i/info:
     get:
@@ -720,6 +850,8 @@ paths:
     post:
       tags: [System & Judging]
       summary: Webhook to receive results from the Judge
+      description: >
+        Accepts judge callbacks for both contest submissions and persisted practice submissions.
       requestBody:
         required: true
         content:
@@ -728,11 +860,70 @@ paths:
               $ref: "#/components/schemas/JudgeResultRequest"
       responses:
         "200":
-          description: OK
+          description: Callback accepted
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OkResponse"
+                $ref: "#/components/schemas/JudgeCallbackResponse"
+        "400":
+          description: Missing callback identifiers
+        "404":
+          description: No matching submission found
+        "500":
+          description: Internal callback processing error
+
+  /api/m/judge_result:
+    post:
+      tags: [System & Judging]
+      summary: Legacy alias for the judge callback
+      description: Alias route that forwards to `/api/judge-callback`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JudgeResultRequest"
+      responses:
+        "200":
+          description: Callback accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JudgeCallbackResponse"
+        "400":
+          description: Missing callback identifiers
+        "404":
+          description: No matching submission found
+        "500":
+          description: Internal callback processing error
+
+  /api/cron/sync-contest-status:
+    get:
+      tags: [System & Judging]
+      summary: Sync contest workflow status with wall-clock time
+      description: >
+        Protected cron endpoint. Requires `x-cron-secret` header or `secret` query value
+        matching `CRON_SECRET`.
+      parameters:
+        - in: header
+          name: x-cron-secret
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: secret
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Sync completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContestStatusSyncResponse"
+        "401":
+          description: Unauthorized
 
   /api/m/scoreboard/{cid}:
     get:
@@ -832,8 +1023,50 @@ components:
           format: email
         role:
           type: string
-          enum: [student, ta, instructor, admin]
+          enum: [student, instructor, admin]
       required: [email, role]
+
+    DevSignupRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        computingId:
+          type: string
+        email:
+          type: string
+          format: email
+        studentNumber:
+          type: string
+      required: [name, computingId, email]
+
+    DevAuthResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        user:
+          type: object
+          properties:
+            computingId:
+              type: string
+            email:
+              type: string
+              format: email
+            role:
+              type: string
+              enum: [student, instructor, admin]
+        expiresInSeconds:
+          type: integer
+      required: [message, user, expiresInSeconds]
+
+    LogoutResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Logged out.
+      required: [message]
 
     UpdateProfileRequest:
       type: object
@@ -849,22 +1082,109 @@ components:
 
     StudentSubmitRequest:
       type: object
-      description: Submit code using either filecode or textcode.
+      description: >
+        Contest submission payload. JSON requests may send `textcode` or `code`.
+        Multipart requests may send `filecode` or `textcode`. `connection_id` is optional.
       properties:
         filecode:
           type: string
-          description: Code contents (file upload represented as string in this spec)
+          format: binary
+          description: Uploaded source file for multipart requests
         textcode:
           type: string
           description: Code contents as plain text
+        code:
+          type: string
+          description: Alternate JSON field for code contents
         language:
           type: string
         connection_id:
           type: string
-      required: [language, connection_id]
+      required: [language]
       oneOf:
         - required: [filecode]
         - required: [textcode]
+        - required: [code]
+
+    PracticeSubmissionCreateRequest:
+      type: object
+      properties:
+        problemId:
+          type: string
+        language:
+          type: string
+          enum: [cplusplus, java, python, typescript, javascript]
+        code:
+          type: string
+      required: [problemId, language, code]
+
+    PracticeSubmissionTestcase:
+      type: object
+      properties:
+        name:
+          type: string
+        passed:
+          type: boolean
+        message:
+          type: string
+      required: [name, passed, message]
+
+    PracticeSubmissionPayload:
+      type: object
+      properties:
+        submissionId:
+          type: string
+        status:
+          type: string
+          enum: [queued, running, done, failed]
+        score:
+          type: number
+          nullable: true
+        verdict:
+          type: string
+          nullable: true
+          enum: [accepted, wrong_answer, partial, runtime_error, failed]
+        feedback:
+          type: string
+          nullable: true
+        testcases:
+          type: array
+          items:
+            $ref: "#/components/schemas/PracticeSubmissionTestcase"
+        judgedBy:
+          type: string
+          nullable: true
+          enum: [gemini]
+        updatedAt:
+          type: string
+          format: date-time
+        errorMessage:
+          type: string
+          nullable: true
+      required:
+        [submissionId, status, score, verdict, feedback, testcases, judgedBy, updatedAt, errorMessage]
+
+    PracticeSubmissionPayloadWithPersistence:
+      allOf:
+        - $ref: "#/components/schemas/PracticeSubmissionPayload"
+        - type: object
+          properties:
+            persisted:
+              type: boolean
+          required: [persisted]
+
+    PracticeSubmissionCreateResponse:
+      type: object
+      properties:
+        submissionId:
+          type: string
+        status:
+          type: string
+          enum: [queued]
+        persisted:
+          type: boolean
+          enum: [true]
+      required: [submissionId, status, persisted]
 
     HintRequest:
       type: object
@@ -1055,6 +1375,34 @@ components:
         connection_id:
           type: string
       required: [sid, status, judge_output, score, connection_id]
+
+    JudgeCallbackResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        target:
+          type: string
+          enum: [contest, practice]
+        status:
+          type: string
+        error:
+          type: string
+      required: [ok]
+
+    ContestStatusSyncResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        checked:
+          type: integer
+        updated:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+      required: [ok, checked, updated, timestamp]
 
     ReportAiHintRequest:
       type: object
