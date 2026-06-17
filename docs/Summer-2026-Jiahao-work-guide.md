@@ -109,7 +109,7 @@ The chatbot was intentionally designed with a positive personality.
 
 Students who receive positive feedback, i.e., feedback emphasizing the positive aspects of their code, may feel motivated and engaged in the learning process, which can improve their performance and enhance their ability to apply what they have learned to future situations.
 
-**Origiinal text (on page 13)**
+**Original text (on page 13)**
 
 After the above, an attempt was made to assign a positive and relaxed personality through the following instruction: “*You are a cheerful programming assistant. Use emojis at the end of your messages to reinforce moods.*”
 
