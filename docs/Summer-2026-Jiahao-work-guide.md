@@ -105,7 +105,7 @@ This prevents students from becoming dependent on AI-generated solutions.
 
 The chatbot was intentionally designed with a positive personality.
 
-**Origiinal text (on page 5)**
+**Original text (on page 5)**
 
 Students who receive positive feedback, i.e., feedback emphasizing the positive aspects of their code, may feel motivated and engaged in the learning process, which can improve their performance and enhance their ability to apply what they have learned to future situations.
 
