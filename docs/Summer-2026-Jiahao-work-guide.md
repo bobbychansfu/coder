@@ -7,7 +7,7 @@ Author: Jiahao Han (Spencer)
 
 ## Personal Research Analysis Overview
 
-The Spring 2026 work summarized in this guide focused on the following areas:
+The Summer 2026 work summarized in this guide focused on the following areas:
 
 - [Paper research](#Literature-Review-and-Proposed-Features)
 
