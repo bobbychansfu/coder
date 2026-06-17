@@ -62,7 +62,7 @@ A About Page helps students understand why the platform exists and how to start 
 This improvement is less directly supported by the papers because the papers discuss educational design, not web landing-page design. Therefore, this point should be presented as a design implication rather than a direct requirement from the literature.
 
 ### Paper and Original text:
-Source 1: Students Programming Competitions as an Educational Tool and a Motivational Incentive to Students, pp.1: “The author suggests “to consider various forms of student competitions as a way to achieve a number of benefits for their students at a relatively low cost” for information systems (IS) students. He continues in [14] “just the idea of participating in a competition is often enough to increase significantly students motivation level to learn and perform well.”, if one of the value of CP is to increase student motivation, why don’t we clearly state out the learning purpose of this website?
+Source 1: Students Programming Competitions as an Educational Tool and a Motivational Incentive to Students, pp.1: “The author suggests 'to consider various forms of student competitions as a way to achieve a number of benefits for their students at a relatively low cost' for information systems (IS) students. He continues in [14] 'just the idea of participating in a competition is often enough to increase significantly students motivation level to learn and perform well.' If one of the values of CP is to increase student motivation, why don’t we clearly state the learning purpose of this website?
 
 
 ### Additional note:
