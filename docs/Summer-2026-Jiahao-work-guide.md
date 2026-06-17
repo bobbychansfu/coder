@@ -9,7 +9,7 @@ Author: Jiahao Han (Spencer)
 
 The Summer 2026 work summarized in this guide focused on the following areas:
 
-- [Paper research](#Literature-Review-and-Proposed-Features)
+- [Paper research](#literature-review-and-proposed-features)
 
 ## Literature Review and Proposed Features
 
