@@ -121,4 +121,4 @@ Source: Curriculum Design of Competitive Programming: a Contest-based Approach, 
 “In the end, we decide to adopt a 90-minute contest which fits in most classroom settings with minimal adjustment."
 
 ### Additional note:
-Without time pressure, the platform risks becoming a general practice website rather than a realistic competitive-programming learning environment. We have an idea is that solve the questions effectively is also important, so we suggest when the time is running out, the web page automatically turns to the upsolve mode.
+Without time pressure, the platform risks becoming a general practice website rather than a realistic competitive-programming learning environment. We believe that solving the questions effectively is also important, so we suggest that when the time runs out, the web page automatically switches to upsolve mode.
