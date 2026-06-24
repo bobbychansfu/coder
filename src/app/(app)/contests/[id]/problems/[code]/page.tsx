@@ -165,6 +165,7 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
     <ProblemSubmissionPage
       contestId={contest.id}
       contestStatus={contest.status}
+      contestEndsAt={normalizedContestSummary.endsAt}
       detail={adaptContestProblemDetail(
         problem,
         problemDetailPayload,

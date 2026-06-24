@@ -35,8 +35,60 @@ interface ProblemNavigator {
 interface ProblemSubmissionPageProps {
   contestId: string;
   contestStatus?: ContestDetailStatus;
+  contestEndsAt?: string | null;
   detail: ProblemDetail;
   navigator?: ProblemNavigator;
+}
+
+function formatTimeRemaining(milliseconds: number) {
+  const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function ContestTimer({ endsAt }: { endsAt?: string | null }) {
+  if (!endsAt) {
+    return (
+      <Typography fontSize={14} fontWeight={600}>
+        Time left: 00:00:00
+      </Typography>
+    );
+  }
+
+  const endTime = new Date(endsAt).getTime();
+
+  if (Number.isNaN(endTime)) {
+    return (
+      <Typography fontSize={14} fontWeight={600}>
+        Time left: 00:00:00
+      </Typography>
+    );
+  }
+
+  return <CountdownTimer key={endTime} endTime={endTime} />;
+}
+
+function CountdownTimer({ endTime }: { endTime: number }) {
+  const [remainingMs, setRemainingMs] = useState(() =>
+    Math.max(0, endTime - Date.now()),
+  );
+
+  useEffect(() => {
+    const timerId = window.setInterval(() => {
+      setRemainingMs(Math.max(0, endTime - Date.now()));
+    }, 1000);
+
+    return () => window.clearInterval(timerId);
+  }, [endTime]);
+
+  return (
+    <Typography fontSize={14} fontWeight={600}>
+      Time left: {formatTimeRemaining(remainingMs)}
+    </Typography>
+  );
 }
 
 type SupportedLanguage = SupportedCodeLanguage;
@@ -126,6 +178,7 @@ function sleep(ms: number) {
 export default function ProblemSubmissionPage({
   contestId,
   contestStatus,
+  contestEndsAt,
   detail,
   navigator,
 }: ProblemSubmissionPageProps) {
@@ -134,6 +187,7 @@ export default function ProblemSubmissionPage({
       key={`${contestId}:${detail.code}`}
       contestId={contestId}
       contestStatus={contestStatus}
+      contestEndsAt={contestEndsAt}
       detail={detail}
       navigator={navigator}
     />
@@ -147,6 +201,7 @@ function getContestDraftStorageKey(contestId: string, problemCode: string) {
 function ProblemSubmissionPageContent({
   contestId,
   contestStatus,
+  contestEndsAt,
   detail,
   navigator,
 }: ProblemSubmissionPageProps) {
@@ -334,7 +389,11 @@ function ProblemSubmissionPageContent({
 
   return (
     <Box className={styles.page}>
-      <PageHeader onBack={() => router.back()} />
+      {/* <PageHeader onBack={() => router.back()} /> */}
+      <Box display="flex" alignItems="center" gap="12px">
+        <PageHeader onBack={() => router.back()} />
+        <ContestTimer endsAt={contestEndsAt} />
+      </Box>
 
       <Box className={styles.container}>
         <Box className={styles.leftColumn}>
