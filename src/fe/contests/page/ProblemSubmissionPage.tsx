@@ -279,11 +279,20 @@ function ProblemSubmissionPageContent({
         }),
       });
 
-      const payload = (await response.json()) as unknown;
+      let payload: unknown;
+      try {
+        payload = await response.json();
+      } catch {
+        payload = null;
+      }
 
       if (!response.ok) {
-        const errorPayload = payload as { details?: string; error?: string };
-        throw new Error(errorPayload.details ?? errorPayload.error ?? "Failed to generate hint.");
+        const errorPayload = payload as { details?: string; error?: string } | null;
+        throw new Error(
+          errorPayload?.details ??
+            errorPayload?.error ??
+            ("Failed to generate hint (Status " + response.status + ").")
+        );
       }
 
       const hintText = getHintText(payload);
