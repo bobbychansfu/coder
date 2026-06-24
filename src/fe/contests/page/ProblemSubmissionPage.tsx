@@ -124,8 +124,8 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function getHintText(payload: unknown): string | null {
-  if (!payload || typeof payload !== "object") {
+function getHintText(payload: unknown, depth = 0): string | null {
+  if (depth > 5 || !payload || typeof payload !== "object") {
     return null;
   }
 
@@ -138,7 +138,7 @@ function getHintText(payload: unknown): string | null {
     }
   }
 
-  return getHintText(record.data);
+  return getHintText(record.data, depth + 1);
 }
 
 export default function ProblemSubmissionPage({
