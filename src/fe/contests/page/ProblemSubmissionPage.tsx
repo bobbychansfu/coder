@@ -7,6 +7,7 @@ import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import PageHeader from "@/fe/shared/components/PageHeader";
+import AiHintDialog from "@/fe/shared/components/problem/AiHintDialog";
 import ProblemHeader from "@/fe/shared/components/problem/ProblemHeader";
 import ProblemDetails from "@/fe/shared/components/problem/ProblemDetails";
 import SolutionEditor from "@/fe/shared/components/problem/SolutionEditor";
@@ -123,6 +124,23 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function getHintText(payload: unknown): string | null {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+
+  const record = payload as Record<string, unknown>;
+
+  for (const key of ["hint", "feedback", "message", "response", "text"]) {
+    const value = record[key];
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return getHintText(record.data);
+}
+
 export default function ProblemSubmissionPage({
   contestId,
   contestStatus,
@@ -163,6 +181,10 @@ function ProblemSubmissionPageContent({
   );
   const [runResult, setRunResult] = useState<RunResult | null>(null);
   const [submissions, setSubmissions] = useState(detail.submissions);
+  const [aiHintOpen, setAiHintOpen] = useState(false);
+  const [aiHintMessage, setAiHintMessage] = useState<string | null>(null);
+  const [aiHintError, setAiHintError] = useState<string | null>(null);
+  const [aiHintLoading, setAiHintLoading] = useState(false);
   const effectiveLanguage =
     hasLocalDraftState ? language : (persistedDraft?.language ?? DEFAULT_LANGUAGE);
   const effectiveDrafts =
@@ -233,6 +255,49 @@ function ProblemSubmissionPageContent({
     }
 
     return null;
+  };
+
+  const requestAiHint = async () => {
+    const hintProblemId = detail.problemId ?? detail.practiceProblemCode ?? detail.code;
+
+    setAiHintOpen(true);
+    setAiHintLoading(true);
+    setAiHintError(null);
+
+    try {
+      const response = await fetch("/api/s/request_hint", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          pid: hintProblemId,
+          contest_id: contestId,
+          problem_code: detail.code,
+          problem_title: detail.title,
+          language: effectiveLanguage,
+          code,
+        }),
+      });
+
+      const payload = (await response.json()) as unknown;
+
+      if (!response.ok) {
+        const errorPayload = payload as { details?: string; error?: string };
+        throw new Error(errorPayload.details ?? errorPayload.error ?? "Failed to generate hint.");
+      }
+
+      const hintText = getHintText(payload);
+
+      if (!hintText) {
+        throw new Error("Hint service returned an empty response.");
+      }
+
+      setAiHintMessage(hintText);
+    } catch (error) {
+      setAiHintError(error instanceof Error ? error.message : "Failed to generate hint.");
+    } finally {
+      setAiHintLoading(false);
+    }
   };
 
   const submitContestCode = async () => {
@@ -413,10 +478,20 @@ function ProblemSubmissionPageContent({
             submitButtonLabel={submitState === "submitting" ? "Submitting..." : "Submit"}
             submitButtonStartIcon={<SendRoundedIcon fontSize="small" />}
             showAiHint
-            aiHintSource={code}
+            aiHintLoading={aiHintLoading}
+            onRequestAiHint={requestAiHint}
           />
         </Box>
       </Box>
+
+      <AiHintDialog
+        open={aiHintOpen}
+        loading={aiHintLoading}
+        hint={aiHintMessage}
+        error={aiHintError}
+        onClose={() => setAiHintOpen(false)}
+        onRetry={() => void requestAiHint()}
+      />
     </Box>
   );
 }
