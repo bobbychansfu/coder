@@ -281,6 +281,8 @@ export default function InstructorCreateContestPage() {
         endDate: toLocalDateInputValue(contestQuery.data.endsAtIso),
         endTime: toLocalTimeInputValue(contestQuery.data.endsAtIso),
         visibility: contestQuery.data.visibility,
+        groupAHintAfterMinutes: contestQuery.data.groupAHintAfterMinutes,
+        groupBHintAfterMinutes: contestQuery.data.groupBHintAfterMinutes,
       });
       setSelectedProblemIds(contestQuery.data.selectedProblemIds);
       setAiHintEnabled(contestQuery.data.aiHintEnabled);
@@ -441,6 +443,15 @@ export default function InstructorCreateContestPage() {
 
   const updateField = (field: keyof ContestFormDraft, value: string) => {
     setFormValues((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const updateNumberField = (field: keyof ContestFormDraft, value: string) => {
+    const parsedValue = Number(value);
+
+    setFormValues((prev) => ({
+      ...prev,
+      [field]: Number.isFinite(parsedValue) ? Math.max(0, Math.floor(parsedValue)) : 0,
+    }));
   };
 
   const buildContestMutationInput = (isDraft: boolean) => ({
@@ -819,11 +830,17 @@ export default function InstructorCreateContestPage() {
                         <Typography className={styles.groupHintLabel}>
                           {contestAuthoringCopy.groupAHintLabel}
                         </Typography>
-                        <Box className={styles.groupValueSurface}>
-                          <Typography className={styles.groupValueText}>
-                            {contestAiHintConfig.groupAHintAfterMinutes}
-                          </Typography>
-                        </Box>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          type="number"
+                          value={formValues.groupAHintAfterMinutes}
+                          onChange={(event) =>
+                            updateNumberField("groupAHintAfterMinutes", event.target.value)
+                          }
+                          className={styles.inputField}
+                          inputProps={{ min: 0, step: 1 }}
+                        />
                       </Box>
 
                       <Box className={`${styles.groupCard} ${styles.groupCardB}`}>
@@ -834,11 +851,17 @@ export default function InstructorCreateContestPage() {
                         <Typography className={styles.groupHintLabel}>
                           {contestAuthoringCopy.groupBHintLabel}
                         </Typography>
-                        <Box className={styles.groupValueSurface}>
-                          <Typography className={styles.groupValueText}>
-                            {contestAiHintConfig.groupBHintAfterMinutes}
-                          </Typography>
-                        </Box>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          type="number"
+                          value={formValues.groupBHintAfterMinutes}
+                          onChange={(event) =>
+                            updateNumberField("groupBHintAfterMinutes", event.target.value)
+                          }
+                          className={styles.inputField}
+                          inputProps={{ min: 0, step: 1 }}
+                        />
                       </Box>
                     </Box>
 
@@ -1175,7 +1198,7 @@ export default function InstructorCreateContestPage() {
                     AI Hint Experiment Active
                   </Typography>
                   <Typography className={styles.previewExperimentBody}>
-                    {`Group A: hints after ${contestAiHintConfig.groupAHintAfterMinutes} min - Group B: hints after ${contestAiHintConfig.groupBHintAfterMinutes} min`}
+                    {`Group A: hints after ${formValues.groupAHintAfterMinutes} min - Group B: hints after ${formValues.groupBHintAfterMinutes} min`}
                   </Typography>
                 </Box>
               </Box>
