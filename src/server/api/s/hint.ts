@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { can, normalizeRole } from "@/lib/authz";
+import { getEffectiveContestStatus } from "@/lib/contestStatus";
 import { getCurrentUser } from "@/lib/session";
 import { dbHelpers } from "@/lib/db-helpers";
 
@@ -24,6 +26,45 @@ function getAiHintServiceUrl() {
 
 function toStringValue(value: unknown): string {
   return typeof value === "string" ? value : "";
+}
+
+async function findContestForHintAccess(computingId: string, role: string, contestId: string) {
+  const normalizedRole = normalizeRole(role);
+
+  if (normalizedRole && can(normalizedRole).canManageContest) {
+    return dbHelpers.findContestForViewer(contestId, computingId, role);
+  }
+
+  return dbHelpers.findSpecificContestForUser(computingId, contestId, "contestant");
+}
+
+async function assertContestAllowsAiHint(computingId: string, role: string, contestId: string) {
+  const contest = await findContestForHintAccess(computingId, role, contestId);
+
+  if (!contest) {
+    return NextResponse.json({ error: "Contest not found" }, { status: 404 });
+  }
+
+  if (!contest.aiHintEnabled) {
+    return NextResponse.json(
+      { error: "AI hints are disabled for this contest" },
+      { status: 403 },
+    );
+  }
+
+  const now = new Date();
+  const contestEnded =
+    getEffectiveContestStatus(contest) === "ENDED" ||
+    Boolean(contest.endsAt && contest.endsAt <= now);
+
+  if (contestEnded) {
+    return NextResponse.json(
+      { error: "AI hints are disabled after the contest ends" },
+      { status: 403 },
+    );
+  }
+
+  return null;
 }
 
 function buildHintPayload(args: {
@@ -75,9 +116,22 @@ export async function handleRequestHint(request: NextRequest) {
 
     const requestData = (await request.json()) as HintRequestBody;
     const pid = toStringValue(requestData.pid);
+    const contestId = toStringValue(requestData.contest_id);
 
     if (!pid) {
       return NextResponse.json({ error: "Missing pid" }, { status: 400 });
+    }
+
+    if (contestId) {
+      const contestAccessError = await assertContestAllowsAiHint(
+        user.computingId,
+        user.role,
+        contestId,
+      );
+
+      if (contestAccessError) {
+        return contestAccessError;
+      }
     }
 
     const prior_problems = await dbHelpers.getReleventSolvedProblems(user.computingId, pid);
