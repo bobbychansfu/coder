@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { can, normalizeRole } from "@/lib/authz";
 import { getEffectiveContestStatus } from "@/lib/contestStatus";
+import crypto from "crypto";
 import { getCurrentUser } from "@/lib/session";
 import { dbHelpers } from "@/lib/db-helpers";
 
