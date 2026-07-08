@@ -36,6 +36,8 @@ interface ProblemNavigator {
 interface ProblemSubmissionPageProps {
   contestId: string;
   contestStatus?: ContestDetailStatus;
+  contestEndsAt?: string | null;
+  aiHintEnabled?: boolean;
   detail: ProblemDetail;
   navigator?: ProblemNavigator;
 }
@@ -144,6 +146,8 @@ function getHintText(payload: unknown, depth = 0): string | null {
 export default function ProblemSubmissionPage({
   contestId,
   contestStatus,
+  contestEndsAt,
+  aiHintEnabled = false,
   detail,
   navigator,
 }: ProblemSubmissionPageProps) {
@@ -152,6 +156,8 @@ export default function ProblemSubmissionPage({
       key={`${contestId}:${detail.code}`}
       contestId={contestId}
       contestStatus={contestStatus}
+      contestEndsAt={contestEndsAt}
+      aiHintEnabled={aiHintEnabled}
       detail={detail}
       navigator={navigator}
     />
@@ -165,6 +171,8 @@ function getContestDraftStorageKey(contestId: string, problemCode: string) {
 function ProblemSubmissionPageContent({
   contestId,
   contestStatus,
+  contestEndsAt,
+  aiHintEnabled = false,
   detail,
   navigator,
 }: ProblemSubmissionPageProps) {
@@ -185,6 +193,7 @@ function ProblemSubmissionPageContent({
   const [aiHintMessage, setAiHintMessage] = useState<string | null>(null);
   const [aiHintError, setAiHintError] = useState<string | null>(null);
   const [aiHintLoading, setAiHintLoading] = useState(false);
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
   const effectiveLanguage =
     hasLocalDraftState ? language : (persistedDraft?.language ?? DEFAULT_LANGUAGE);
   const effectiveDrafts =
@@ -192,11 +201,20 @@ function ProblemSubmissionPageContent({
   const code = effectiveDrafts[effectiveLanguage] ?? detail.starterCodes?.[effectiveLanguage] ?? "";
   const hasCode = code.trim().length > 0;
   const isJudging = submitState === "submitting";
+  const contestEndsAtTime = contestEndsAt ? new Date(contestEndsAt).getTime() : null;
+  const contestEndedByTime =
+    typeof contestEndsAtTime === "number" &&
+    Number.isFinite(contestEndsAtTime) &&
+    contestEndsAtTime <= currentTime;
+  const aiHintLockedReason =
+    contestStatus === "closed" || contestEndedByTime
+      ? "AI hints are disabled after the contest ends."
+      : null;
   const submissionsLockedReason =
     contestStatus === "upcoming"
       ? "Submissions open when this contest starts."
-      : contestStatus === "closed"
-        ? "This contest has ended. You can review problems and submissions, but new submissions are disabled."
+      : contestStatus === "closed" || contestEndedByTime
+        ? "This contest has ended. You can review problems and submissions, but new submissions and AI hints are disabled."
         : null;
   const submissionsLocked = submissionsLockedReason !== null;
   const displayedRunResult = runResult;
@@ -204,6 +222,18 @@ function ProblemSubmissionPageContent({
     ...detail,
     submissions,
   };
+
+  useEffect(() => {
+    if (!contestEndsAt) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 30_000);
+
+    return () => window.clearInterval(intervalId);
+  }, [contestEndsAt]);
 
   useEffect(() => {
     if (persistedDraft === undefined) {
@@ -258,6 +288,14 @@ function ProblemSubmissionPageContent({
   };
 
   const requestAiHint = async () => {
+    if (aiHintLockedReason) {
+      setAiHintOpen(true);
+      setAiHintLoading(false);
+      setAiHintMessage(null);
+      setAiHintError(aiHintLockedReason);
+      return;
+    }
+
     const hintProblemId = detail.problemId ?? detail.practiceProblemCode ?? detail.code;
 
     setAiHintOpen(true);
@@ -486,7 +524,8 @@ function ProblemSubmissionPageContent({
             submitButtonDisabled={!hasCode || isJudging || !detail.problemId || submissionsLocked}
             submitButtonLabel={submitState === "submitting" ? "Submitting..." : "Submit"}
             submitButtonStartIcon={<SendRoundedIcon fontSize="small" />}
-            showAiHint
+            showAiHint={aiHintEnabled}
+            aiHintDisabled={Boolean(aiHintLockedReason)}
             aiHintLoading={aiHintLoading}
             onRequestAiHint={requestAiHint}
           />

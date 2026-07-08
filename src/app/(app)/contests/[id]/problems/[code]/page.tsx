@@ -33,6 +33,7 @@ function toBackendContestSummary(
     durationMinutes: contest.durationMinutes,
     participants: contest.participants,
     published: contest.published,
+    aiHintEnabled: contest.aiHintEnabled,
   };
 }
 
@@ -165,6 +166,8 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
     <ProblemSubmissionPage
       contestId={contest.id}
       contestStatus={contest.status}
+      contestEndsAt={normalizedContestSummary.endsAt}
+      aiHintEnabled={normalizedContestSummary.aiHintEnabled}
       detail={adaptContestProblemDetail(
         problem,
         problemDetailPayload,
