@@ -165,7 +165,13 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
     <ProblemSubmissionPage
       contestId={contest.id}
       contestStatus={contest.status}
+      contestStartsAt={normalizedContestSummary.startsAt}
       contestEndsAt={normalizedContestSummary.endsAt}
+      contestDurationMinutes={normalizedContestSummary.durationMinutes}
+      practiceProblemLinks={contest.problems.map((contestProblem) => ({
+        contestCode: contestProblem.code,
+        practiceProblemCode: contestProblem.practiceProblemCode ?? contestProblem.code,
+      }))}
       detail={adaptContestProblemDetail(
         problem,
         problemDetailPayload,

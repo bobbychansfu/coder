@@ -141,6 +141,9 @@ export default function ContestsPage({
             key={contest.id}
             title={contest.title}
             status={contest.status}
+            startsAt={contest.startsAt}
+            endsAt={contest.endsAt}
+            durationMinutes={contest.durationMinutes}
             href={`/contests/${contest.id}`}
             actionLabel={
               mode === "registered"
@@ -261,6 +264,9 @@ export default function ContestsPage({
                 key={contest.id}
                 title={contest.title}
                 status={contest.status}
+                startsAt={contest.startsAt}
+                endsAt={contest.endsAt}
+                durationMinutes={contest.durationMinutes}
                 href={`/contests/${contest.id}`}
                 actionLabel={getRegisteredActionLabel(contest.status)}
                 actionKind="link"

@@ -188,7 +188,7 @@ function PracticeTimer({ problemCode }: { problemCode: string }) {
   return (
     <Box display="flex" alignItems="center" gap="8px">
       <Typography fontSize={14} fontWeight={600}>
-        Time left: {formatPracticeTimeRemaining(remainingMs)}
+        Stop Watch: {formatPracticeTimeRemaining(remainingMs)}
       </Typography>
 
       {!timerState.isStarted ? (
@@ -652,9 +652,9 @@ function PracticeProblemSubmissionPageContent({
 
   return (
     <Box className={styles.page}>
-      <Box display="flex" alignItems="center" gap="12px">
+      <Box display="flex" alignItems="center" gap="12px" flexWrap="wrap">
         <PageHeader onBack={() => router.back()} />
-        {persistSubmissions ? <PracticeTimer problemCode={problemCode} /> : null}
+        <PracticeTimer problemCode={problemCode} />
       </Box>
 
       <Box className={styles.container}>

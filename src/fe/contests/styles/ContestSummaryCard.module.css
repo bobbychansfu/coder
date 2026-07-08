@@ -46,6 +46,21 @@
   border: 1px solid #e5e7eb;
 }
 
+.timeLeft {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  color: #4b5563;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
 .actionRow {
   display: flex;
   justify-content: flex-end;

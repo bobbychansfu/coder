@@ -43,6 +43,7 @@ export interface BackendContestScoreboardRow {
 
 interface BackendContestProblem {
   id: string;
+  code: string;
   title: string;
   difficulty: string;
   points: number | null;

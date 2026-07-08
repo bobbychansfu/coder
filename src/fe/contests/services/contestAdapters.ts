@@ -98,6 +98,7 @@ function toContestProblem(row: BackendContestProblemStatus, index: number): Cont
     problemId: row.problemId,
     code: toProblemCode(index),
     title: row.problem.title,
+    practiceProblemCode: row.problem.code,
     difficulty: mapDifficulty(row.problem.difficulty),
     tags: [],
     points: row.problem.points ?? 0,
@@ -140,6 +141,7 @@ export function toContestListItem(contest: BackendContestSummary): ContestListIt
     status: mapContestListStatus(contest),
     startsAt: contest.startsAt,
     endsAt: contest.endsAt,
+    durationMinutes: getDurationMinutes(contest),
   };
 }
 
