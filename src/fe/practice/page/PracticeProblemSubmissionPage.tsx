@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Box, CircularProgress, Typography } from "@mui/material";
+import PracticeTimer from "@/fe/practice/components/PracticeTimer";
 import PageHeader from "@/fe/shared/components/PageHeader";
 import ProblemHeader from "@/fe/shared/components/problem/ProblemHeader";
 import ProblemDetails from "@/fe/shared/components/problem/ProblemDetails";
@@ -481,7 +482,10 @@ function PracticeProblemSubmissionPageContent({
 
   return (
     <Box className={styles.page}>
-      <PageHeader onBack={() => router.back()} />
+      <Box display="flex" alignItems="center" gap="12px" flexWrap="wrap">
+        <PageHeader onBack={() => router.back()} />
+        <PracticeTimer problemCode={problemCode} />
+      </Box>
 
       <Box className={styles.container}>
         <Box className={styles.leftColumn}>

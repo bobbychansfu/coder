@@ -6,6 +6,7 @@ export interface ContestListItem {
   status: ContestStatus;
   startsAt?: string;
   endsAt?: string | null;
+  durationMinutes?: number | null;
 }
 
 export const contestList: ContestListItem[] = [

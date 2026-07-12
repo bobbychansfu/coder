@@ -7,6 +7,83 @@
   min-height: 100%;
 }
 
+.timerHeaderRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+}
+
+.timerHeaderLeft {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: nowrap;
+  min-height: 36px;
+  white-space: nowrap;
+  position: relative;
+  z-index: 1;
+}
+
+.timeLeftPopupDialog {
+  position: fixed;
+  top: 178px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1300;
+  min-width: 360px;
+  max-width: min(520px, calc(100vw - 48px));
+  padding: 24px 52px 24px 32px;
+  border: 2px solid #ef4444;
+  border-radius: 8px !important;
+  background-color: #ffffff !important;
+  color: #7f1d1d;
+  box-shadow: 0 18px 46px rgba(127, 29, 29, 0.24);
+  font-family: Inter, sans-serif;
+}
+
+.timeLeftPopupMessage {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: center;
+}
+
+.timeLeftPopupTitle {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 28px;
+}
+
+.timeLeftPopupSubtitle {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.timeLeftPopupClose {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  background-color: transparent;
+  color: #991b1b;
+  cursor: pointer;
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.timeLeftPopupClose:hover {
+  background-color: #fee2e2;
+}
+
 .backButton {
   align-self: flex-start;
   text-transform: none;
