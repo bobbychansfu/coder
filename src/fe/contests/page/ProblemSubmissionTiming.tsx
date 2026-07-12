@@ -88,6 +88,33 @@ function getContestRemainingMsForAlert({
   return Math.max(0, endTime - now);
 }
 
+function getInitialShownTimeLeftAlerts({
+  startsAt,
+  endsAt,
+  durationMinutes,
+}: {
+  startsAt?: string | null;
+  endsAt?: string | null;
+  durationMinutes?: number | null;
+}) {
+  const remainingMs = getContestRemainingMsForAlert({ startsAt, endsAt, durationMinutes });
+
+  if (remainingMs === null) {
+    return {};
+  }
+
+  const remainingMinutes = remainingMs / 60_000;
+  const initialShown: Partial<Record<TimeLeftAlertThreshold, boolean>> = {};
+
+  TIME_LEFT_ALERT_THRESHOLDS.forEach((threshold) => {
+    if (remainingMinutes < threshold) {
+      initialShown[threshold] = true;
+    }
+  });
+
+  return initialShown;
+}
+
 export function useContestTimeLeftAlert({
   contestStatus,
   contestStartsAt,
@@ -103,7 +130,13 @@ export function useContestTimeLeftAlert({
     useState<TimeLeftAlertThreshold | null>(null);
   const [shownTimeLeftAlerts, setShownTimeLeftAlerts] = useState<
     Partial<Record<TimeLeftAlertThreshold, boolean>>
-  >({});
+  >(() =>
+    getInitialShownTimeLeftAlerts({
+      startsAt: contestStartsAt,
+      endsAt: contestEndsAt,
+      durationMinutes: contestDurationMinutes,
+    }),
+  );
 
   useEffect(() => {
     if (contestStatus === "closed") {

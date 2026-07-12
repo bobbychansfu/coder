@@ -24,7 +24,7 @@ export default function ContestDataHub({ contest }: ContestDataHubProps) {
       icon: ScheduleOutlinedIcon,
       content: (
         <CountdownTimer
-          startsAt={contest.startTimeISO}
+          startsAt={contest.startTimeISO ?? contest.startTime}
           durationMinutes={contest.durationMinutes}
           endedLabel="Contest Ended"
         />
