@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Typography } from "@mui/material";
 import CountdownTimer from "@/fe/contests/components/CountdownTimer";
 import type { ContestDetailStatus } from "@/fe/contests/data/contestDetails";
@@ -105,9 +105,16 @@ function getInitialShownTimeLeftAlerts({
 
   const remainingMinutes = remainingMs / 60_000;
   const initialShown: Partial<Record<TimeLeftAlertThreshold, boolean>> = {};
+  const nextThreshold = TIME_LEFT_ALERT_THRESHOLDS.find(
+    (threshold) => remainingMinutes <= threshold,
+  );
+
+  if (!nextThreshold) {
+    return initialShown;
+  }
 
   TIME_LEFT_ALERT_THRESHOLDS.forEach((threshold) => {
-    if (remainingMinutes < threshold) {
+    if (threshold > nextThreshold) {
       initialShown[threshold] = true;
     }
   });
@@ -128,9 +135,7 @@ export function useContestTimeLeftAlert({
 }) {
   const [activeTimeLeftAlert, setActiveTimeLeftAlert] =
     useState<TimeLeftAlertThreshold | null>(null);
-  const [shownTimeLeftAlerts, setShownTimeLeftAlerts] = useState<
-    Partial<Record<TimeLeftAlertThreshold, boolean>>
-  >(() =>
+  const shownTimeLeftAlertsRef = useRef<Partial<Record<TimeLeftAlertThreshold, boolean>>>(
     getInitialShownTimeLeftAlerts({
       startsAt: contestStartsAt,
       endsAt: contestEndsAt,
@@ -156,18 +161,16 @@ export function useContestTimeLeftAlert({
 
       const remainingMinutes = remainingMs / 60_000;
       const nextThreshold = TIME_LEFT_ALERT_THRESHOLDS.find(
-        (threshold) => remainingMinutes <= threshold && !shownTimeLeftAlerts[threshold],
+        (threshold) =>
+          remainingMinutes <= threshold && !shownTimeLeftAlertsRef.current[threshold],
       );
 
       if (!nextThreshold) {
         return;
       }
 
+      shownTimeLeftAlertsRef.current[nextThreshold] = true;
       setActiveTimeLeftAlert(nextThreshold);
-      setShownTimeLeftAlerts((current) => ({
-        ...current,
-        [nextThreshold]: true,
-      }));
     };
 
     updateTimeLeftAlert();
@@ -179,7 +182,6 @@ export function useContestTimeLeftAlert({
     contestEndsAt,
     contestStartsAt,
     contestStatus,
-    shownTimeLeftAlerts,
   ]);
 
   useEffect(() => {

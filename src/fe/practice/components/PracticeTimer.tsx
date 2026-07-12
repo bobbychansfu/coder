@@ -95,10 +95,16 @@ export default function PracticeTimer({ problemCode }: { problemCode: string }) 
       JSON.stringify({
         isStarted: timerState.isStarted,
         endTime: timerState.endTime,
-        remainingMs,
+        remainingMs: timerState.remainingMs,
       }),
     );
-  }, [isTimerStorageReady, storageKey, timerState.isStarted, timerState.endTime, remainingMs]);
+  }, [
+    isTimerStorageReady,
+    storageKey,
+    timerState.isStarted,
+    timerState.endTime,
+    timerState.remainingMs,
+  ]);
 
   useEffect(() => {
     endTimeRef.current = timerState.endTime;

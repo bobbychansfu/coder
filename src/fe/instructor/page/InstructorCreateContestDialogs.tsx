@@ -5,6 +5,7 @@ import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
 import FlagOutlinedIcon from "@mui/icons-material/FlagOutlined";
 import RemoveRedEyeOutlinedIcon from "@mui/icons-material/RemoveRedEyeOutlined";
 import { Box, Button, Dialog, DialogContent, IconButton, Typography } from "@mui/material";
+import { useMemo } from "react";
 import {
   contestAuthoringCopy,
   type ContestDifficulty,
@@ -73,6 +74,11 @@ export default function InstructorCreateContestDialogs({
   onTogglePendingProblem,
   onApplySelectedProblems,
 }: InstructorCreateContestDialogsProps) {
+  const pendingProblemIdSet = useMemo(
+    () => new Set(pendingProblemIds),
+    [pendingProblemIds],
+  );
+
   return (
     <>
       <Dialog
@@ -103,7 +109,7 @@ export default function InstructorCreateContestDialogs({
 
           <Box className={styles.modalProblemList}>
             {availableProblems.map((problem) => {
-              const isSelected = pendingProblemIds.includes(problem.id);
+              const isSelected = pendingProblemIdSet.has(problem.id);
               const showContestOnlyBadge = problem.source === "contest-only";
 
               return (
