@@ -74,10 +74,12 @@ export default function CountdownTimer({
   const [timeLeft, setTimeLeft] = useState("");
 
   useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | null = null;
+
     const updateTimer = () => {
       if (endTimestamp === null) {
         setTimeLeft(fallbackLabel);
-        return;
+        return false;
       }
 
       const now = Date.now();
@@ -85,16 +87,27 @@ export default function CountdownTimer({
 
       if (distance <= 0) {
         setTimeLeft(endedLabel);
-        return;
+
+        if (interval !== null) {
+          clearInterval(interval);
+        }
+
+        return false;
       }
 
       setTimeLeft(formatTimeLeft(distance));
+      return true;
     };
 
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
+    if (updateTimer()) {
+      interval = setInterval(updateTimer, 1000);
+    }
 
-    return () => clearInterval(interval);
+    return () => {
+      if (interval !== null) {
+        clearInterval(interval);
+      }
+    };
   }, [endedLabel, endTimestamp, fallbackLabel, startTimestamp]);
 
   return <span>{timeLeft}</span>;

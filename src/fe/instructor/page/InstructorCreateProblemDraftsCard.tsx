@@ -21,6 +21,7 @@ function formatDraftUpdatedAt(isoValue: string) {
     month: "numeric",
     day: "numeric",
     year: "numeric",
+    timeZone: "UTC",
   }).format(date);
 }
 

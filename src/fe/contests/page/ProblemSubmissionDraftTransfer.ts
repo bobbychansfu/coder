@@ -155,16 +155,29 @@ export function useContestPracticeRedirect({
       return;
     }
 
+    let intervalId: number | null = null;
+
     const checkContestEnd = () => {
       if (Date.now() >= endTime) {
         copyDraftAndRedirectToPractice();
+
+        if (intervalId !== null) {
+          window.clearInterval(intervalId);
+        }
       }
     };
 
     checkContestEnd();
-    const intervalId = window.setInterval(checkContestEnd, 1000);
 
-    return () => window.clearInterval(intervalId);
+    if (Date.now() < endTime) {
+      intervalId = window.setInterval(checkContestEnd, 1000);
+    }
+
+    return () => {
+      if (intervalId !== null) {
+        window.clearInterval(intervalId);
+      }
+    };
   }, [
     contestDurationMinutes,
     contestEndsAt,

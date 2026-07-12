@@ -154,7 +154,17 @@ export default function PracticeTimer({ problemCode }: { problemCode: string }) 
     }
 
     const timerId = window.setInterval(() => {
-      setNow(Date.now());
+      const currentTime = Date.now();
+      setNow(currentTime);
+
+      if (endTimeRef.current !== null && endTimeRef.current - currentTime <= 0) {
+        window.clearInterval(timerId);
+        setTimerState({
+          isStarted: false,
+          endTime: null,
+          remainingMs: 0,
+        });
+      }
     }, 1000);
 
     return () => window.clearInterval(timerId);

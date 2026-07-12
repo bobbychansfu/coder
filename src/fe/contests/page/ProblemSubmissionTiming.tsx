@@ -8,6 +8,7 @@ export type TimeLeftAlertThreshold = 15 | 5;
 
 const TIME_LEFT_ALERT_THRESHOLDS: TimeLeftAlertThreshold[] = [5, 15];
 const TIME_LEFT_ALERT_AUTO_CLOSE_MS = 30_000;
+const TIME_LEFT_ALERT_REENTRY_WINDOW_MINUTES = 1;
 
 export function ContestTimer({
   startsAt,
@@ -88,6 +89,27 @@ function getContestRemainingMsForAlert({
   return Math.max(0, endTime - now);
 }
 
+function isWithinTimeLeftAlertWindow(
+  remainingMinutes: number,
+  threshold: TimeLeftAlertThreshold,
+) {
+  return (
+    remainingMinutes <= threshold &&
+    remainingMinutes >= threshold - TIME_LEFT_ALERT_REENTRY_WINDOW_MINUTES
+  );
+}
+
+function hasFutureTimeLeftAlertWindow(
+  remainingMinutes: number,
+  shownTimeLeftAlerts: Partial<Record<TimeLeftAlertThreshold, boolean>>,
+) {
+  return TIME_LEFT_ALERT_THRESHOLDS.some(
+    (threshold) =>
+      !shownTimeLeftAlerts[threshold] &&
+      remainingMinutes >= threshold - TIME_LEFT_ALERT_REENTRY_WINDOW_MINUTES,
+  );
+}
+
 function getInitialShownTimeLeftAlerts({
   startsAt,
   endsAt,
@@ -106,7 +128,7 @@ function getInitialShownTimeLeftAlerts({
   const remainingMinutes = remainingMs / 60_000;
   const initialShown: Partial<Record<TimeLeftAlertThreshold, boolean>> = {};
   const nextThreshold = TIME_LEFT_ALERT_THRESHOLDS.find(
-    (threshold) => remainingMinutes <= threshold,
+    (threshold) => isWithinTimeLeftAlertWindow(remainingMinutes, threshold),
   );
 
   if (!nextThreshold) {
@@ -148,6 +170,8 @@ export function useContestTimeLeftAlert({
       return;
     }
 
+    let intervalId: number | null = null;
+
     const updateTimeLeftAlert = () => {
       const remainingMs = getContestRemainingMsForAlert({
         startsAt: contestStartsAt,
@@ -156,27 +180,42 @@ export function useContestTimeLeftAlert({
       });
 
       if (remainingMs === null) {
-        return;
+        return true;
       }
 
       const remainingMinutes = remainingMs / 60_000;
       const nextThreshold = TIME_LEFT_ALERT_THRESHOLDS.find(
         (threshold) =>
-          remainingMinutes <= threshold && !shownTimeLeftAlertsRef.current[threshold],
+          isWithinTimeLeftAlertWindow(remainingMinutes, threshold) &&
+          !shownTimeLeftAlertsRef.current[threshold],
       );
 
-      if (!nextThreshold) {
-        return;
+      if (nextThreshold) {
+        shownTimeLeftAlertsRef.current[nextThreshold] = true;
+        setActiveTimeLeftAlert(nextThreshold);
       }
 
-      shownTimeLeftAlertsRef.current[nextThreshold] = true;
-      setActiveTimeLeftAlert(nextThreshold);
+      const shouldKeepChecking = hasFutureTimeLeftAlertWindow(
+        remainingMinutes,
+        shownTimeLeftAlertsRef.current,
+      );
+
+      if (!shouldKeepChecking && intervalId !== null) {
+        window.clearInterval(intervalId);
+      }
+
+      return shouldKeepChecking;
     };
 
-    updateTimeLeftAlert();
-    const intervalId = window.setInterval(updateTimeLeftAlert, 1000);
+    if (updateTimeLeftAlert()) {
+      intervalId = window.setInterval(updateTimeLeftAlert, 1000);
+    }
 
-    return () => window.clearInterval(intervalId);
+    return () => {
+      if (intervalId !== null) {
+        window.clearInterval(intervalId);
+      }
+    };
   }, [
     contestDurationMinutes,
     contestEndsAt,
