@@ -92,6 +92,15 @@ export function useContestPracticeRedirect({
   router: AppRouterInstance;
 }) {
   const hasRedirectedToPracticeRef = useRef(false);
+  const latestDraftsRef = useRef(effectiveDrafts);
+  const latestLanguageRef = useRef(effectiveLanguage);
+  const latestLinksRef = useRef(practiceProblemLinks);
+
+  useEffect(() => {
+    latestDraftsRef.current = effectiveDrafts;
+    latestLanguageRef.current = effectiveLanguage;
+    latestLinksRef.current = practiceProblemLinks;
+  }, [effectiveDrafts, effectiveLanguage, practiceProblemLinks]);
 
   useEffect(() => {
     if (persistedDraft === undefined) {
@@ -103,8 +112,8 @@ export function useContestPracticeRedirect({
     }
 
     const allPracticeProblemLinks =
-      practiceProblemLinks.length > 0
-        ? practiceProblemLinks
+      latestLinksRef.current.length > 0
+        ? latestLinksRef.current
         : [{ contestCode: contestProblemCode, practiceProblemCode }];
 
     const copyDraftAndRedirectToPractice = () => {
@@ -118,7 +127,7 @@ export function useContestPracticeRedirect({
         const isCurrentProblem =
           link.contestCode.toLowerCase() === contestProblemCode.toLowerCase();
         const contestDraft = isCurrentProblem
-          ? { language: effectiveLanguage, drafts: effectiveDrafts }
+          ? { language: latestLanguageRef.current, drafts: latestDraftsRef.current }
           : readPersistedCodeDraft(getContestDraftStorageKey(contestId, link.contestCode));
 
         if (!contestDraft || !hasDraftContent(contestDraft.drafts)) {
@@ -163,11 +172,8 @@ export function useContestPracticeRedirect({
     contestProblemCode,
     contestStartsAt,
     contestStatus,
-    effectiveDrafts,
-    effectiveLanguage,
     persistedDraft,
     practiceProblemCode,
-    practiceProblemLinks,
     router,
   ]);
 }
