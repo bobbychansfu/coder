@@ -7,6 +7,7 @@ import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import PageHeader from "@/fe/shared/components/PageHeader";
+import AiHintDialog from "@/fe/shared/components/problem/AiHintDialog";
 import ProblemHeader from "@/fe/shared/components/problem/ProblemHeader";
 import ProblemDetails from "@/fe/shared/components/problem/ProblemDetails";
 import SolutionEditor from "@/fe/shared/components/problem/SolutionEditor";
@@ -54,6 +55,7 @@ interface ProblemSubmissionPageProps {
   contestEndsAt?: string | null;
   contestDurationMinutes?: number | null;
   practiceProblemLinks?: ContestPracticeProblemLink[];
+  aiHintEnabled?: boolean;
   detail: ProblemDetail;
   navigator?: ProblemNavigator;
 }
@@ -64,6 +66,100 @@ const DEFAULT_LANGUAGE: SupportedLanguage = DEFAULT_CODE_LANGUAGE;
 const SUBMISSION_POLL_INTERVAL_MS = 1_500;
 const SUBMISSION_POLL_ATTEMPTS = 40;
 
+interface RunResult {
+  submissionId: string;
+  status: "idle" | "submitting" | "done" | "failed";
+  verdict: string | null;
+  feedback: string | null;
+  errorMessage: string | null;
+  testcases: { name: string; passed: boolean; message: string }[];
+}
+
+interface ContestSubmitResponse {
+  sid: string;
+  message: string;
+  score?: number;
+  status?: string;
+  runtime?: string;
+  memory?: string;
+}
+
+function formatVerdictLabel(verdict: string | null | undefined) {
+  const normalized = verdict?.trim().toLowerCase();
+
+  switch (normalized) {
+    case "pending":
+      return "Pending";
+    case "accepted":
+      return "Accepted";
+    case "wrong_answer":
+    case "wrong answer":
+    case "wrong":
+      return "Wrong Answer";
+    case "time_limit_exceeded":
+    case "time limit exceeded":
+    case "tle":
+      return "Time Limit Exceeded";
+    case "runtime_error":
+    case "runtime error":
+      return "Runtime Error";
+    case "system_error":
+    case "system error":
+    case "judge_error":
+    case "judge error":
+    case "ierr":
+    case "internal_error":
+    case "internal error":
+      return "System Error";
+    case "compile_error":
+    case "compile error":
+      return "Compile Error";
+    case "failed":
+      return "Failed";
+    default:
+      return null;
+  }
+}
+
+function buildRunResult(input: {
+  submissionId: string;
+  status: RunResult["status"];
+  verdict: string | null | undefined;
+  feedback: string | null;
+  errorMessage: string | null;
+  testcases: RunResult["testcases"];
+}): RunResult {
+  return {
+    submissionId: input.submissionId,
+    status: input.status,
+    verdict: formatVerdictLabel(input.verdict),
+    feedback: input.feedback,
+    errorMessage: input.errorMessage,
+    testcases: input.testcases,
+  };
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function getHintText(payload: unknown, depth = 0): string | null {
+  if (depth > 5 || !payload || typeof payload !== "object") {
+    return null;
+  }
+
+  const record = payload as Record<string, unknown>;
+
+  for (const key of ["hint", "feedback", "message", "response", "text"]) {
+    const value = record[key];
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return getHintText(record.data, depth + 1);
+}
+
 export default function ProblemSubmissionPage({
   contestId,
   contestStatus,
@@ -71,6 +167,7 @@ export default function ProblemSubmissionPage({
   contestEndsAt,
   contestDurationMinutes,
   practiceProblemLinks,
+  aiHintEnabled = false,
   detail,
   navigator,
 }: ProblemSubmissionPageProps) {
@@ -83,6 +180,7 @@ export default function ProblemSubmissionPage({
       contestEndsAt={contestEndsAt}
       contestDurationMinutes={contestDurationMinutes}
       practiceProblemLinks={practiceProblemLinks}
+      aiHintEnabled={aiHintEnabled}
       detail={detail}
       navigator={navigator}
     />
@@ -96,6 +194,7 @@ function ProblemSubmissionPageContent({
   contestEndsAt,
   contestDurationMinutes,
   practiceProblemLinks = [],
+  aiHintEnabled = false,
   detail,
   navigator,
 }: ProblemSubmissionPageProps) {
@@ -112,6 +211,11 @@ function ProblemSubmissionPageContent({
   );
   const [runResult, setRunResult] = useState<RunResult | null>(null);
   const [submissions, setSubmissions] = useState(detail.submissions);
+  const [aiHintOpen, setAiHintOpen] = useState(false);
+  const [aiHintMessage, setAiHintMessage] = useState<string | null>(null);
+  const [aiHintError, setAiHintError] = useState<string | null>(null);
+  const [aiHintLoading, setAiHintLoading] = useState(false);
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
   const effectiveLanguage =
     hasLocalDraftState ? language : (persistedDraft?.language ?? DEFAULT_LANGUAGE);
   const effectiveDrafts =
@@ -119,11 +223,20 @@ function ProblemSubmissionPageContent({
   const code = effectiveDrafts[effectiveLanguage] ?? detail.starterCodes?.[effectiveLanguage] ?? "";
   const hasCode = code.trim().length > 0;
   const isJudging = submitState === "submitting";
+  const contestEndsAtTime = contestEndsAt ? new Date(contestEndsAt).getTime() : null;
+  const contestEndedByTime =
+    typeof contestEndsAtTime === "number" &&
+    Number.isFinite(contestEndsAtTime) &&
+    contestEndsAtTime <= currentTime;
+  const aiHintLockedReason =
+    contestStatus === "closed" || contestEndedByTime
+      ? "AI hints are disabled after the contest ends."
+      : null;
   const submissionsLockedReason =
     contestStatus === "upcoming"
       ? "Submissions open when this contest starts."
-      : contestStatus === "closed"
-        ? "This contest has ended. You can review problems and submissions, but new submissions are disabled."
+      : contestStatus === "closed" || contestEndedByTime
+        ? "This contest has ended. You can review problems and submissions, but new submissions and AI hints are disabled."
         : null;
   const submissionsLocked = submissionsLockedReason !== null;
   const displayedRunResult = runResult;
@@ -131,6 +244,7 @@ function ProblemSubmissionPageContent({
     ...detail,
     submissions,
   };
+  
   const { activeTimeLeftAlert, closeTimeLeftAlert } = useContestTimeLeftAlert({
     contestStatus,
     contestStartsAt,
@@ -192,6 +306,66 @@ function ProblemSubmissionPageContent({
     }
 
     return null;
+  };
+
+  const requestAiHint = async () => {
+    if (aiHintLockedReason) {
+      setAiHintOpen(true);
+      setAiHintLoading(false);
+      setAiHintMessage(null);
+      setAiHintError(aiHintLockedReason);
+      return;
+    }
+
+    const hintProblemId = detail.problemId ?? detail.practiceProblemCode ?? detail.code;
+
+    setAiHintOpen(true);
+    setAiHintLoading(true);
+    setAiHintError(null);
+
+    try {
+      const response = await fetch("/api/s/request_hint", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          pid: hintProblemId,
+          contest_id: contestId,
+          problem_code: detail.code,
+          problem_title: detail.title,
+          language: effectiveLanguage,
+          code,
+        }),
+      });
+
+      let payload: unknown;
+      try {
+        payload = await response.json();
+      } catch {
+        payload = null;
+      }
+
+      if (!response.ok) {
+        const errorPayload = payload as { details?: string; error?: string } | null;
+        throw new Error(
+          errorPayload?.details ??
+            errorPayload?.error ??
+            ("Failed to generate hint (Status " + response.status + ").")
+        );
+      }
+
+      const hintText = getHintText(payload);
+
+      if (!hintText) {
+        throw new Error("Hint service returned an empty response.");
+      }
+
+      setAiHintMessage(hintText);
+    } catch (error) {
+      setAiHintError(error instanceof Error ? error.message : "Failed to generate hint.");
+    } finally {
+      setAiHintLoading(false);
+    }
   };
 
   const submitContestCode = async () => {
@@ -394,11 +568,22 @@ function ProblemSubmissionPageContent({
             submitButtonDisabled={!hasCode || isJudging || !detail.problemId || submissionsLocked}
             submitButtonLabel={submitState === "submitting" ? "Submitting..." : "Submit"}
             submitButtonStartIcon={<SendRoundedIcon fontSize="small" />}
-            showAiHint
-            aiHintSource={code}
+            showAiHint={aiHintEnabled}
+            aiHintDisabled={Boolean(aiHintLockedReason)}
+            aiHintLoading={aiHintLoading}
+            onRequestAiHint={requestAiHint}
           />
         </Box>
       </Box>
+
+      <AiHintDialog
+        open={aiHintOpen}
+        loading={aiHintLoading}
+        hint={aiHintMessage}
+        error={aiHintError}
+        onClose={() => setAiHintOpen(false)}
+        onRetry={() => void requestAiHint()}
+      />
     </Box>
   );
 }

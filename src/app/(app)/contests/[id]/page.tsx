@@ -27,6 +27,7 @@ function toBackendContestSummary(
     durationMinutes: contest.durationMinutes,
     participants: contest.participants,
     published: contest.published,
+    aiHintEnabled: contest.aiHintEnabled,
   };
 }
 

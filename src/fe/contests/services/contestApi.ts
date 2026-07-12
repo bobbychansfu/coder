@@ -12,6 +12,7 @@ export interface BackendContestSummary {
   durationMinutes: number | null;
   participants: number;
   published: boolean;
+  aiHintEnabled: boolean;
 }
 
 export interface StudentContestInfoResponse {

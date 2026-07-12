@@ -1,3 +1,140 @@
+## Local AI Hint Startup
+
+### Prerequisites
+
+- Start Docker Desktop and wait until the Docker Engine is running.
+
+#### Yicheng's local setup
+
+- Confirm that `C:\Users\yicheng.zheng\Desktop\CMPT415\coder\.env` contains:
+
+```env
+JUDGE_URL="http://127.0.0.1:8000"
+AI_HINT_URL="http://127.0.0.1:8000"
+```
+
+- Confirm that
+  `C:\Users\yicheng.zheng\Desktop\CMPT415\SFU_Judge\judge\ai_hints\.env`
+  contains `AI_HINTS_API_KEY`.
+
+#### General setup for everyone else
+
+- Confirm that `<CMPT415_PATH>\coder\.env` contains:
+
+```env
+JUDGE_URL="http://127.0.0.1:8000"
+AI_HINT_URL="http://127.0.0.1:8000"
+```
+
+- Confirm that `<CMPT415_PATH>\SFU_Judge\judge\ai_hints\.env` contains
+  `AI_HINTS_API_KEY`.
+
+Here, `<CMPT415_PATH>` means the local path to the CMPT415 folder.
+
+### First-time AI Hint image build
+
+On Windows, open CMD and run:
+
+```cmd
+cd C:\Users\yicheng.zheng\Desktop\CMPT415\SFU_Judge\judge
+docker build -f .\ai_hints\Dockerfile -t sfu/ai_hints .
+```
+
+On Linux/macOS, open a terminal and run:
+
+```bash
+cd <CMPT415_PATH>/SFU_Judge/judge
+docker build -f ./ai_hints/Dockerfile -t sfu/ai_hints .
+```
+
+The image only needs to be rebuilt after changing `ai_hints/Dockerfile`,
+`requirements.txt`, or `ai_hints/requirements.txt`.
+
+### Start the AI Hint API
+
+#### Yicheng's local command
+
+Open CMD and run:
+
+```cmd
+cd C:\Users\yicheng.zheng\Desktop\CMPT415\SFU_Judge\judge
+docker run --rm ^
+  -p 8000:8000 ^
+  --env-file C:\Users\yicheng.zheng\Desktop\CMPT415\SFU_Judge\judge\ai_hints\.env ^
+  --mount "type=bind,source=C:\Users\yicheng.zheng\Desktop\CMPT415\SFU_Judge\judge,target=/judge" ^
+  --entrypoint python3 ^
+  sfu/ai_hints ^
+  /judge/api.py --host 0.0.0.0 --port 8000
+```
+
+#### General command for everyone else
+
+Open CMD, replace `<CMPT415_PATH>` with the local project path, and run:
+
+```cmd
+cd <CMPT415_PATH>\SFU_Judge\judge
+docker run --rm ^
+  -p 8000:8000 ^
+  --env-file .\ai_hints\.env ^
+  --mount "type=bind,source=%CD%,target=/judge" ^
+  --entrypoint python3 ^
+  sfu/ai_hints ^
+  /judge/api.py --host 0.0.0.0 --port 8000
+```
+
+For example, if the project is under `C:\Users\alice\Desktop\CMPT415`, then
+`<CMPT415_PATH>` should be `C:\Users\alice\Desktop\CMPT415`.
+
+#### Linux/macOS command
+
+Open a terminal, replace `<CMPT415_PATH>` with the local project path, and run:
+
+```bash
+cd <CMPT415_PATH>/SFU_Judge/judge
+docker run --rm \
+  -p 8000:8000 \
+  --env-file ./ai_hints/.env \
+  --mount "type=bind,source=$(pwd),target=/judge" \
+  --entrypoint python3 \
+  sfu/ai_hints \
+  /judge/api.py --host 0.0.0.0 --port 8000
+```
+
+Keep this terminal open. The API is ready when it displays:
+
+```text
+Running on http://127.0.0.1:8000
+```
+
+Python source changes are loaded through the bind mount, so ordinary source
+changes do not require rebuilding the image.
+
+### Start the coder app
+
+Open a second CMD window and run:
+
+```cmd
+cd C:\Users\yicheng.zheng\Desktop\CMPT415\coder
+npm.cmd run db:up
+npm.cmd run dev
+```
+
+For a new or uninitialized database, run these commands before `npm.cmd run dev`:
+
+```cmd
+npm.cmd run prisma:generate
+npm.cmd run prisma:deploy
+npm.cmd run prisma:seed
+```
+
+Open `http://localhost:3000`, enter a problem page, and click **AI Hint**.
+The AI API terminal should log a `POST /request_hint` request.
+
+For normal daily development, only Docker Desktop, the `docker run` command,
+`npm.cmd run db:up`, and `npm.cmd run dev` are required.
+
+---
+
 ## 1. Upsolve Page
 
 ### Ideas:
