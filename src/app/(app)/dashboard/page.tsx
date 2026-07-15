@@ -5,6 +5,10 @@ import {
   mapStudentDashboardContests,
   type StudentDashboardContestSummary,
 } from "@/fe/dashboard/services/dashboardContests";
+import {
+  getStudentPracticeHistory,
+  type StudentDashboardPracticeHistoryItem,
+} from "@/fe/dashboard/services/dashboardPracticeHistory";
 import { redirect } from "next/navigation";
 import { getStudentContestInfoPayload } from "@/server/api/s/studentContestInfo";
 import { getCurrentUser } from "@/lib/session";
@@ -16,12 +20,36 @@ export default async function DashboardRoute() {
     redirect("/login");
   }
 
+  let practiceHistory: StudentDashboardPracticeHistoryItem[] = [];
+
+  try {
+    practiceHistory = await getStudentPracticeHistory(user);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown server-side data load error.";
+
+    console.error("[dashboard:ssr] failed direct practice history load", {
+      computingId: user.computingId,
+      role: user.role,
+      errorMessage: message,
+    });
+  }
+
   if (user.role === "admin") {
-    return <AdminDashboardPage />;
+    return (
+      <AdminDashboardPage
+        practiceHistory={practiceHistory}
+        currentUserComputingId={user.computingId}
+      />
+    );
   }
 
   if (user.role === "instructor") {
-    return <InstructorDashboardPage />;
+    return (
+      <InstructorDashboardPage
+        practiceHistory={practiceHistory}
+        currentUserComputingId={user.computingId}
+      />
+    );
   }
 
   let contestSummary: StudentDashboardContestSummary | undefined;
@@ -38,5 +66,11 @@ export default async function DashboardRoute() {
     });
   }
 
-  return <DashboardPage contestSummary={contestSummary} />;
+  return (
+    <DashboardPage
+      contestSummary={contestSummary}
+      practiceHistory={practiceHistory}
+      currentUserComputingId={user.computingId}
+    />
+  );
 }

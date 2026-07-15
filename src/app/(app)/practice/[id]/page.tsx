@@ -16,5 +16,11 @@ export default async function PracticeProblemRoute({ params }: PracticeProblemRo
   }
 
   const { id } = await params;
-  return <PracticeProblemSubmissionPage problemCode={id} persistSubmissions={user.role === "student"} />;
+  return (
+    <PracticeProblemSubmissionPage
+      problemCode={id}
+      persistSubmissions={user.role === "student"}
+      currentUserComputingId={user.computingId}
+    />
+  );
 }
