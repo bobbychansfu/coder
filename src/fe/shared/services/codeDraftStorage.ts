@@ -7,6 +7,8 @@ export type CodeDraftMap = Partial<Record<SupportedCodeLanguage, string>>;
 export interface PersistedCodeDraft {
   language: SupportedCodeLanguage;
   drafts: CodeDraftMap;
+  updatedAt?: number;
+  ownerComputingId?: string;
 }
 
 export const DEFAULT_CODE_LANGUAGE: SupportedCodeLanguage = "cplusplus";
@@ -39,6 +41,8 @@ function parsePersistedCodeDraft(rawValue: string | null): PersistedCodeDraft | 
     const parsed = JSON.parse(rawValue) as {
       language?: unknown;
       drafts?: Record<string, unknown>;
+      updatedAt?: unknown;
+      ownerComputingId?: unknown;
     };
 
     if (!isSupportedCodeLanguage(parsed.language) || !parsed.drafts || typeof parsed.drafts !== "object") {
@@ -54,6 +58,9 @@ function parsePersistedCodeDraft(rawValue: string | null): PersistedCodeDraft | 
     return {
       language: parsed.language,
       drafts,
+      updatedAt: typeof parsed.updatedAt === "number" ? parsed.updatedAt : undefined,
+      ownerComputingId:
+        typeof parsed.ownerComputingId === "string" ? parsed.ownerComputingId : undefined,
     };
   } catch {
     return null;
@@ -86,7 +93,7 @@ export function writePersistedCodeDraft(storageKey: string, value: PersistedCode
   }
 
   try {
-    window.sessionStorage.setItem(storageKey, JSON.stringify(value));
+    window.sessionStorage.setItem(storageKey, JSON.stringify({ ...value, updatedAt: Date.now() }));
   } catch {
     // Ignore storage write failures and keep the editor usable.
   }

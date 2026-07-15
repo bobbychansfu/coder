@@ -1,0 +1,220 @@
+.container {
+  width: 100%;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.title {
+  font-family: Inter, sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: #1a1a1a;
+}
+
+.viewAll {
+  color: #1a1a1a;
+  text-decoration: none;
+  font-family: Inter, sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.viewAll:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  min-width: 0;
+  background-color: white;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 24px;
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.card:hover {
+  border-color: rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.card:focus-visible {
+  outline: 3px solid rgba(224, 62, 62, 0.22);
+  outline-offset: 2px;
+}
+
+.iconWrapper {
+  background-color: #e03e3e;
+  border-radius: 8px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.problemIcon {
+  color: white;
+  font-size: 24px;
+}
+
+.content {
+  min-width: 0;
+  flex: 1;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  margin-bottom: 8px;
+}
+
+.problemTitle {
+  min-width: 0;
+  overflow: hidden;
+  color: #1a1a1a;
+  font-family: Inter, sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.difficultyBadge {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.difficultyEasy {
+  background-color: transparent;
+  border: 1px solid #00a63e;
+  color: #00a63e;
+}
+
+.difficultyMedium {
+  background-color: transparent;
+  border: 1px solid #ff8c00;
+  color: #ff8c00;
+}
+
+.difficultyHard {
+  background-color: transparent;
+  border: 1px solid #e03e3e;
+  color: #e03e3e;
+}
+
+.metadata {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: #4a5565;
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.separator {
+  color: #9ca3af;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.statusIcon {
+  font-size: 14px;
+}
+
+.statusAccepted {
+  background-color: #dcfce7;
+  border: 1px solid #bbf7d0;
+  color: #008236;
+}
+
+.statusPartial {
+  background-color: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #c2410c;
+}
+
+.statusNeedsWork {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+}
+
+.statusPending {
+  background-color: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  color: #4b5563;
+}
+
+.statusDraft {
+  background-color: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  color: #4b5563;
+}
+
+.empty {
+  background-color: white;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 24px;
+  color: #4a5565;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+}
+
+@media (max-width: 640px) {
+  .card {
+    padding: 20px;
+  }
+
+  .titleRow {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+}

@@ -5,6 +5,12 @@ import {
   mapStudentDashboardContests,
   type StudentDashboardContestSummary,
 } from "@/fe/dashboard/services/dashboardContests";
+import {
+  getStudentPracticeProblemCatalog,
+  getStudentPracticeHistory,
+  type StudentDashboardPracticeHistoryItem,
+  type StudentDashboardPracticeProblemCatalogItem,
+} from "@/fe/dashboard/services/dashboardPracticeHistory";
 import { redirect } from "next/navigation";
 import { getStudentContestInfoPayload } from "@/server/api/s/studentContestInfo";
 import { getCurrentUser } from "@/lib/session";
@@ -16,12 +22,42 @@ export default async function DashboardRoute() {
     redirect("/login");
   }
 
+  let practiceHistory: StudentDashboardPracticeHistoryItem[] = [];
+  let practiceProblemCatalog: StudentDashboardPracticeProblemCatalogItem[] = [];
+
+  try {
+    [practiceHistory, practiceProblemCatalog] = await Promise.all([
+      getStudentPracticeHistory(user),
+      getStudentPracticeProblemCatalog(),
+    ]);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown server-side data load error.";
+
+    console.error("[dashboard:ssr] failed direct practice history load", {
+      computingId: user.computingId,
+      role: user.role,
+      errorMessage: message,
+    });
+  }
+
   if (user.role === "admin") {
-    return <AdminDashboardPage />;
+    return (
+      <AdminDashboardPage
+        practiceHistory={practiceHistory}
+        practiceProblemCatalog={practiceProblemCatalog}
+        currentUserComputingId={user.computingId}
+      />
+    );
   }
 
   if (user.role === "instructor") {
-    return <InstructorDashboardPage />;
+    return (
+      <InstructorDashboardPage
+        practiceHistory={practiceHistory}
+        practiceProblemCatalog={practiceProblemCatalog}
+        currentUserComputingId={user.computingId}
+      />
+    );
   }
 
   let contestSummary: StudentDashboardContestSummary | undefined;
@@ -38,5 +74,12 @@ export default async function DashboardRoute() {
     });
   }
 
-  return <DashboardPage contestSummary={contestSummary} />;
+  return (
+    <DashboardPage
+      contestSummary={contestSummary}
+      practiceHistory={practiceHistory}
+      practiceProblemCatalog={practiceProblemCatalog}
+      currentUserComputingId={user.computingId}
+    />
+  );
 }

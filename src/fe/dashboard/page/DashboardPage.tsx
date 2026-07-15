@@ -11,6 +11,7 @@ import ScrollbarHider from "@/fe/shared/components/ui/ScrollbarHider";
 import StatisticsSection from "@/fe/dashboard/components/StatisticsSection";
 import ContestAlert from "@/fe/dashboard/components/ContestAlert";
 import PastContests from "@/fe/dashboard/components/PastContests";
+import PracticeHistory from "@/fe/dashboard/components/PracticeHistory";
 import UpcomingContests from "@/fe/dashboard/components/UpcomingContests";
 import ThisWeek from "@/fe/dashboard/components/ThisWeek";
 import RecentBadges from "@/fe/dashboard/components/RecentBadges";
@@ -20,17 +21,29 @@ import {
   useStudentDashboardMetadata,
 } from "@/fe/dashboard/services/dashboardMetadata";
 import type { StudentDashboardContestSummary } from "@/fe/dashboard/services/dashboardContests";
+import type {
+  StudentDashboardPracticeHistoryItem,
+  StudentDashboardPracticeProblemCatalogItem,
+} from "@/fe/dashboard/services/dashboardPracticeHistory";
 import { buildContestRoute } from "@/fe/shared/constants/routes";
 import type { UpcomingContest } from "@/fe/shared/types/contest";
 import styles from "../styles/DashboardPage.module.css";
 
 interface DashboardPageProps {
   contestSummary?: StudentDashboardContestSummary;
+  practiceHistory?: StudentDashboardPracticeHistoryItem[];
+  practiceProblemCatalog?: StudentDashboardPracticeProblemCatalogItem[];
+  currentUserComputingId?: string;
 }
 
 type PendingAction = "register" | "enter";
 
-export default function DashboardPage({ contestSummary }: DashboardPageProps) {
+export default function DashboardPage({
+  contestSummary,
+  practiceHistory = [],
+  practiceProblemCatalog = [],
+  currentUserComputingId,
+}: DashboardPageProps) {
   const router = useRouter();
   useTimedRouterRefresh(true);
   const { metadata, isLoading, isError } = useStudentDashboardMetadata();
@@ -131,6 +144,12 @@ export default function DashboardPage({ contestSummary }: DashboardPageProps) {
           {actionError ? <div className={styles.errorBanner}>{actionError}</div> : null}
 
           <StatisticsSection stats={resolvedMetadata.statistics} />
+
+          <PracticeHistory
+            problems={practiceHistory}
+            problemCatalog={practiceProblemCatalog}
+            currentUserComputingId={currentUserComputingId}
+          />
 
           {alert && (
             <ContestAlert

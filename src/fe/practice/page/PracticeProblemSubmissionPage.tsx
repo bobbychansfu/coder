@@ -25,6 +25,7 @@ import styles from "@/fe/contests/styles/ProblemSubmissionPage.module.css";
 interface PracticeProblemSubmissionPageProps {
   problemCode: string;
   persistSubmissions?: boolean;
+  currentUserComputingId?: string;
 }
 
 type SupportedLanguage = SupportedCodeLanguage;
@@ -87,12 +88,14 @@ function buildRunResult(input: {
 export default function PracticeProblemSubmissionPage({
   problemCode,
   persistSubmissions = true,
+  currentUserComputingId,
 }: PracticeProblemSubmissionPageProps) {
   return (
     <PracticeProblemSubmissionPageContent
       key={problemCode}
       problemCode={problemCode}
       persistSubmissions={persistSubmissions}
+      currentUserComputingId={currentUserComputingId}
     />
   );
 }
@@ -100,6 +103,7 @@ export default function PracticeProblemSubmissionPage({
 function PracticeProblemSubmissionPageContent({
   problemCode,
   persistSubmissions = true,
+  currentUserComputingId,
 }: PracticeProblemSubmissionPageProps) {
   const router = useRouter();
   const [tab, setTab] = useState("description");
@@ -269,14 +273,22 @@ function PracticeProblemSubmissionPageContent({
   useEffect(() => {
     const persistedDraft = readPersistedCodeDraft(getPracticeDraftStorageKey(problemCode));
 
-    if (persistedDraft) {
+    if (
+      persistedDraft &&
+      (!currentUserComputingId || persistedDraft.ownerComputingId === currentUserComputingId)
+    ) {
       setLanguage(persistedDraft.language);
       setDrafts(persistedDraft.drafts);
     }
 
-    setHasPersistedDraft(Boolean(persistedDraft));
+    setHasPersistedDraft(
+      Boolean(
+        persistedDraft &&
+          (!currentUserComputingId || persistedDraft.ownerComputingId === currentUserComputingId),
+      ),
+    );
     setIsDraftStorageReady(true);
-  }, [problemCode]);
+  }, [currentUserComputingId, problemCode]);
 
   useEffect(() => {
     if (!isDraftStorageReady) {
@@ -293,8 +305,9 @@ function PracticeProblemSubmissionPageContent({
     writePersistedCodeDraft(getPracticeDraftStorageKey(problemCode), {
       language,
       drafts,
+      ownerComputingId: currentUserComputingId,
     });
-  }, [drafts, isDraftStorageReady, language, problemCode]);
+  }, [currentUserComputingId, drafts, isDraftStorageReady, language, problemCode]);
 
   useEffect(() => {
     if (

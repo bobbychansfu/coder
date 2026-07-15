@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import StatisticsSection from "@/fe/dashboard/components/StatisticsSection";
+import PracticeHistory from "@/fe/dashboard/components/PracticeHistory";
 import InstructorContestsSection from "@/fe/dashboard/components/InstructorContestsSection";
 import InstructorAnnouncementsWidget from "@/fe/dashboard/components/InstructorAnnouncementsWidget";
 import InstructorMetricsSnapshotWidget from "@/fe/dashboard/components/InstructorMetricsSnapshotWidget";
@@ -11,9 +12,23 @@ import {
   EMPTY_INSTRUCTOR_DASHBOARD_DATA,
   useInstructorDashboard,
 } from "@/fe/dashboard/services/instructorDashboard";
+import type {
+  StudentDashboardPracticeHistoryItem,
+  StudentDashboardPracticeProblemCatalogItem,
+} from "@/fe/dashboard/services/dashboardPracticeHistory";
 import styles from "@/fe/dashboard/styles/InstructorDashboardPage.module.css";
 
-export default function InstructorDashboardPage() {
+interface InstructorDashboardPageProps {
+  practiceHistory?: StudentDashboardPracticeHistoryItem[];
+  practiceProblemCatalog?: StudentDashboardPracticeProblemCatalogItem[];
+  currentUserComputingId?: string;
+}
+
+export default function InstructorDashboardPage({
+  practiceHistory = [],
+  practiceProblemCatalog = [],
+  currentUserComputingId,
+}: InstructorDashboardPageProps) {
   const { data, isError } = useInstructorDashboard();
   const resolvedMetadata = data ?? EMPTY_INSTRUCTOR_DASHBOARD_DATA;
   const upcomingContests = useMemo(
@@ -43,6 +58,12 @@ export default function InstructorDashboardPage() {
             className={styles.sectionBlock}
             gridClassName={styles.statsGrid}
             stats={resolvedMetadata.statistics}
+          />
+
+          <PracticeHistory
+            problems={practiceHistory}
+            problemCatalog={practiceProblemCatalog}
+            currentUserComputingId={currentUserComputingId}
           />
 
           <InstructorContestsSection contests={resolvedMetadata.contests} />
