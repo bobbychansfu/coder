@@ -165,6 +165,7 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
   return (
     <ProblemSubmissionPage
       contestId={contest.id}
+      computingId={user.computingId}
       contestStatus={contest.status}
       contestEndsAt={normalizedContestSummary.endsAt}
       aiHintEnabled={normalizedContestSummary.aiHintEnabled}

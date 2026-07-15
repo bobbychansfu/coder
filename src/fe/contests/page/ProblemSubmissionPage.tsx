@@ -35,6 +35,7 @@ interface ProblemNavigator {
 
 interface ProblemSubmissionPageProps {
   contestId: string;
+  computingId: string;
   contestStatus?: ContestDetailStatus;
   contestEndsAt?: string | null;
   aiHintEnabled?: boolean;
@@ -145,6 +146,7 @@ function getHintText(payload: unknown, depth = 0): string | null {
 
 export default function ProblemSubmissionPage({
   contestId,
+  computingId,
   contestStatus,
   contestEndsAt,
   aiHintEnabled = false,
@@ -153,8 +155,9 @@ export default function ProblemSubmissionPage({
 }: ProblemSubmissionPageProps) {
   return (
     <ProblemSubmissionPageContent
-      key={`${contestId}:${detail.code}`}
+      key={`${computingId}:${contestId}:${detail.code}`}
       contestId={contestId}
+      computingId={computingId}
       contestStatus={contestStatus}
       contestEndsAt={contestEndsAt}
       aiHintEnabled={aiHintEnabled}
@@ -164,12 +167,13 @@ export default function ProblemSubmissionPage({
   );
 }
 
-function getContestDraftStorageKey(contestId: string, problemCode: string) {
-  return `${CONTEST_DRAFT_STORAGE_KEY_PREFIX}${contestId}:${problemCode.toLowerCase()}`;
+function getContestDraftStorageKey(computingId: string, contestId: string, problemCode: string) {
+  return `${CONTEST_DRAFT_STORAGE_KEY_PREFIX}${computingId}:${contestId}:${problemCode.toLowerCase()}`;
 }
 
 function ProblemSubmissionPageContent({
   contestId,
+  computingId,
   contestStatus,
   contestEndsAt,
   aiHintEnabled = false,
@@ -177,7 +181,7 @@ function ProblemSubmissionPageContent({
   navigator,
 }: ProblemSubmissionPageProps) {
   const router = useRouter();
-  const storageKey = getContestDraftStorageKey(contestId, detail.code);
+  const storageKey = getContestDraftStorageKey(computingId, contestId, detail.code);
   const persistedDraft = usePersistedCodeDraft(storageKey);
   const [tab, setTab] = useState("description");
   const [language, setLanguage] = useState<SupportedLanguage>(DEFAULT_LANGUAGE);
