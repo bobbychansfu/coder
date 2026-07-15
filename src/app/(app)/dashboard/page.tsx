@@ -6,10 +6,8 @@ import {
   type StudentDashboardContestSummary,
 } from "@/fe/dashboard/services/dashboardContests";
 import {
-  getStudentPracticeProblemCatalog,
   getStudentPracticeHistory,
   type StudentDashboardPracticeHistoryItem,
-  type StudentDashboardPracticeProblemCatalogItem,
 } from "@/fe/dashboard/services/dashboardPracticeHistory";
 import { redirect } from "next/navigation";
 import { getStudentContestInfoPayload } from "@/server/api/s/studentContestInfo";
@@ -23,13 +21,9 @@ export default async function DashboardRoute() {
   }
 
   let practiceHistory: StudentDashboardPracticeHistoryItem[] = [];
-  let practiceProblemCatalog: StudentDashboardPracticeProblemCatalogItem[] = [];
 
   try {
-    [practiceHistory, practiceProblemCatalog] = await Promise.all([
-      getStudentPracticeHistory(user),
-      getStudentPracticeProblemCatalog(),
-    ]);
+    practiceHistory = await getStudentPracticeHistory(user);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown server-side data load error.";
 
@@ -44,7 +38,6 @@ export default async function DashboardRoute() {
     return (
       <AdminDashboardPage
         practiceHistory={practiceHistory}
-        practiceProblemCatalog={practiceProblemCatalog}
         currentUserComputingId={user.computingId}
       />
     );
@@ -54,7 +47,6 @@ export default async function DashboardRoute() {
     return (
       <InstructorDashboardPage
         practiceHistory={practiceHistory}
-        practiceProblemCatalog={practiceProblemCatalog}
         currentUserComputingId={user.computingId}
       />
     );
@@ -78,7 +70,6 @@ export default async function DashboardRoute() {
     <DashboardPage
       contestSummary={contestSummary}
       practiceHistory={practiceHistory}
-      practiceProblemCatalog={practiceProblemCatalog}
       currentUserComputingId={user.computingId}
     />
   );

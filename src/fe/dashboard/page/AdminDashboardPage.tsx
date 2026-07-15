@@ -13,19 +13,16 @@ import {
 } from "@/fe/dashboard/services/adminDashboard";
 import type {
   StudentDashboardPracticeHistoryItem,
-  StudentDashboardPracticeProblemCatalogItem,
 } from "@/fe/dashboard/services/dashboardPracticeHistory";
 import styles from "@/fe/dashboard/styles/AdminDashboardPage.module.css";
 
 interface AdminDashboardPageProps {
   practiceHistory?: StudentDashboardPracticeHistoryItem[];
-  practiceProblemCatalog?: StudentDashboardPracticeProblemCatalogItem[];
   currentUserComputingId?: string;
 }
 
 export default function AdminDashboardPage({
   practiceHistory = [],
-  practiceProblemCatalog = [],
   currentUserComputingId,
 }: AdminDashboardPageProps) {
   const { data, isError } = useAdminDashboard();
@@ -50,7 +47,6 @@ export default function AdminDashboardPage({
 
           <PracticeHistory
             problems={practiceHistory}
-            problemCatalog={practiceProblemCatalog}
             currentUserComputingId={currentUserComputingId}
           />
 

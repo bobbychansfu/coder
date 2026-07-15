@@ -17,7 +17,7 @@ interface SolutionEditorProps {
   language: string;
   code: string;
   onLanguageChange: (language: string) => void;
-  onCodeChange: (code: string) => void;
+  onCodeChange: (code: string, isFlush?: boolean) => void;
   onSubmitCode?: () => void;
   submitButtonDisabled?: boolean;
   submitButtonLabel?: string;
@@ -99,7 +99,7 @@ export default function SolutionEditor({
             height="100%"
             language={editorLanguage}
             value={code}
-            onChange={(value) => onCodeChange(value ?? "")}
+            onChange={(value, event) => onCodeChange(value ?? "", event.isFlush)}
             theme="vs-light"
             options={{
               minimap: { enabled: false },

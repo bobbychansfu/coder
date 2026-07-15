@@ -14,19 +14,16 @@ import {
 } from "@/fe/dashboard/services/instructorDashboard";
 import type {
   StudentDashboardPracticeHistoryItem,
-  StudentDashboardPracticeProblemCatalogItem,
 } from "@/fe/dashboard/services/dashboardPracticeHistory";
 import styles from "@/fe/dashboard/styles/InstructorDashboardPage.module.css";
 
 interface InstructorDashboardPageProps {
   practiceHistory?: StudentDashboardPracticeHistoryItem[];
-  practiceProblemCatalog?: StudentDashboardPracticeProblemCatalogItem[];
   currentUserComputingId?: string;
 }
 
 export default function InstructorDashboardPage({
   practiceHistory = [],
-  practiceProblemCatalog = [],
   currentUserComputingId,
 }: InstructorDashboardPageProps) {
   const { data, isError } = useInstructorDashboard();
@@ -62,7 +59,6 @@ export default function InstructorDashboardPage({
 
           <PracticeHistory
             problems={practiceHistory}
-            problemCatalog={practiceProblemCatalog}
             currentUserComputingId={currentUserComputingId}
           />
 

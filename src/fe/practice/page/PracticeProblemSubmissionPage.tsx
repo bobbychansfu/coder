@@ -121,6 +121,7 @@ function PracticeProblemSubmissionPageContent({
   const submissionEventSourceRef = useRef<EventSource | null>(null);
   const [isDraftStorageReady, setIsDraftStorageReady] = useState(false);
   const [hasPersistedDraft, setHasPersistedDraft] = useState(false);
+  const [userModifiedAt, setUserModifiedAt] = useState<number | null>(null);
 
   const { data: detail, isLoading: detailLoading, error: detailError } =
     trpc.practice.getProblemDetail.useQuery({ problemCode }, { retry: false });
@@ -141,6 +142,16 @@ function PracticeProblemSubmissionPageContent({
   const code = drafts[language] ?? detail?.starterCodes?.[language] ?? "";
   const hasCode = code.trim().length > 0;
   const displayedRunResult = runResult;
+  const hasModifiedDraft = Object.entries(drafts).some(([draftLanguage, draftCode]) => {
+    const trimmedDraft = draftCode?.trim() ?? "";
+
+    if (!trimmedDraft) {
+      return false;
+    }
+
+    const starterCode = detail?.starterCodes?.[draftLanguage as SupportedLanguage];
+    return starterCode === undefined || trimmedDraft !== starterCode.trim();
+  });
 
   const closeSubmissionStream = useCallback(() => {
     submissionEventSourceRef.current?.close();
@@ -272,21 +283,17 @@ function PracticeProblemSubmissionPageContent({
 
   useEffect(() => {
     const persistedDraft = readPersistedCodeDraft(getPracticeDraftStorageKey(problemCode));
-
-    if (
+    const canLoadDraft =
       persistedDraft &&
-      (!currentUserComputingId || persistedDraft.ownerComputingId === currentUserComputingId)
-    ) {
+      (!currentUserComputingId || persistedDraft.ownerComputingId === currentUserComputingId);
+
+    if (canLoadDraft) {
       setLanguage(persistedDraft.language);
       setDrafts(persistedDraft.drafts);
+      setUserModifiedAt(persistedDraft.userModifiedAt ?? null);
     }
 
-    setHasPersistedDraft(
-      Boolean(
-        persistedDraft &&
-          (!currentUserComputingId || persistedDraft.ownerComputingId === currentUserComputingId),
-      ),
-    );
+    setHasPersistedDraft(Boolean(canLoadDraft));
     setIsDraftStorageReady(true);
   }, [currentUserComputingId, problemCode]);
 
@@ -297,7 +304,7 @@ function PracticeProblemSubmissionPageContent({
 
     const hasDraftContent = Object.keys(drafts).length > 0;
 
-    if (!hasDraftContent && language === DEFAULT_LANGUAGE) {
+    if ((!hasDraftContent && language === DEFAULT_LANGUAGE) || !hasModifiedDraft) {
       removePersistedCodeDraft(getPracticeDraftStorageKey(problemCode));
       return;
     }
@@ -306,8 +313,18 @@ function PracticeProblemSubmissionPageContent({
       language,
       drafts,
       ownerComputingId: currentUserComputingId,
+      hasModifiedSolution: hasModifiedDraft,
+      userModifiedAt: userModifiedAt ?? Date.now(),
     });
-  }, [currentUserComputingId, drafts, isDraftStorageReady, language, problemCode]);
+  }, [
+    currentUserComputingId,
+    drafts,
+    hasModifiedDraft,
+    isDraftStorageReady,
+    language,
+    problemCode,
+    userModifiedAt,
+  ]);
 
   useEffect(() => {
     if (
@@ -525,12 +542,16 @@ function PracticeProblemSubmissionPageContent({
             language={language}
             code={code}
             onLanguageChange={(nextLanguage) => setLanguage(nextLanguage as SupportedLanguage)}
-            onCodeChange={(nextCode) =>
+            onCodeChange={(nextCode, isFlush) => {
+              if (!isFlush && nextCode !== code) {
+                setUserModifiedAt(Date.now());
+              }
+
               setDrafts((currentDrafts) => ({
                 ...currentDrafts,
                 [language]: nextCode,
-              }))
-            }
+              }));
+            }}
             onSubmitCode={handleSubmitCode}
             footerContent={persistenceNote}
             submitButtonDisabled={!hasCode || isJudging}

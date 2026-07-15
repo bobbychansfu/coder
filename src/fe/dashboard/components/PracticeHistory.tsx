@@ -5,28 +5,29 @@ import CodeIcon from "@mui/icons-material/Code";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import HistoryIcon from "@mui/icons-material/History";
 import Link from "next/link";
-import { useMemo, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type {
   PracticeHistoryStatus,
   StudentDashboardPracticeHistoryItem,
   StudentDashboardPracticeProblemCatalogItem,
 } from "@/fe/dashboard/services/dashboardPracticeHistory";
 import {
+  isSupportedCodeLanguage,
   readPersistedCodeDraft,
   type PersistedCodeDraft,
   type SupportedCodeLanguage,
 } from "@/fe/shared/services/codeDraftStorage";
 import { LANGUAGE_OPTIONS } from "@/fe/shared/constants/options";
+import { formatTimeAgo } from "@/fe/shared/services/timeFormatting";
+import { trpc } from "@/lib/trpc/client";
 import styles from "../styles/PracticeHistory.module.css";
 
 interface PracticeHistoryProps {
   problems?: StudentDashboardPracticeHistoryItem[];
-  problemCatalog?: StudentDashboardPracticeProblemCatalogItem[];
   currentUserComputingId?: string;
 }
 
 const PRACTICE_DRAFT_STORAGE_KEY_PREFIX = "practice-submission-draft:";
-const subscribeToPracticeDraftStorage = () => () => {};
 
 function readPracticeDraftStorageSnapshot(): string {
   if (typeof window === "undefined") {
@@ -92,31 +93,6 @@ function PracticeStatusIcon({ status }: { status: PracticeHistoryStatus }) {
   return <ErrorOutlineIcon className={styles.statusIcon} />;
 }
 
-function formatTimeAgo(timestamp: number): string {
-  if (timestamp <= 0) {
-    return "Draft saved";
-  }
-
-  const seconds = Math.floor((Date.now() - timestamp) / 1000);
-
-  if (seconds < 60) {
-    return "just now";
-  }
-
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) {
-    return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
-  }
-
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) {
-    return `${hours} hour${hours === 1 ? "" : "s"} ago`;
-  }
-
-  const days = Math.floor(hours / 24);
-  return `${days} day${days === 1 ? "" : "s"} ago`;
-}
-
 function getLanguageLabel(language: SupportedCodeLanguage): string {
   return LANGUAGE_OPTIONS.find((option) => option.value === language)?.label ?? language;
 }
@@ -127,8 +103,8 @@ function getModifiedDraftLanguage(
 ): SupportedCodeLanguage | null {
   const preferredLanguages = [
     draft.language,
-    ...Object.keys(draft.drafts),
-  ] as SupportedCodeLanguage[];
+    ...Object.keys(draft.drafts).filter(isSupportedCodeLanguage),
+  ];
   const seenLanguages = new Set<SupportedCodeLanguage>();
 
   for (const language of preferredLanguages) {
@@ -154,20 +130,19 @@ function getModifiedDraftLanguage(
 
 export default function PracticeHistory({
   problems = [],
-  problemCatalog = [],
   currentUserComputingId,
 }: PracticeHistoryProps) {
-  const draftStorageSnapshot = useSyncExternalStore(
-    subscribeToPracticeDraftStorage,
-    readPracticeDraftStorageSnapshot,
-    () => "",
-  );
+  const [draftStorageSnapshot, setDraftStorageSnapshot] = useState("");
 
-  const draftProblems = useMemo(() => {
-    const catalogByCode = new Map(
-      problemCatalog.map((problem) => [problem.problemCode, problem]),
-    );
-    const nextDraftProblems: StudentDashboardPracticeHistoryItem[] = [];
+  useEffect(() => {
+    const timerId = window.setTimeout(() => {
+      setDraftStorageSnapshot(readPracticeDraftStorageSnapshot());
+    }, 0);
+
+    return () => window.clearTimeout(timerId);
+  }, []);
+
+  const draftEntries = useMemo(() => {
     let draftEntries: Array<[string, string | null]> = [];
 
     try {
@@ -176,12 +151,50 @@ export default function PracticeHistory({
       return [];
     }
 
+    return draftEntries;
+  }, [draftStorageSnapshot]);
+
+  const draftProblemCodes = useMemo(() => {
+    const codes = new Set<string>();
+
+    for (const [storageKey] of draftEntries) {
+      const problemCode = storageKey.slice(PRACTICE_DRAFT_STORAGE_KEY_PREFIX.length);
+      const draft = readPersistedCodeDraft(storageKey);
+
+      if (!problemCode || !draft?.hasModifiedSolution || !draft.userModifiedAt) {
+        continue;
+      }
+
+      if (
+        currentUserComputingId &&
+        draft.ownerComputingId !== currentUserComputingId
+      ) {
+        continue;
+      }
+
+      codes.add(problemCode);
+    }
+
+    return [...codes];
+  }, [currentUserComputingId, draftEntries]);
+
+  const { data: draftProblemMetadata = [] } = trpc.practice.getDraftProblemMetadata.useQuery(
+    { problemCodes: draftProblemCodes },
+    { enabled: draftProblemCodes.length > 0 },
+  );
+
+  const draftProblems = useMemo(() => {
+    const catalogByCode = new Map(
+      draftProblemMetadata.map((problem) => [problem.problemCode, problem]),
+    );
+    const nextDraftProblems: StudentDashboardPracticeHistoryItem[] = [];
+
     for (const [storageKey] of draftEntries) {
       const problemCode = storageKey.slice(PRACTICE_DRAFT_STORAGE_KEY_PREFIX.length);
       const problem = catalogByCode.get(problemCode);
       const draft = readPersistedCodeDraft(storageKey);
 
-      if (!problem || !draft) {
+      if (!problem || !draft?.hasModifiedSolution || !draft.userModifiedAt) {
         continue;
       }
 
@@ -198,23 +211,24 @@ export default function PracticeHistory({
         continue;
       }
 
-      const updatedAt = draft.updatedAt ?? 0;
+      const updatedAt = draft.userModifiedAt;
       nextDraftProblems.push({
         id: `draft-${problem.problemCode}`,
         problemCode: problem.problemCode,
-        title: problem.title,
-        difficulty: problem.difficulty,
-        verdict: "Draft",
+          title: problem.title,
+          difficulty: problem.difficulty,
+          category: problem.category,
+          verdict: "Draft",
         status: "draft",
         language: getLanguageLabel(modifiedLanguage),
-        practicedAt: formatTimeAgo(updatedAt),
+        practicedAt: formatTimeAgo(updatedAt, "Draft saved"),
         practicedAtMs: updatedAt,
         href: `/practice/${encodeURIComponent(problem.problemCode)}`,
       });
     }
 
     return nextDraftProblems;
-  }, [currentUserComputingId, draftStorageSnapshot, problemCatalog]);
+  }, [currentUserComputingId, draftEntries, draftProblemMetadata]);
 
   const displayProblems = useMemo(() => {
     const latestByProblemCode = new Map<string, StudentDashboardPracticeHistoryItem>();
@@ -273,7 +287,7 @@ export default function PracticeHistory({
                 </div>
 
                 <div className={styles.metadata}>
-                  <span>{problem.problemCode}</span>
+                  <span>{problem.category}</span>
                   <span className={styles.separator}>-</span>
                   <span>{problem.language}</span>
                   <span className={styles.separator}>-</span>

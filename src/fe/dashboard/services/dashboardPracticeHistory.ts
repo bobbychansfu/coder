@@ -1,13 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import type { CurrentUser } from "@/lib/session";
-import {
-  codingLanguageToAppLanguage,
-  codingLanguageToLabel,
-} from "@/server/coding-language";
-import type {
-  CodeDraftMap,
-  SupportedCodeLanguage,
-} from "@/fe/shared/services/codeDraftStorage";
+import { codingLanguageToLabel } from "@/server/coding-language";
+import type { CodeDraftMap } from "@/fe/shared/services/codeDraftStorage";
+import { formatTimeAgo } from "@/fe/shared/services/timeFormatting";
 
 export type PracticeHistoryStatus =
   | "accepted"
@@ -23,6 +18,7 @@ export interface StudentDashboardPracticeHistoryItem {
   problemCode: string;
   title: string;
   difficulty: "easy" | "medium" | "hard";
+  category: string;
   verdict: string;
   status: PracticeHistoryStatus;
   language: string;
@@ -35,6 +31,7 @@ export interface StudentDashboardPracticeProblemCatalogItem {
   problemCode: string;
   title: string;
   difficulty: "easy" | "medium" | "hard";
+  category: string;
   starterCodes: CodeDraftMap;
 }
 
@@ -48,29 +45,12 @@ function normalizeDifficulty(difficulty: string): StudentDashboardPracticeHistor
   return "easy";
 }
 
-function formatTimeAgo(date: Date): string {
-  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
-
-  if (seconds < 60) {
-    return "just now";
-  }
-
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) {
-    return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
-  }
-
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) {
-    return `${hours} hour${hours === 1 ? "" : "s"} ago`;
-  }
-
-  const days = Math.floor(hours / 24);
-  return `${days} day${days === 1 ? "" : "s"} ago`;
+function normalizeVerdict(verdict: string | null | undefined): string {
+  return verdict?.trim().toLowerCase() ?? "";
 }
 
-function formatVerdict(verdict: string): string {
-  switch (verdict.trim().toLowerCase()) {
+function formatVerdict(verdict: string | null | undefined): string {
+  switch (normalizeVerdict(verdict)) {
     case "accepted":
       return "Accepted";
     case "wrong_answer":
@@ -90,8 +70,8 @@ function formatVerdict(verdict: string): string {
   }
 }
 
-function mapVerdictToStatus(verdict: string): PracticeHistoryStatus {
-  switch (verdict.trim().toLowerCase()) {
+function mapVerdictToStatus(verdict: string | null | undefined): PracticeHistoryStatus {
+  switch (normalizeVerdict(verdict)) {
     case "accepted":
       return "accepted";
     case "partial":
@@ -139,6 +119,12 @@ export async function getStudentPracticeHistory(
               code: true,
               title: true,
               difficulty: true,
+              topics: {
+                select: {
+                  name: true,
+                },
+                take: 1,
+              },
               starterCodes: {
                 select: {
                   language: true,
@@ -173,6 +159,7 @@ export async function getStudentPracticeHistory(
       problemCode: problem.code,
       title: problem.title,
       difficulty: normalizeDifficulty(problem.difficulty),
+      category: problem.topics[0]?.name ?? "General",
       verdict: formatVerdict(run.verdict),
       status: mapVerdictToStatus(run.verdict),
       language: codingLanguageToLabel(run.language),
@@ -187,40 +174,4 @@ export async function getStudentPracticeHistory(
   }
 
   return history;
-}
-
-export async function getStudentPracticeProblemCatalog(): Promise<
-  StudentDashboardPracticeProblemCatalogItem[]
-> {
-  const problems = await prisma.problem.findMany({
-    where: {
-      isDraft: false,
-      manageStatus: "ACTIVE",
-      source: { in: ["PRACTICE", "BOTH"] },
-    },
-    orderBy: { title: "asc" },
-    select: {
-      code: true,
-      title: true,
-      difficulty: true,
-      starterCodes: {
-        select: {
-          language: true,
-          code: true,
-        },
-      },
-    },
-  });
-
-  return problems.map((problem) => ({
-    problemCode: problem.code,
-    title: problem.title,
-    difficulty: normalizeDifficulty(problem.difficulty),
-    starterCodes: Object.fromEntries(
-      problem.starterCodes.map((starter) => [
-        codingLanguageToAppLanguage(starter.language) as SupportedCodeLanguage,
-        starter.code,
-      ]),
-    ) as CodeDraftMap,
-  }));
 }

@@ -23,7 +23,6 @@ import {
 import type { StudentDashboardContestSummary } from "@/fe/dashboard/services/dashboardContests";
 import type {
   StudentDashboardPracticeHistoryItem,
-  StudentDashboardPracticeProblemCatalogItem,
 } from "@/fe/dashboard/services/dashboardPracticeHistory";
 import { buildContestRoute } from "@/fe/shared/constants/routes";
 import type { UpcomingContest } from "@/fe/shared/types/contest";
@@ -32,7 +31,6 @@ import styles from "../styles/DashboardPage.module.css";
 interface DashboardPageProps {
   contestSummary?: StudentDashboardContestSummary;
   practiceHistory?: StudentDashboardPracticeHistoryItem[];
-  practiceProblemCatalog?: StudentDashboardPracticeProblemCatalogItem[];
   currentUserComputingId?: string;
 }
 
@@ -41,7 +39,6 @@ type PendingAction = "register" | "enter";
 export default function DashboardPage({
   contestSummary,
   practiceHistory = [],
-  practiceProblemCatalog = [],
   currentUserComputingId,
 }: DashboardPageProps) {
   const router = useRouter();
@@ -147,7 +144,6 @@ export default function DashboardPage({
 
           <PracticeHistory
             problems={practiceHistory}
-            problemCatalog={practiceProblemCatalog}
             currentUserComputingId={currentUserComputingId}
           />
 
