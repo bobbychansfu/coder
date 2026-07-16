@@ -20,8 +20,12 @@ export interface ContestPracticeProblemLink {
 const CONTEST_DRAFT_STORAGE_KEY_PREFIX = "contest-submission-draft:";
 const PRACTICE_DRAFT_STORAGE_KEY_PREFIX = "practice-submission-draft:";
 
-export function getContestDraftStorageKey(contestId: string, problemCode: string) {
-  return `${CONTEST_DRAFT_STORAGE_KEY_PREFIX}${contestId}:${problemCode.toLowerCase()}`;
+export function getContestDraftStorageKey(
+  computingId: string,
+  contestId: string,
+  problemCode: string,
+) {
+  return `${CONTEST_DRAFT_STORAGE_KEY_PREFIX}${computingId}:${contestId}:${problemCode.toLowerCase()}`;
 }
 
 function getPracticeDraftStorageKey(problemCode: string) {
@@ -65,6 +69,7 @@ export function useContestDraftPersistence({
 }
 
 export function useContestPracticeRedirect({
+  computingId,
   contestId,
   contestStatus,
   contestStartsAt,
@@ -78,6 +83,7 @@ export function useContestPracticeRedirect({
   persistedDraft,
   router,
 }: {
+  computingId: string;
   contestId: string;
   contestStatus?: ContestDetailStatus;
   contestStartsAt?: string | null;
@@ -128,7 +134,9 @@ export function useContestPracticeRedirect({
           link.contestCode.toLowerCase() === contestProblemCode.toLowerCase();
         const contestDraft = isCurrentProblem
           ? { language: latestLanguageRef.current, drafts: latestDraftsRef.current }
-          : readPersistedCodeDraft(getContestDraftStorageKey(contestId, link.contestCode));
+          : readPersistedCodeDraft(
+              getContestDraftStorageKey(computingId, contestId, link.contestCode),
+            );
 
         if (!contestDraft || !hasDraftContent(contestDraft.drafts)) {
           return;
