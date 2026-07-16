@@ -230,7 +230,7 @@ Deliverable:
 
 ---
 
-## Week 13 and Final Week: Documentation, and PR
+## Week 13 and Final Week: Documentation and PR
 
 Both developers:
 - End-to-end test contest flow.

@@ -199,7 +199,7 @@ A About Page helps students understand why the platform exists and how to start 
 This improvement is less directly supported by the papers because the papers discuss educational design, not web landing-page design. Therefore, this point should be presented as a design implication rather than a direct requirement from the literature.
 
 ### Paper and Original text:
-Source 1: Students Programming Competitions as an Educational Tool and a Motivational Incentive to Students, pp.1: “The author suggests “to consider various forms of student competitions as a way to achieve a number of benefits for their students at a relatively low cost” for information systems (IS) students. He continues in [14] “just the idea of participating in a competition is often enough to increase significantly students motivation level to learn and perform well.”, if one of the value of CP is to increase student motivation, why don’t we clearly state out the learning purpose of this website?
+Source 1: Students Programming Competitions as an Educational Tool and a Motivational Incentive to Students, pp.1: “The author suggests 'to consider various forms of student competitions as a way to achieve a number of benefits for their students at a relatively low cost' for information systems (IS) students. He continues in [14] 'just the idea of participating in a competition is often enough to increase significantly students motivation level to learn and perform well.' If one of the values of CP is to increase student motivation, why don’t we clearly state the learning purpose of this website?
 
 
 ### Additional note:
@@ -258,4 +258,4 @@ Source: Curriculum Design of Competitive Programming: a Contest-based Approach, 
 “In the end, we decide to adopt a 90-minute contest which fits in most classroom settings with minimal adjustment."
 
 ### Additional note:
-Without time pressure, the platform risks becoming a general practice website rather than a realistic competitive-programming learning environment. We have an idea is that solve the questions effectively is also important, so we suggest when the time is running out, the web page automatically turns to the upsolve mode.
+Without time pressure, the platform risks becoming a general practice website rather than a realistic competitive-programming learning environment. We believe that solving the questions effectively is also important, so we suggest that when the time runs out, the web page automatically switches to upsolve mode.

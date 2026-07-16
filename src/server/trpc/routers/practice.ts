@@ -81,6 +81,61 @@ function mapRunVerdictToStatus(
 // ---------------------------------------------------------------------------
 
 export const practiceRouter = router({
+  getDraftProblemMetadata: practiceViewProcedure
+    .input(
+      z.object({
+        problemCodes: z.array(z.string()).max(10),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const uniqueProblemCodes = [...new Set(input.problemCodes.map((code) => code.trim()))].filter(
+        Boolean,
+      );
+
+      if (uniqueProblemCodes.length === 0) {
+        return [];
+      }
+
+      const problems = await ctx.prisma.problem.findMany({
+        where: {
+          code: { in: uniqueProblemCodes },
+          isDraft: false,
+          manageStatus: "ACTIVE",
+          source: { in: ["PRACTICE", "BOTH"] },
+        },
+        select: {
+          code: true,
+          title: true,
+          difficulty: true,
+          topics: {
+            select: {
+              name: true,
+            },
+            take: 1,
+          },
+          starterCodes: {
+            select: {
+              language: true,
+              code: true,
+            },
+          },
+        },
+      });
+
+      return problems.map((problem) => ({
+        problemCode: problem.code,
+        title: problem.title,
+        difficulty: problem.difficulty.toLowerCase() as "easy" | "medium" | "hard",
+        category: problem.topics[0]?.name ?? "General",
+        starterCodes: Object.fromEntries(
+          problem.starterCodes.map((starter) => [
+            codingLanguageToAppLanguage(starter.language),
+            starter.code,
+          ]),
+        ) as Partial<Record<(typeof APP_LANGUAGES)[number], string>>,
+      }));
+    }),
+
   listProblems: practiceViewProcedure
     .input(
       z.object({

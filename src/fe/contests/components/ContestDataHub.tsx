@@ -13,26 +13,6 @@ interface ContestDataHubProps {
 }
 
 export default function ContestDataHub({ contest }: ContestDataHubProps) {
-  const formatDuration = (totalMinutes: number) => {
-    if (!Number.isFinite(totalMinutes) || totalMinutes <= 0) {
-      return "—";
-    }
-
-    if (totalMinutes % 60 === 0) {
-      const hours = totalMinutes / 60;
-      return `${hours} hour${hours === 1 ? "" : "s"}`;
-    }
-
-    return `${totalMinutes} minutes`;
-  };
-
-  const getContestEndTime = () => {
-    const baseStart = contest.startTimeISO ? new Date(contest.startTimeISO) : new Date(contest.startTime);
-    const startTime = Number.isNaN(baseStart.getTime()) ? new Date() : baseStart;
-    const durationMinutes = contest.durationMinutes ?? 0;
-    return new Date(startTime.getTime() + durationMinutes * 60 * 1000);
-  };
-
   const stats = [
     {
       label: "Start Time",
@@ -40,14 +20,15 @@ export default function ContestDataHub({ contest }: ContestDataHubProps) {
       value: contest.startTime,
     },
     {
-      label: contest.status === "in progress" ? "Time Remaining" : "Duration",
+      label: "Time Left",
       icon: ScheduleOutlinedIcon,
-      content:
-        contest.status === "in progress" ? (
-          <CountdownTimer endTime={getContestEndTime()} />
-        ) : (
-          <span>{formatDuration(contest.durationMinutes)}</span>
-        ),
+      content: (
+        <CountdownTimer
+          startsAt={contest.startTimeISO ?? contest.startTime}
+          durationMinutes={contest.durationMinutes}
+          endedLabel="Contest Ended"
+        />
+      ),
     },
     {
       label: "Problems",

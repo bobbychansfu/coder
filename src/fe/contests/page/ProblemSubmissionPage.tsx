@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Box, ButtonBase, CircularProgress, Typography } from "@mui/material";
 import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
@@ -14,9 +14,7 @@ import SolutionEditor from "@/fe/shared/components/problem/SolutionEditor";
 import type { ContestDetailStatus } from "@/fe/contests/data/contestDetails";
 import {
   DEFAULT_CODE_LANGUAGE,
-  removePersistedCodeDraft,
   usePersistedCodeDraft,
-  writePersistedCodeDraft,
   type SupportedCodeLanguage,
 } from "@/fe/shared/services/codeDraftStorage";
 import type { ProblemDetail, SubmissionRecord } from "@/fe/contests/data/problemDetails";
@@ -24,6 +22,23 @@ import {
   adaptContestSubmissionRecords,
   type ContestProblemSubmissionsResponse,
 } from "@/fe/contests/services/contestProblem";
+import {
+  ContestTimeLeftPopup,
+  ContestTimer,
+  useContestTimeLeftAlert,
+} from "./ProblemSubmissionTiming";
+import {
+  getContestDraftStorageKey,
+  type ContestPracticeProblemLink,
+  useContestDraftPersistence,
+  useContestPracticeRedirect,
+} from "./ProblemSubmissionDraftTransfer";
+import {
+  buildRunResult,
+  sleep,
+  type ContestSubmitResponse,
+  type RunResult,
+} from "./ProblemSubmissionResult";
 import styles from "@/fe/contests/styles/ProblemSubmissionPage.module.css";
 
 interface ProblemNavigator {
@@ -37,7 +52,10 @@ interface ProblemSubmissionPageProps {
   contestId: string;
   computingId: string;
   contestStatus?: ContestDetailStatus;
+  contestStartsAt?: string | null;
   contestEndsAt?: string | null;
+  contestDurationMinutes?: number | null;
+  practiceProblemLinks?: ContestPracticeProblemLink[];
   aiHintEnabled?: boolean;
   detail: ProblemDetail;
   navigator?: ProblemNavigator;
@@ -46,86 +64,8 @@ interface ProblemSubmissionPageProps {
 type SupportedLanguage = SupportedCodeLanguage;
 
 const DEFAULT_LANGUAGE: SupportedLanguage = DEFAULT_CODE_LANGUAGE;
-const CONTEST_DRAFT_STORAGE_KEY_PREFIX = "contest-submission-draft:";
 const SUBMISSION_POLL_INTERVAL_MS = 1_500;
 const SUBMISSION_POLL_ATTEMPTS = 40;
-
-interface RunResult {
-  submissionId: string;
-  status: "idle" | "submitting" | "done" | "failed";
-  verdict: string | null;
-  feedback: string | null;
-  errorMessage: string | null;
-  testcases: { name: string; passed: boolean; message: string }[];
-}
-
-interface ContestSubmitResponse {
-  sid: string;
-  message: string;
-  score?: number;
-  status?: string;
-  runtime?: string;
-  memory?: string;
-}
-
-function formatVerdictLabel(verdict: string | null | undefined) {
-  const normalized = verdict?.trim().toLowerCase();
-
-  switch (normalized) {
-    case "pending":
-      return "Pending";
-    case "accepted":
-      return "Accepted";
-    case "wrong_answer":
-    case "wrong answer":
-    case "wrong":
-      return "Wrong Answer";
-    case "time_limit_exceeded":
-    case "time limit exceeded":
-    case "tle":
-      return "Time Limit Exceeded";
-    case "runtime_error":
-    case "runtime error":
-      return "Runtime Error";
-    case "system_error":
-    case "system error":
-    case "judge_error":
-    case "judge error":
-    case "ierr":
-    case "internal_error":
-    case "internal error":
-      return "System Error";
-    case "compile_error":
-    case "compile error":
-      return "Compile Error";
-    case "failed":
-      return "Failed";
-    default:
-      return null;
-  }
-}
-
-function buildRunResult(input: {
-  submissionId: string;
-  status: RunResult["status"];
-  verdict: string | null | undefined;
-  feedback: string | null;
-  errorMessage: string | null;
-  testcases: RunResult["testcases"];
-}): RunResult {
-  return {
-    submissionId: input.submissionId,
-    status: input.status,
-    verdict: formatVerdictLabel(input.verdict),
-    feedback: input.feedback,
-    errorMessage: input.errorMessage,
-    testcases: input.testcases,
-  };
-}
-
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 function getHintText(payload: unknown, depth = 0): string | null {
   if (depth > 5 || !payload || typeof payload !== "object") {
@@ -148,7 +88,10 @@ export default function ProblemSubmissionPage({
   contestId,
   computingId,
   contestStatus,
+  contestStartsAt,
   contestEndsAt,
+  contestDurationMinutes,
+  practiceProblemLinks,
   aiHintEnabled = false,
   detail,
   navigator,
@@ -159,7 +102,10 @@ export default function ProblemSubmissionPage({
       contestId={contestId}
       computingId={computingId}
       contestStatus={contestStatus}
+      contestStartsAt={contestStartsAt}
       contestEndsAt={contestEndsAt}
+      contestDurationMinutes={contestDurationMinutes}
+      practiceProblemLinks={practiceProblemLinks}
       aiHintEnabled={aiHintEnabled}
       detail={detail}
       navigator={navigator}
@@ -167,15 +113,14 @@ export default function ProblemSubmissionPage({
   );
 }
 
-function getContestDraftStorageKey(computingId: string, contestId: string, problemCode: string) {
-  return `${CONTEST_DRAFT_STORAGE_KEY_PREFIX}${computingId}:${contestId}:${problemCode.toLowerCase()}`;
-}
-
 function ProblemSubmissionPageContent({
   contestId,
   computingId,
   contestStatus,
+  contestStartsAt,
   contestEndsAt,
+  contestDurationMinutes,
+  practiceProblemLinks = [],
   aiHintEnabled = false,
   detail,
   navigator,
@@ -227,35 +172,35 @@ function ProblemSubmissionPageContent({
     submissions,
   };
 
-  useEffect(() => {
-    if (!contestEndsAt) {
-      return;
-    }
+  const { activeTimeLeftAlert, closeTimeLeftAlert } = useContestTimeLeftAlert({
+    contestStatus,
+    contestStartsAt,
+    contestEndsAt,
+    contestDurationMinutes,
+  });
 
-    const intervalId = window.setInterval(() => {
-      setCurrentTime(Date.now());
-    }, 30_000);
+  useContestDraftPersistence({
+    storageKey,
+    effectiveLanguage,
+    effectiveDrafts,
+    persistedDraft,
+  });
 
-    return () => window.clearInterval(intervalId);
-  }, [contestEndsAt]);
-
-  useEffect(() => {
-    if (persistedDraft === undefined) {
-      return;
-    }
-
-    const hasDraftContent = Object.keys(effectiveDrafts).length > 0;
-
-    if (!hasDraftContent && effectiveLanguage === DEFAULT_LANGUAGE) {
-      removePersistedCodeDraft(storageKey);
-      return;
-    }
-
-    writePersistedCodeDraft(storageKey, {
-      language: effectiveLanguage,
-      drafts: effectiveDrafts,
-    });
-  }, [effectiveDrafts, effectiveLanguage, persistedDraft, storageKey]);
+  useContestPracticeRedirect({
+    computingId,
+    contestId,
+    contestStatus,
+    contestStartsAt,
+    contestEndsAt,
+    contestDurationMinutes,
+    contestProblemCode: detail.code,
+    practiceProblemCode: detail.practiceProblemCode ?? detail.code,
+    practiceProblemLinks,
+    effectiveLanguage,
+    effectiveDrafts,
+    persistedDraft,
+    router,
+  });
 
   const refetchSubmissions = async (): Promise<SubmissionRecord[]> => {
     if (!detail.problemId) {
@@ -450,7 +395,30 @@ function ProblemSubmissionPageContent({
 
   return (
     <Box className={styles.page}>
-      <PageHeader onBack={() => router.back()} />
+      {/* <PageHeader onBack={() => router.back()} /> */}
+      <Box className={styles.timerHeaderRow}>
+        <Box
+          className={styles.timerHeaderLeft}
+          display="inline-flex"
+          flexDirection="row"
+          alignItems="center"
+          flexWrap="nowrap"
+          gap="12px"
+        >
+          <PageHeader onBack={() => router.back()} />
+          <ContestTimer
+            startsAt={contestStartsAt}
+            endsAt={contestEndsAt}
+            durationMinutes={contestDurationMinutes}
+          />
+        </Box>
+        {activeTimeLeftAlert !== null ? (
+          <ContestTimeLeftPopup
+            threshold={activeTimeLeftAlert}
+            onClose={closeTimeLeftAlert}
+          />
+        ) : null}
+      </Box>
 
       <Box className={styles.container}>
         <Box className={styles.leftColumn}>
