@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, type ComponentProps } from "react";
+import { useEffect, useRef, useState, type ComponentProps } from "react";
 import AiHintDialog from "@/fe/shared/components/problem/AiHintDialog";
 import SolutionEditor from "@/fe/shared/components/problem/SolutionEditor";
 
@@ -15,20 +15,45 @@ interface PracticeSolutionEditorWithAiHintProps
 }
 
 function getHintText(payload: unknown, depth = 0): string | null {
-  if (depth > 5 || !payload || typeof payload !== "object") {
+  if (depth > 5 || !payload) {
+    return null;
+  }
+
+  if (Array.isArray(payload)) {
+    for (const item of payload) {
+      const hint = getHintText(item, depth + 1);
+      if (hint) {
+        return hint;
+      }
+    }
+    return null;
+  }
+
+  if (typeof payload !== "object") {
     return null;
   }
 
   const record = payload as Record<string, unknown>;
+  const targetKeys = ["hint", "feedback", "message", "response", "text"];
 
-  for (const key of ["hint", "feedback", "message", "response", "text"]) {
+  for (const key of targetKeys) {
     const value = record[key];
     if (typeof value === "string" && value.trim()) {
       return value.trim();
     }
   }
 
-  return getHintText(record.data, depth + 1);
+  for (const key of [...targetKeys, "data"]) {
+    const value = record[key];
+    if (value && typeof value === "object") {
+      const hint = getHintText(value, depth + 1);
+      if (hint) {
+        return hint;
+      }
+    }
+  }
+
+  return null;
 }
 
 export default function PracticeSolutionEditorWithAiHint({
@@ -43,8 +68,21 @@ export default function PracticeSolutionEditorWithAiHint({
   const [hint, setHint] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      const controller = abortControllerRef.current;
+      abortControllerRef.current = null;
+      controller?.abort();
+    };
+  }, []);
 
   const requestAiHint = async () => {
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setOpen(true);
     setLoading(true);
     setHint(null);
@@ -55,6 +93,7 @@ export default function PracticeSolutionEditorWithAiHint({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
+        signal: controller.signal,
         body: JSON.stringify({
           pid: problemId,
           problem_code: problemCode,
@@ -80,11 +119,17 @@ export default function PracticeSolutionEditorWithAiHint({
       }
       setHint(hintText);
     } catch (requestError) {
+      if (requestError instanceof Error && requestError.name === "AbortError") {
+        return;
+      }
       setError(
         requestError instanceof Error ? requestError.message : "Failed to generate hint.",
       );
     } finally {
-      setLoading(false);
+      if (abortControllerRef.current === controller) {
+        abortControllerRef.current = null;
+        setLoading(false);
+      }
     }
   };
 
