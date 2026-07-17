@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ComponentProps } from "react";
+import { useState, useRef, useEffect, type ComponentProps } from "react";
 import AiHintDialog from "@/fe/shared/components/problem/AiHintDialog";
 import SolutionEditor from "@/fe/shared/components/problem/SolutionEditor";
 
