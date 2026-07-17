@@ -7,7 +7,7 @@ import PracticeTimer from "@/fe/practice/components/PracticeTimer";
 import PageHeader from "@/fe/shared/components/PageHeader";
 import ProblemHeader from "@/fe/shared/components/problem/ProblemHeader";
 import ProblemDetails from "@/fe/shared/components/problem/ProblemDetails";
-import SolutionEditor from "@/fe/shared/components/problem/SolutionEditor";
+import PracticeSolutionEditorWithAiHint from "@/fe/practice/components/PracticeSolutionEditorWithAiHint";
 import {
   DEFAULT_CODE_LANGUAGE,
   readPersistedCodeDraft,
@@ -538,7 +538,10 @@ function PracticeProblemSubmissionPageContent({
         </Box>
 
         <Box className={styles.rightColumn}>
-          <SolutionEditor
+          <PracticeSolutionEditorWithAiHint
+            problemId={detail.id}
+            problemCode={problemCode}
+            problemTitle={detail.title}
             language={language}
             code={code}
             onLanguageChange={(nextLanguage) => setLanguage(nextLanguage as SupportedLanguage)}
