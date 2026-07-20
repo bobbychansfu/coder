@@ -9,18 +9,20 @@ import styles from "@/fe/auth/styles/LoginPage.module.css";
 
 interface LoginPageProps {
   showDevQuickAccess: boolean;
+  showGuestLogin: boolean;
 }
 
-export default function LoginPage({ showDevQuickAccess }: LoginPageProps) {
+export default function LoginPage({ showDevQuickAccess, showGuestLogin }: LoginPageProps) {
   return (
-    <Suspense fallback={<LoginPageView showDevQuickAccess={showDevQuickAccess} />}>
-      <LoginPageContent showDevQuickAccess={showDevQuickAccess} />
+    <Suspense fallback={<LoginPageView showDevQuickAccess={showDevQuickAccess} showGuestLogin={showGuestLogin} />}>
+      <LoginPageContent showDevQuickAccess={showDevQuickAccess} showGuestLogin={showGuestLogin} />
     </Suspense>
   );
 }
 
 interface LoginPageViewProps {
   showDevQuickAccess: boolean;
+  showGuestLogin: boolean;
   isLoading?: boolean;
   loadingEmail?: string | null;
   casError?: string | null;
@@ -31,6 +33,7 @@ interface LoginPageViewProps {
 
 function LoginPageView({
   showDevQuickAccess,
+  showGuestLogin,
   isLoading = false,
   loadingEmail = null,
   casError = null,
@@ -47,7 +50,12 @@ function LoginPageView({
         <h1 className={styles.brandTitle}>cs-coder</h1>
         <p className={styles.brandSubtitle}>Competitive Programming Platform</p>
 
-        <CasLoginCard onCasLogin={onCasLogin} loading={isLoading && loadingEmail === null} error={casError} />
+        <CasLoginCard
+          onCasLogin={onCasLogin}
+          loading={isLoading && loadingEmail === null}
+          showGuestLogin={showGuestLogin}
+          error={casError}
+        />
 
         {showDevQuickAccess ? (
           <DevQuickAccessCard
@@ -63,7 +71,7 @@ function LoginPageView({
   );
 }
 
-function LoginPageContent({ showDevQuickAccess }: LoginPageProps) {
+function LoginPageContent({ showDevQuickAccess, showGuestLogin }: LoginPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
@@ -143,7 +151,9 @@ function LoginPageContent({ showDevQuickAccess }: LoginPageProps) {
       });
 
       if (response.ok) {
-        router.push("/dashboard");
+        const nextPath = searchParams.get("next");
+        router.push(nextPath?.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "/dashboard");
+        router.refresh();
         return;
       }
 
@@ -164,6 +174,7 @@ function LoginPageContent({ showDevQuickAccess }: LoginPageProps) {
   return (
     <LoginPageView
       showDevQuickAccess={showDevQuickAccess}
+      showGuestLogin={showGuestLogin}
       isLoading={isLoading}
       loadingEmail={loadingEmail}
       casError={casError}

@@ -1,6 +1,8 @@
 import { cookies } from "next/headers";
 import { normalizeRole, type Role } from "@/lib/authz";
 import { verifyDevSessionToken } from "@/lib/devAuthSession";
+import { verifyGuestSessionToken } from "@/lib/guestAuthSession";
+import { prisma } from "@/lib/prisma";
 
 export interface CurrentUser {
   computingId: string;
@@ -12,6 +14,7 @@ const AUTH_ME_PATH = process.env.AUTH_ME_PATH || "/me";
 const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "session";
 const AUTH_MODE = process.env.AUTH_MODE;
 const DEV_AUTH_COOKIE_SECRET = process.env.DEV_AUTH_COOKIE_SECRET;
+const GUEST_AUTH_COOKIE_SECRET = process.env.GUEST_AUTH_COOKIE_SECRET;
 
 function getComputingId(payload: Record<string, unknown>): string | null {
   const candidates = [
@@ -37,6 +40,29 @@ function getRole(payload: Record<string, unknown>): Role | null {
 export async function getCurrentUser(): Promise<CurrentUser | null> {
   const cookieStore = await cookies();
   const sessionCookieValue = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+
+  if (sessionCookieValue && GUEST_AUTH_COOKIE_SECRET) {
+    const guestSession = verifyGuestSessionToken(sessionCookieValue, GUEST_AUTH_COOKIE_SECRET);
+    if (guestSession) {
+      const credential = await prisma.localCredential.findUnique({
+        where: { userId: guestSession.userId },
+        select: {
+          enabled: true,
+          expiresAt: true,
+          user: { select: { computingId: true, role: true } },
+        },
+      });
+      const active =
+        credential?.enabled &&
+        (!credential.expiresAt || credential.expiresAt.getTime() > Date.now()) &&
+        credential.user.role === "GUEST" &&
+        credential.user.computingId === guestSession.computingId;
+
+      // Guest is an account type in the database, but intentionally receives the
+      // existing student authorization profile throughout the application.
+      if (active) return { computingId: guestSession.computingId, role: "student" };
+    }
+  }
 
   if (AUTH_MODE === "dev" && sessionCookieValue && DEV_AUTH_COOKIE_SECRET) {
     const devSession = verifyDevSessionToken(sessionCookieValue, DEV_AUTH_COOKIE_SECRET);

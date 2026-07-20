@@ -56,7 +56,7 @@ export interface InstructorDashboardSnapshot {
       author: {
         firstName: string;
         lastName: string;
-        role: "ADMIN" | "INSTRUCTOR" | "TA" | "STUDENT";
+        role: "ADMIN" | "INSTRUCTOR" | "TA" | "STUDENT" | "GUEST";
       } | null;
     }>;
   }>;
