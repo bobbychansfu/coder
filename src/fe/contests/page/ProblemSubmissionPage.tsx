@@ -50,6 +50,7 @@ interface ProblemNavigator {
 
 interface ProblemSubmissionPageProps {
   contestId: string;
+  computingId: string;
   contestStatus?: ContestDetailStatus;
   contestStartsAt?: string | null;
   contestEndsAt?: string | null;
@@ -85,6 +86,7 @@ function getHintText(payload: unknown, depth = 0): string | null {
 
 export default function ProblemSubmissionPage({
   contestId,
+  computingId,
   contestStatus,
   contestStartsAt,
   contestEndsAt,
@@ -96,8 +98,9 @@ export default function ProblemSubmissionPage({
 }: ProblemSubmissionPageProps) {
   return (
     <ProblemSubmissionPageContent
-      key={`${contestId}:${detail.code}`}
+      key={`${computingId}:${contestId}:${detail.code}`}
       contestId={contestId}
+      computingId={computingId}
       contestStatus={contestStatus}
       contestStartsAt={contestStartsAt}
       contestEndsAt={contestEndsAt}
@@ -112,6 +115,7 @@ export default function ProblemSubmissionPage({
 
 function ProblemSubmissionPageContent({
   contestId,
+  computingId,
   contestStatus,
   contestStartsAt,
   contestEndsAt,
@@ -122,7 +126,7 @@ function ProblemSubmissionPageContent({
   navigator,
 }: ProblemSubmissionPageProps) {
   const router = useRouter();
-  const storageKey = getContestDraftStorageKey(contestId, detail.code);
+  const storageKey = getContestDraftStorageKey(computingId, contestId, detail.code);
   const persistedDraft = usePersistedCodeDraft(storageKey);
   const [tab, setTab] = useState("description");
   const [language, setLanguage] = useState<SupportedLanguage>(DEFAULT_LANGUAGE);
@@ -167,7 +171,7 @@ function ProblemSubmissionPageContent({
     ...detail,
     submissions,
   };
-  
+
   const { activeTimeLeftAlert, closeTimeLeftAlert } = useContestTimeLeftAlert({
     contestStatus,
     contestStartsAt,
@@ -183,6 +187,7 @@ function ProblemSubmissionPageContent({
   });
 
   useContestPracticeRedirect({
+    computingId,
     contestId,
     contestStatus,
     contestStartsAt,
