@@ -7,6 +7,9 @@ import { prisma } from "@/lib/prisma";
 export interface CurrentUser {
   computingId: string;
   role: Role;
+  displayName: string;
+  identifier: string;
+  accountType: "guest" | "sfu";
 }
 
 const AUTH_BACKEND_BASE_URL = process.env.AUTH_BACKEND_BASE_URL;
@@ -37,6 +40,36 @@ function getRole(payload: Record<string, unknown>): Role | null {
   return normalizeRole(payload.role);
 }
 
+async function buildCurrentUser(
+  computingId: string,
+  role: Role,
+  accountType: CurrentUser["accountType"] = "sfu",
+): Promise<CurrentUser> {
+  try {
+    const dbUser = await prisma.user.findUnique({
+      where: { computingId },
+      select: { firstName: true, lastName: true, email: true, localCredential: { select: { username: true } } },
+    });
+    if (dbUser) {
+      const isGuest = accountType === "guest" || Boolean(dbUser.localCredential);
+      const guestUsername = dbUser.localCredential?.username;
+      return {
+        computingId,
+        role,
+        displayName: isGuest
+          ? (guestUsername ?? computingId)
+          : (`${dbUser.firstName} ${dbUser.lastName}`.trim() || computingId),
+        identifier: isGuest ? (guestUsername ?? computingId) : dbUser.email,
+        accountType: isGuest ? "guest" : "sfu",
+      };
+    }
+  } catch {
+    // Authentication can still resolve with a safe identifier if profile lookup is unavailable.
+  }
+
+  return { computingId, role, displayName: computingId, identifier: computingId, accountType };
+}
+
 export async function getCurrentUser(): Promise<CurrentUser | null> {
   const cookieStore = await cookies();
   const sessionCookieValue = cookieStore.get(SESSION_COOKIE_NAME)?.value;
@@ -60,17 +93,14 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 
       // Guest is an account type in the database, but intentionally receives the
       // existing student authorization profile throughout the application.
-      if (active) return { computingId: guestSession.computingId, role: "student" };
+      if (active) return buildCurrentUser(guestSession.computingId, "student", "guest");
     }
   }
 
   if (AUTH_MODE === "dev" && sessionCookieValue && DEV_AUTH_COOKIE_SECRET) {
     const devSession = verifyDevSessionToken(sessionCookieValue, DEV_AUTH_COOKIE_SECRET);
     if (devSession) {
-      return {
-        computingId: devSession.computingId,
-        role: devSession.role,
-      };
+      return buildCurrentUser(devSession.computingId, devSession.role);
     }
   }
 
@@ -113,7 +143,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
       return null;
     }
 
-    return { computingId, role };
+    return buildCurrentUser(computingId, role);
   } catch {
     return null;
   }

@@ -13,6 +13,48 @@ const createGuestSchema = z.object({
   expiresAt: z.string().datetime().nullable().optional(),
 });
 
+export async function handleListGuestUsers(): Promise<NextResponse> {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) return NextResponse.json({ message: "Authentication required." }, { status: 401 });
+  if (currentUser.role !== "admin") return NextResponse.json({ message: "Admin access required." }, { status: 403 });
+
+  const now = new Date();
+  const expiredUsers = await prisma.user.findMany({
+    where: {
+      role: "GUEST",
+      localCredential: { is: { expiresAt: { lte: now } } },
+    },
+    select: { id: true },
+  });
+  if (expiredUsers.length > 0) {
+    await prisma.user.deleteMany({ where: { id: { in: expiredUsers.map((user) => user.id) } } });
+  }
+
+  const guests = await prisma.localCredential.findMany({
+    where: { user: { role: "GUEST" } },
+    orderBy: { createdAt: "desc" },
+    select: {
+      username: true,
+      enabled: true,
+      expiresAt: true,
+      lastLoginAt: true,
+      user: { select: { id: true, firstName: true, lastName: true } },
+    },
+  });
+
+  return NextResponse.json({
+    users: guests.map((guest) => ({
+      id: guest.user.id,
+      name: `${guest.user.firstName} ${guest.user.lastName}`.trim(),
+      username: guest.username,
+      role: "guest",
+      enabled: guest.enabled,
+      expiresAt: guest.expiresAt?.toISOString() ?? null,
+      lastActive: guest.lastLoginAt?.toISOString() ?? null,
+    })),
+  });
+}
+
 export async function handleCreateGuestUser(request: NextRequest): Promise<NextResponse> {
   const currentUser = await getCurrentUser();
   if (!currentUser) return NextResponse.json({ message: "Authentication required." }, { status: 401 });
@@ -33,24 +75,44 @@ export async function handleCreateGuestUser(request: NextRequest): Promise<NextR
   const passwordHash = await hashLocalPassword(password);
 
   try {
-    const user = await prisma.user.create({
-      data: {
-        computingId,
-        email,
-        firstName: firstName || "Guest",
-        lastName: lastName || "User",
-        role: "GUEST",
-        localCredential: {
-          create: {
-            username,
-            passwordHash,
-            expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
+    const existingCredential = await prisma.localCredential.findUnique({
+      where: { username },
+      select: { id: true, userId: true, expiresAt: true },
+    });
+    const isExpired =
+      existingCredential?.expiresAt && existingCredential.expiresAt.getTime() <= Date.now();
+
+    if (existingCredential && !isExpired) {
+      return NextResponse.json({ message: "That guest username is already in use." }, { status: 409 });
+    }
+
+    const user = await prisma.$transaction(async (tx) => {
+      if (existingCredential) {
+        await tx.user.delete({ where: { id: existingCredential.userId } });
+      }
+
+      return tx.user.create({
+        data: {
+          computingId,
+          email,
+          firstName: firstName || "Guest",
+          lastName: lastName || "User",
+          role: "GUEST",
+          localCredential: {
+            create: {
+              username,
+              passwordHash,
+              expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
+            },
           },
         },
-      },
-      select: { id: true, computingId: true, firstName: true, lastName: true, role: true },
+        select: { id: true, computingId: true, firstName: true, lastName: true, role: true },
+      });
     });
-    return NextResponse.json({ message: "Guest account created.", user }, { status: 201 });
+    return NextResponse.json(
+      { message: existingCredential ? "Expired guest account deleted and replaced." : "Guest account created.", user },
+      { status: 201 },
+    );
   } catch (error) {
     const code =
       error && typeof error === "object" && "code" in error && typeof error.code === "string"

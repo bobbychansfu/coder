@@ -17,7 +17,7 @@ export default async function AppLayout({ children }: ProtectedLayoutProps) {
 
   return (
     <TrpcProvider>
-      <AppShell role={user.role}>{children}</AppShell>
+      <AppShell user={user}>{children}</AppShell>
     </TrpcProvider>
   );
 }

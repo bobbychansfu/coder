@@ -2,6 +2,7 @@ import MoreVertRoundedIcon from "@mui/icons-material/MoreVertRounded";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import SupervisorAccountOutlinedIcon from "@mui/icons-material/SupervisorAccountOutlined";
+import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import {
   Box,
   Chip,
@@ -21,6 +22,7 @@ const roleChipConfig: Record<
   AdminUserRole,
   { label: string; className: string; icon: typeof SchoolOutlinedIcon }
 > = {
+  guest: { label: "Guest", className: styles.roleChipStudent, icon: PersonOutlineIcon },
   student: { label: "Student", className: styles.roleChipStudent, icon: SchoolOutlinedIcon },
   instructor: {
     label: "Instructor",

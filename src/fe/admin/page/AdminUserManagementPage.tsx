@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import PersonAddOutlinedIcon from "@mui/icons-material/PersonAddOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
@@ -18,7 +18,7 @@ import {
   TextField,
 } from "@mui/material";
 
-import { adminRoleOptions, adminUsers } from "@/fe/admin/data";
+import { adminRoleOptions, adminUsers, type AdminUserRecord } from "@/fe/admin/data";
 import UserFiltersBar from "@/fe/admin/components/UserFiltersBar";
 import UserTable from "@/fe/admin/components/UserTable";
 import PageHeader from "@/fe/shared/components/PageHeader";
@@ -44,6 +44,31 @@ export default function AdminUserManagementPage() {
   const [guestSuccess, setGuestSuccess] = useState<string | null>(null);
   const [creatingGuest, setCreatingGuest] = useState(false);
   const [showGuestPassword, setShowGuestPassword] = useState(false);
+  const [guestUsers, setGuestUsers] = useState<AdminUserRecord[]>([]);
+
+  const loadGuestUsers = useCallback(async () => {
+    const response = await fetch("/api/admin/guest-users", { credentials: "include" });
+    if (!response.ok) return;
+    const payload = (await response.json()) as {
+      users: Array<{ id: string; name: string; username: string; lastActive: string | null }>;
+    };
+    setGuestUsers(
+      payload.users.map((guest) => ({
+        id: guest.id,
+        name: guest.name,
+        email: guest.username,
+        role: "guest",
+        courses: 0,
+        lastActive: guest.lastActive
+          ? new Date(guest.lastActive).toLocaleString()
+          : "Never",
+      })),
+    );
+  }, []);
+
+  useEffect(() => {
+    void loadGuestUsers();
+  }, [loadGuestUsers]);
 
   const createGuest = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -68,6 +93,7 @@ export default function AdminUserManagementPage() {
       setGuestSuccess(`Guest account “${guestForm.username}” was created.`);
       setGuestForm({ username: "", firstName: "", lastName: "", password: "", expiresAt: "" });
       setGuestDialogOpen(false);
+      await loadGuestUsers();
     } catch {
       setGuestError("Unable to create guest account.");
     } finally {
@@ -76,7 +102,7 @@ export default function AdminUserManagementPage() {
   };
 
   const filteredUsers = useMemo(() => {
-    return adminUsers.filter((user) => {
+    return [...adminUsers, ...guestUsers].filter((user) => {
       const matchesRole = selectedRole === "all" || user.role === selectedRole;
       const query = search.trim().toLowerCase();
 
@@ -88,21 +114,22 @@ export default function AdminUserManagementPage() {
         user.email.toLowerCase().includes(query)
       );
     });
-  }, [search, selectedRole]);
+  }, [guestUsers, search, selectedRole]);
 
   const stats = useMemo(() => {
-    const totalUsers = adminUsers.length;
+    const allUsers = [...adminUsers, ...guestUsers];
+    const totalUsers = allUsers.length;
     const studentCount = adminUsers.filter((u) => u.role === "student").length;
     const instructorCount = adminUsers.filter((u) => u.role === "instructor").length;
-    const adminCount = adminUsers.filter((u) => u.role === "admin").length;
+    const guestCount = guestUsers.length;
 
     return [
       { id: "total-users", label: "Total Users", value: String(totalUsers) },
       { id: "students", label: "Students", value: String(studentCount) },
       { id: "instructors", label: "Instructors", value: String(instructorCount) },
-      { id: "admins", label: "Admins", value: String(adminCount) },
+      { id: "guests", label: "Guests", value: String(guestCount) },
     ];
-  }, []);
+  }, [guestUsers]);
 
   return (
     <Box className={styles.page}>

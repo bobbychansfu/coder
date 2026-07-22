@@ -1,6 +1,6 @@
 import type { Role } from "@/lib/authz";
 
-export type AdminUserRole = Role;
+export type AdminUserRole = Role | "guest";
 
 export interface AdminUserRecord {
   id: string;
@@ -19,6 +19,7 @@ export interface AdminUserRoleOption {
 export const adminRoleOptions: AdminUserRoleOption[] = [
   { value: "all", label: "All Roles" },
   { value: "student", label: "Student" },
+  { value: "guest", label: "Guest" },
   { value: "instructor", label: "Instructor" },
   { value: "admin", label: "Admin" },
 ];
