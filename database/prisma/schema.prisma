@@ -93,6 +93,7 @@ model User {
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
 
+  teamMemberships        TeamMember[]
   contestsCreated        Contest[]               @relation("ContestCreator")
   announcements          Announcement[]          @relation("AnnouncementAuthor")
   submissions            Submission[]
@@ -103,6 +104,25 @@ model User {
   participations         Participation[]
   practiceSessions       PracticeSession[]
   contestProblemSessions ContestProblemSession[]
+}
+
+model Team {
+  id        String       @id @default(cuid())
+  name      String
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  members   TeamMember[]
+}
+
+model TeamMember {
+  id     String @id @default(cuid())
+  teamId String
+  userId String
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
 }
 
 model PracticeSession {
