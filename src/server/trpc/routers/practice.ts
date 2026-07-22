@@ -179,13 +179,28 @@ export const practiceRouter = router({
         where: { userId: dbUser.id },
         select: {
           solvedAt: true,
+          firstRunAt: true,
+          firstSubmitAt: true,
+          runCount: true,
+          submitCount: true,
           problem: { select: { code: true } },
         },
       });
       const solvedCodes = new Set(
         sessions.filter((s) => s.solvedAt != null).map((s) => s.problem.code),
       );
-      const startedCodes = new Set(sessions.map((s) => s.problem.code));
+      const startedCodes = new Set(
+        sessions
+          .filter(
+            (session) =>
+              session.firstRunAt !== null ||
+              session.firstSubmitAt !== null ||
+              session.solvedAt !== null ||
+              session.runCount > 0 ||
+              session.submitCount > 0,
+          )
+          .map((session) => session.problem.code),
+      );
 
       let filtered = problems;
       if (input.status === "completed") {

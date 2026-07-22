@@ -266,19 +266,6 @@ function PracticeProblemSubmissionPageContent({
     return sessionRequest;
   }, [openSessionMutateAsync, problemCode, sessionInfo]);
 
-  useEffect(() => {
-    if (!persistSubmissions) {
-      return;
-    }
-
-    if (sessionOpened.current || pendingSessionRequest.current) {
-      return;
-    }
-
-    sessionOpened.current = true;
-    void ensureSessionInfo();
-  }, [ensureSessionInfo, persistSubmissions]);
-
   useEffect(() => () => closeSubmissionStream(), [closeSubmissionStream]);
 
   useEffect(() => {

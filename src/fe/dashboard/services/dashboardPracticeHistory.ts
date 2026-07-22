@@ -102,10 +102,9 @@ export async function getStudentPracticeHistory(
     return [];
   }
 
-  const recentRuns = await prisma.practiceRunRecord.findMany({
+  const recordedRuns = await prisma.practiceRunRecord.findMany({
     where: { userId: dbUser.id },
     orderBy: { createdAt: "desc" },
-    take: 20,
     select: {
       id: true,
       verdict: true,
@@ -141,7 +140,7 @@ export async function getStudentPracticeHistory(
   const seenProblemCodes = new Set<string>();
   const history: StudentDashboardPracticeHistoryItem[] = [];
 
-  for (const run of recentRuns) {
+  for (const run of recordedRuns) {
     const problem = run.session.problem;
     const starterCode = problem.starterCodes.find(
       (starter) => starter.language === run.language,
@@ -167,10 +166,6 @@ export async function getStudentPracticeHistory(
       practicedAtMs: run.createdAt.getTime(),
       href: `/practice/${encodeURIComponent(problem.code)}`,
     });
-
-    if (history.length === 3) {
-      break;
-    }
   }
 
   return history;

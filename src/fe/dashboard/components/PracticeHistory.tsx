@@ -132,6 +132,7 @@ export default function PracticeHistory({
   problems = [],
   currentUserComputingId,
 }: PracticeHistoryProps) {
+  const [showAllHistory, setShowAllHistory] = useState(false);
   const [draftStorageSnapshot, setDraftStorageSnapshot] = useState("");
 
   useEffect(() => {
@@ -230,7 +231,7 @@ export default function PracticeHistory({
     return nextDraftProblems;
   }, [currentUserComputingId, draftEntries, draftProblemMetadata]);
 
-  const displayProblems = useMemo(() => {
+  const recordedProblems = useMemo(() => {
     const latestByProblemCode = new Map<string, StudentDashboardPracticeHistoryItem>();
 
     for (const problem of [...problems, ...draftProblems]) {
@@ -242,17 +243,24 @@ export default function PracticeHistory({
     }
 
     return [...latestByProblemCode.values()]
-      .sort((a, b) => b.practicedAtMs - a.practicedAtMs)
-      .slice(0, 3);
+      .sort((a, b) => b.practicedAtMs - a.practicedAtMs);
   }, [draftProblems, problems]);
+
+  const displayProblems = showAllHistory ? recordedProblems : recordedProblems.slice(0, 3);
 
   return (
     <section className={styles.container} data-testid="practice-history">
       <div className={styles.header}>
         <h2 className={styles.title}>My Practice</h2>
-        <Link href="/practice" className={styles.viewAll}>
-          View All
-        </Link>
+        {recordedProblems.length > 3 && (
+          <button
+            type="button"
+            className={styles.viewAll}
+            onClick={() => setShowAllHistory((current) => !current)}
+          >
+            {showAllHistory ? "Show Less" : "View All"}
+          </button>
+        )}
       </div>
 
       {displayProblems.length === 0 ? (
