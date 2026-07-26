@@ -31,6 +31,227 @@
   height: 16px !important;
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.groupButton {
+  text-transform: none !important;
+  border-radius: 6px !important;
+  height: 36px;
+  color: #e7000b !important;
+  border-color: #e7000b !important;
+}
+
+.groupButton:hover {
+  background: rgba(231, 0, 11, 0.04) !important;
+  border-color: #ef4444 !important;
+}
+
+.groupDialogContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 8px !important;
+}
+
+.groupSummary {
+  font-weight: 600 !important;
+}
+
+.userListControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 32px;
+}
+
+.userListCount {
+  font-size: 13px !important;
+}
+
+.viewAllButton {
+  padding: 4px 8px !important;
+  color: #e7000b !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+}
+
+.groupsSection {
+  padding: 24px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.groupsHeadingRow,
+.groupCardHeader,
+.memberRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.groupHeadingActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.modifyGroupsButton {
+  color: #e7000b !important;
+  border-color: #e7000b !important;
+  border-radius: 6px !important;
+  text-transform: none !important;
+}
+
+.modifyGroupsButton:hover {
+  background: rgba(231, 0, 11, 0.04) !important;
+  border-color: #ef4444 !important;
+}
+
+.groupsTitle {
+  color: #111827;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+}
+
+.groupsSubtitle {
+  margin-top: 2px !important;
+  font-size: 14px !important;
+}
+
+.groupNotice {
+  margin-top: 16px;
+}
+
+.groupsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.groupListControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 32px;
+  margin-top: 16px;
+}
+
+.groupCard {
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.groupCardHeader {
+  padding: 14px 16px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.groupName {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+}
+
+.memberCount,
+.memberEmail {
+  font-size: 12px !important;
+}
+
+.memberList {
+  display: flex;
+  flex-direction: column;
+}
+
+.memberRow {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f1f3;
+}
+
+.memberRow:last-child {
+  border-bottom: 0;
+}
+
+.memberName {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+
+.emptyGroups {
+  padding: 28px 0 8px;
+  text-align: center;
+}
+
+.modifyGroupList {
+  display: flex;
+  flex-direction: column;
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.modifyGroupOption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 4px 10px;
+  border-bottom: 1px solid #f0f1f3;
+}
+
+.modifyGroupOption:last-child {
+  border-bottom: 0;
+}
+
+.modifyDialogActions {
+  flex-wrap: wrap;
+}
+
+.dialogActionSpacer {
+  flex: 1;
+}
+
+.deleteWarningText {
+  margin-top: 12px !important;
+}
+
+.studentMemberList {
+  display: flex;
+  flex-direction: column;
+  max-height: 360px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.studentMemberOption {
+  width: 100%;
+  margin: 0 !important;
+  padding: 4px 10px;
+  border-bottom: 1px solid #f0f1f3;
+}
+
+.studentMemberOption:last-child {
+  border-bottom: 0;
+}
+
+.selectedMemberCount {
+  font-size: 13px !important;
+  text-align: right;
+}
+
 .statsGrid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -84,6 +305,15 @@
   }
 
   .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .headerActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .groupsGrid {
     grid-template-columns: 1fr;
   }
 }
