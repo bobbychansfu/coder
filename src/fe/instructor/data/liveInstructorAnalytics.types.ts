@@ -38,6 +38,7 @@ export interface StudentCatalogRow {
 export interface ContestCatalogRow {
   id: string;
   name: string;
+  startsAt?: string;
   hintNote: string;
   gamificationNote: string;
   comparisonNote: string;

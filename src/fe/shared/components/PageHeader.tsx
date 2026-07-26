@@ -1,5 +1,6 @@
 import { Box, Button, Chip, Typography } from "@mui/material";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
+import type { ReactNode } from "react";
 import styles from "@/fe/shared/styles/PageHeader.module.css";
 
 interface StatusConfig {
@@ -17,6 +18,7 @@ interface PageHeaderProps {
   headerClassName?: string;
   titleClassName?: string;
   statusChipClassName?: string;
+  actions?: ReactNode;
 }
 
 export default function PageHeader({
@@ -28,6 +30,7 @@ export default function PageHeader({
   headerClassName,
   titleClassName,
   statusChipClassName,
+  actions,
 }: PageHeaderProps) {
   const backButtonClasses = [styles.backButton, backButtonClassName].filter(Boolean).join(" ");
   const headerClasses = [styles.headerRow, headerClassName].filter(Boolean).join(" ");
@@ -59,6 +62,7 @@ export default function PageHeader({
               }}
             />
           )}
+          {actions ? <Box className={styles.actions}>{actions}</Box> : null}
         </Box>
       )}
     </>

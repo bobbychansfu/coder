@@ -21,5 +21,9 @@ export function buildContestRoute(contestId: string) {
   return `${ROUTES.contests}/${contestId}`;
 }
 
+export function buildContestEditRoute(contestId: string) {
+  return `${ROUTES.instructorCreateContest}?contestId=${encodeURIComponent(contestId)}`;
+}
+
 // Type-safe route access
 export type RouteKey = keyof typeof ROUTES;

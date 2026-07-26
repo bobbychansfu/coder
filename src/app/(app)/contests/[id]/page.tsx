@@ -103,6 +103,8 @@ export default async function ContestDetailRoute({ params }: ContestDetailRouteP
 
   return (
     <ContestDetailPage
+      isStudent={user.role === "student"}
+      canEditContest={can(user.role).canManageContest}
       contest={toContestDetail(
         normalizedContest,
         contestProblemStatus,

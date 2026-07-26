@@ -21,7 +21,9 @@ import {
   Typography,
 } from "@mui/material";
 
-import { adminRoleOptions } from "@/fe/admin/data";
+import { adminRoleOptions, type AdminUserRecord } from "@/fe/admin/data";
+import AdminDeleteUserDialog from "@/fe/admin/components/AdminDeleteUserDialog";
+import AdminEditUserDialog from "@/fe/admin/components/AdminEditUserDialog";
 import UserFiltersBar from "@/fe/admin/components/UserFiltersBar";
 import UserTable from "@/fe/admin/components/UserTable";
 import PageHeader from "@/fe/shared/components/PageHeader";
@@ -30,21 +32,8 @@ import StatCard from "@/fe/shared/components/StatCard";
 import { ROUTES } from "@/fe/shared/constants/routes";
 import subpageStyles from "@/fe/shared/styles/SubpageHeader.module.css";
 import styles from "@/fe/admin/styles/AdminUserManagementPage.module.css";
+import { formatAdminUserLastActive } from "@/fe/admin/services/adminUsers";
 import { trpc } from "@/lib/trpc/client";
-
-function formatLastActive(value: string): string {
-  const timestamp = new Date(value).getTime();
-  const elapsedMinutes = Math.max(0, Math.floor((Date.now() - timestamp) / 60_000));
-
-  if (elapsedMinutes < 1) return "Just now";
-  if (elapsedMinutes < 60) return `${elapsedMinutes} min ago`;
-
-  const elapsedHours = Math.floor(elapsedMinutes / 60);
-  if (elapsedHours < 24) return `${elapsedHours} ${elapsedHours === 1 ? "hour" : "hours"} ago`;
-
-  const elapsedDays = Math.floor(elapsedHours / 24);
-  return `${elapsedDays} ${elapsedDays === 1 ? "day" : "days"} ago`;
-}
 
 export default function AdminUserManagementPage() {
   const router = useRouter();
@@ -61,6 +50,9 @@ export default function AdminUserManagementPage() {
   const [teamWarningDismissed, setTeamWarningDismissed] = useState(false);
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
   const [draftMemberIds, setDraftMemberIds] = useState<string[]>([]);
+  const [editingUser, setEditingUser] = useState<AdminUserRecord | null>(null);
+  const [deletingUser, setDeletingUser] = useState<AdminUserRecord | null>(null);
+  const [userActionResult, setUserActionResult] = useState<string | null>(null);
   const teamSummary = trpc.adminTeams.summary.useQuery();
   const createGroups = trpc.adminTeams.createGroups.useMutation({
     onSuccess: async (result) => {
@@ -96,7 +88,7 @@ export default function AdminUserManagementPage() {
     () =>
       (teamSummary.data?.users ?? []).map((user) => ({
         ...user,
-        lastActive: formatLastActive(user.lastActive),
+        lastActive: formatAdminUserLastActive(user.lastActive),
       })),
     [teamSummary.data?.users],
   );
@@ -165,6 +157,11 @@ export default function AdminUserManagementPage() {
       {teamSummary.isError && (
         <Alert severity="error">Unable to load users from the database.</Alert>
       )}
+      {userActionResult ? (
+        <Alert severity="success" onClose={() => setUserActionResult(null)}>
+          {userActionResult}
+        </Alert>
+      ) : null}
 
       <Box className={styles.statsGrid}>
         {stats.map((stat) => (
@@ -205,7 +202,17 @@ export default function AdminUserManagementPage() {
         )}
       </Box>
 
-      <UserTable users={visibleUsers} />
+      <UserTable
+        users={visibleUsers}
+        onEditUser={(user) => {
+          setUserActionResult(null);
+          setEditingUser(user);
+        }}
+        onDeleteUser={(user) => {
+          setUserActionResult(null);
+          setDeletingUser(user);
+        }}
+      />
 
       <Box className={styles.groupsSection}>
         <Box className={styles.groupsHeadingRow}>
@@ -533,7 +540,7 @@ export default function AdminUserManagementPage() {
             type="number"
             value={groupSize}
             onChange={(event) => setGroupSize(Number(event.target.value))}
-            inputProps={{ min: 2, max: 20 }}
+            slotProps={{ htmlInput: { min: 2, max: 20 } }}
             fullWidth
           />
           {createGroups.error && (
@@ -562,6 +569,26 @@ export default function AdminUserManagementPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {editingUser ? (
+        <AdminEditUserDialog
+          key={editingUser.id}
+          user={editingUser}
+          onClose={() => setEditingUser(null)}
+          onUpdated={(message) => {
+            setUserActionResult(message);
+            void teamSummary.refetch();
+          }}
+        />
+      ) : null}
+      <AdminDeleteUserDialog
+        user={deletingUser}
+        onClose={() => setDeletingUser(null)}
+        onDeleted={(message) => {
+          setUserActionResult(message);
+          void teamSummary.refetch();
+        }}
+      />
     </Box>
   );
 }
