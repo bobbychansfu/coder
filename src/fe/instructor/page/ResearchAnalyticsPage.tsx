@@ -1,14 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useMemo } from "react";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import { Box, Button } from "@mui/material";
 import {
-  aiHintTrendsByRange,
   conditionOptions,
   dateRangeOptions,
-  gamificationTrendsByRange,
   researchAnalyticsCopy,
 } from "@/fe/instructor/data/researchAnalytics";
 import ComparisonAnalyticsSection from "@/fe/instructor/components/ComparisonAnalyticsSection";
@@ -25,15 +24,44 @@ import { ROUTES } from "@/fe/shared/constants/routes";
 import ScrollbarHider from "@/fe/shared/components/ui/ScrollbarHider";
 import subpageStyles from "@/fe/instructor/styles/InstructorSubpageHeader.module.css";
 import styles from "@/fe/instructor/styles/ResearchAnalyticsPage.module.css";
+import { trpc } from "@/lib/trpc/client";
+import type { InstructorAnalyticsUiPayload } from "@/fe/instructor/data/liveInstructorAnalytics";
+import { buildAnalyticsTrends } from "@/fe/instructor/page/researchAnalytics.helpers";
+
+const EMPTY_ANALYTICS: InstructorAnalyticsUiPayload = {
+  segmented_metrics: {
+    all: { contest_metrics: [], problem_metrics: [] },
+    groupA: { contest_metrics: [], problem_metrics: [] },
+    groupB: { contest_metrics: [], problem_metrics: [] },
+    groupC: { contest_metrics: [], problem_metrics: [] },
+  },
+  student_views: {},
+  students_catalog: [],
+  contests_catalog: [],
+  analytics_notes: [],
+};
 
 export default function ResearchAnalyticsPage() {
   const router = useRouter();
   const copy = researchAnalyticsCopy;
+  const analyticsQuery = trpc.instructorAnalysis.dashboard.useQuery(undefined, {
+    staleTime: 30_000,
+  });
+  const analytics = analyticsQuery.data ?? EMPTY_ANALYTICS;
+  const dashboardGamificationTrends = useMemo(
+    () => buildAnalyticsTrends(analytics, "gamification"),
+    [analytics],
+  );
+  const dashboardAiHintTrends = useMemo(
+    () => buildAnalyticsTrends(analytics, "hints"),
+    [analytics],
+  );
 
   const comparisons = useResearchAnalyticsComparisons({
+    analytics,
     conditionOptions,
-    gamificationTrendsByRange,
-    aiHintTrendsByRange,
+    gamificationTrendsByRange: dashboardGamificationTrends,
+    aiHintTrendsByRange: dashboardAiHintTrends,
     sectionFilterIconClassName: styles.sectionFilterIcon,
   });
 
@@ -99,10 +127,12 @@ export default function ResearchAnalyticsPage() {
 
           <Box className={styles.sectionBlock}>
             <LiveInstructorAnalyticsCard
+              analytics={analytics}
               viewMode={comparisons.liveViewMode}
               selectedContestId={comparisons.liveSelectedContestId}
               onViewModeChange={comparisons.setLiveViewMode}
               onSelectedContestIdChange={comparisons.setLiveSelectedContestId}
+              onRefresh={analyticsQuery.refetch}
             />
           </Box>
 

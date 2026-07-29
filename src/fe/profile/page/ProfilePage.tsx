@@ -1,12 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import ArrowBackOutlinedIcon from "@mui/icons-material/ArrowBackOutlined";
 import EmojiEventsOutlinedIcon from "@mui/icons-material/EmojiEventsOutlined";
 import WhatshotOutlinedIcon from "@mui/icons-material/WhatshotOutlined";
 import PublicOutlinedIcon from "@mui/icons-material/PublicOutlined";
 import LeaderboardOutlinedIcon from "@mui/icons-material/LeaderboardOutlined";
 import WorkspacePremiumOutlinedIcon from "@mui/icons-material/WorkspacePremiumOutlined";
+import EditProfileDialog, {
+  type EditableProfile,
+} from "@/fe/profile/components/EditProfileDialog";
 import styles from "@/fe/profile/styles/ProfilePage.module.css";
 
 const stats = [
@@ -126,6 +130,61 @@ const contests = [
 ];
 
 export default function ProfilePage() {
+  const [profile, setProfile] = useState<EditableProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadProfile = async () => {
+      try {
+        const response = await fetch("/api/s/profile", {
+          credentials: "include",
+          cache: "no-store",
+        });
+        const payload = (await response.json()) as {
+          error?: string;
+          user?: EditableProfile;
+        };
+
+        if (!response.ok || !payload.user) {
+          throw new Error(payload.error ?? "Failed to load profile.");
+        }
+
+        if (active) {
+          setProfile(payload.user);
+          setProfileError(null);
+        }
+      } catch (loadError) {
+        if (active) {
+          setProfileError(
+            loadError instanceof Error ? loadError.message : "Failed to load profile.",
+          );
+        }
+      } finally {
+        if (active) {
+          setProfileLoading(false);
+        }
+      }
+    };
+
+    void loadProfile();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const profileName = profile
+    ? `${profile.firstName} ${profile.lastName}`.trim()
+    : profileLoading
+      ? "Loading profile…"
+      : "Profile unavailable";
+  const initials = profile
+    ? `${profile.firstName.charAt(0)}${profile.lastName.charAt(0)}`.toUpperCase() || "?"
+    : "—";
+
   return (
     <div className={styles.page}>
       <Link href="/" className={styles.backLink}>
@@ -136,9 +195,13 @@ export default function ProfilePage() {
       <div className={styles.layout}>
         <div className={styles.sidebar}>
           <section className={`${styles.card} ${styles.profileCard}`}>
-            <div className={styles.avatar}>AC</div>
-            <h2 className={styles.profileName}>Alex Chen</h2>
-            <p className={styles.profileEmail}>alex.chen@sfu.ca</p>
+            <div className={styles.avatar}>{initials}</div>
+            <h2 className={styles.profileName}>{profileName}</h2>
+            <p className={styles.profileEmail}>{profile?.email ?? "—"}</p>
+            {profile?.nickname ? (
+              <p className={styles.profileNickname}>@{profile.nickname}</p>
+            ) : null}
+            {profileError ? <p className={styles.profileError}>{profileError}</p> : null}
             <span className={styles.levelBadge}>Level 14</span>
 
             <div className={styles.progressBlock}>
@@ -155,7 +218,12 @@ export default function ProfilePage() {
               <p className={styles.progressHint}>1,550 XP to Level 15</p>
             </div>
 
-            <button type="button" className={styles.primaryButton}>
+            <button
+              type="button"
+              className={styles.primaryButton}
+              disabled={!profile || profileLoading}
+              onClick={() => setEditOpen(true)}
+            >
               Edit Profile
             </button>
           </section>
@@ -292,6 +360,14 @@ export default function ProfilePage() {
           </section>
         </div>
       </div>
+      {profile ? (
+        <EditProfileDialog
+          open={editOpen}
+          profile={profile}
+          onClose={() => setEditOpen(false)}
+          onUpdated={setProfile}
+        />
+      ) : null}
     </div>
   );
 }

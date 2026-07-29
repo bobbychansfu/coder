@@ -10,6 +10,7 @@ import TableViewOutlinedIcon from "@mui/icons-material/TableViewOutlined";
 import TimerOutlinedIcon from "@mui/icons-material/TimerOutlined";
 import {
   MOCK_INSTRUCTOR_ANALYTICS,
+  type InstructorAnalyticsUiPayload,
   type ContestCatalogRow,
   type ContestMetricRow,
   type ProblemMetricRow,
@@ -23,10 +24,12 @@ import LiveMetricsTable from "@/fe/instructor/components/LiveMetricsTable";
 import styles from "@/fe/instructor/styles/LiveInstructorAnalyticsCard.module.css";
 
 interface LiveInstructorAnalyticsCardProps {
+  analytics?: InstructorAnalyticsUiPayload;
   viewMode?: ViewMode;
   selectedContestId?: string;
   onViewModeChange?: (value: ViewMode) => void;
   onSelectedContestIdChange?: (value: string) => void;
+  onRefresh?: () => Promise<unknown>;
 }
 
 export interface LiveInstructorAnalyticsResolvedData {
@@ -49,8 +52,9 @@ function formatPercent(value: number | null): string {
 function resolveLiveInstructorAnalyticsData(
   viewMode: ViewMode,
   selectedContestId: string,
+  analytics: InstructorAnalyticsUiPayload = MOCK_INSTRUCTOR_ANALYTICS,
 ): LiveInstructorAnalyticsResolvedData {
-  const activeBundle = MOCK_INSTRUCTOR_ANALYTICS.segmented_metrics[viewMode] || {
+  const activeBundle = analytics.segmented_metrics[viewMode] || {
     contest_metrics: [],
     problem_metrics: [],
   };
@@ -58,7 +62,7 @@ function resolveLiveInstructorAnalyticsData(
   const activeContest =
     selectedContestId === "all"
       ? null
-      : MOCK_INSTRUCTOR_ANALYTICS.contests_catalog.find((contest) => contest.id === selectedContestId) ||
+      : analytics.contests_catalog.find((contest) => contest.id === selectedContestId) ||
         null;
 
   const contestRows =
@@ -88,10 +92,12 @@ function resolveLiveInstructorAnalyticsData(
 export { resolveLiveInstructorAnalyticsData };
 
 export default function LiveInstructorAnalyticsCard({
+  analytics = MOCK_INSTRUCTOR_ANALYTICS,
   viewMode: controlledViewMode,
   selectedContestId: controlledSelectedContestId,
   onViewModeChange,
   onSelectedContestIdChange,
+  onRefresh,
 }: LiveInstructorAnalyticsCardProps) {
   const [loading, setLoading] = useState(false);
   const [uncontrolledViewMode, setUncontrolledViewMode] = useState<ViewMode>("all");
@@ -102,23 +108,23 @@ export default function LiveInstructorAnalyticsCard({
   const viewMode = controlledViewMode ?? uncontrolledViewMode;
   const selectedContestId = controlledSelectedContestId ?? uncontrolledSelectedContestId;
 
-  async function refreshDemo(): Promise<void> {
+  async function refreshData(): Promise<void> {
     setLoading(true);
     try {
-      await Promise.resolve();
+      await onRefresh?.();
     } finally {
       setLoading(false);
     }
   }
 
   const contestOptions = useMemo(() => {
-    const catalog = MOCK_INSTRUCTOR_ANALYTICS.contests_catalog;
+    const catalog = analytics.contests_catalog;
     return [{ id: "all", name: "All Contests" }, ...catalog];
-  }, []);
+  }, [analytics]);
 
   const { activeContest, contestRows, problemRows, orderedProblemRows } = useMemo(
-    () => resolveLiveInstructorAnalyticsData(viewMode, selectedContestId),
-    [viewMode, selectedContestId],
+    () => resolveLiveInstructorAnalyticsData(viewMode, selectedContestId, analytics),
+    [analytics, viewMode, selectedContestId],
   );
 
   const avgSolveRate =
@@ -218,7 +224,7 @@ export default function LiveInstructorAnalyticsCard({
             className={styles.secondaryButton}
             variant="outlined"
             size="small"
-            onClick={() => void refreshDemo()}
+            onClick={() => void refreshData()}
           >
             Refresh
           </Button>
@@ -265,8 +271,8 @@ export default function LiveInstructorAnalyticsCard({
       </Box>
 
       {loading && <p className={styles.info}>Refreshing metrics...</p>}
-      {MOCK_INSTRUCTOR_ANALYTICS.analytics_notes[0] ? (
-        <p className={styles.info}>{MOCK_INSTRUCTOR_ANALYTICS.analytics_notes[0]}</p>
+      {analytics.analytics_notes[0] ? (
+        <p className={styles.info}>{analytics.analytics_notes[0]}</p>
       ) : null}
 
       <Box className={styles.focusGrid}>
