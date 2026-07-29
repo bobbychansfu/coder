@@ -34,6 +34,7 @@ export const adminTeamsRouter = router({
     const [studentCount, users] = await Promise.all([
       ctx.prisma.user.count({ where: { role: "STUDENT" } }),
       ctx.prisma.user.findMany({
+        where: { role: { not: "GUEST" } },
         orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
         select: {
           id: true,

@@ -109,8 +109,9 @@ export default function UserTable({ users, onEditUser, onDeleteUser }: UserTable
       </TableContainer>
       <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={closeMenu}>
         <MenuItem
+          disabled={menuUser?.role === "guest"}
           onClick={() => {
-            if (menuUser) onEditUser(menuUser);
+            if (menuUser && menuUser.role !== "guest") onEditUser(menuUser);
             closeMenu();
           }}
         >

@@ -26,7 +26,7 @@ import {
 } from "@mui/material";
 
 
-import { adminRoleOptions, adminUsers, type AdminUserRecord } from "@/fe/admin/data";
+import { adminRoleOptions, type AdminUserRecord } from "@/fe/admin/data";
 import AdminDeleteUserDialog from "@/fe/admin/components/AdminDeleteUserDialog";
 import AdminEditUserDialog from "@/fe/admin/components/AdminEditUserDialog";
 import UserFiltersBar from "@/fe/admin/components/UserFiltersBar";
@@ -67,9 +67,20 @@ export default function AdminUserManagementPage() {
     setGuestUsers(
       payload.users.map((guest) => ({
         id: guest.id,
+        computingId: guest.username,
+        firstName: guest.name.split(" ")[0] || "Guest",
+        lastName: guest.name.split(" ").slice(1).join(" ") || "User",
         name: guest.name,
         email: guest.username,
         role: "guest",
+        databaseRole: "STUDENT",
+        nickname: null,
+        studentNumber: null,
+        pointsAcquired: 0,
+        problemsSolved: 0,
+        competitionsParticipated: 0,
+        rank: null,
+        isCurrentUser: false,
         courses: 0,
         lastActive: guest.lastActive
           ? new Date(guest.lastActive).toLocaleString()
@@ -265,8 +276,6 @@ export default function AdminUserManagementPage() {
         }
         roleOptions={adminRoleOptions}
       />
-
-      <UserTable users={filteredUsers} />
 
       <Dialog open={guestDialogOpen} onClose={() => setGuestDialogOpen(false)} fullWidth maxWidth="sm">
         <form onSubmit={(event) => void createGuest(event)}>
