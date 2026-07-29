@@ -62,3 +62,37 @@ test("guest login does not reveal whether a username exists", async ({ request }
   expect(response.status()).toBe(401);
   await expect(response.json()).resolves.toEqual({ message: "Invalid username or password." });
 });
+
+test("an expired guest username can be registered again without exposing old history", async ({ page }) => {
+  const username = `expired-${Date.now()}`;
+  const adminLogin = await page.request.post("/api/auth/dev-login", {
+    data: { email: "admin@sfu.ca", role: "ADMIN" },
+  });
+  expect(adminLogin.status()).toBe(200);
+
+  const expiredAccount = await page.request.post("/api/admin/guest-users", {
+    data: {
+      username,
+      password: "OldPassword!",
+      firstName: "Old",
+      lastName: "Guest",
+      expiresAt: new Date(Date.now() - 60_000).toISOString(),
+    },
+  });
+  expect(expiredAccount.status()).toBe(201);
+
+  const replacement = await page.request.post("/api/admin/guest-users", {
+    data: {
+      username,
+      password: "NewPassword!",
+      firstName: "New",
+      lastName: "Guest",
+      expiresAt: null,
+    },
+  });
+  expect(replacement.status()).toBe(201);
+  await expect(replacement.json()).resolves.toMatchObject({
+    message: "Expired guest account deleted and replaced.",
+    user: { firstName: "New", lastName: "Guest" },
+  });
+});
