@@ -7,6 +7,10 @@ export type CodeDraftMap = Partial<Record<SupportedCodeLanguage, string>>;
 export interface PersistedCodeDraft {
   language: SupportedCodeLanguage;
   drafts: CodeDraftMap;
+  updatedAt?: number;
+  userModifiedAt?: number;
+  ownerComputingId?: string;
+  hasModifiedSolution?: boolean;
 }
 
 export const DEFAULT_CODE_LANGUAGE: SupportedCodeLanguage = "cplusplus";
@@ -14,7 +18,7 @@ export const DEFAULT_CODE_LANGUAGE: SupportedCodeLanguage = "cplusplus";
 const SUPPORTED_CODE_LANGUAGES = LANGUAGE_OPTIONS.map((option) => option.value) as SupportedCodeLanguage[];
 const subscribeToCodeDraftStorage = () => () => {};
 
-function isSupportedCodeLanguage(value: unknown): value is SupportedCodeLanguage {
+export function isSupportedCodeLanguage(value: unknown): value is SupportedCodeLanguage {
   return typeof value === "string" && SUPPORTED_CODE_LANGUAGES.includes(value as SupportedCodeLanguage);
 }
 
@@ -39,6 +43,10 @@ function parsePersistedCodeDraft(rawValue: string | null): PersistedCodeDraft | 
     const parsed = JSON.parse(rawValue) as {
       language?: unknown;
       drafts?: Record<string, unknown>;
+      updatedAt?: unknown;
+      userModifiedAt?: unknown;
+      ownerComputingId?: unknown;
+      hasModifiedSolution?: unknown;
     };
 
     if (!isSupportedCodeLanguage(parsed.language) || !parsed.drafts || typeof parsed.drafts !== "object") {
@@ -54,6 +62,12 @@ function parsePersistedCodeDraft(rawValue: string | null): PersistedCodeDraft | 
     return {
       language: parsed.language,
       drafts,
+      updatedAt: typeof parsed.updatedAt === "number" ? parsed.updatedAt : undefined,
+      userModifiedAt: typeof parsed.userModifiedAt === "number" ? parsed.userModifiedAt : undefined,
+      ownerComputingId:
+        typeof parsed.ownerComputingId === "string" ? parsed.ownerComputingId : undefined,
+      hasModifiedSolution:
+        typeof parsed.hasModifiedSolution === "boolean" ? parsed.hasModifiedSolution : undefined,
     };
   } catch {
     return null;
@@ -86,7 +100,7 @@ export function writePersistedCodeDraft(storageKey: string, value: PersistedCode
   }
 
   try {
-    window.sessionStorage.setItem(storageKey, JSON.stringify(value));
+    window.sessionStorage.setItem(storageKey, JSON.stringify({ ...value, updatedAt: Date.now() }));
   } catch {
     // Ignore storage write failures and keep the editor usable.
   }

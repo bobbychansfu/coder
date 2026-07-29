@@ -6,6 +6,9 @@ import type { Context } from "../init";
 import { publicProcedure, router } from "../init";
 
 const visibilitySchema = z.enum(["course-only", "public", "private"]);
+const hintDelayMinutesSchema = z.number().int().min(0).max(10_080);
+const DEFAULT_GROUP_A_HINT_DELAY_MINUTES = 5;
+const DEFAULT_GROUP_B_HINT_DELAY_MINUTES = 10;
 
 const contestMutationSchema = z.object({
   contestName: z.string().trim().min(1, "Contest name is required."),
@@ -18,6 +21,8 @@ const contestMutationSchema = z.object({
   endUtcOffsetMinutes: z.number().int().nullable().optional(),
   visibility: visibilitySchema,
   aiHintEnabled: z.boolean(),
+  groupAHintAfterMinutes: hintDelayMinutesSchema.default(DEFAULT_GROUP_A_HINT_DELAY_MINUTES),
+  groupBHintAfterMinutes: hintDelayMinutesSchema.default(DEFAULT_GROUP_B_HINT_DELAY_MINUTES),
   isDraft: z.boolean().default(false),
   selectedProblemIds: z.array(z.string().min(1)).default([]),
 });
@@ -34,6 +39,8 @@ const contestPatchSchema = z
     endUtcOffsetMinutes: z.number().int().nullable().optional(),
     visibility: visibilitySchema.optional(),
     aiHintEnabled: z.boolean().optional(),
+    groupAHintAfterMinutes: hintDelayMinutesSchema.optional(),
+    groupBHintAfterMinutes: hintDelayMinutesSchema.optional(),
     isDraft: z.boolean().optional(),
     selectedProblemIds: z.array(z.string().min(1)).optional(),
   })
@@ -161,6 +168,41 @@ function hasOwnKey<T extends object>(
   return Object.prototype.hasOwnProperty.call(value, key);
 }
 
+async function replaceContestExperimentGroups(
+  tx: Prisma.TransactionClient,
+  contestId: string,
+  input: {
+    aiHintEnabled: boolean;
+    groupAHintAfterMinutes: number;
+    groupBHintAfterMinutes: number;
+  },
+) {
+  await tx.contestExperimentGroup.deleteMany({
+    where: { contestId },
+  });
+
+  if (!input.aiHintEnabled) {
+    return;
+  }
+
+  await tx.contestExperimentGroup.createMany({
+    data: [
+      {
+        contestId,
+        groupName: "A",
+        aiHintEnabled: true,
+        hintDelayMinutes: input.groupAHintAfterMinutes,
+      },
+      {
+        contestId,
+        groupName: "B",
+        aiHintEnabled: true,
+        hintDelayMinutes: input.groupBHintAfterMinutes,
+      },
+    ],
+  });
+}
+
 async function getContestAuthoringUserOrThrow(ctx: Context) {
   if (!ctx.user) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
@@ -278,6 +320,7 @@ export const contestAuthoringRouter = router({
       const contest = await ctx.prisma.contest.findUnique({
         where: { id: input.contestId },
         include: {
+          experimentGroups: true,
           contestProblems: {
             orderBy: { ordering: "asc" },
             include: {
@@ -301,6 +344,13 @@ export const contestAuthoringRouter = router({
         throw new TRPCError({ code: "FORBIDDEN" });
       }
 
+      const groupAHintAfterMinutes =
+        contest.experimentGroups.find((group) => group.groupName === "A")?.hintDelayMinutes ??
+        DEFAULT_GROUP_A_HINT_DELAY_MINUTES;
+      const groupBHintAfterMinutes =
+        contest.experimentGroups.find((group) => group.groupName === "B")?.hintDelayMinutes ??
+        DEFAULT_GROUP_B_HINT_DELAY_MINUTES;
+
       return {
         id: contest.id,
         contestName: contest.name,
@@ -309,6 +359,8 @@ export const contestAuthoringRouter = router({
         endsAtIso: contest.endsAt?.toISOString() ?? null,
         visibility: toUiVisibility(contest.visibility),
         aiHintEnabled: contest.aiHintEnabled,
+        groupAHintAfterMinutes,
+        groupBHintAfterMinutes,
         status: contest.status,
         selectedProblemIds: contest.contestProblems.map((entry) => entry.problemId),
         selectedProblems: contest.contestProblems.map((entry) => ({
@@ -417,6 +469,12 @@ export const contestAuthoringRouter = router({
           })),
         });
 
+        await replaceContestExperimentGroups(tx, created.id, {
+          aiHintEnabled: input.aiHintEnabled,
+          groupAHintAfterMinutes: input.groupAHintAfterMinutes,
+          groupBHintAfterMinutes: input.groupBHintAfterMinutes,
+        });
+
         return created;
       });
 
@@ -444,6 +502,8 @@ export const contestAuthoringRouter = router({
           startsAt: true,
           endsAt: true,
           updatedAt: true,
+          aiHintEnabled: true,
+          experimentGroups: true,
         },
       });
 
@@ -470,6 +530,10 @@ export const contestAuthoringRouter = router({
       const startScheduleChanged = hasStartDate || hasStartTime;
       const endScheduleChanged = hasEndDate || hasEndTime;
       const scheduleChanged = startScheduleChanged || endScheduleChanged;
+      const aiHintSettingsChanged =
+        hasOwnKey(input.data, "aiHintEnabled") ||
+        hasOwnKey(input.data, "groupAHintAfterMinutes") ||
+        hasOwnKey(input.data, "groupBHintAfterMinutes");
 
       const startDateValue = hasStartDate
         ? (input.data.startDate ?? "").trim()
@@ -618,6 +682,23 @@ export const contestAuthoringRouter = router({
               problemId,
               ordering: index + 1,
             })),
+          });
+        }
+
+        if (aiHintSettingsChanged) {
+          const existingGroupAHintAfterMinutes =
+            contest.experimentGroups.find((group) => group.groupName === "A")?.hintDelayMinutes ??
+            DEFAULT_GROUP_A_HINT_DELAY_MINUTES;
+          const existingGroupBHintAfterMinutes =
+            contest.experimentGroups.find((group) => group.groupName === "B")?.hintDelayMinutes ??
+            DEFAULT_GROUP_B_HINT_DELAY_MINUTES;
+
+          await replaceContestExperimentGroups(tx, input.contestId, {
+            aiHintEnabled: input.data.aiHintEnabled ?? contest.aiHintEnabled,
+            groupAHintAfterMinutes:
+              input.data.groupAHintAfterMinutes ?? existingGroupAHintAfterMinutes,
+            groupBHintAfterMinutes:
+              input.data.groupBHintAfterMinutes ?? existingGroupBHintAfterMinutes,
           });
         }
       });

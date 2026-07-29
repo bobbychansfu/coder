@@ -4,9 +4,20 @@ export type AdminUserRole = Role | "guest";
 
 export interface AdminUserRecord {
   id: string;
+  computingId: string;
+  firstName: string;
+  lastName: string;
   name: string;
   email: string;
   role: AdminUserRole;
+  databaseRole: "ADMIN" | "INSTRUCTOR" | "TA" | "STUDENT";
+  nickname: string | null;
+  studentNumber: string | null;
+  pointsAcquired: number;
+  problemsSolved: number;
+  competitionsParticipated: number;
+  rank: string | null;
+  isCurrentUser: boolean;
   courses: number;
   lastActive: string;
 }
@@ -22,47 +33,4 @@ export const adminRoleOptions: AdminUserRoleOption[] = [
   { value: "guest", label: "Guest" },
   { value: "instructor", label: "Instructor" },
   { value: "admin", label: "Admin" },
-];
-
-export const adminUsers: AdminUserRecord[] = [
-  {
-    id: "user-alex-chen",
-    name: "Alex Chen",
-    email: "alex.chen@sfu.ca",
-    role: "student",
-    courses: 3,
-    lastActive: "2 hours ago",
-  },
-  {
-    id: "user-sarah-johnson",
-    name: "Dr. Sarah Johnson",
-    email: "sarah.j@sfu.ca",
-    role: "instructor",
-    courses: 2,
-    lastActive: "1 hour ago",
-  },
-  {
-    id: "user-emma-wilson",
-    name: "Emma Wilson",
-    email: "emma.w@sfu.ca",
-    role: "student",
-    courses: 2,
-    lastActive: "3 hours ago",
-  },
-  {
-    id: "user-michael-chen",
-    name: "Prof. Michael Chen",
-    email: "michael.c@sfu.ca",
-    role: "instructor",
-    courses: 1,
-    lastActive: "30 min ago",
-  },
-  {
-    id: "user-admin",
-    name: "Admin User",
-    email: "admin@sfu.ca",
-    role: "admin",
-    courses: 0,
-    lastActive: "5 min ago",
-  },
 ];

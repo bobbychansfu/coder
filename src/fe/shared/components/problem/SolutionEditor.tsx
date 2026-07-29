@@ -1,12 +1,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Box, Button, MenuItem, Select, Typography } from "@mui/material";
-import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
+import { type ReactNode } from "react";
+import { Box, Button, CircularProgress, MenuItem, Select, Typography } from "@mui/material";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
-import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import ExpandLessRoundedIcon from "@mui/icons-material/ExpandLessRounded";
 import PlayArrowRoundedIcon from "@mui/icons-material/PlayArrowRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import { LANGUAGE_OPTIONS } from "@/fe/shared/constants/options";
@@ -20,7 +17,7 @@ interface SolutionEditorProps {
   language: string;
   code: string;
   onLanguageChange: (language: string) => void;
-  onCodeChange: (code: string) => void;
+  onCodeChange: (code: string, isFlush?: boolean) => void;
   onSubmitCode?: () => void;
   submitButtonDisabled?: boolean;
   submitButtonLabel?: string;
@@ -33,22 +30,8 @@ interface SolutionEditorProps {
   showAiHint?: boolean;
   aiHintSource?: string;
   aiHintDisabled?: boolean;
-}
-
-const AI_HINT_COOLDOWN_SECONDS = 28;
-
-function buildAiHint(source: string) {
-  const trimmed = source.trim();
-
-  if (!trimmed) {
-    return "Your editor looks empty. Start with a direct solution first, then trim repeated work after the base case behaves correctly.";
-  }
-
-  if (trimmed.length < 180) {
-    return "You already have a partial draft. Test the smallest valid input first, then make sure your main loop or helper handles edge cases cleanly.";
-  }
-
-  return "You have a solid draft. Look for repeated work, verify one sharp edge case, and check whether your data structure choice matches the target time complexity.";
+  aiHintLoading?: boolean;
+  onRequestAiHint?: () => Promise<void> | void;
 }
 
 export default function SolutionEditor({
@@ -66,93 +49,28 @@ export default function SolutionEditor({
   headerLeading,
   footerContent,
   showAiHint = false,
-  aiHintSource = "",
   aiHintDisabled = false,
+  aiHintLoading = false,
+  onRequestAiHint,
 }: SolutionEditorProps) {
   const editorLanguage = LANGUAGE_OPTIONS.find((o) => o.value === language)?.monacoLanguage ?? "plaintext";
-  const [aiHintState, setAiHintState] = useState<"idle" | "ready" | "cooldown">("idle");
-  const [cooldownSeconds, setCooldownSeconds] = useState(AI_HINT_COOLDOWN_SECONDS);
 
-  useEffect(() => {
-    if (aiHintState !== "cooldown") {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      if (cooldownSeconds <= 1) {
-        setAiHintState("idle");
-        setCooldownSeconds(AI_HINT_COOLDOWN_SECONDS);
-        return;
-      }
-
-      setCooldownSeconds((current) => current - 1);
-    }, 1000);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [aiHintState, cooldownSeconds]);
-
-  const aiHintMessage = useMemo(() => buildAiHint(aiHintSource), [aiHintSource]);
-
-  const startAiHintCooldown = () => {
-    setAiHintState("cooldown");
-    setCooldownSeconds(AI_HINT_COOLDOWN_SECONDS);
-  };
-
-  const aiHintLeading = !showAiHint ? null : aiHintState === "idle" ? (
+  const aiHintLeading = !showAiHint ? null : (
     <Button
       className={styles.aiHintButton}
-      startIcon={<AutoAwesomeRoundedIcon fontSize="inherit" />}
-      onClick={() => setAiHintState("ready")}
-      disabled={aiHintDisabled}
+      startIcon={
+        aiHintLoading ? (
+          <CircularProgress size={14} color="inherit" />
+        ) : (
+          <AutoAwesomeRoundedIcon fontSize="inherit" />
+        )
+      }
+      onClick={() => void onRequestAiHint?.()}
+      disabled={aiHintDisabled || aiHintLoading || !onRequestAiHint}
     >
-      AI Hint
+      {aiHintLoading ? "Generating..." : "AI Hint"}
     </Button>
-  ) : aiHintState === "ready" ? (
-    <Box className={styles.aiHintReadyBadge}>
-      <AutoAwesomeRoundedIcon fontSize="inherit" />
-      <span>Hint ready</span>
-    </Box>
-  ) : (
-    <Box className={styles.aiHintCooldownBadge}>
-      <AccessTimeRoundedIcon fontSize="inherit" />
-      <span>{cooldownSeconds}s</span>
-    </Box>
   );
-
-  const aiHintPanel =
-    showAiHint && aiHintState === "ready" ? (
-      <Box className={styles.aiHintPanel}>
-        <Box className={styles.aiHintPanelHeader}>
-          <Box className={styles.aiHintPanelTitleRow}>
-            <AutoAwesomeRoundedIcon fontSize="inherit" className={styles.aiHintPanelIcon} />
-            <span className={styles.aiHintPanelTitle}>AI Hint</span>
-            <span className={styles.aiHintPanelContext}>Based on your code</span>
-          </Box>
-          <Box className={styles.aiHintPanelActions}>
-            <button
-              type="button"
-              className={styles.aiHintPanelAction}
-              onClick={startAiHintCooldown}
-              aria-label="Collapse AI hint"
-            >
-              <ExpandLessRoundedIcon fontSize="inherit" />
-            </button>
-            <button
-              type="button"
-              className={styles.aiHintPanelAction}
-              onClick={startAiHintCooldown}
-              aria-label="Close AI hint"
-            >
-              <CloseRoundedIcon fontSize="inherit" />
-            </button>
-          </Box>
-        </Box>
-        <Box className={styles.aiHintPanelBody}>{aiHintMessage}</Box>
-        <Box className={styles.aiHintPanelFootnote}>
-          Hints guide your thinking. The solution is still yours to finish.
-        </Box>
-      </Box>
-    ) : null;
 
   return (
     <Box className={`${styles.card} ${styles.solutionCard}`}>
@@ -181,7 +99,7 @@ export default function SolutionEditor({
             height="100%"
             language={editorLanguage}
             value={code}
-            onChange={(value) => onCodeChange(value ?? "")}
+            onChange={(value, event) => onCodeChange(value ?? "", event.isFlush)}
             theme="vs-light"
             options={{
               minimap: { enabled: false },
@@ -212,7 +130,7 @@ export default function SolutionEditor({
         </Box>
       </Box>
 
-      {footerContent ?? aiHintPanel}
+      {footerContent}
 
       <Box className={styles.buttonRow}>
         {secondaryButtonLabel ? (

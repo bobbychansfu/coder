@@ -3,6 +3,7 @@ import { z } from "zod";
 import { protectedProcedure, router } from "../init";
 import { loadInstructorAnalysisSnapshot } from "@/server/instructorAnalysis/repository";
 import { buildInstructorAnalysisResponse } from "@/server/instructorAnalysis/serializer";
+import { loadInstructorAnalyticsDashboard } from "@/server/instructorAnalysis/dashboardRepository";
 
 const instructorAnalysisInputSchema = z.object({
   contestId: z.string().optional(),
@@ -11,6 +12,21 @@ const instructorAnalysisInputSchema = z.object({
 });
 
 export const instructorAnalysisRouter = router({
+  dashboard: protectedProcedure.query(async ({ ctx }) => {
+    if (ctx.user.role !== "instructor") {
+      throw new TRPCError({ code: "FORBIDDEN" });
+    }
+
+    const dashboard = await loadInstructorAnalyticsDashboard(
+      ctx.prisma,
+      ctx.user.computingId,
+    );
+    if (!dashboard) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Instructor not found" });
+    }
+
+    return dashboard;
+  }),
   get: protectedProcedure
     .input(instructorAnalysisInputSchema)
     .query(async ({ ctx, input }) => {

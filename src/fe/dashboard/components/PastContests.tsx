@@ -3,6 +3,7 @@
 import Link from "next/link";
 import ContestResultCard from "./ContestResultCard";
 import type { MouseEvent } from "react";
+import { useState } from "react";
 import { buildContestRoute } from "@/fe/shared/constants/routes";
 import type { DashboardContestHistoryItem } from "@/fe/dashboard/services/dashboardContests";
 import styles from "../styles/PastContests.module.css";
@@ -18,6 +19,9 @@ export default function PastContests({
   emptyMessage = "No contest activity yet.",
   onContestEntry,
 }: PastContestsProps) {
+  const [showAllHistory, setShowAllHistory] = useState(false);
+  const visibleContests = showAllHistory ? contests : contests.slice(0, 3);
+
   function handleContestClick(
     event: MouseEvent<HTMLAnchorElement>,
     contest: DashboardContestHistoryItem,
@@ -32,15 +36,21 @@ export default function PastContests({
     <div className={styles.container} data-testid="my-contests">
       <div className={styles.header}>
         <h2 className={styles.title}>My Contests</h2>
-        <Link href="/contests" className={styles.viewAll}>
-          View All
-        </Link>
+        {contests.length > 3 && (
+          <button
+            type="button"
+            className={styles.viewAll}
+            onClick={() => setShowAllHistory((current) => !current)}
+          >
+            {showAllHistory ? "Show Less" : "View All"}
+          </button>
+        )}
       </div>
       {contests.length === 0 ? (
         <div className={styles.empty}>{emptyMessage}</div>
       ) : (
         <div className={styles.list}>
-          {contests.map((contest) => (
+          {visibleContests.map((contest) => (
             <Link
               key={contest.id}
               href={buildContestRoute(contest.id)}

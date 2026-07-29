@@ -33,6 +33,7 @@ function toBackendContestSummary(
     durationMinutes: contest.durationMinutes,
     participants: contest.participants,
     published: contest.published,
+    aiHintEnabled: contest.aiHintEnabled,
   };
 }
 
@@ -164,7 +165,16 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
   return (
     <ProblemSubmissionPage
       contestId={contest.id}
+      computingId={user.computingId}
       contestStatus={contest.status}
+      contestStartsAt={normalizedContestSummary.startsAt}
+      contestEndsAt={normalizedContestSummary.endsAt}
+      contestDurationMinutes={normalizedContestSummary.durationMinutes}
+      practiceProblemLinks={contest.problems.map((contestProblem) => ({
+        contestCode: contestProblem.code,
+        practiceProblemCode: contestProblem.practiceProblemCode ?? contestProblem.code,
+      }))}
+      aiHintEnabled={normalizedContestSummary.aiHintEnabled}
       detail={adaptContestProblemDetail(
         problem,
         problemDetailPayload,

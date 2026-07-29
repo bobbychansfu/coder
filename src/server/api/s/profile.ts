@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
 import { dbHelpers } from "@/lib/db-helpers";
+import { z } from "zod";
 
-export async function handleGetProfile(request: NextRequest) {
+const updateProfileSchema = z.object({
+  fname: z.string().trim().min(1).max(50),
+  lname: z.string().trim().min(1).max(50),
+  nickname: z.string().trim().max(40).optional().default(""),
+  student_number: z.string().trim().max(20).optional(),
+});
+
+export async function handleGetProfile() {
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -26,14 +34,23 @@ export async function handleUpdateProfile(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { fname, lname, nickname, student_number } = body;
+    const parsed = updateProfileSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Please provide valid profile information." },
+        { status: 400 },
+      );
+    }
+    const { fname, lname, nickname, student_number } = parsed.data;
 
     await dbHelpers.updateUser(user.computingId, {
       firstName: fname,
       lastName: lname,
-      nickname,
-      studentNumber: student_number,
+      nickname: nickname || null,
+      studentNumber:
+        user.role === "student"
+          ? student_number || null
+          : undefined,
     });
 
     const updatedUser = await dbHelpers.findUserByComputingId(user.computingId);
