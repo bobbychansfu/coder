@@ -1,0 +1,56 @@
+.createButton {
+  min-height: 36px;
+  border-radius: 6px !important;
+  text-transform: none !important;
+}
+
+.teamNotice {
+  min-width: 260px;
+}
+
+.dialogContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 8px !important;
+}
+
+.studentList {
+  display: flex;
+  flex-direction: column;
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.studentOption {
+  width: 100%;
+  min-height: 58px;
+  margin: 0 !important;
+  padding: 4px 12px;
+  border-bottom: 1px solid #f0f1f3;
+}
+
+.studentOption:last-child {
+  border-bottom: 0;
+}
+
+.studentName {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+
+.studentMeta,
+.selectionCount {
+  font-size: 12px !important;
+}
+
+.selectionCount {
+  text-align: right;
+}
+
+.emptyState {
+  padding: 24px;
+  text-align: center;
+}

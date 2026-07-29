@@ -186,6 +186,7 @@ export function adaptContestProblemDetail(
   return {
     ...contestProblem,
     problemId: contestProblem.problemId ?? payload.pid,
+    practiceProblemCode: problem?.code ?? contestProblem.practiceProblemCode,
     tags:
       problem?.topics && problem.topics.length > 0
         ? problem.topics.map((topic) => topic.name)

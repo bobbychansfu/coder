@@ -69,6 +69,8 @@ export interface ContestFormDraft {
   endDate: string;
   endTime: string;
   visibility: "course-only" | "public" | "private";
+  groupAHintAfterMinutes: number;
+  groupBHintAfterMinutes: number;
 }
 
 export interface ContestPreviewFallback {
@@ -213,4 +215,6 @@ export const contestFormDraft: ContestFormDraft = {
   endDate: "",
   endTime: "",
   visibility: "public",
+  groupAHintAfterMinutes: contestAiHintConfig.groupAHintAfterMinutes,
+  groupBHintAfterMinutes: contestAiHintConfig.groupBHintAfterMinutes,
 };
