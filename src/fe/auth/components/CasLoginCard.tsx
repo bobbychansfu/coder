@@ -1,16 +1,19 @@
 "use client";
 
+import Link from "next/link";
 import styles from "@/fe/auth/styles/LoginPage.module.css";
 
 interface CasLoginCardProps {
   onCasLogin: () => Promise<void> | void;
   loading: boolean;
+  showGuestLogin: boolean;
   error?: string | null;
 }
 
 export default function CasLoginCard({
   onCasLogin,
   loading,
+  showGuestLogin,
   error,
 }: CasLoginCardProps) {
   return (
@@ -38,6 +41,12 @@ export default function CasLoginCard({
       <p className={styles.hint}>
         You will be redirected to SFU&apos;s authentication portal
       </p>
+
+      {showGuestLogin ? (
+        <Link href="/guest-login" className={styles.secondaryLink}>
+          Sign in with a guest account
+        </Link>
+      ) : null}
 
       {error ? (
         <p role="alert" className={styles.errorText}>
