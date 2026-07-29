@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import PersonAddOutlinedIcon from "@mui/icons-material/PersonAddOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
+import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import {
   Alert,
   Box,
@@ -15,10 +18,16 @@ import {
   DialogTitle,
   IconButton,
   InputAdornment,
+  Chip,
+  Checkbox,
+  FormControlLabel,
   TextField,
+  Typography,
 } from "@mui/material";
 
-import { adminRoleOptions, adminUsers } from "@/fe/admin/data";
+import { adminRoleOptions, type AdminUserRecord } from "@/fe/admin/data";
+import AdminDeleteUserDialog from "@/fe/admin/components/AdminDeleteUserDialog";
+import AdminEditUserDialog from "@/fe/admin/components/AdminEditUserDialog";
 import UserFiltersBar from "@/fe/admin/components/UserFiltersBar";
 import UserTable from "@/fe/admin/components/UserTable";
 import PageHeader from "@/fe/shared/components/PageHeader";
@@ -27,6 +36,8 @@ import StatCard from "@/fe/shared/components/StatCard";
 import { ROUTES } from "@/fe/shared/constants/routes";
 import subpageStyles from "@/fe/shared/styles/SubpageHeader.module.css";
 import styles from "@/fe/admin/styles/AdminUserManagementPage.module.css";
+import { formatAdminUserLastActive } from "@/fe/admin/services/adminUsers";
+import { trpc } from "@/lib/trpc/client";
 
 export default function AdminUserManagementPage() {
   const router = useRouter();
@@ -74,6 +85,59 @@ export default function AdminUserManagementPage() {
       setCreatingGuest(false);
     }
   };
+  const [groupDialogOpen, setGroupDialogOpen] = useState(false);
+  const [groupSize, setGroupSize] = useState(3);
+  const [groupResult, setGroupResult] = useState<string | null>(null);
+  const [showAllUsers, setShowAllUsers] = useState(false);
+  const [showAllGroups, setShowAllGroups] = useState(false);
+  const [modifyGroupsOpen, setModifyGroupsOpen] = useState(false);
+  const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([]);
+  const [deleteScope, setDeleteScope] = useState<"selected" | "all" | null>(null);
+  const [teamWarningDismissed, setTeamWarningDismissed] = useState(false);
+  const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
+  const [draftMemberIds, setDraftMemberIds] = useState<string[]>([]);
+  const [editingUser, setEditingUser] = useState<AdminUserRecord | null>(null);
+  const [deletingUser, setDeletingUser] = useState<AdminUserRecord | null>(null);
+  const [userActionResult, setUserActionResult] = useState<string | null>(null);
+  const teamSummary = trpc.adminTeams.summary.useQuery();
+  const createGroups = trpc.adminTeams.createGroups.useMutation({
+    onSuccess: async (result) => {
+      setGroupResult(
+        `Created ${result.teamsCreated} groups and assigned ${result.studentsAssigned} students.`,
+      );
+      setGroupDialogOpen(false);
+      await teamSummary.refetch();
+    },
+  });
+  const deleteGroups = trpc.adminTeams.deleteGroups.useMutation({
+    onSuccess: async (result) => {
+      setGroupResult(
+        `Deleted ${result.teamsDeleted} ${result.teamsDeleted === 1 ? "group" : "groups"}. Students can now be reassigned.`,
+      );
+      setDeleteScope(null);
+      setModifyGroupsOpen(false);
+      setSelectedTeamIds([]);
+      await teamSummary.refetch();
+    },
+  });
+  const updateMembers = trpc.adminTeams.updateMembers.useMutation({
+    onSuccess: async (result) => {
+      setGroupResult(
+        `Updated group membership. The group now has ${result.membersUpdated} ${result.membersUpdated === 1 ? "student" : "students"}.`,
+      );
+      setEditingTeamId(null);
+      setDraftMemberIds([]);
+      await teamSummary.refetch();
+    },
+  });
+  const adminUsers = useMemo(
+    () =>
+      (teamSummary.data?.users ?? []).map((user) => ({
+        ...user,
+        lastActive: formatAdminUserLastActive(user.lastActive),
+      })),
+    [teamSummary.data?.users],
+  );
 
   const filteredUsers = useMemo(() => {
     return adminUsers.filter((user) => {
@@ -88,7 +152,7 @@ export default function AdminUserManagementPage() {
         user.email.toLowerCase().includes(query)
       );
     });
-  }, [search, selectedRole]);
+  }, [adminUsers, search, selectedRole]);
 
   const stats = useMemo(() => {
     const totalUsers = adminUsers.length;
@@ -102,7 +166,17 @@ export default function AdminUserManagementPage() {
       { id: "instructors", label: "Instructors", value: String(instructorCount) },
       { id: "admins", label: "Admins", value: String(adminCount) },
     ];
-  }, []);
+  }, [adminUsers]);
+
+  const visibleUsers = showAllUsers ? filteredUsers : filteredUsers.slice(0, 5);
+  const editingTeam = teamSummary.data?.teams.find((team) => team.id === editingTeamId);
+  const unavailableStudentIds = new Set(
+    teamSummary.data?.teams
+      .filter((team) => team.id !== editingTeamId)
+      .flatMap((team) => team.members.map((member) => member.userId)) ?? [],
+  );
+  const allGroups = teamSummary.data?.teams ?? [];
+  const visibleGroups = showAllGroups ? allGroups : allGroups.slice(0, 4);
 
   return (
     <Box className={styles.page}>
@@ -127,7 +201,17 @@ export default function AdminUserManagementPage() {
         }
       />
 
-      {guestSuccess ? <Alert severity="success">{guestSuccess}</Alert> : null}
+      {guestSuccess ? 
+         <Alert severity="success">{guestSuccess}</Alert> : null
+      }
+      {teamSummary.isError && (
+        <Alert severity="error">Unable to load users from the database.</Alert>
+      )}
+      {userActionResult ? (
+        <Alert severity="success" onClose={() => setUserActionResult(null)}>
+          {userActionResult}
+        </Alert>
+      ) : null}
 
       <Box className={styles.statsGrid}>
         {stats.map((stat) => (
@@ -216,6 +300,407 @@ export default function AdminUserManagementPage() {
           </DialogActions>
         </form>
       </Dialog>
+      <Box className={styles.userListControls}>
+        <Typography color="text.secondary" className={styles.userListCount}>
+          Showing {visibleUsers.length} of {filteredUsers.length} users
+        </Typography>
+        {filteredUsers.length > 5 && (
+          <Button
+            className={styles.viewAllButton}
+            onClick={() => setShowAllUsers((current) => !current)}
+          >
+            {showAllUsers ? "Show fewer" : "View all users"}
+          </Button>
+        )}
+      </Box>
+
+      <UserTable
+        users={visibleUsers}
+        onEditUser={(user) => {
+          setUserActionResult(null);
+          setEditingUser(user);
+        }}
+        onDeleteUser={(user) => {
+          setUserActionResult(null);
+          setDeletingUser(user);
+        }}
+      />
+
+      <Box className={styles.groupsSection}>
+        <Box className={styles.groupsHeadingRow}>
+          <Box>
+            <Typography component="h2" className={styles.groupsTitle}>
+              Student Groups
+            </Typography>
+            <Typography color="text.secondary" className={styles.groupsSubtitle}>
+              Groups and memberships created by administrators.
+            </Typography>
+          </Box>
+          <Box className={styles.groupHeadingActions}>
+            <Button
+              className={styles.groupButton}
+              variant="outlined"
+              startIcon={<GroupsOutlinedIcon className={styles.addButtonIcon} />}
+            onClick={() => {
+              setGroupResult(null);
+              setTeamWarningDismissed(false);
+              createGroups.reset();
+                setGroupDialogOpen(true);
+              }}
+            >
+              Create Student Groups
+            </Button>
+            <Button
+              className={styles.modifyGroupsButton}
+              variant="outlined"
+              startIcon={<EditOutlinedIcon />}
+              disabled={(teamSummary.data?.teamCount ?? 0) === 0}
+              onClick={() => {
+                setSelectedTeamIds([]);
+                deleteGroups.reset();
+                setModifyGroupsOpen(true);
+              }}
+            >
+              Modify groups
+            </Button>
+            <Chip
+              label={`${teamSummary.data?.teamCount ?? 0} groups`}
+              size="small"
+              variant="outlined"
+            />
+          </Box>
+        </Box>
+
+        {groupResult && (
+          <Alert
+            severity="success"
+            className={styles.groupNotice}
+            onClose={() => setGroupResult(null)}
+          >
+            {groupResult}
+          </Alert>
+        )}
+        {teamSummary.data && !teamSummary.data.teamsAvailable && !teamWarningDismissed && (
+          <Alert
+            severity="warning"
+            className={styles.groupNotice}
+            onClose={() => setTeamWarningDismissed(true)}
+          >
+            Users loaded, but the Team tables are unavailable. Apply the team migration and restart the development server.
+          </Alert>
+        )}
+
+        {!teamSummary.isLoading && allGroups.length > 0 && (
+          <Box className={styles.groupListControls}>
+            <Typography color="text.secondary" className={styles.userListCount}>
+              Showing {visibleGroups.length} of {allGroups.length} groups
+            </Typography>
+            {allGroups.length > 4 && (
+              <Button
+                className={styles.viewAllButton}
+                onClick={() => setShowAllGroups((current) => !current)}
+              >
+                {showAllGroups ? "Show fewer" : "View all groups"}
+              </Button>
+            )}
+          </Box>
+        )}
+
+        {teamSummary.isLoading ? (
+          <Typography color="text.secondary">Loading groups…</Typography>
+        ) : (teamSummary.data?.teams.length ?? 0) === 0 ? (
+          <Typography color="text.secondary" className={styles.emptyGroups}>
+            No student groups have been created yet.
+          </Typography>
+        ) : (
+          <Box className={styles.groupsGrid}>
+            {visibleGroups.map((team) => (
+              <Box key={team.id} className={styles.groupCard}>
+                <Box className={styles.groupCardHeader}>
+                  <Typography component="h3" className={styles.groupName}>
+                    {team.name}
+                  </Typography>
+                  <Typography color="text.secondary" className={styles.memberCount}>
+                    {team.members.length} {team.members.length === 1 ? "student" : "students"}
+                  </Typography>
+                </Box>
+                <Box className={styles.memberList}>
+                  {team.members.map((member) => (
+                    <Box key={member.id} className={styles.memberRow}>
+                      <Box>
+                        <Typography className={styles.memberName}>{member.name}</Typography>
+                        <Typography color="text.secondary" className={styles.memberEmail}>
+                          {member.email}
+                        </Typography>
+                      </Box>
+                      <Chip label={member.computingId} size="small" />
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        )}
+      </Box>
+
+      <Dialog
+        open={modifyGroupsOpen}
+        onClose={() => !deleteGroups.isPending && setModifyGroupsOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Modify student groups</DialogTitle>
+        <DialogContent className={styles.groupDialogContent}>
+          <Typography color="text.secondary">
+            Select groups to remove. Deleting a group releases its students so they can be assigned again.
+          </Typography>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={
+                  (teamSummary.data?.teams.length ?? 0) > 0 &&
+                  selectedTeamIds.length === teamSummary.data?.teams.length
+                }
+                indeterminate={
+                  selectedTeamIds.length > 0 &&
+                  selectedTeamIds.length < (teamSummary.data?.teams.length ?? 0)
+                }
+                onChange={(event) =>
+                  setSelectedTeamIds(
+                    event.target.checked
+                      ? (teamSummary.data?.teams.map((team) => team.id) ?? [])
+                      : [],
+                  )
+                }
+              />
+            }
+            label="Select all groups"
+          />
+          <Box className={styles.modifyGroupList}>
+            {teamSummary.data?.teams.map((team) => (
+              <Box key={team.id} className={styles.modifyGroupOption}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={selectedTeamIds.includes(team.id)}
+                      onChange={(event) =>
+                        setSelectedTeamIds((current) =>
+                          event.target.checked
+                            ? [...current, team.id]
+                            : current.filter((id) => id !== team.id),
+                        )
+                      }
+                    />
+                  }
+                  label={`${team.name} (${team.members.length} ${team.members.length === 1 ? "student" : "students"})`}
+                />
+                <Button
+                  size="small"
+                  startIcon={<EditOutlinedIcon />}
+                  onClick={() => {
+                    setDraftMemberIds(team.members.map((member) => member.userId));
+                    updateMembers.reset();
+                    setEditingTeamId(team.id);
+                  }}
+                >
+                  Edit members
+                </Button>
+              </Box>
+            ))}
+          </Box>
+          {deleteGroups.error && <Alert severity="error">{deleteGroups.error.message}</Alert>}
+        </DialogContent>
+        <DialogActions className={styles.modifyDialogActions}>
+          <Button
+            color="error"
+            startIcon={<DeleteOutlineIcon />}
+            onClick={() => setDeleteScope("all")}
+          >
+            Delete all groups
+          </Button>
+          <Box className={styles.dialogActionSpacer} />
+          <Button onClick={() => setModifyGroupsOpen(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            color="error"
+            disabled={selectedTeamIds.length === 0}
+            onClick={() => setDeleteScope("selected")}
+          >
+            Delete selected ({selectedTeamIds.length})
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={editingTeamId !== null}
+        onClose={() => !updateMembers.isPending && setEditingTeamId(null)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          Edit {editingTeam?.name ?? "group"} members
+        </DialogTitle>
+        <DialogContent className={styles.groupDialogContent}>
+          <Typography color="text.secondary">
+            Current members and ungrouped students are shown. Students assigned to other groups are unavailable.
+          </Typography>
+          <Box className={styles.studentMemberList}>
+            {teamSummary.data?.users
+              .filter(
+                (user) =>
+                  user.role === "student" && !unavailableStudentIds.has(user.id),
+              )
+              .map((student) => (
+                <FormControlLabel
+                  key={student.id}
+                  className={styles.studentMemberOption}
+                  control={
+                    <Checkbox
+                      checked={draftMemberIds.includes(student.id)}
+                      onChange={(event) =>
+                        setDraftMemberIds((current) =>
+                          event.target.checked
+                            ? [...current, student.id]
+                            : current.filter((id) => id !== student.id),
+                        )
+                      }
+                    />
+                  }
+                  label={`${student.name} (${student.email})`}
+                />
+              ))}
+          </Box>
+          <Typography color="text.secondary" className={styles.selectedMemberCount}>
+            {draftMemberIds.length} {draftMemberIds.length === 1 ? "student" : "students"} selected
+          </Typography>
+          {updateMembers.error && <Alert severity="error">{updateMembers.error.message}</Alert>}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditingTeamId(null)} disabled={updateMembers.isPending}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            disabled={updateMembers.isPending || editingTeamId === null}
+            onClick={() => {
+              if (editingTeamId) {
+                updateMembers.mutate({ teamId: editingTeamId, userIds: draftMemberIds });
+              }
+            }}
+          >
+            {updateMembers.isPending ? "Saving…" : "Save members"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={deleteScope !== null}
+        onClose={() => !deleteGroups.isPending && setDeleteScope(null)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Confirm group deletion</DialogTitle>
+        <DialogContent>
+          <Typography>
+            {deleteScope === "all"
+              ? `Delete all ${teamSummary.data?.teamCount ?? 0} groups?`
+              : `Delete the ${selectedTeamIds.length} selected ${selectedTeamIds.length === 1 ? "group" : "groups"}?`}
+          </Typography>
+          <Typography color="text.secondary" className={styles.deleteWarningText}>
+            The students will not be deleted. Their group memberships will be removed so they can be reassigned.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteScope(null)} disabled={deleteGroups.isPending}>
+            Keep groups
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            disabled={deleteGroups.isPending}
+            onClick={() => {
+              if (deleteScope === "all") {
+                deleteGroups.mutate({ scope: "all" });
+              } else {
+                deleteGroups.mutate({ scope: "selected", teamIds: selectedTeamIds });
+              }
+            }}
+          >
+            {deleteGroups.isPending ? "Deleting…" : "Delete groups"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={groupDialogOpen}
+        onClose={() => !createGroups.isPending && setGroupDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Create student groups</DialogTitle>
+        <DialogContent className={styles.groupDialogContent}>
+          <Typography color="text.secondary">
+            Students will be assigned randomly. Existing team memberships will not be changed.
+          </Typography>
+          <Typography className={styles.groupSummary}>
+            {teamSummary.isLoading
+              ? "Checking students…"
+              : `${teamSummary.data?.ungroupedStudentCount ?? 0} of ${teamSummary.data?.studentCount ?? 0} students are ungrouped.`}
+          </Typography>
+          <TextField
+            label="Students per group"
+            type="number"
+            value={groupSize}
+            onChange={(event) => setGroupSize(Number(event.target.value))}
+            slotProps={{ htmlInput: { min: 2, max: 20 } }}
+            fullWidth
+          />
+          {createGroups.error && (
+            <Alert severity="error">{createGroups.error.message}</Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setGroupDialogOpen(false)}
+            disabled={createGroups.isPending}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            disabled={
+              createGroups.isPending ||
+              teamSummary.data?.teamsAvailable === false ||
+              groupSize < 2 ||
+              groupSize > 20 ||
+              (teamSummary.data?.ungroupedStudentCount ?? 0) === 0
+            }
+            onClick={() => createGroups.mutate({ groupSize, namePrefix: "Group" })}
+          >
+            {createGroups.isPending ? "Creating…" : "Create groups"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {editingUser ? (
+        <AdminEditUserDialog
+          key={editingUser.id}
+          user={editingUser}
+          onClose={() => setEditingUser(null)}
+          onUpdated={(message) => {
+            setUserActionResult(message);
+            void teamSummary.refetch();
+          }}
+        />
+      ) : null}
+      <AdminDeleteUserDialog
+        user={deletingUser}
+        onClose={() => setDeletingUser(null)}
+        onDeleted={(message) => {
+          setUserActionResult(message);
+          void teamSummary.refetch();
+        }}
+      />
     </Box>
   );
 }

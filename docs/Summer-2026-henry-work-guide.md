@@ -1,5 +1,3 @@
-<<<<<<< Updated upstream
-=======
 ## Local AI Hint Startup
 
 ### Prerequisites
@@ -135,6 +133,7 @@ The AI API terminal should log a `POST /request_hint` request.
 For normal daily development, only Docker Desktop, the `docker run` command,
 `npm.cmd run db:up`, and `npm.cmd run dev` are required.
 
+
 ## Demo
 
 ### AI Hint Feature
@@ -158,9 +157,7 @@ When part of the code has been written, the AI provides context-aware suggestion
 When the implementation is nearly complete, the AI reviews the current code and offers final suggestions to complete or improve the solution.
 
 
----
 
->>>>>>> Stashed changes
 ## 1. Upsolve Page
 
 ### Ideas:

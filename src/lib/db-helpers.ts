@@ -639,8 +639,8 @@ export const dbHelpers = {
     firstName?: string;
     lastName?: string;
     role?: UserRole;
-    nickname?: string;
-    studentNumber?: string;
+    nickname?: string | null;
+    studentNumber?: string | null;
   }) => {
     return prisma.user.update({
       where: { computingId },
@@ -834,5 +834,4 @@ export const dbHelpers = {
     });
   },
 };
-
 

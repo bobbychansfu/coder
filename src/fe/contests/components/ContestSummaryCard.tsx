@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import CountdownTimer from "@/fe/contests/components/CountdownTimer";
 import sharedStyles from "@/fe/shared/components/problem/ProblemCard.module.css";
 import styles from "../styles/ContestSummaryCard.module.css";
 
@@ -8,6 +9,9 @@ interface ContestSummaryCardProps {
   title: string;
   status: string;
   href?: string;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  durationMinutes?: number | null;
   actionLabel: string;
   actionKind: "link" | "button";
   actionVariant?: "primary" | "secondary";
@@ -19,6 +23,9 @@ export default function ContestSummaryCard({
   title,
   status,
   href,
+  startsAt,
+  endsAt,
+  durationMinutes,
   actionLabel,
   actionKind,
   actionVariant = "secondary",
@@ -45,6 +52,14 @@ export default function ContestSummaryCard({
         </div>
         <div className={`${sharedStyles.tileMeta} ${styles.meta}`}>
           <span className={`${styles.status} ${statusClassName}`}>{status}</span>
+          <span className={styles.timeLeft}>
+            Time left:{" "}
+            <CountdownTimer
+              startsAt={startsAt}
+              endsAt={endsAt}
+              durationMinutes={durationMinutes}
+            />
+          </span>
         </div>
       </div>
       <div className={styles.actionRow}>

@@ -7,6 +7,7 @@ import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
 import ScienceOutlinedIcon from "@mui/icons-material/ScienceOutlined";
 import {
   MOCK_INSTRUCTOR_ANALYTICS,
+  type InstructorAnalyticsUiPayload,
   type ViewMode,
 } from "@/fe/instructor/data/liveInstructorAnalytics";
 import type { FilterOption, TrendDataset } from "@/fe/instructor/data/researchAnalytics";
@@ -25,6 +26,7 @@ import {
 } from "@/fe/instructor/page/researchAnalytics.helpers";
 
 interface UseResearchAnalyticsComparisonsArgs {
+  analytics?: InstructorAnalyticsUiPayload;
   conditionOptions: FilterOption[];
   gamificationTrendsByRange: Record<string, TrendDataset>;
   aiHintTrendsByRange: Record<string, TrendDataset>;
@@ -32,6 +34,7 @@ interface UseResearchAnalyticsComparisonsArgs {
 }
 
 export function useResearchAnalyticsComparisons({
+  analytics = MOCK_INSTRUCTOR_ANALYTICS,
   conditionOptions,
   gamificationTrendsByRange,
   aiHintTrendsByRange,
@@ -39,11 +42,11 @@ export function useResearchAnalyticsComparisons({
 }: UseResearchAnalyticsComparisonsArgs) {
   const contestOptions = useMemo(
     () =>
-      MOCK_INSTRUCTOR_ANALYTICS.contests_catalog.map((contest) => ({
+      analytics.contests_catalog.map((contest) => ({
         label: contest.name,
         value: contest.id,
       })),
-    [],
+    [analytics],
   );
 
   const groupOptions = useMemo(
@@ -51,17 +54,17 @@ export function useResearchAnalyticsComparisons({
     [conditionOptions],
   );
 
-  const [contestComparisonFilters, setContestComparisonFilters] = useState<ContestComparisonFilters>({
+  const [storedContestComparisonFilters, setContestComparisonFilters] = useState<ContestComparisonFilters>({
     leftContest: "contest-1",
     rightContest: "contest-2",
   });
-  const [groupComparisonFilters, setGroupComparisonFilters] = useState<GroupComparisonFilters>({
+  const [storedGroupComparisonFilters, setGroupComparisonFilters] = useState<GroupComparisonFilters>({
     leftContest: "contest-1",
     leftGroup: "group-a",
     rightContest: "contest-2",
     rightGroup: "group-b",
   });
-  const [studentComparisonFilters, setStudentComparisonFilters] = useState<StudentComparisonFilters>({
+  const [storedStudentComparisonFilters, setStudentComparisonFilters] = useState<StudentComparisonFilters>({
     leftContest: "contest-1",
     leftGroup: "group-a",
     leftStudent: "student01",
@@ -74,30 +77,82 @@ export function useResearchAnalyticsComparisons({
   const [gamificationDateRange, setGamificationDateRange] = useState("1m");
   const [hintDateRange, setHintDateRange] = useState("1m");
 
-  const contestRows = MOCK_INSTRUCTOR_ANALYTICS.segmented_metrics.all.contest_metrics;
+  const contestComparisonFilters = useMemo<ContestComparisonFilters>(() => {
+    const first = analytics.contests_catalog[0]?.id ?? "";
+    const second = analytics.contests_catalog[1]?.id ?? first;
+    const has = (id: string) => analytics.contests_catalog.some((row) => row.id === id);
+    return {
+      leftContest: has(storedContestComparisonFilters.leftContest)
+        ? storedContestComparisonFilters.leftContest
+        : first,
+      rightContest: has(storedContestComparisonFilters.rightContest)
+        ? storedContestComparisonFilters.rightContest
+        : second,
+    };
+  }, [analytics, storedContestComparisonFilters]);
+  const groupComparisonFilters = useMemo<GroupComparisonFilters>(() => {
+    const first = analytics.contests_catalog[0]?.id ?? "";
+    const second = analytics.contests_catalog[1]?.id ?? first;
+    const has = (id: string) => analytics.contests_catalog.some((row) => row.id === id);
+    return {
+      ...storedGroupComparisonFilters,
+      leftContest: has(storedGroupComparisonFilters.leftContest)
+        ? storedGroupComparisonFilters.leftContest
+        : first,
+      rightContest: has(storedGroupComparisonFilters.rightContest)
+        ? storedGroupComparisonFilters.rightContest
+        : second,
+    };
+  }, [analytics, storedGroupComparisonFilters]);
+  const studentComparisonFilters = useMemo<StudentComparisonFilters>(() => {
+    const first = analytics.contests_catalog[0]?.id ?? "";
+    const second = analytics.contests_catalog[1]?.id ?? first;
+    const has = (id: string) => analytics.contests_catalog.some((row) => row.id === id);
+    return {
+      ...storedStudentComparisonFilters,
+      leftContest: has(storedStudentComparisonFilters.leftContest)
+        ? storedStudentComparisonFilters.leftContest
+        : first,
+      rightContest: has(storedStudentComparisonFilters.rightContest)
+        ? storedStudentComparisonFilters.rightContest
+        : second,
+      leftStudent: getDefaultStudentIdForGroup(
+        analytics,
+        storedStudentComparisonFilters.leftGroup,
+        storedStudentComparisonFilters.leftStudent,
+      ),
+      rightStudent: getDefaultStudentIdForGroup(
+        analytics,
+        storedStudentComparisonFilters.rightGroup,
+        storedStudentComparisonFilters.rightStudent,
+      ),
+    };
+  }, [analytics, storedStudentComparisonFilters]);
+
+  const contestRows = analytics.segmented_metrics.all.contest_metrics;
   const liveAnalyticsData = useMemo(
-    () => resolveLiveInstructorAnalyticsData(liveViewMode, liveSelectedContestId),
-    [liveSelectedContestId, liveViewMode],
+    () => resolveLiveInstructorAnalyticsData(liveViewMode, liveSelectedContestId, analytics),
+    [analytics, liveSelectedContestId, liveViewMode],
   );
   const contestComparisonRows = useMemo(
     () => buildContestComparisonRows(contestRows, contestComparisonFilters),
     [contestComparisonFilters, contestRows],
   );
   const groupComparisonRows = useMemo(
-    () => buildGroupComparisonRows(MOCK_INSTRUCTOR_ANALYTICS, groupComparisonFilters),
-    [groupComparisonFilters],
+    () => buildGroupComparisonRows(analytics, groupComparisonFilters),
+    [analytics, groupComparisonFilters],
   );
   const leftStudentOptions = useMemo(
-    () => buildStudentOptions(MOCK_INSTRUCTOR_ANALYTICS, studentComparisonFilters.leftGroup),
-    [studentComparisonFilters.leftGroup],
+    () => buildStudentOptions(analytics, studentComparisonFilters.leftGroup),
+    [analytics, studentComparisonFilters.leftGroup],
   );
   const rightStudentOptions = useMemo(
-    () => buildStudentOptions(MOCK_INSTRUCTOR_ANALYTICS, studentComparisonFilters.rightGroup),
-    [studentComparisonFilters.rightGroup],
+    () => buildStudentOptions(analytics, studentComparisonFilters.rightGroup),
+    [analytics, studentComparisonFilters.rightGroup],
   );
   const studentComparisonRows = useMemo(
-    () => buildStudentComparisonRows(MOCK_INSTRUCTOR_ANALYTICS, studentComparisonFilters),
-    [studentComparisonFilters],
+    () => buildStudentComparisonRows(analytics, studentComparisonFilters),
+    [analytics, studentComparisonFilters],
   );
 
   const leftContestLabel = getOptionLabel(contestOptions, contestComparisonFilters.leftContest, "Left Contest");
@@ -207,7 +262,7 @@ export function useResearchAnalyticsComparisons({
         setStudentComparisonFilters((prev) => ({
           ...prev,
           leftGroup: value,
-          leftStudent: getDefaultStudentIdForGroup(MOCK_INSTRUCTOR_ANALYTICS, value, prev.leftStudent),
+          leftStudent: getDefaultStudentIdForGroup(analytics, value, prev.leftStudent),
         })),
       icon: <Groups2OutlinedIcon className={sectionFilterIconClassName} />,
     },
@@ -236,7 +291,7 @@ export function useResearchAnalyticsComparisons({
         setStudentComparisonFilters((prev) => ({
           ...prev,
           rightGroup: value,
-          rightStudent: getDefaultStudentIdForGroup(MOCK_INSTRUCTOR_ANALYTICS, value, prev.rightStudent),
+          rightStudent: getDefaultStudentIdForGroup(analytics, value, prev.rightStudent),
         })),
       icon: <Groups2OutlinedIcon className={sectionFilterIconClassName} />,
     },

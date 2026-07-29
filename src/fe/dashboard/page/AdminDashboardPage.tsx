@@ -1,6 +1,7 @@
 "use client";
 
 import StatisticsSection from "@/fe/dashboard/components/StatisticsSection";
+import PracticeHistory from "@/fe/dashboard/components/PracticeHistory";
 import AdminContestOverviewSection from "@/fe/dashboard/components/AdminContestOverviewSection";
 import AdminActivityWidget from "@/fe/dashboard/components/AdminActivityWidget";
 import AdminHealthSnapshotWidget from "@/fe/dashboard/components/AdminHealthSnapshotWidget";
@@ -10,9 +11,20 @@ import {
   EMPTY_ADMIN_DASHBOARD_DATA,
   useAdminDashboard,
 } from "@/fe/dashboard/services/adminDashboard";
+import type {
+  StudentDashboardPracticeHistoryItem,
+} from "@/fe/dashboard/services/dashboardPracticeHistory";
 import styles from "@/fe/dashboard/styles/AdminDashboardPage.module.css";
 
-export default function AdminDashboardPage() {
+interface AdminDashboardPageProps {
+  practiceHistory?: StudentDashboardPracticeHistoryItem[];
+  currentUserComputingId?: string;
+}
+
+export default function AdminDashboardPage({
+  practiceHistory = [],
+  currentUserComputingId,
+}: AdminDashboardPageProps) {
   const { data, isError } = useAdminDashboard();
   const resolvedData = data ?? EMPTY_ADMIN_DASHBOARD_DATA;
 
@@ -31,6 +43,11 @@ export default function AdminDashboardPage() {
             className={styles.sectionBlock}
             gridClassName={styles.statsGrid}
             stats={resolvedData.statistics}
+          />
+
+          <PracticeHistory
+            problems={practiceHistory}
+            currentUserComputingId={currentUserComputingId}
           />
 
           <AdminContestOverviewSection contests={resolvedData.contests} />

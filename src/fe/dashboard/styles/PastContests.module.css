@@ -17,6 +17,9 @@
 }
 
 .viewAll {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
   color: #1a1a1a;
   text-decoration: none;
   font-family: Inter, sans-serif;

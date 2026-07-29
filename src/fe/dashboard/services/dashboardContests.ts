@@ -153,7 +153,7 @@ export function mapStudentDashboardContests(
       };
     }) satisfies UpcomingContest[];
 
-  const recentContests = myContests.slice(0, 3).map((contest) => ({
+  const recentContests = myContests.map((contest) => ({
     id: contest.id,
     title: contest.name,
     date: formatContestDate(contest.startsAt),
