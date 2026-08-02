@@ -1,12 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
+import { normalizeRole } from "@/lib/authz";
+import { createCasSessionToken } from "@/lib/casAuthSession";
+import { prisma } from "@/lib/prisma";
+import { recordDailyLogin, syncStudentGamification } from "@/server/gamification/persistence";
 
 const AUTH_BACKEND_BASE_URL = process.env.AUTH_BACKEND_BASE_URL;
 const AUTH_BACKEND_CAS_PATH = process.env.AUTH_BACKEND_CAS_PATH || "/";
 const CAS_LOGIN_BASE_URL = process.env.CAS_LOGIN_BASE_URL;
 const CAS_SERVICE_URL = process.env.CAS_SERVICE_URL;
+const CAS_VALIDATE_URL = process.env.CAS_VALIDATE_URL;
+const CAS_AUTH_COOKIE_SECRET = process.env.CAS_AUTH_COOKIE_SECRET;
+const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "session";
 const DEFAULT_POST_LOGIN_PATH = "/dashboard";
 const CAS_NEXT_COOKIE_NAME = "cas_post_login_path";
 const CAS_NEXT_COOKIE_TTL_SECONDS = 10 * 60;
+const CAS_SESSION_TTL_SECONDS = 60 * 60 * 6;
 
 interface CasLoginRequestBody {
   next?: unknown;
@@ -53,13 +61,13 @@ function buildServiceUrl(request: NextRequest): string | null {
 }
 
 function getCasConfig(): CasConfig | null {
-  if (!AUTH_BACKEND_BASE_URL || !CAS_LOGIN_BASE_URL) {
+  if (!CAS_LOGIN_BASE_URL) {
     return null;
   }
 
   try {
     return {
-      authBackendBaseUrl: AUTH_BACKEND_BASE_URL,
+      authBackendBaseUrl: AUTH_BACKEND_BASE_URL ?? "",
       authBackendCasPath: AUTH_BACKEND_CAS_PATH,
       casLoginBaseUrl: CAS_LOGIN_BASE_URL,
       casLoginOrigin: new URL(CAS_LOGIN_BASE_URL).origin,
@@ -95,6 +103,58 @@ function buildBackendCasValidationUrl(
   backendUrl.searchParams.set("ticket", ticket);
   backendUrl.searchParams.set("service", serviceUrl);
   return backendUrl.toString();
+}
+
+function buildSfuValidationUrl(ticket: string, serviceUrl: string): string | null {
+  if (!CAS_VALIDATE_URL) return null;
+
+  try {
+    const validationUrl = new URL(CAS_VALIDATE_URL);
+    validationUrl.searchParams.set("ticket", ticket);
+    validationUrl.searchParams.set("service", serviceUrl);
+    return validationUrl.toString();
+  } catch {
+    return null;
+  }
+}
+
+function readCasUser(xml: string): string | null {
+  if (!/<(?:[A-Za-z][\w.-]*:)?authenticationSuccess\b/.test(xml)) return null;
+
+  const match = xml.match(
+    /<(?:[A-Za-z][\w.-]*:)?user\b[^>]*>\s*([A-Za-z0-9._-]+)\s*<\/(?:[A-Za-z][\w.-]*:)?user>/,
+  );
+  return match?.[1] ?? null;
+}
+
+async function validateDirectlyWithSfu(ticket: string, serviceUrl: string): Promise<{
+  computingId: string;
+  role: "student" | "instructor" | "admin";
+} | null> {
+  const validationUrl = buildSfuValidationUrl(ticket, serviceUrl);
+  if (!validationUrl || !CAS_AUTH_COOKIE_SECRET) return null;
+
+  const casResponse = await fetch(validationUrl, {
+    method: "GET",
+    headers: { Accept: "application/xml, text/xml" },
+    cache: "no-store",
+  });
+  if (!casResponse.ok) return null;
+
+  const computingId = readCasUser(await casResponse.text());
+  if (!computingId) return null;
+
+  const user = await prisma.user.findUnique({
+    where: { computingId },
+    select: { id: true, role: true },
+  });
+  const role = normalizeRole(user?.role);
+  if (!user || !role) return null;
+
+  await recordDailyLogin(user.id);
+  if (role === "student") await syncStudentGamification(computingId);
+
+  return { computingId, role };
 }
 
 function setPostLoginCookie(response: NextResponse, nextPath: string): void {
@@ -181,6 +241,45 @@ export async function handleCasCallback(request: NextRequest): Promise<NextRespo
   if (!ticket) {
     return clearPostLoginCookie(
       NextResponse.redirect(getLoginErrorRedirectUrl(request, nextPath, "missing_ticket")),
+    );
+  }
+
+  if (CAS_VALIDATE_URL) {
+    try {
+      const user = await validateDirectlyWithSfu(ticket, serviceUrl);
+      if (!user || !CAS_AUTH_COOKIE_SECRET) {
+        return clearPostLoginCookie(
+          NextResponse.redirect(getLoginErrorRedirectUrl(request, nextPath, "cas_denied")),
+        );
+      }
+
+      const token = createCasSessionToken(
+        { ...user, ttlSeconds: CAS_SESSION_TTL_SECONDS },
+        CAS_AUTH_COOKIE_SECRET,
+      );
+      const response = NextResponse.redirect(new URL(nextPath, request.nextUrl.origin));
+      response.cookies.set({
+        name: SESSION_COOKIE_NAME,
+        value: token,
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: CAS_SESSION_TTL_SECONDS,
+      });
+      return clearPostLoginCookie(response);
+    } catch {
+      return clearPostLoginCookie(
+        NextResponse.redirect(
+          getLoginErrorRedirectUrl(request, nextPath, "cas_backend_unreachable"),
+        ),
+      );
+    }
+  }
+
+  if (!casConfig.authBackendBaseUrl) {
+    return clearPostLoginCookie(
+      NextResponse.redirect(getLoginErrorRedirectUrl(request, nextPath, "cas_config_missing")),
     );
   }
 
