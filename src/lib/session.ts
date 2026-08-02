@@ -62,7 +62,7 @@ async function buildCurrentUser(
       const isGuest = accountType === "guest" || Boolean(dbUser.localCredential);
       const guestUsername = dbUser.localCredential?.username;
       const hasLegacyCasName =
-        !isGuest && dbUser.firstName === computingId && dbUser.lastName === "SFU User";
+        !isGuest && dbUser.firstName === computingId && dbUser.lastName === "";
 
       if (hasLegacyCasName) {
         await prisma.user.update({
