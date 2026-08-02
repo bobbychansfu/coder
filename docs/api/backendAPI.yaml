@@ -1154,7 +1154,7 @@ components:
         judgedBy:
           type: string
           nullable: true
-          enum: [gemini]
+          enum: [gemini, judge]
         updatedAt:
           type: string
           format: date-time

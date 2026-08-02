@@ -7,6 +7,7 @@ import {
 } from "@/lib/practiceSubmission";
 import {
   appLanguageToCodingLanguage,
+  appLanguageToJudgeLanguage,
   codingLanguageToAppLanguage,
   parseAppLanguage,
   type AppLanguage,
@@ -48,7 +49,7 @@ function getJudgingProvider(): JudgingProvider {
 
 function getConfiguredProviderName(): PracticeSubmissionPayload["judgedBy"] {
   const mode = (process.env.JUDGING_MODE ?? "gemini").trim().toLowerCase();
-  return mode === "gemini" ? "gemini" : null;
+  return mode === "gemini" || mode === "judge" ? mode : null;
 }
 
 export function getSubmissionVerdictLabel(verdict: PracticeSubmissionVerdict | null): string {
@@ -102,6 +103,7 @@ export async function getPracticeProblemById(problemId: string): Promise<Practic
     select: {
       id: true,
       code: true,
+      judgeProblemId: true,
       title: true,
       statement: true,
       inputFormat: true,
@@ -121,7 +123,7 @@ export function parseSubmissionLanguage(language: string | null | undefined): Ap
   return parseAppLanguage(language ?? "");
 }
 
-async function publishSubmissionEvent(submissionId: string) {
+export async function publishPracticeSubmissionEvent(submissionId: string) {
   const payload = await getPracticeSubmissionPayload(submissionId);
   if (!payload) {
     return;
@@ -204,7 +206,7 @@ export async function createPracticeSubmission(args: {
     language: args.language,
   });
 
-  await publishSubmissionEvent(record.id);
+  await publishPracticeSubmissionEvent(record.id);
 
   void runPracticeSubmissionJudging({
     submissionId: record.id,
@@ -226,6 +228,11 @@ export async function judgePracticeSubmissionEphemerally(args: {
   language: AppLanguage;
   code: string;
 }): Promise<PracticeSubmissionPayload> {
+  if ((process.env.JUDGING_MODE ?? "gemini").trim().toLowerCase() === "judge") {
+    throw new Error(
+      "Judge mode requires a persisted submission so the asynchronous result callback can be recorded.",
+    );
+  }
   const problem = await getPracticeProblemById(args.problemId);
   if (!problem) {
     throw new Error("Problem not found.");
@@ -298,12 +305,23 @@ async function runPracticeSubmissionJudging(args: {
     language: codingLanguageToAppLanguage(record.language),
   });
 
-  await publishSubmissionEvent(record.id);
+  await publishPracticeSubmissionEvent(record.id);
 
   try {
+    const mode = (process.env.JUDGING_MODE ?? "gemini").trim().toLowerCase();
+    if (mode === "judge") {
+      await submitPracticeSubmissionToJudge({
+        submissionId: record.id,
+        language: codingLanguageToAppLanguage(record.language),
+        code: record.code,
+        problem: args.problem,
+      });
+      return;
+    }
+
     const provider = getJudgingProvider();
 
-    logInfo("gemini request started", {
+    logInfo(`${provider.name} request started`, {
       submissionId: record.id,
       problemId: record.problemId,
       language: codingLanguageToAppLanguage(record.language),
@@ -319,7 +337,7 @@ async function runPracticeSubmissionJudging(args: {
 
     const result = await provider.judgeSubmission(input);
 
-    logInfo("gemini response parsed", {
+    logInfo(`${provider.name} response parsed`, {
       submissionId: record.id,
       latencyMs: Date.now() - runningAt,
       verdict: result.verdict,
@@ -389,7 +407,7 @@ async function runPracticeSubmissionJudging(args: {
     });
   }
 
-  await publishSubmissionEvent(record.id);
+  await publishPracticeSubmissionEvent(record.id);
 }
 
 function toProviderLanguage(language: CodingLanguage): "cpp" | "java" | "typescript" | "javascript" | "python" {
@@ -441,10 +459,68 @@ export function mapPracticeRunRecordToSubmissionPayload(
     verdict: normalizeVerdictLabel(record.verdict),
     feedback: record.feedback ?? null,
     testcases: normalizePracticeSubmissionTestcases(record.testcases),
-    judgedBy: record.judgedBy === "gemini" ? "gemini" : null,
+    judgedBy:
+      record.judgedBy === "gemini" || record.judgedBy === "judge"
+        ? record.judgedBy
+        : null,
     updatedAt: record.updatedAt.toISOString(),
     errorMessage: record.errorMessage ?? null,
   };
+}
+
+function resolveJudgeProblemId(problem: PracticeProblemRecord): string | null {
+  const mappedId = problem.judgeProblemId?.trim();
+  if (mappedId && /^\d+$/.test(mappedId)) {
+    return mappedId;
+  }
+
+  const code = problem.code.trim();
+  return /^\d+$/.test(code) ? code : null;
+}
+
+async function submitPracticeSubmissionToJudge(args: {
+  submissionId: string;
+  language: AppLanguage;
+  code: string;
+  problem: PracticeProblemRecord;
+}) {
+  const judgeProblemId = resolveJudgeProblemId(args.problem);
+  if (!judgeProblemId) {
+    throw new Error(
+      `Problem "${args.problem.code}" is missing a numeric Judge problem mapping.`,
+    );
+  }
+
+  const judgeLanguage = appLanguageToJudgeLanguage(args.language);
+  if (!judgeLanguage) {
+    throw new Error(`Judge does not support language "${args.language}".`);
+  }
+
+  const judgeUrl = (process.env.JUDGE_URL ?? "http://127.0.0.1:8000").replace(/\/+$/, "");
+  const response = await fetch(`${judgeUrl}/judge_submission`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      sid: args.submissionId,
+      pid: judgeProblemId,
+      language: judgeLanguage,
+      connection_id: args.submissionId,
+      submission: args.code,
+    }),
+  });
+
+  if (!response.ok) {
+    const details = await response.text();
+    throw new Error(
+      `Judge rejected submission (${response.status}): ${details.slice(0, 300)}`,
+    );
+  }
+
+  logInfo("submission queued by judge", {
+    submissionId: args.submissionId,
+    judgeProblemId,
+    language: judgeLanguage,
+  });
 }
 
 function normalizeSubmissionStatus(status: string): PracticeSubmissionPayload["status"] {

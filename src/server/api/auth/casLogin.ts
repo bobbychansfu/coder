@@ -3,7 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 const AUTH_BACKEND_BASE_URL = process.env.AUTH_BACKEND_BASE_URL;
 const AUTH_BACKEND_CAS_PATH = process.env.AUTH_BACKEND_CAS_PATH || "/";
 const CAS_LOGIN_BASE_URL = process.env.CAS_LOGIN_BASE_URL;
+const CAS_SERVICE_URL = process.env.CAS_SERVICE_URL;
 const DEFAULT_POST_LOGIN_PATH = "/dashboard";
+const CAS_NEXT_COOKIE_NAME = "cas_post_login_path";
+const CAS_NEXT_COOKIE_TTL_SECONDS = 10 * 60;
 
 interface CasLoginRequestBody {
   next?: unknown;
@@ -35,6 +38,20 @@ interface CasConfig {
   casLoginOrigin: string;
 }
 
+function buildServiceUrl(request: NextRequest): string | null {
+  try {
+    const serviceUrl = CAS_SERVICE_URL
+      ? new URL(CAS_SERVICE_URL)
+      : new URL("/api/auth/cas/callback", request.nextUrl.origin);
+
+    serviceUrl.search = "";
+    serviceUrl.hash = "";
+    return serviceUrl.toString();
+  } catch {
+    return null;
+  }
+}
+
 function getCasConfig(): CasConfig | null {
   if (!AUTH_BACKEND_BASE_URL || !CAS_LOGIN_BASE_URL) {
     return null;
@@ -52,12 +69,9 @@ function getCasConfig(): CasConfig | null {
   }
 }
 
-function buildCasLoginRedirectUrl(request: NextRequest, nextPath: string, casLoginBaseUrl: string): string {
-  const serviceUrl = new URL("/api/auth/cas/callback", request.nextUrl.origin);
-  serviceUrl.searchParams.set("next", nextPath);
-
+function buildCasLoginRedirectUrl(serviceUrl: string, casLoginBaseUrl: string): string {
   const casLoginUrl = new URL(casLoginBaseUrl);
-  casLoginUrl.searchParams.set("service", serviceUrl.toString());
+  casLoginUrl.searchParams.set("service", serviceUrl);
 
   return casLoginUrl.toString();
 }
@@ -71,10 +85,41 @@ async function readNextPathFromBody(request: NextRequest): Promise<string | null
   }
 }
 
-function buildBackendCasValidationUrl(ticket: string, authBackendCasPath: string, authBackendBaseUrl: string): string {
+function buildBackendCasValidationUrl(
+  ticket: string,
+  serviceUrl: string,
+  authBackendCasPath: string,
+  authBackendBaseUrl: string,
+): string {
   const backendUrl = new URL(authBackendCasPath, authBackendBaseUrl);
   backendUrl.searchParams.set("ticket", ticket);
+  backendUrl.searchParams.set("service", serviceUrl);
   return backendUrl.toString();
+}
+
+function setPostLoginCookie(response: NextResponse, nextPath: string): void {
+  response.cookies.set({
+    name: CAS_NEXT_COOKIE_NAME,
+    value: nextPath,
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/api/auth/cas/callback",
+    maxAge: CAS_NEXT_COOKIE_TTL_SECONDS,
+  });
+}
+
+function clearPostLoginCookie(response: NextResponse): NextResponse {
+  response.cookies.set({
+    name: CAS_NEXT_COOKIE_NAME,
+    value: "",
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/api/auth/cas/callback",
+    maxAge: 0,
+  });
+  return response;
 }
 
 export async function handleCasLoginStart(
@@ -99,32 +144,49 @@ export async function handleCasLoginStart(
   const bodyNextPath = responseMode === "json" ? await readNextPathFromBody(request) : null;
   const queryNextPath = request.nextUrl.searchParams.get("next");
   const nextPath = normalizeNextPath(bodyNextPath ?? queryNextPath);
-  const redirectUrl = buildCasLoginRedirectUrl(request, nextPath, casConfig.casLoginBaseUrl);
+  const serviceUrl = buildServiceUrl(request);
+  if (!serviceUrl) {
+    if (responseMode === "redirect") {
+      return NextResponse.redirect(getLoginErrorRedirectUrl(request, nextPath, "cas_config_missing"));
+    }
+    return NextResponse.json({ message: "CAS_SERVICE_URL is invalid." }, { status: 500 });
+  }
+  const redirectUrl = buildCasLoginRedirectUrl(serviceUrl, casConfig.casLoginBaseUrl);
 
   if (responseMode === "redirect") {
-    return NextResponse.redirect(redirectUrl);
+    const response = NextResponse.redirect(redirectUrl);
+    setPostLoginCookie(response, nextPath);
+    return response;
   }
 
-  return NextResponse.json({ redirectUrl }, { status: 200 });
+  const response = NextResponse.json({ redirectUrl }, { status: 200 });
+  setPostLoginCookie(response, nextPath);
+  return response;
 }
 
 export async function handleCasCallback(request: NextRequest): Promise<NextResponse> {
   const casConfig = getCasConfig();
   const ticket = request.nextUrl.searchParams.get("ticket");
-  const nextPath = normalizeNextPath(request.nextUrl.searchParams.get("next"));
+  const nextPath = normalizeNextPath(
+    request.cookies.get(CAS_NEXT_COOKIE_NAME)?.value ?? request.nextUrl.searchParams.get("next"),
+  );
+  const serviceUrl = buildServiceUrl(request);
 
-  if (!casConfig) {
-    return NextResponse.redirect(
-      getLoginErrorRedirectUrl(request, nextPath, "cas_config_missing"),
+  if (!casConfig || !serviceUrl) {
+    return clearPostLoginCookie(
+      NextResponse.redirect(getLoginErrorRedirectUrl(request, nextPath, "cas_config_missing")),
     );
   }
 
   if (!ticket) {
-    return NextResponse.redirect(getLoginErrorRedirectUrl(request, nextPath, "missing_ticket"));
+    return clearPostLoginCookie(
+      NextResponse.redirect(getLoginErrorRedirectUrl(request, nextPath, "missing_ticket")),
+    );
   }
 
   const backendEndpoint = buildBackendCasValidationUrl(
     ticket,
+    serviceUrl,
     casConfig.authBackendCasPath,
     casConfig.authBackendBaseUrl,
   );
@@ -142,27 +204,30 @@ export async function handleCasCallback(request: NextRequest): Promise<NextRespo
 
     const redirectLocation = backendResponse.headers.get("location");
     const redirectedToCas = redirectLocation?.startsWith(casConfig.casLoginOrigin);
-    const failedStatus =
-      backendResponse.status === 401 ||
-      backendResponse.status === 403 ||
-      backendResponse.status >= 500;
+    const failedStatus = !backendResponse.ok;
 
     if (failedStatus || redirectedToCas) {
-      return NextResponse.redirect(getLoginErrorRedirectUrl(request, nextPath, "cas_denied"));
+      return clearPostLoginCookie(
+        NextResponse.redirect(getLoginErrorRedirectUrl(request, nextPath, "cas_denied")),
+      );
+    }
+
+    const setCookie = backendResponse.headers.get("set-cookie");
+    if (!setCookie) {
+      return clearPostLoginCookie(
+        NextResponse.redirect(getLoginErrorRedirectUrl(request, nextPath, "cas_denied")),
+      );
     }
 
     const appRedirectUrl = new URL(nextPath, request.nextUrl.origin);
     const response = NextResponse.redirect(appRedirectUrl);
-    const setCookie = backendResponse.headers.get("set-cookie");
-
-    if (setCookie) {
-      response.headers.set("set-cookie", setCookie);
-    }
-
-    return response;
+    response.headers.append("set-cookie", setCookie);
+    return clearPostLoginCookie(response);
   } catch {
-    return NextResponse.redirect(
-      getLoginErrorRedirectUrl(request, nextPath, "cas_backend_unreachable"),
+    return clearPostLoginCookie(
+      NextResponse.redirect(
+        getLoginErrorRedirectUrl(request, nextPath, "cas_backend_unreachable"),
+      ),
     );
   }
 }

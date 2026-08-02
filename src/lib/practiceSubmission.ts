@@ -25,7 +25,7 @@ export interface PracticeSubmissionPayload {
   verdict: PracticeSubmissionVerdict | null;
   feedback: string | null;
   testcases: PracticeSubmissionTestcase[];
-  judgedBy: "gemini" | null;
+  judgedBy: "gemini" | "judge" | null;
   updatedAt: string;
   errorMessage: string | null;
 }
