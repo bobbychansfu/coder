@@ -141,18 +141,47 @@ async function validateDirectlyWithSfu(ticket: string, serviceUrl: string): Prom
   });
   if (!casResponse.ok) return null;
 
-  const computingId = readCasUser(await casResponse.text());
+  const computingId = readCasUser(await casResponse.text())?.toLowerCase();
   if (!computingId) return null;
 
-  const user = await prisma.user.findUnique({
-    where: { computingId },
-    select: { id: true, role: true },
+  const email = `${computingId}@sfu.ca`;
+  const existingUser = await prisma.user.findFirst({
+    where: { OR: [{ computingId }, { email }] },
+    select: { id: true, computingId: true, role: true },
   });
-  const role = normalizeRole(user?.role);
-  if (!user || !role) return null;
 
-  await recordDailyLogin(user.id);
-  if (role === "student") await syncStudentGamification(computingId);
+  // CAS has already proved ownership of this SFU computing ID. Provision new
+  // users as students, while preserving the role of any existing account.
+  const user =
+    existingUser?.computingId === computingId
+      ? existingUser
+      : existingUser
+        ? await prisma.user.update({
+            where: { id: existingUser.id },
+            data: { computingId },
+            select: { id: true, computingId: true, role: true },
+          })
+        : await prisma.user.create({
+            data: {
+              computingId,
+              email,
+              firstName: computingId,
+              lastName: "SFU User",
+              role: "STUDENT",
+            },
+            select: { id: true, computingId: true, role: true },
+          });
+
+  const role = normalizeRole(user?.role);
+  if (!role) return null;
+
+  try {
+    await recordDailyLogin(user.id);
+    if (role === "student") await syncStudentGamification(computingId);
+  } catch (error) {
+    // Login should still succeed if optional activity/gamification tracking is unavailable.
+    console.error("CAS post-login tracking failed", error);
+  }
 
   return { computingId, role };
 }
@@ -268,7 +297,8 @@ export async function handleCasCallback(request: NextRequest): Promise<NextRespo
         maxAge: CAS_SESSION_TTL_SECONDS,
       });
       return clearPostLoginCookie(response);
-    } catch {
+    } catch (error) {
+      console.error("Direct CAS callback failed", error);
       return clearPostLoginCookie(
         NextResponse.redirect(
           getLoginErrorRedirectUrl(request, nextPath, "cas_backend_unreachable"),
