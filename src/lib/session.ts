@@ -51,7 +51,6 @@ async function buildCurrentUser(
     const dbUser = await prisma.user.findUnique({
       where: { computingId },
       select: {
-        id: true,
         firstName: true,
         lastName: true,
         email: true,
@@ -61,22 +60,12 @@ async function buildCurrentUser(
     if (dbUser) {
       const isGuest = accountType === "guest" || Boolean(dbUser.localCredential);
       const guestUsername = dbUser.localCredential?.username;
-      const hasLegacyCasName =
-        !isGuest && dbUser.firstName === computingId && dbUser.lastName === "";
-
-      if (hasLegacyCasName) {
-        await prisma.user.update({
-          where: { id: dbUser.id },
-          data: { lastName: "" },
-        });
-      }
-
       return {
         computingId,
         role,
         displayName: isGuest
           ? (guestUsername ?? computingId)
-          : (`${dbUser.firstName} ${hasLegacyCasName ? "" : dbUser.lastName}`.trim() || computingId),
+          : (`${dbUser.firstName} ${dbUser.lastName}`.trim() || computingId),
         identifier: isGuest ? (guestUsername ?? computingId) : dbUser.email,
         accountType: isGuest ? "guest" : "sfu",
       };

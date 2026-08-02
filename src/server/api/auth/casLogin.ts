@@ -147,20 +147,14 @@ async function validateDirectlyWithSfu(ticket: string, serviceUrl: string): Prom
   const email = `${computingId}@sfu.ca`;
   const existingUser = await prisma.user.findFirst({
     where: { OR: [{ computingId }, { email }] },
-    select: { id: true, computingId: true, firstName: true, lastName: true, role: true },
+    select: { id: true, computingId: true, role: true },
   });
 
   // CAS has already proved ownership of this SFU computing ID. Provision new
   // users as students, while preserving the role of any existing account.
   const user =
     existingUser?.computingId === computingId
-      ? existingUser.firstName === computingId && existingUser.lastName === "SFU User"
-        ? await prisma.user.update({
-            where: { id: existingUser.id },
-            data: { lastName: "" },
-            select: { id: true, computingId: true, role: true },
-          })
-        : existingUser
+      ? existingUser
       : existingUser
         ? await prisma.user.update({
             where: { id: existingUser.id },
