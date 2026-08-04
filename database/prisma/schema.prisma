@@ -11,6 +11,7 @@ enum UserRole {
   INSTRUCTOR
   TA
   STUDENT
+  GUEST
 }
 
 enum ContestStatus {
@@ -104,6 +105,21 @@ model User {
   participations         Participation[]
   practiceSessions       PracticeSession[]
   contestProblemSessions ContestProblemSession[]
+  localCredential       LocalCredential?
+}
+
+model LocalCredential {
+  id           String    @id @default(cuid())
+  userId       String    @unique
+  username     String    @unique
+  passwordHash String
+  enabled      Boolean   @default(true)
+  expiresAt    DateTime?
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Team {
