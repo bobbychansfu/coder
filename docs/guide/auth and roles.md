@@ -111,6 +111,8 @@ Current TTL:
 In CAS mode:
 
 - the callback route validates the CAS ticket against the configured backend
+- the login and validation requests use the same fixed `CAS_SERVICE_URL`
+- the desired post-login path is kept in a short-lived HttpOnly cookie instead of the CAS service URL
 - if successful, it forwards the backend `set-cookie` header back to the browser
 - later user resolution reads the same cookie and calls the backend `/me` endpoint
 
@@ -184,7 +186,7 @@ Purpose:
 Purpose:
 
 - receive the CAS ticket
-- validate it against the configured auth backend
+- validate it against the configured auth backend, passing both `ticket` and the exact `service`
 - forward session cookie into the app
 
 ### 4.3 Logout
@@ -414,7 +416,7 @@ Allowed:
 3. Backend returns a CAS redirect URL
 4. Browser goes to CAS
 5. CAS returns to `/api/auth/cas/callback`
-6. Callback validates the ticket against the auth backend
+6. Callback validates the ticket against the auth backend using the same fixed service URL
 7. Backend session cookie is forwarded into the app
 8. Later requests resolve the current user through `/me`
 
@@ -433,5 +435,7 @@ Allowed:
 - dev signup only creates student users
 - dev login only allows the predefined demo accounts
 - CAS mode depends on an external backend `/me` endpoint and CAS validation path being configured correctly
+- deployed CAS mode should set `CAS_SERVICE_URL` to the exact HTTPS callback registered with SFU
+- the auth backend must accept `ticket` and `service` query parameters and return a session `Set-Cookie` on success
 - if the backend `/me` payload uses an unexpected role value, the app will treat the user as unauthenticated
 - some older env flags such as `ALLOW_TA_*` exist in `.env`, but the main active role/permission code currently centers on `student`, `instructor`, and `admin`

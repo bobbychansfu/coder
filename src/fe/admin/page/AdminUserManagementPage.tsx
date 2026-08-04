@@ -7,7 +7,6 @@ import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
 import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import {
   Alert,
   Box,
@@ -26,7 +25,7 @@ import {
 } from "@mui/material";
 
 
-import { adminRoleOptions, adminUsers, type AdminUserRecord } from "@/fe/admin/data";
+import { adminRoleOptions, type AdminUserRecord } from "@/fe/admin/data";
 import AdminDeleteUserDialog from "@/fe/admin/components/AdminDeleteUserDialog";
 import AdminEditUserDialog from "@/fe/admin/components/AdminEditUserDialog";
 import UserFiltersBar from "@/fe/admin/components/UserFiltersBar";
@@ -67,9 +66,20 @@ export default function AdminUserManagementPage() {
     setGuestUsers(
       payload.users.map((guest) => ({
         id: guest.id,
-        name: guest.name,
-        email: guest.username,
+        computingId: guest.username,
+        firstName: guest.name.split(" ")[0] || "Guest",
+        lastName: guest.name.split(" ").slice(1).join(" ") || "User",
+        name: guest.username,
+        email: "",
         role: "guest",
+        databaseRole: "STUDENT",
+        nickname: null,
+        studentNumber: null,
+        pointsAcquired: 0,
+        problemsSolved: 0,
+        competitionsParticipated: 0,
+        rank: null,
+        isCurrentUser: false,
         courses: 0,
         lastActive: guest.lastActive
           ? new Date(guest.lastActive).toLocaleString()
@@ -119,7 +129,7 @@ export default function AdminUserManagementPage() {
   const [showAllGroups, setShowAllGroups] = useState(false);
   const [modifyGroupsOpen, setModifyGroupsOpen] = useState(false);
   const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([]);
-  const [deleteScope, setDeleteScope] = useState<"selected" | "all" | null>(null);
+  const [deleteScope, setDeleteScope] = useState<"selected" | null>(null);
   const [teamWarningDismissed, setTeamWarningDismissed] = useState(false);
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
   const [draftMemberIds, setDraftMemberIds] = useState<string[]>([]);
@@ -265,8 +275,6 @@ export default function AdminUserManagementPage() {
         }
         roleOptions={adminRoleOptions}
       />
-
-      <UserTable users={filteredUsers} />
 
       <Dialog open={guestDialogOpen} onClose={() => setGuestDialogOpen(false)} fullWidth maxWidth="sm">
         <form onSubmit={(event) => void createGuest(event)}>
@@ -539,14 +547,6 @@ export default function AdminUserManagementPage() {
           {deleteGroups.error && <Alert severity="error">{deleteGroups.error.message}</Alert>}
         </DialogContent>
         <DialogActions className={styles.modifyDialogActions}>
-          <Button
-            color="error"
-            startIcon={<DeleteOutlineIcon />}
-            onClick={() => setDeleteScope("all")}
-          >
-            Delete all groups
-          </Button>
-          <Box className={styles.dialogActionSpacer} />
           <Button onClick={() => setModifyGroupsOpen(false)}>Cancel</Button>
           <Button
             variant="contained"
@@ -630,9 +630,8 @@ export default function AdminUserManagementPage() {
         <DialogTitle>Confirm group deletion</DialogTitle>
         <DialogContent>
           <Typography>
-            {deleteScope === "all"
-              ? `Delete all ${teamSummary.data?.teamCount ?? 0} groups?`
-              : `Delete the ${selectedTeamIds.length} selected ${selectedTeamIds.length === 1 ? "group" : "groups"}?`}
+            Delete the {selectedTeamIds.length} selected{" "}
+            {selectedTeamIds.length === 1 ? "group" : "groups"}?
           </Typography>
           <Typography color="text.secondary" className={styles.deleteWarningText}>
             The students will not be deleted. Their group memberships will be removed so they can be reassigned.
@@ -646,13 +645,9 @@ export default function AdminUserManagementPage() {
             variant="contained"
             color="error"
             disabled={deleteGroups.isPending}
-            onClick={() => {
-              if (deleteScope === "all") {
-                deleteGroups.mutate({ scope: "all" });
-              } else {
-                deleteGroups.mutate({ scope: "selected", teamIds: selectedTeamIds });
-              }
-            }}
+            onClick={() =>
+              deleteGroups.mutate({ scope: "selected", teamIds: selectedTeamIds })
+            }
           >
             {deleteGroups.isPending ? "Deleting…" : "Delete groups"}
           </Button>

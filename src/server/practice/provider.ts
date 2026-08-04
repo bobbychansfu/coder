@@ -13,6 +13,7 @@ export interface VisiblePracticeTest {
 export interface JudgingProblemContext {
   id: string;
   code: string;
+  judgeProblemId: string | null;
   title: string;
   statement: string;
   inputFormat: string | null;

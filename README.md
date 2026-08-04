@@ -56,14 +56,13 @@ Quick links:
 <a href="docs/backend.md"><kbd>Backend Docs</kbd></a>
 <a href="docs/workflow.md"><kbd>Workflow Docs</kbd></a>
 
-### Temporary AI Practice Judging
+### Practice Judging
 
-Local practice submissions now use a temporary Gemini-backed judge instead of the external judge API.
+Practice submissions use Gemini, while contest submissions continue to use the external SFU Judge.
 
-- Required env vars: `JUDGING_MODE=gemini`, `GEMINI_API_KEY`, optional `GEMINI_MODEL`
-- Submission flow: frontend `POST /api/practice/submissions` -> backend persists queued submission -> backend runs Gemini judging async -> frontend listens on `GET /api/practice/submissions/:submissionId/stream` via SSE
-- Current limitations: this does not compile or execute code, it evaluates code conservatively from the prompt context and visible example tests only
-- Swap-back path: keep frontend on the normalized submission contract and replace the provider behind `JudgingProvider`
+- Practice requires `JUDGING_MODE=gemini`, `GEMINI_API_KEY`, and optionally `GEMINI_MODEL`.
+- Practice flow: frontend `POST /api/practice/submissions` -> backend persists the submission -> Gemini evaluates it asynchronously -> frontend receives the normalized result through SSE.
+- Contest flow is independent of `JUDGING_MODE`; it submits mapped contest problems to `JUDGE_URL` and receives results through `/api/judge-callback`.
 
 ---
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { applyContestJudgeResult } from "@/server/contestJudging";
 import { parseJudgeResult } from "@/server/judge";
+import { publishPracticeSubmissionEvent } from "@/server/practice/submissionService";
 
 const STATUS_MAP: Record<string, string> = {
   AC: "Accepted",
@@ -67,7 +68,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (!normalized.sid || !normalized.connectionId) {
+    const practiceSubmissionId = normalized.connectionId ?? normalized.sid;
+    if (!practiceSubmissionId) {
       console.warn("[judge-callback] missing identifiers", callbackSummary);
       return NextResponse.json(
         { ok: false, error: "Missing callback identifiers" },
@@ -86,7 +88,7 @@ export async function POST(req: NextRequest) {
       rawStatus === "TIME_LIMIT_EXCEEDED";
 
     const practiceRecord = await prisma.practiceRunRecord.findUnique({
-      where: { id: normalized.connectionId },
+      where: { id: practiceSubmissionId },
       select: { id: true },
     });
 
@@ -99,7 +101,7 @@ export async function POST(req: NextRequest) {
     }
 
     await prisma.practiceRunRecord.update({
-      where: { id: normalized.connectionId },
+      where: { id: practiceSubmissionId },
       data: {
         status: "done",
         score: normalized.score,
@@ -109,9 +111,11 @@ export async function POST(req: NextRequest) {
         stdout: normalized.judgeOutput || null,
         stderr: null,
         errorMessage: null,
+        judgedBy: "judge",
         runtimeMs: normalized.score || null,
       },
     });
+    await publishPracticeSubmissionEvent(practiceSubmissionId);
 
     console.info("[judge-callback] practice submission updated", {
       ...callbackSummary,

@@ -34,6 +34,7 @@ export const adminTeamsRouter = router({
     const [studentCount, users] = await Promise.all([
       ctx.prisma.user.count({ where: { role: "STUDENT" } }),
       ctx.prisma.user.findMany({
+        where: { role: { not: "GUEST" } },
         orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
         select: {
           id: true,
@@ -136,30 +137,39 @@ export const adminTeamsRouter = router({
       teamCount,
       teamsAvailable,
       teams,
-      users: users.map((user) => ({
-        id: user.id,
-        name: `${user.firstName} ${user.lastName}`.trim(),
-        email: user.email,
-        computingId: user.computingId,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        nickname: user.nickname,
-        studentNumber: user.studentNumber,
-        databaseRole: user.role,
-        pointsAcquired: user.pointsAcquired,
-        problemsSolved: user.problemsSolved,
-        competitionsParticipated: user.competitionsParticipated,
-        rank: user.rank,
-        isCurrentUser: user.computingId === ctx.user.computingId,
-        role:
-          user.role === "STUDENT"
-            ? ("student" as const)
-            : user.role === "ADMIN"
-              ? ("admin" as const)
-              : ("instructor" as const),
-        courses: new Set(user.participations.map((item) => item.contestId)).size,
-        lastActive: user.updatedAt.toISOString(),
-      })),
+      users: users.map((user) => {
+        if (user.role === "GUEST") {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Guest users must not appear in the admin team summary.",
+          });
+        }
+
+        return {
+          id: user.id,
+          name: `${user.firstName} ${user.lastName}`.trim(),
+          email: user.email,
+          computingId: user.computingId,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          nickname: user.nickname,
+          studentNumber: user.studentNumber,
+          databaseRole: user.role,
+          pointsAcquired: user.pointsAcquired,
+          problemsSolved: user.problemsSolved,
+          competitionsParticipated: user.competitionsParticipated,
+          rank: user.rank,
+          isCurrentUser: user.computingId === ctx.user.computingId,
+          role:
+            user.role === "STUDENT"
+              ? ("student" as const)
+              : user.role === "ADMIN"
+                ? ("admin" as const)
+                : ("instructor" as const),
+          courses: new Set(user.participations.map((item) => item.contestId)).size,
+          lastActive: user.updatedAt.toISOString(),
+        };
+      }),
     };
   }),
 

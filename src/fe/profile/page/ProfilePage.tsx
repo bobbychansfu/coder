@@ -1,12 +1,13 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
 import ArrowBackOutlinedIcon from "@mui/icons-material/ArrowBackOutlined";
 import EmojiEventsOutlinedIcon from "@mui/icons-material/EmojiEventsOutlined";
-import PublicOutlinedIcon from "@mui/icons-material/PublicOutlined";
 import LeaderboardOutlinedIcon from "@mui/icons-material/LeaderboardOutlined";
+import PublicOutlinedIcon from "@mui/icons-material/PublicOutlined";
 import WorkspacePremiumOutlinedIcon from "@mui/icons-material/WorkspacePremiumOutlined";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+
 import EditProfileDialog, {
   type EditableProfile,
 } from "@/fe/profile/components/EditProfileDialog";
@@ -22,24 +23,14 @@ export interface ProfileData {
   contests: Array<{ title: string; date: string; rank: number | null }>;
 }
 
-export default function ProfilePage({ user, profile }: { user: CurrentUser; profile: ProfileData }) {
-  const initials =
-    user.displayName
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase())
-      .join("") || "G";
-  const stats = [
-    { label: "Total Solved", value: profile.problemsSolved, Icon: EmojiEventsOutlinedIcon },
-    { label: "Contests Entered", value: profile.competitionsParticipated, Icon: PublicOutlinedIcon },
-    { label: "Points", value: profile.points, Icon: LeaderboardOutlinedIcon },
-    { label: "Badges Earned", value: profile.badges.length, Icon: WorkspacePremiumOutlinedIcon },
-  ];
-  const pointsProgress = Math.min(100, (profile.points % 1000) / 10);
-
-export default function ProfilePage() {
-  const [profile, setProfile] = useState<EditableProfile | null>(null);
+export default function ProfilePage({
+  user,
+  profile: profileData,
+}: {
+  user: CurrentUser;
+  profile: ProfileData;
+}) {
+  const [editableProfile, setEditableProfile] = useState<EditableProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
@@ -63,7 +54,7 @@ export default function ProfilePage() {
         }
 
         if (active) {
-          setProfile(payload.user);
+          setEditableProfile(payload.user);
           setProfileError(null);
         }
       } catch (loadError) {
@@ -73,9 +64,7 @@ export default function ProfilePage() {
           );
         }
       } finally {
-        if (active) {
-          setProfileLoading(false);
-        }
+        if (active) setProfileLoading(false);
       }
     };
 
@@ -85,14 +74,26 @@ export default function ProfilePage() {
     };
   }, []);
 
-  const profileName = profile
-    ? `${profile.firstName} ${profile.lastName}`.trim()
+  const profileName = editableProfile
+    ? `${editableProfile.firstName} ${editableProfile.lastName}`.trim()
     : profileLoading
       ? "Loading profile…"
       : "Profile unavailable";
-  const initials = profile
-    ? `${profile.firstName.charAt(0)}${profile.lastName.charAt(0)}`.toUpperCase() || "?"
-    : "—";
+  const initials = editableProfile
+    ? `${editableProfile.firstName.charAt(0)}${editableProfile.lastName.charAt(0)}`.toUpperCase() || "?"
+    : user.displayName
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase())
+        .join("") || "G";
+  const stats = [
+    { label: "Total Solved", value: profileData.problemsSolved, Icon: EmojiEventsOutlinedIcon },
+    { label: "Contests Entered", value: profileData.competitionsParticipated, Icon: PublicOutlinedIcon },
+    { label: "Points", value: profileData.points, Icon: LeaderboardOutlinedIcon },
+    { label: "Badges Earned", value: profileData.badges.length, Icon: WorkspacePremiumOutlinedIcon },
+  ];
+  const pointsProgress = Math.min(100, (profileData.points % 1000) / 10);
 
   return (
     <div className={styles.page}>
@@ -108,21 +109,17 @@ export default function ProfilePage() {
               {user.accountType === "guest" ? user.displayName : profileName}
             </h2>
             <p className={styles.profileEmail}>
-              {user.accountType === "guest"
-                ? user.identifier
-                : profile?.email ?? "—"}
+              {user.accountType === "guest" ? user.identifier : editableProfile?.email ?? "—"}
             </p>
-            {user.accountType !== "guest" && profile?.nickname ? (
-              <p className={styles.profileNickname}>@{profile.nickname}</p>
+            {user.accountType !== "guest" && editableProfile?.nickname ? (
+              <p className={styles.profileNickname}>@{editableProfile.nickname}</p>
             ) : null}
-            {profileError ? (
-              <p className={styles.profileError}>{profileError}</p>
-            ) : null}
-            <span className={styles.levelBadge}>{profile.rank}</span>
+            {profileError ? <p className={styles.profileError}>{profileError}</p> : null}
+            <span className={styles.levelBadge}>{profileData.rank}</span>
             <div className={styles.progressBlock}>
               <div className={styles.progressHeader}>
                 <span className={styles.progressLabel}>Points</span>
-                <span className={styles.progressValue}>{profile.points}</span>
+                <span className={styles.progressValue}>{profileData.points}</span>
               </div>
               <div className={styles.progressTrack}>
                 <div className={styles.progressFill} style={{ width: `${pointsProgress}%` }} />
@@ -132,7 +129,7 @@ export default function ProfilePage() {
             <button
               type="button"
               className={styles.primaryButton}
-              disabled={!profile || profileLoading}
+              disabled={!editableProfile || profileLoading}
               onClick={() => setEditOpen(true)}
             >
               Edit Profile
@@ -144,7 +141,10 @@ export default function ProfilePage() {
             <div className={styles.statList}>
               {stats.map(({ label, value, Icon }) => (
                 <div key={label} className={styles.statRow}>
-                  <div className={styles.statLabel}><Icon className={styles.statIcon} /><span>{label}</span></div>
+                  <div className={styles.statLabel}>
+                    <Icon className={styles.statIcon} />
+                    <span>{label}</span>
+                  </div>
                   <span className={styles.statValue}>{value}</span>
                 </div>
               ))}
@@ -155,12 +155,12 @@ export default function ProfilePage() {
         <div className={styles.mainColumn}>
           <section className={styles.card}>
             <div className={styles.cardHeader}>
-              <h3 className={styles.cardTitle}>Badges & Achievements</h3>
+              <h3 className={styles.cardTitle}>Badges &amp; Achievements</h3>
               <p className={styles.cardSubtitle}>Achievements earned by this account</p>
             </div>
-            {profile.badges.length ? (
+            {profileData.badges.length ? (
               <div className={styles.badgeGrid}>
-                {profile.badges.map((badge) => (
+                {profileData.badges.map((badge) => (
                   <div key={`${badge.title}-${badge.earnedAt}`} className={`${styles.badgeCard} ${styles.badgeCardEarned}`}>
                     <div className={styles.badgeEmoji}>🏆</div>
                     <div className={styles.badgeTitle}>{badge.title}</div>
@@ -169,7 +169,9 @@ export default function ProfilePage() {
                   </div>
                 ))}
               </div>
-            ) : <p className={styles.cardSubtitle}>No badges earned yet.</p>}
+            ) : (
+              <p className={styles.cardSubtitle}>No badges earned yet.</p>
+            )}
           </section>
 
           <section className={styles.card}>
@@ -177,9 +179,9 @@ export default function ProfilePage() {
               <EmojiEventsOutlinedIcon className={styles.sectionIcon} />
               <h3 className={styles.cardTitle}>Contest History</h3>
             </div>
-            {profile.contests.length ? (
+            {profileData.contests.length ? (
               <div className={styles.contestList}>
-                {profile.contests.map((contest) => (
+                {profileData.contests.map((contest) => (
                   <div key={`${contest.title}-${contest.date}`} className={styles.contestItem}>
                     <div className={styles.contestHeader}>
                       <span className={styles.contestTitle}>{contest.title}</span>
@@ -193,16 +195,19 @@ export default function ProfilePage() {
                   </div>
                 ))}
               </div>
-            ) : <p className={styles.cardSubtitle}>No contest history yet.</p>}
+            ) : (
+              <p className={styles.cardSubtitle}>No contest history yet.</p>
+            )}
           </section>
         </div>
       </div>
-      {profile ? (
+
+      {editableProfile ? (
         <EditProfileDialog
           open={editOpen}
-          profile={profile}
+          profile={editableProfile}
           onClose={() => setEditOpen(false)}
-          onUpdated={setProfile}
+          onUpdated={setEditableProfile}
         />
       ) : null}
     </div>

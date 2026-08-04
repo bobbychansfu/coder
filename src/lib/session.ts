@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { normalizeRole, type Role } from "@/lib/authz";
+import { verifyCasSessionToken } from "@/lib/casAuthSession";
 import { verifyDevSessionToken } from "@/lib/devAuthSession";
 import { verifyGuestSessionToken } from "@/lib/guestAuthSession";
 import { prisma } from "@/lib/prisma";
@@ -16,6 +17,7 @@ const AUTH_BACKEND_BASE_URL = process.env.AUTH_BACKEND_BASE_URL;
 const AUTH_ME_PATH = process.env.AUTH_ME_PATH || "/me";
 const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "session";
 const AUTH_MODE = process.env.AUTH_MODE;
+const CAS_AUTH_COOKIE_SECRET = process.env.CAS_AUTH_COOKIE_SECRET;
 const DEV_AUTH_COOKIE_SECRET = process.env.DEV_AUTH_COOKIE_SECRET;
 const GUEST_AUTH_COOKIE_SECRET = process.env.GUEST_AUTH_COOKIE_SECRET;
 
@@ -48,7 +50,12 @@ async function buildCurrentUser(
   try {
     const dbUser = await prisma.user.findUnique({
       where: { computingId },
-      select: { firstName: true, lastName: true, email: true, localCredential: { select: { username: true } } },
+      select: {
+        firstName: true,
+        lastName: true,
+        email: true,
+        localCredential: { select: { username: true } },
+      },
     });
     if (dbUser) {
       const isGuest = accountType === "guest" || Boolean(dbUser.localCredential);
@@ -101,6 +108,13 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     const devSession = verifyDevSessionToken(sessionCookieValue, DEV_AUTH_COOKIE_SECRET);
     if (devSession) {
       return buildCurrentUser(devSession.computingId, devSession.role);
+    }
+  }
+
+  if (AUTH_MODE === "cas" && sessionCookieValue && CAS_AUTH_COOKIE_SECRET) {
+    const casSession = verifyCasSessionToken(sessionCookieValue, CAS_AUTH_COOKIE_SECRET);
+    if (casSession) {
+      return buildCurrentUser(casSession.computingId, casSession.role);
     }
   }
 

@@ -14,5 +14,5 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
     redirect("/login");
   }
 
-  return <AppShell role={user.role}>{children}</AppShell>;
+  return <AppShell user = {user}>{children}</AppShell>;
 }
