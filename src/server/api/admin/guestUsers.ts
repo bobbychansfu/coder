@@ -8,7 +8,7 @@ import { prisma } from "@/lib/prisma";
 const createGuestSchema = z.object({
   username: z.string().trim().min(1).transform((value) => value.toLowerCase()),
   firstName: z.string().trim().optional().default("Guest"),
-  lastName: z.string().trim().optional().default("User"),
+  lastName: z.string().trim().optional().default(""),
   password: z.string().min(1),
   expiresAt: z.string().datetime().nullable().optional(),
 });
@@ -96,7 +96,7 @@ export async function handleCreateGuestUser(request: NextRequest): Promise<NextR
           computingId,
           email,
           firstName: firstName || "Guest",
-          lastName: lastName || "User",
+          lastName,
           role: "GUEST",
           localCredential: {
             create: {

@@ -38,7 +38,6 @@ export default function AdminEditUserDialog({
 
   const canSave =
     form.firstName.trim().length > 0 &&
-    form.lastName.trim().length > 0 &&
     form.computingId.trim().length > 0 &&
     form.email.trim().length > 0 &&
     Number.isInteger(form.pointsAcquired) &&
@@ -66,7 +65,7 @@ export default function AdminEditUserDialog({
             label="Last name"
             value={form.lastName}
             onChange={(event) => setForm({ ...form, lastName: event.target.value })}
-            required
+            helperText="Optional"
           />
           <TextField
             label="Email"
