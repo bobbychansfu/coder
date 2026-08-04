@@ -133,7 +133,30 @@ The AI API terminal should log a `POST /request_hint` request.
 For normal daily development, only Docker Desktop, the `docker run` command,
 `npm.cmd run db:up`, and `npm.cmd run dev` are required.
 
----
+
+## Demo
+
+### AI Hint Feature
+
+#### Nothing Written
+
+<img src="assets/AI hint before written code.png" width="600">
+
+When the editor is empty, the AI hint feature analyzes the task requirements and suggests a suitable starting point for the implementation.
+
+#### Partially Written
+
+<img src="assets/AI hint when written code.png" width="600">
+
+When part of the code has been written, the AI provides context-aware suggestions based on the existing implementation and helps the user complete the remaining logic.
+
+#### Almost Finished
+
+<img src="assets/AI hint when almost finish the code.png" width="600">
+
+When the implementation is nearly complete, the AI reviews the current code and offers final suggestions to complete or improve the solution.
+
+
 
 ## 1. Upsolve Page
 
