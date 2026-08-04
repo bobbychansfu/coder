@@ -57,7 +57,6 @@ export default function EditProfileDialog({
 
   const canSave =
     firstName.trim().length > 0 &&
-    lastName.trim().length > 0 &&
     firstName.trim().length <= 50 &&
     lastName.trim().length <= 50 &&
     nickname.trim().length <= 40 &&
@@ -120,7 +119,7 @@ export default function EditProfileDialog({
             value={lastName}
             onChange={(event) => setLastName(event.target.value)}
             slotProps={{ htmlInput: { maxLength: 50 } }}
-            required
+            helperText="Optional"
             fullWidth
           />
         </div>

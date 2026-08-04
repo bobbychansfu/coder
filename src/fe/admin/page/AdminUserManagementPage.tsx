@@ -295,6 +295,7 @@ export default function AdminUserManagementPage() {
               label="Last name"
               value={guestForm.lastName}
               onChange={(event) => setGuestForm((form) => ({ ...form, lastName: event.target.value }))}
+              helperText="Optional"
             />
             <TextField
               label="Initial password"

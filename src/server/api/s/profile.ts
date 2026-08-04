@@ -5,7 +5,7 @@ import { z } from "zod";
 
 const updateProfileSchema = z.object({
   fname: z.string().trim().min(1).max(50),
-  lname: z.string().trim().min(1).max(50),
+  lname: z.string().trim().max(50).optional().default(""),
   nickname: z.string().trim().max(40).optional().default(""),
   student_number: z.string().trim().max(20).optional(),
 });

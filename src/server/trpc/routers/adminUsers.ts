@@ -10,7 +10,7 @@ const updateUserInput = z.object({
   computingId: z.string().trim().min(1).max(50),
   email: z.string().trim().email().max(254),
   firstName: z.string().trim().min(1).max(50),
-  lastName: z.string().trim().min(1).max(50),
+  lastName: z.string().trim().max(50),
   nickname: z.string().trim().max(40).nullable(),
   studentNumber: z.string().trim().max(20).nullable(),
   role: userRoleSchema,
