@@ -86,6 +86,18 @@
   color: #4a5565;
 }
 
+.profileNickname {
+  margin: -6px 0 0;
+  color: #6a7282;
+  font-size: 14px;
+}
+
+.profileError {
+  margin: 0;
+  color: #b91c1c;
+  font-size: 13px;
+}
+
 .levelBadge {
   background-color: #dc2626;
   color: #ffffff;
@@ -157,6 +169,11 @@
 
 .primaryButton:hover {
   filter: brightness(0.95);
+}
+
+.primaryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .cardTitle {

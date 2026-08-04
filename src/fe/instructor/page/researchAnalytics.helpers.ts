@@ -192,8 +192,17 @@ export function getDefaultStudentIdForGroup(
   groupValue: string,
   fallback: string,
 ): string {
+  const selectedGroup = toSegmentKey(groupValue);
+  if (
+    analytics.students_catalog.some(
+      (student) => student.computingId === fallback && student.segment === selectedGroup,
+    )
+  ) {
+    return fallback;
+  }
+
   return (
-    analytics.students_catalog.find((student) => student.segment === toSegmentKey(groupValue))
+    analytics.students_catalog.find((student) => student.segment === selectedGroup)
       ?.computingId ?? fallback
   );
 }
@@ -311,6 +320,62 @@ export function getOptionLabel(
   fallback: string,
 ): string {
   return options.find((option) => option.value === value)?.label ?? fallback;
+}
+
+const TREND_RANGES_IN_DAYS: Record<string, number | null> = {
+  "1m": 31,
+  "1s": 183,
+  "1y": 366,
+  all: null,
+};
+
+export function buildAnalyticsTrends(
+  analytics: InstructorAnalyticsUiPayload,
+  kind: "gamification" | "hints",
+): Record<string, TrendDataset> {
+  return Object.entries(TREND_RANGES_IN_DAYS).reduce<Record<string, TrendDataset>>(
+    (datasets, [range, days]) => {
+      const cutoff = days === null ? null : Date.now() - days * 86_400_000;
+      const contests = analytics.contests_catalog.filter((contest) => {
+        if (cutoff === null || !contest.startsAt) return true;
+        return new Date(contest.startsAt).getTime() >= cutoff;
+      });
+      const xValues = contests.map((contest, index) =>
+        contest.startsAt ? new Date(contest.startsAt).getTime() : index,
+      );
+      const xLabels = contests.map((contest) => contest.name);
+      const series = (["groupA", "groupB", "groupC"] as const).map((segment, index) => ({
+        label: `Group ${String.fromCharCode(65 + index)}`,
+        color: ["#2563eb", "#f97316", "#16a34a"][index],
+        data: contests.map((contest) => {
+          if (kind === "gamification") {
+            return (
+              analytics.segmented_metrics[segment].contest_metrics.find(
+                (row) => row.contest_id === contest.id,
+              )?.solve_rate ?? 0
+            );
+          }
+          const values = analytics.segmented_metrics[segment].problem_metrics
+            .filter((row) => row.contest_id === contest.id)
+            .map((row) => row.post_hint_solve_probability)
+            .filter((value): value is number => value !== null);
+          return Math.round(average(values) * 10) / 10;
+        }),
+      }));
+
+      datasets[range] = {
+        xLabels,
+        xValues,
+        xGroups:
+          xValues.length === 0
+            ? []
+            : [{ label: "Recorded contests", start: xValues[0], end: xValues.at(-1) ?? xValues[0] }],
+        series,
+      };
+      return datasets;
+    },
+    {},
+  );
 }
 
 export function buildCsvSection(title: string, rows: Array<Record<string, unknown>>): string {

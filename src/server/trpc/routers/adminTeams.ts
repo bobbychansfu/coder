@@ -40,7 +40,14 @@ export const adminTeamsRouter = router({
           firstName: true,
           lastName: true,
           email: true,
+          computingId: true,
           role: true,
+          nickname: true,
+          studentNumber: true,
+          pointsAcquired: true,
+          problemsSolved: true,
+          competitionsParticipated: true,
+          rank: true,
           updatedAt: true,
           participations: {
             select: { contestId: true },
@@ -70,11 +77,16 @@ export const adminTeamsRouter = router({
         ctx.prisma.user.count({
           where: {
             role: "STUDENT",
-            teamMemberships: { some: {} },
+            teamMemberships: {
+              some: {
+                team: { contestId: null },
+              },
+            },
           },
         }),
-        ctx.prisma.team.count(),
+        ctx.prisma.team.count({ where: { contestId: null } }),
         ctx.prisma.team.findMany({
+          where: { contestId: null },
           orderBy: [{ createdAt: "asc" }, { name: "asc" }],
           select: {
             id: true,
@@ -128,6 +140,17 @@ export const adminTeamsRouter = router({
         id: user.id,
         name: `${user.firstName} ${user.lastName}`.trim(),
         email: user.email,
+        computingId: user.computingId,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        nickname: user.nickname,
+        studentNumber: user.studentNumber,
+        databaseRole: user.role,
+        pointsAcquired: user.pointsAcquired,
+        problemsSolved: user.problemsSolved,
+        competitionsParticipated: user.competitionsParticipated,
+        rank: user.rank,
+        isCurrentUser: user.computingId === ctx.user.computingId,
         role:
           user.role === "STUDENT"
             ? ("student" as const)
@@ -146,7 +169,11 @@ export const adminTeamsRouter = router({
       const students = await ctx.prisma.user.findMany({
         where: {
           role: "STUDENT",
-          teamMemberships: { none: {} },
+          teamMemberships: {
+            none: {
+              team: { contestId: null },
+            },
+          },
         },
         select: { id: true },
         orderBy: { computingId: "asc" },
@@ -159,7 +186,7 @@ export const adminTeamsRouter = router({
         });
       }
 
-      const existingTeamCount = await ctx.prisma.team.count();
+      const existingTeamCount = await ctx.prisma.team.count({ where: { contestId: null } });
       const randomizedStudents = shuffled(students);
       const groupCount = Math.ceil(randomizedStudents.length / input.groupSize);
       const groups = Array.from({ length: groupCount }, () => [] as typeof students);
@@ -199,7 +226,10 @@ export const adminTeamsRouter = router({
     .input(deleteGroupsInput)
     .mutation(async ({ ctx, input }) => {
       const result = await ctx.prisma.team.deleteMany({
-        where: input.scope === "all" ? {} : { id: { in: input.teamIds } },
+        where:
+          input.scope === "all"
+            ? { contestId: null }
+            : { id: { in: input.teamIds }, contestId: null },
       });
 
       return { teamsDeleted: result.count };
@@ -212,7 +242,10 @@ export const adminTeamsRouter = router({
 
       const result = await ctx.prisma.$transaction(async (tx) => {
         const [team, students, conflictingMembership] = await Promise.all([
-          tx.team.findUnique({ where: { id: input.teamId }, select: { id: true } }),
+          tx.team.findFirst({
+            where: { id: input.teamId, contestId: null },
+            select: { id: true },
+          }),
           tx.user.findMany({
             where: { id: { in: userIds }, role: "STUDENT" },
             select: { id: true },
@@ -221,6 +254,7 @@ export const adminTeamsRouter = router({
             where: {
               userId: { in: userIds },
               teamId: { not: input.teamId },
+              team: { contestId: null },
             },
             select: { id: true },
           }),

@@ -2,10 +2,16 @@ import MoreVertRoundedIcon from "@mui/icons-material/MoreVertRounded";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import SupervisorAccountOutlinedIcon from "@mui/icons-material/SupervisorAccountOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import { useState, type MouseEvent } from "react";
 import {
   Box,
   Chip,
   IconButton,
+  ListItemIcon,
+  Menu,
+  MenuItem,
   Table,
   TableBody,
   TableCell,
@@ -32,9 +38,24 @@ const roleChipConfig: Record<
 
 interface UserTableProps {
   users: AdminUserRecord[];
+  onEditUser: (user: AdminUserRecord) => void;
+  onDeleteUser: (user: AdminUserRecord) => void;
 }
 
-export default function UserTable({ users }: UserTableProps) {
+export default function UserTable({ users, onEditUser, onDeleteUser }: UserTableProps) {
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+  const [menuUser, setMenuUser] = useState<AdminUserRecord | null>(null);
+
+  const openMenu = (event: MouseEvent<HTMLButtonElement>, user: AdminUserRecord) => {
+    setMenuAnchor(event.currentTarget);
+    setMenuUser(user);
+  };
+
+  const closeMenu = () => {
+    setMenuAnchor(null);
+    setMenuUser(null);
+  };
+
   return (
     <Box className={styles.tableCard}>
       <TableContainer>
@@ -73,6 +94,7 @@ export default function UserTable({ users }: UserTableProps) {
                     <IconButton
                       className={styles.rowActionButton}
                       aria-label={`Actions for ${user.name}`}
+                      onClick={(event) => openMenu(event, user)}
                     >
                       <MoreVertRoundedIcon className={styles.rowActionIcon} />
                     </IconButton>
@@ -83,6 +105,31 @@ export default function UserTable({ users }: UserTableProps) {
           </TableBody>
         </Table>
       </TableContainer>
+      <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={closeMenu}>
+        <MenuItem
+          onClick={() => {
+            if (menuUser) onEditUser(menuUser);
+            closeMenu();
+          }}
+        >
+          <ListItemIcon>
+            <EditOutlinedIcon fontSize="small" />
+          </ListItemIcon>
+          Edit user
+        </MenuItem>
+        <MenuItem
+          disabled={menuUser?.isCurrentUser}
+          onClick={() => {
+            if (menuUser) onDeleteUser(menuUser);
+            closeMenu();
+          }}
+        >
+          <ListItemIcon>
+            <DeleteOutlineOutlinedIcon fontSize="small" color="error" />
+          </ListItemIcon>
+          Delete user
+        </MenuItem>
+      </Menu>
     </Box>
   );
 }
