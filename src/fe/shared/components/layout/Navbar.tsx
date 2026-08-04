@@ -8,13 +8,14 @@ import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import MailOutlineIcon from "@mui/icons-material/MailOutline";
 import { AppBar, Toolbar, Box, ButtonBase } from "@mui/material";
 import styles from "../../styles/Navbar.module.css";
-import { can, type Role } from "@/lib/authz";
+import { can } from "@/lib/authz";
+import type { CurrentUser } from "@/lib/session";
 
 interface NavbarProps {
-  role: Role;
+  user: CurrentUser;
 }
 
-export default function Navbar({ role }: NavbarProps) {
+export default function Navbar({ user }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -30,7 +31,7 @@ export default function Navbar({ role }: NavbarProps) {
   }
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
   const profileButtonRef = useRef<HTMLButtonElement | null>(null);
-  const permissions = can(role);
+  const permissions = can(user.role);
 
   const isActive = (href: string) =>
     href === "/"
@@ -137,13 +138,15 @@ export default function Navbar({ role }: NavbarProps) {
             >
               <Box className={styles.profileMenuHeader}>
                 <Box className={styles.profileMetaRow}>
-                  <Box component="span" className={styles.profileRole}>{role}</Box>
-                  <Box component="span" className={styles.profileName}>Alex Chen</Box>
+                  <Box component="span" className={styles.profileRole}>
+                    {user.accountType === "guest" ? "guest" : user.role}
+                  </Box>
+                  <Box component="span" className={styles.profileName}>{user.displayName}</Box>
                 </Box>
                 <Box className={styles.profileEmailRow}>
                   <MailOutlineIcon className={styles.profileEmailIcon} />
                   <Box component="span" className={styles.profileEmail}>
-                    alex.chen@sfu.ca
+                    Email: {user.accountType === "guest" ? "" : user.identifier}
                   </Box>
                 </Box>
               </Box>

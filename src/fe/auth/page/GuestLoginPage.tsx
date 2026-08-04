@@ -2,13 +2,11 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
 import styles from "@/fe/auth/styles/LoginPage.module.css";
 
 export default function GuestLoginPage({ enabled }: { enabled: boolean }) {
-  const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -33,8 +31,7 @@ export default function GuestLoginPage({ enabled }: { enabled: boolean }) {
         setError(payload?.message ?? "Guest login failed.");
         return;
       }
-      router.push("/dashboard");
-      router.refresh();
+      window.location.assign("/dashboard");
     } catch {
       setError("Guest login failed.");
     } finally {
