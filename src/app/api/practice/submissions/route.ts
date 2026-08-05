@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (user.role !== "student" && user.role !== "instructor") {
+  if (!(["student", "instructor", "admin"] as const).includes(user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    if (user.role === "instructor") {
+    if (user.role === "instructor" || user.role === "admin") {
       const payload = await judgePracticeSubmissionEphemerally({
         problemId,
         language,
