@@ -330,8 +330,8 @@ test.describe("Practice list page for instructor", () => {
   });
 });
 
-test.describe("Student workflow guards", () => {
-  test("rejects practice submissions from non-student roles", async ({ page }) => {
+test.describe("Practice workflow guards", () => {
+  test("allows instructors through the practice submission role guard", async ({ page }) => {
     await loginAsInstructor(page);
 
     const response = await page.request.post("/api/practice/submissions", {
@@ -342,7 +342,21 @@ test.describe("Student workflow guards", () => {
       },
     });
 
-    expect(response.status()).toBe(403);
+    expect(response.status()).toBe(404);
+  });
+
+  test("allows admins through the practice submission role guard", async ({ page }) => {
+    await loginAsAdmin(page);
+
+    const response = await page.request.post("/api/practice/submissions", {
+      data: {
+        problemId: "not-used-because-role-check-runs-first",
+        language: "cpp",
+        code: "int main() { return 0; }",
+      },
+    });
+
+    expect(response.status()).toBe(404);
   });
 
   test("redirects admin users to the admin area instead of the student dashboard", async ({
