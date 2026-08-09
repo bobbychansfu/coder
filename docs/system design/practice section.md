@@ -1,5 +1,5 @@
 # 🧩 Practice Section — System Design Notes
-**Authenticated practice library + per-student persisted sessions + AI-reviewed submissions + SSE progress updates**
+**Authenticated practice library + per-student persisted sessions + configurable judging + AI hints + SSE progress updates**
 
 ---
 
@@ -31,14 +31,16 @@ In the current project, practice is:
 - backed by the same `Problem` records used elsewhere in the app
 - filtered to **published practice-visible problems only**
 - persisted for students through `PracticeSession` + `PracticeRunRecord`
-- AI-reviewed through a backend judging provider
+- reviewed through Gemini by default, with an optional external Judge mode
+- supported by a separate AI-hint request flow
 - updated live in the browser using **Server-Sent Events (SSE)**
+- equipped with a browser-local, per-problem practice timer
 
 Important current behavior:
 
 - students get **persisted** practice history
-- instructors can still open practice problems, but their AI reviews are **ephemeral** and not saved
-- the current judging flow is **AI review**, not real sandbox execution
+- instructors and admins can still open practice problems, but their reviews are **ephemeral** and not saved
+- Gemini mode reviews code without executing it; external Judge mode submits persisted student attempts for execution
 
 ---
 
@@ -67,7 +69,7 @@ Behavior:
 
 Student-specific status behavior:
 - `Completed` means the student has a `PracticeSession.solvedAt`
-- `Not Started` means the student has no session yet for that problem
+- `Not Started` means the student has no recorded activity (`firstRunAt`, `firstSubmitAt`, `solvedAt`, `runCount`, or `submitCount`) for that problem
 
 ### 2.2 Practice problem page
 
@@ -76,26 +78,52 @@ Route:
 
 Behavior:
 - loads problem statement, examples, starter code, and prior practice history
-- opens or resumes a per-student practice session
+- lazily opens or resumes a per-student practice session when a student submits
 - lets the user edit code with draft persistence in browser storage
-- submits code for AI review
+- includes a 15-minute, per-problem browser-local stopwatch
+- can request a standalone AI hint for the current code
+- submits code to the configured judging mode
 - shows live progress:
   - `queued`
   - `running`
   - `done`
   - `failed`
 
-### 2.3 Student vs instructor behavior
+### 2.3 Student vs staff behavior
 
 Students:
 - use persisted practice sessions and persisted run history
 - get SSE updates for live judging status
 - can revisit prior code and latest judged result
 
-Instructors:
+Instructors and admins:
 - can view practice problems and submit code for temporary AI review
 - do **not** persist sessions or submission history from the frontend practice page
 - see a UI note that their reviews are temporary
+
+Important:
+- ephemeral staff reviews require Gemini mode
+- external Judge mode requires a persisted submission and therefore does not support this staff path
+
+### 2.4 Practice timer
+
+The problem page renders `PracticeTimer`:
+
+- starts at 15 minutes
+- is scoped by problem code using `practice-timer:<problemCode>` in local storage
+- continues across a full page refresh using a stored end time
+- exposes `+15 min` only while running with five minutes or less remaining
+- freezes its remaining time during normal client-side unmount/navigation
+- does not update `PracticeSession`, analytics, scores, or judging behavior
+
+### 2.5 AI hint dialog
+
+The editor exposes an AI Hint action that:
+
+- sends the problem identity, language, and current code to `POST /api/s/request_hint`
+- displays the returned hint in `AiHintDialog`
+- can retry a failed request
+- is separate from submission judging and does not create a `PracticeRunRecord`
 
 ---
 
@@ -118,7 +146,7 @@ This means:
 
 For students, practice uses **one session per user per problem**:
 
-- session is created on first open
+- session is created lazily immediately before the first student submission
 - same session is reused on later visits
 - counters and timestamps accumulate over time
 
@@ -130,16 +158,27 @@ Students can submit repeatedly:
 - each submit creates a new `PracticeRunRecord`
 - the parent `PracticeSession.submitCount` increments
 - `firstSubmitAt` is set once
-- `solvedAt` is set the first time a verdict becomes accepted
+- in Gemini mode, `solvedAt` is set the first time a verdict becomes accepted
 
 ### 3.4 Judging model
 
-Current practice judging is:
-- asynchronous for students
-- ephemeral for instructors
-- AI-based, not real compilation/execution
+Practice judging is configurable through `JUDGING_MODE`:
 
-The provider evaluates conservatively using:
+- `gemini` (default):
+  - asynchronous and persisted for students
+  - synchronous and ephemeral for instructors/admins
+  - AI review without real compilation or execution
+- `judge`:
+  - sends persisted student submissions to `${JUDGE_URL}/judge_submission`
+  - receives results through `/api/judge-callback` (also aliased by `/api/m/judge_result`)
+  - requires a numeric `Problem.judgeProblemId`, or a numeric problem code as fallback
+
+Across the two modes, student judging is:
+- asynchronous for students
+- persisted in `PracticeRunRecord`
+- surfaced to the browser through status polling/SSE
+
+Gemini evaluates conservatively using:
 - the problem statement
 - examples
 - visible tests derived from the example input/output
@@ -155,6 +194,7 @@ The provider evaluates conservatively using:
 - tRPC + React Query for read/query flows
 - REST endpoints for practice submission creation/status streaming
 - browser local storage for code drafts
+- browser local storage for timer state
 - SSE for near real-time submission status updates
 
 ### Backend
@@ -168,11 +208,14 @@ The provider evaluates conservatively using:
   - `/api/practice/submissions`
   - `/api/practice/submissions/:submissionId`
   - `/api/practice/submissions/:submissionId/stream`
+  - `/api/s/request_hint`
+  - `/api/judge-callback`
 
 ### Judging
 
-- provider abstraction under `src/server/practice/provider.ts`
-- Gemini-backed implementation under `src/server/practice/providers/geminiJudgingProvider.ts`
+- Gemini provider abstraction under `src/server/practice/provider.ts`
+- Gemini implementation under `src/server/practice/providers/geminiJudgingProvider.ts`
+- external Judge adapter in `src/server/practice/submissionService.ts`
 
 ---
 
@@ -184,13 +227,19 @@ The provider evaluates conservatively using:
   - creates/reuses one session per student/problem
 - **Submission API**
   - accepts code submissions
-  - either persists them (student) or judges ephemerally (instructor)
+  - either persists them (student) or judges ephemerally (instructor/admin)
 - **Submission Service**
   - validates problem visibility
   - writes `PracticeSession` / `PracticeRunRecord`
   - schedules async judging work
 - **Judging Provider**
-  - performs AI review and returns verdict, score, feedback, and testcase notes
+  - performs Gemini review and returns verdict, score, feedback, and testcase notes
+- **External Judge Adapter**
+  - posts student submissions to the Judge service in `judge` mode
+  - records asynchronous callback results
+- **AI Hint Proxy**
+  - enriches a hint request with problem/user context
+  - forwards it to `AI_HINT_URL`, then `JUDGE_URL`, then the localhost fallback
 - **Event Bus + SSE**
   - emits `queued/running/done/failed`
   - pushes updates to the current browser session
@@ -274,7 +323,7 @@ Purpose:
 - `updatedAt`
 
 Purpose:
-- one persisted AI-reviewed attempt
+- one persisted judged attempt
 - stores the code snapshot, review output, and final verdict
 
 ### 6.4 Related UI-only state
@@ -285,6 +334,8 @@ The frontend also keeps non-database state:
 - per-language draft code in local storage
 - active submission SSE connection
 - local output panel state
+- per-problem stopwatch state
+- AI hint dialog/loading/result state
 
 ---
 
@@ -315,9 +366,9 @@ The current project uses a hybrid model:
 - `practiceExecution.submitCode`
   - student-only
 - `POST /api/practice/submissions`
-  - allows `student` and `instructor`
+  - allows `student`, `instructor`, and `admin`
   - student: persisted submission
-  - instructor: ephemeral review
+  - instructor/admin: ephemeral review
 - `GET /api/practice/submissions/:submissionId`
   - student-only
 - `GET /api/practice/submissions/:submissionId/stream`
@@ -325,7 +376,7 @@ The current project uses a hybrid model:
 
 This is intentional in the current implementation because the practice problem page supports:
 - student persisted history
-- instructor temporary AI feedback
+- instructor/admin temporary AI feedback
 
 ---
 
@@ -333,12 +384,14 @@ This is intentional in the current implementation because the practice problem p
 
 ### 8.1 Open problem
 
-When a student opens `/practice/[id]`:
+When a student first submits from `/practice/[id]`:
 
-1. frontend loads problem detail through `trpc.practice.getProblemDetail`
-2. frontend calls `trpc.practiceExecution.openSession`
+1. frontend has already loaded problem detail through `trpc.practice.getProblemDetail`
+2. submission handling calls `trpc.practiceExecution.openSession` if session information is not already available
 3. backend upserts `PracticeSession` by `(userId, problemId)`
-4. frontend stores returned `sessionId` and `problemId`
+4. frontend uses the returned `sessionId` and `problemId` for the persisted submit flow
+
+Opening the detail page alone does not create a session.
 
 ### 8.2 Resume existing work
 
@@ -350,7 +403,7 @@ On later visits:
 
 ### 8.3 Mark solved
 
-When an async judged result becomes accepted:
+When a Gemini-judged result becomes accepted:
 
 - backend updates the run record to `done`
 - backend sets `PracticeSession.solvedAt` if it was previously null
@@ -358,6 +411,10 @@ When an async judged result becomes accepted:
 This creates the basis for:
 - solved badges in the practice list
 - `Completed` / `Not Started` filtering
+
+Current caveat:
+- the external Judge callback updates `PracticeRunRecord`, but does not currently set `PracticeSession.solvedAt`
+- an accepted Judge-mode submission may therefore not appear as `Completed`
 
 ---
 
@@ -392,12 +449,12 @@ Current normalized verdicts:
 
 These are UI/domain verdicts, separate from transport status.
 
-### 9.3 Ephemeral instructor flow
+### 9.3 Ephemeral staff flow
 
-Instructor reviews skip persisted state transitions in the database:
+Instructor/admin reviews skip persisted state transitions in the database:
 
 - request enters the same create endpoint
-- backend detects `user.role === "instructor"`
+- backend detects an instructor or admin role
 - provider judges immediately
 - response returns directly with `persisted: false`
 
@@ -453,6 +510,8 @@ The practice feature currently uses both tRPC and REST.
   - `{ submissionId, status: "queued", persisted: true }`
 - instructor result:
   - full judged payload + `persisted: false`
+- admin result:
+  - full judged payload + `persisted: false`
 
 `GET /api/practice/submissions/:submissionId`
 - returns the latest normalized submission payload for the current student
@@ -465,6 +524,26 @@ The practice feature currently uses both tRPC and REST.
   - `running`
   - `done`
   - `failed`
+
+### 10.4 AI hint API
+
+`POST /api/s/request_hint`
+- requires authentication
+- accepts the problem identity, language, and current code
+- enriches the request with problem metadata, topics, user rank, and relevant solved problems
+- forwards to `${AI_HINT_URL}/request_hint`
+- falls back to `JUDGE_URL`, then `http://127.0.0.1:8000`, when `AI_HINT_URL` is unset
+
+### 10.5 Judge callback API
+
+`POST /api/judge-callback`
+- receives asynchronous external Judge results
+- attempts to match a contest submission by `sid` first
+- uses `connection_id`, then `sid`, to find a practice run
+- updates the matching `PracticeRunRecord` and publishes an SSE event
+
+`POST /api/m/judge_result`
+- compatibility alias for the same callback handler
 
 ---
 
@@ -484,6 +563,8 @@ The detail page:
 - manages editor language and code drafts
 - posts submissions through `/api/practice/submissions`
 - opens SSE stream for persisted student submissions
+- renders `PracticeTimer` for local time management
+- wraps the editor with `PracticeSolutionEditorWithAiHint`
 
 ### 11.3 Draft persistence
 
@@ -506,25 +587,31 @@ If there is no local draft but the student has a persisted latest run:
 
 This helps practice feel resumable rather than stateless.
 
+### 11.5 Timer and hint state
+
+- timer state is local to the browser and problem code
+- AI hint loading/result state lives in the page dialog only
+- neither state changes practice completion, score, or submission counters
+
 ---
 
 ## 12) Judging Design
 
-### 12.1 Provider model
+### 12.1 Gemini provider model
 
 The backend uses a provider interface:
 
 - `JudgingProvider`
 - `judgeSubmission(input) -> { score, verdict, feedback, testcases }`
 
-This makes it possible to swap implementations later without changing the outer practice flow.
+This isolates Gemini review from the outer practice flow.
 
-### 12.2 Current Gemini implementation
+### 12.2 Gemini mode
 
-The current provider:
-- is selected by `JUDGING_MODE`
-- defaults to Gemini
+Gemini mode:
+- is selected when `JUDGING_MODE` is unset or set to `gemini`
 - requires `GEMINI_API_KEY`
+- uses `GEMINI_MODEL`, defaulting to `gemini-2.5-flash`
 
 Gemini is prompted to:
 - review conservatively
@@ -535,16 +622,43 @@ Gemini is prompted to:
   - visible tests
   - submitted code
 
-### 12.3 Visible tests
+### 12.3 External Judge mode
+
+When `JUDGING_MODE=judge`:
+
+- the service maps the app language to the Judge language
+- it resolves a numeric Judge problem ID from `Problem.judgeProblemId` or numeric `Problem.code`
+- it posts `sid`, `pid`, `language`, `connection_id`, and `submission` to `${JUDGE_URL}/judge_submission`
+- the persisted run remains asynchronous until the Judge calls the callback endpoint
+
+This path can provide real execution results, but depends on correct problem mappings, networking, and callback configuration.
+
+### 12.4 Environment configuration
+
+Use the environment template appropriate to the runtime:
+
+- `.env.dev` as the development base
+- `.env.cas` as the CAS/VM deployment base
+
+Relevant variables:
+
+- `JUDGING_MODE=gemini|judge`
+- `GEMINI_API_KEY` and optional `GEMINI_MODEL` for Gemini mode
+- `JUDGE_URL` for external submission execution
+- optional `AI_HINT_URL` for the separate hint service; otherwise it falls back to `JUDGE_URL`
+
+After changing environment values, restart/rebuild the running Next.js process so it loads the new configuration.
+
+### 12.5 Visible tests in Gemini mode
 
 Visible tests are currently derived from the example only:
 
 - if `exampleInput` or `exampleOutput` exists
 - provider receives one visible test named `Example`
 
-There is no hidden-test execution path in the current practice system.
+Gemini mode has no hidden-test execution path. Hidden tests, if any, are owned by the external Judge in Judge mode.
 
-### 12.4 Score normalization
+### 12.6 Score normalization in Gemini mode
 
 The Gemini provider clamps/normalizes score ranges by verdict:
 
@@ -566,16 +680,21 @@ This keeps the UI numerically consistent even though the system is AI-reviewed.
 - live browser updates over SSE
 - resumable editor experience
 - provider abstraction keeps future replacement possible
+- optional external Judge integration for persisted student attempts
+- standalone AI hints without creating submissions
+- browser-local timer state that survives refresh
 
 ### 13.2 Important current limitations
 
-- no real code execution sandbox
-- no compiler/runtime truth source
-- no hidden/private testcase judging
-- visible tests are derived only from example data
-- `runtimeMs` in practice is not a real execution runtime measurement
+- Gemini mode has no real code execution sandbox, compiler/runtime truth source, or hidden tests
+- Gemini visible tests are derived only from example data
+- Gemini `runtimeMs` is not a real execution runtime measurement
+- external Judge mode cannot serve the current ephemeral instructor/admin flow
+- accepted external Judge callbacks do not currently set `PracticeSession.solvedAt`
 - SSE event delivery is process-local; multi-instance deployment would need a shared pub/sub layer
 - practice page browsing is authenticated but not student-only
+- stopwatch and drafts are browser-local and do not synchronize across devices
+- AI hints require a separate service exposing `/request_hint`
 
 ### 13.3 Why this is still useful
 
@@ -600,7 +719,9 @@ Even with those limitations, the current design is still valuable for:
 - browser draft persistence is implemented
 - SSE live status updates are implemented
 - instructor ephemeral review path is implemented
+- admin ephemeral review path is implemented
 - Gemini provider abstraction is implemented
-- true execution-based judging is **not** implemented
-- hidden testcase judging is **not** implemented
-
+- external Judge submission/callback path is implemented
+- standalone AI hint dialog/proxy is implemented
+- per-problem practice stopwatch is implemented
+- Judge-mode accepted-result/session synchronization remains incomplete

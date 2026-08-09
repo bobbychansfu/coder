@@ -1,5 +1,5 @@
 # Contest Section - System Design Notes
-**Schedule-based contest registration + contest problem workspace + direct judge integration + live scoreboard aggregation**
+**Schedule-based contest registration + optional three-student teams + contest problem workspace + direct judge integration + live scoreboard aggregation**
 
 ---
 
@@ -32,6 +32,7 @@ In the current project, contests are:
 - exposed to students through App Router pages and `/api/s/*` REST endpoints
 - governed by a **contest-wide schedule** (`startsAt`, `endsAt`, `durationMinutes`)
 - registered per student through `Participation`
+- able to organize registered students into contest-scoped teams through `Team` and `TeamMember`
 - tracked per problem through `ProblemStatus`
 - judged by forwarding submissions to an external judge service
 - summarized through a live scoreboard derived from stored contest results
@@ -40,6 +41,8 @@ Important current behavior:
 
 - contests are **not** using a per-student countdown timer in the main student flow
 - students can submit **multiple times** to the same problem while the contest is active
+- registered students can create one fixed-size team of three for a contest
+- teams are currently organizational; submissions, progress, and scoreboard rows remain per student
 - scoreboard rows are built from current stored scores, not from delayed snapshot publication
 - practice is now a separate system and should be documented independently
 
@@ -70,6 +73,10 @@ Behavior:
 - shows:
   - problem list
   - current scoreboard
+- shows student team controls in the page header:
+  - an existing team notice when the student already has a contest team
+  - a `Create Team` dialog otherwise
+  - a migration warning when team data cannot be loaded
 - only renders the scoreboard tab when there are scoreboard rows to display
 
 ### 2.3 Contest problem page
@@ -90,8 +97,20 @@ Behavior:
 Instructor/admin contest authoring is handled separately from student contest play:
 
 - draft list and editor use the `contestAuthoring` tRPC router
-- instructors choose visibility, schedule, AI hint setting, and selected problems
+- instructors choose visibility, schedule, AI hint settings, experiment-group hint delays, and selected problems
 - publishing a contest makes it visible to the student-facing contest flow
+
+### 2.5 Contest team creation
+
+The student contest detail page supports self-service team creation:
+
+- the creator must be a registered `STUDENT` contestant
+- the creator supplies a team name of 1-50 trimmed characters
+- the creator selects exactly two other registered students
+- selected students must not already belong to another team for that contest
+- the resulting contest team always has three members, including the creator
+
+There is currently no student join-request, leave-team, rename-team, or delete-team flow.
 
 ---
 
@@ -151,6 +170,17 @@ The main student progress record is `ProblemStatus`:
 - score is stored per contest/problem/user
 - `tries` increments when a pending submission settles to a non-system final result
 
+### 3.6 Contest teams
+
+Contest teams are stored separately from registration:
+
+- `Participation` determines whether a student is registered for a contest
+- `Team.contestId` scopes a team to one contest
+- `TeamMember` associates users with that team
+- general admin-created student groups use the same tables with `Team.contestId = null`
+
+The application checks that a user belongs to at most one team in the selected contest. This rule is not represented by a dedicated database uniqueness constraint.
+
 ---
 
 ## 4) Tech Stack
@@ -168,6 +198,7 @@ The main student progress record is `ProblemStatus`:
 - Prisma for persistence
 - App Router REST endpoints under `/api/s/*`, `/api/m/*`, and `/api/cron/*`
 - tRPC for instructor contest authoring and analytics surfaces
+- tRPC for student contest-team reads and creation
 
 ### Judge integration
 
@@ -194,6 +225,9 @@ The main student progress record is `ProblemStatus`:
   - also supports practice callback updates through the same endpoint
 - **Scoreboard builder**
   - computes rows from `Participation` + `ProblemStatus`
+- **Contest team service**
+  - reads the current student's contest team and eligible teammates
+  - creates a three-person team in a serializable transaction
 - **Contest status sync cron**
   - keeps stored `Contest.status` aligned with wall-clock schedule
 - **Instructor analytics sidecar**
@@ -313,12 +347,43 @@ Current note:
 - announcements are used by admin/instructor surfaces
 - the current student contest detail API does not yet expose a live contest clarifications feed
 
-### 6.7 `ContestExperimentGroup` and `ContestProblemSession`
+### 6.7 `Team` and `TeamMember`
+
+`Team` fields:
+
+- `id`
+- `name`
+- `contestId` (nullable)
+- `createdAt`
+- `updatedAt`
+
+`TeamMember` fields:
+
+- `id`
+- `teamId`
+- `userId`
+
+Relationships and constraints:
+
+- one `Contest` can have many contest-scoped `Team` rows
+- one `Team` has many `TeamMember` rows
+- one `User` can have many `TeamMember` rows across different teams/contexts
+- deleting a contest cascades to its contest teams
+- deleting a team or user cascades to its membership rows
+- `@@unique([teamId, userId])` prevents the same user from appearing twice in one team
+- `@@index([contestId])` supports contest-scoped team lookup
+- `contestId = null` identifies general admin-created groups; a non-null value identifies a contest team
+
+The contest-team migration adds the nullable `Team.contestId` foreign key to the earlier general team tables.
+
+### 6.8 `ContestExperimentGroup` and `ContestProblemSession`
 
 These tables exist for analytics and experimentation support.
 
 `ContestExperimentGroup`
-- per-contest group metadata for hint experiments
+- stores per-contest group A/B hint configuration
+- includes `aiHintEnabled` and nullable `hintDelayMinutes`
+- is unique by `(contestId, groupName)`
 
 `ContestProblemSession`
 - `startedAt`
@@ -349,6 +414,11 @@ For student-facing contest access, the backend generally expects:
 - the contest to be non-private
 - the contest to be active in lifecycle terms (`manageStatus = ACTIVE`)
 
+Contest-team procedures additionally use `studentProcedure` and require:
+
+- a database user with `role = STUDENT`
+- a `Participation` row for the contest with `role = contestant`
+
 ### Instructor/admin access
 
 Instructor/admin viewers can inspect contests through `findContestForViewer`, which broadens access beyond normal contestant registration.
@@ -377,8 +447,11 @@ Current authoring flow supports:
 - schedule (`startsAt`, `endsAt`)
 - visibility (`PUBLIC`, `PRIVATE`, `COURSE_ONLY`)
 - AI hint toggle
+- group A and group B hint-delay settings (defaults: 5 and 10 minutes)
 - selected problem list
 - draft vs published state
+
+When AI hints are enabled, authoring replaces the contest's experiment-group settings with group A and B rows. Disabling AI hints removes those rows.
 
 ### 8.2 Publishing
 
@@ -405,8 +478,9 @@ Student participation lifecycle:
 
 1. Discover contest from `/api/s/info`
 2. Register through `/api/s/contest/register/:cid`
-3. Enter through `/api/s/entercontest/:cid`
-4. Work on contest problems while the contest is active
+3. Optionally create a three-person contest team through `contestTeams.create`
+4. Enter through `/api/s/entercontest/:cid`
+5. Work on contest problems while the contest is active
 
 ### 8.5 Contest end
 
@@ -462,7 +536,23 @@ Returns:
 - scoreboard rows for the contest
 - current user role
 
-### 9.5 Problem detail and submissions
+The page also uses `contestTeams.get` to load the student's current contest team and eligible teammates.
+
+### 9.5 Create a contest team
+
+tRPC procedures:
+
+- `contestTeams.get`
+- `contestTeams.create`
+
+Behavior:
+
+- returns the student's existing team, if any
+- otherwise returns registered, unassigned student candidates
+- creates the team and its three membership rows atomically
+- rejects duplicate selections, ineligible users, and members already assigned to a contest team
+
+### 9.6 Problem detail and submissions
 
 Problem endpoints:
 
@@ -475,7 +565,7 @@ Behavior:
 - creates an initial `ProblemStatus` row if needed
 - returns the student submission history for that problem
 
-### 9.6 Submit solution
+### 9.7 Submit solution
 
 `POST /api/s/submit/:cid/:pid`
 
@@ -548,6 +638,18 @@ Contest authoring is currently handled by tRPC rather than public REST endpoints
 - `contestAuthoring.createContest`
 - `contestAuthoring.updateContest`
 
+### 10.5 Contest team procedures
+
+Contest teams use authenticated student tRPC procedures:
+
+- `contestTeams.get({ contestId })`
+  - returns the current team and available registered students
+
+- `contestTeams.create({ contestId, name, memberUserIds })`
+  - creates one three-student contest team
+
+The related `adminTeams` router manages general student groups where `contestId` is null; it is not the student contest-team API.
+
 ---
 
 ## 11) Judging & Submission State
@@ -605,6 +707,8 @@ Current scoreboard behavior:
 
 This is a **live aggregation** approach, not a delayed snapshot publish model.
 
+Contest team membership does not currently change scoreboard aggregation. Each participant continues to have an individual row and score.
+
 ### 12.2 Hints
 
 Current hint behavior:
@@ -659,6 +763,10 @@ See:
 - there is no dedicated contest "run against public tests" endpoint in the current student API
 - contest clarifications are not yet fully wired as a live student-facing feature
 - analytics-oriented tables such as `ContestProblemSession` exist, but they are not the main request-path source of truth for student contest play
+- contest teams do not yet aggregate submissions, progress, or scoreboard results
+- one-team-per-student-per-contest is application-enforced rather than protected by a database uniqueness constraint
+- unregistering from a contest does not currently remove an existing contest-team membership
+- team creation checks registration but does not independently restrict creation by effective contest schedule status
 
 ---
 
@@ -673,6 +781,16 @@ See:
 - [x] Contest problem pages show statements, starter code, and submission history
 - [x] New submissions are blocked for upcoming and ended contests
 - [x] Multiple submissions per contest problem are supported
+
+### Contest teams
+
+- [x] Registered students can view their current contest team
+- [x] Unassigned students can create a named team with exactly two other eligible students
+- [x] Contest teams are separated from general admin-created groups by `Team.contestId`
+- [x] Contest deletion cascades to contest teams and memberships
+- [ ] Team-based submissions and scoreboard aggregation
+- [ ] Student leave, rename, delete, or membership-request workflows
+- [ ] Database-level one-team-per-student-per-contest constraint
 
 ### Judging
 

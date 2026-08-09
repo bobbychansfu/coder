@@ -1,5 +1,5 @@
 # Analytics Section - System Design Notes
-**Instructor-only post-contest metrics using on-demand watermark-based computation over PostgreSQL contest data**
+**Instructor-only research analytics using live database aggregation plus on-demand watermark snapshots**
 
 ---
 
@@ -22,12 +22,15 @@
 
 ## 1) Overview
 
-The analytics section is an **instructor-only post-contest metrics feature** centered around the `instructorAnalysis` backend flow.
+The analytics section is an **instructor-only research metrics feature** centered around the `instructorAnalysis` backend flow.
 
 In the current project, analytics provides:
 
 - contest-level metrics by experiment group
-- problem-level metrics by student
+- problem-level metrics by experiment group and student
+- contest, group, and student comparisons
+- gamification and AI-hint trend views derived from the analytics response
+- CSV, JSON, and browser-print/PDF export
 - logical snapshot windows at:
   - `+5 minutes` after contest end
   - `+15 minutes` after contest end
@@ -35,11 +38,12 @@ In the current project, analytics provides:
 
 Important current behavior:
 
-- the backend computes analytics **on demand** when the instructor requests them
+- the visible page loads current analytics through `instructorAnalysis.dashboard`
+- the separate `instructorAnalysis.get` API computes watermark snapshots **on demand**
 - there is **no persisted snapshot table** for these metrics in the current implementation
 - there is **no Redis/BullMQ scheduling layer** in the current implementation
 - there is **no SSE-driven analytics refresh** in the current implementation
-- the visible research analytics page still contains substantial mock/demo sections, even though the backend query path is real
+- the visible research analytics page is database-backed; mock analytics remain as reusable fallback/test data but are not the page's active source
 
 ---
 
@@ -47,7 +51,17 @@ Important current behavior:
 
 ### 2.1 What the backend actually supports
 
-The real backend analytics flow supports:
+The current backend exposes two instructor-only query paths.
+
+`instructorAnalysis.dashboard` supports:
+
+- loading all contests owned by the instructor
+- current metrics for all contestants and Groups A, B, and C
+- per-student metric bundles
+- contest and student catalogs used by filters and comparisons
+- contest AI-hint configuration notes
+
+`instructorAnalysis.get` supports:
 
 - instructor-only access
 - selecting a contest
@@ -70,6 +84,7 @@ Current analytics focuses on understanding:
 - how long students took to submit and solve
 - whether hint-triggered sessions later solved
 - how many attempts happened before and after hint use
+- comparisons across contests, experiment groups, and individual students
 
 ### 2.3 What is not yet implemented as originally planned
 
@@ -96,21 +111,38 @@ Those pieces are **not** present in the current code path.
 ### Frontend
 
 - React + Next.js App Router
-- tRPC client query hooks for the real instructor analysis path
-- formatting/mapping layer for rendering snapshot status and metric tables
+- `instructorAnalysis.dashboard.useQuery(...)` for the visible research analytics page
+- client-side helpers for filtering, comparisons, trend construction, and export
+- a separate reusable query/mapping layer for the logical snapshot API
 
 ### Current note
 
 The current analytics backend is **DB read + in-memory compute**, not a separate analytics pipeline.
+The dashboard and snapshot endpoints use different response shapes and aggregation windows.
 
 ---
 
 ## 4) System Architecture
 
+### 4.1 Visible research analytics dashboard
+
+- **Page query**
+  - `/instructor/research-analytics` calls `instructorAnalysis.dashboard`
+- **tRPC router**
+  - requires an authenticated instructor
+- **Dashboard repository**
+  - loads all instructor-owned contests and their problems, participants, sessions, and submissions
+  - computes all-cohort, Group A/B/C, and per-student metric bundles
+- **Frontend helpers**
+  - filter live tables by contest and group
+  - build contest/group/student comparisons
+  - derive gamification and AI-hint trend datasets
+  - build CSV, JSON, and printable PDF exports
+
+### 4.2 Logical snapshot query
+
 - **Instructor analysis request**
   - instructor selects contest/problem/snapshot preference
-- **tRPC router**
-  - validates role and input
 - **Repository layer**
   - loads instructor-owned contests
   - resolves the requested logical snapshot window
@@ -118,9 +150,7 @@ The current analytics backend is **DB read + in-memory compute**, not a separate
 - **Metrics engine**
   - computes contest-group and problem-student rows using a watermark
 - **Serializer**
-  - shapes the backend result into frontend-friendly filters, selection, contest, snapshot, and row payloads
-- **Frontend mapping**
-  - converts raw numeric metrics into display strings
+  - shapes the result into filters, selection, contest, snapshot, and row payloads
 
 ---
 
@@ -272,7 +302,8 @@ Current note:
 
 ## 7) Metric Definitions
 
-The current analytics backend computes two families of metrics.
+The current analytics backend computes two families of metrics. The snapshot response expresses time
+values in seconds; the dashboard response converts equivalent aggregates to minutes for display.
 
 ### 7.1 Contest-group metrics
 
@@ -376,6 +407,28 @@ Resolution order:
 
 ## 9) Backend Query Flow
 
+### 9.1 Dashboard flow
+
+Current backend flow for `instructorAnalysis.dashboard`:
+
+1. Verify the caller is an authenticated instructor.
+2. Load the instructor by `computingId`.
+3. Load all contests owned by that instructor, including problems, contestant participations,
+   experiment-group configuration, problem sessions, and submissions.
+4. Build current metric bundles for:
+   - all contestants
+   - Group A
+   - Group B
+   - Group C
+   - each individual student
+5. Build contest and student catalogs for frontend filters.
+6. Return the dashboard payload directly to the research analytics page.
+
+The dashboard flow does not resolve a +5m/+15m watermark. It represents the records currently
+available in the database.
+
+### 9.2 Snapshot flow
+
 Current backend flow for `instructorAnalysis.get`:
 
 1. Verify the caller is an authenticated instructor.
@@ -402,7 +455,27 @@ Important current detail:
 
 ### 10.1 Current backend entry point
 
-The real analytics API is a protected tRPC procedure:
+The visible research analytics page uses this protected tRPC procedure:
+
+- `instructorAnalysis.dashboard`
+
+Input:
+
+- none
+
+Response:
+
+- `segmented_metrics`
+  - `all`
+  - `groupA`
+  - `groupB`
+  - `groupC`
+- `student_views`
+- `students_catalog`
+- `contests_catalog`
+- `analytics_notes`
+
+The logical snapshot API is a second protected tRPC procedure:
 
 - `instructorAnalysis.get`
 
@@ -417,7 +490,7 @@ Authorization:
 - requires authenticated user
 - current router explicitly requires `ctx.user.role === "instructor"`
 
-### 10.2 Response shape
+### 10.2 Snapshot response shape
 
 The backend returns:
 
@@ -451,15 +524,22 @@ Those are **not** part of the current implementation.
 
 ### 11.1 Real frontend analysis path
 
-The repo includes a real frontend data flow for instructor analysis:
+The visible `/instructor/research-analytics` page now uses a real database-backed flow:
+
+- `instructorAnalysis.dashboard.useQuery(...)`
+- `staleTime = 30_000ms`
+- an empty payload while no query data is available
+- `LiveInstructorAnalyticsCard` for current contest/problem metrics
+- comparison helpers for contests, groups, and students
+- trend builders for gamification and AI-hint statistics
+- export helpers for CSV, JSON, and browser-print/PDF output
+
+The separate snapshot stack still exists through:
 
 - `useInstructorAnalysis`
 - `instructorAnalysis.get.useQuery(...)`
 - response mapping in `instructorAnalysis.mapper.ts`
-- components for:
-  - snapshot status
-  - contest-group metrics table
-  - problem-student metrics table
+- reusable snapshot-status and metric-table components
 
 This real frontend path uses:
 
@@ -467,25 +547,11 @@ This real frontend path uses:
 - formatted display strings
 - `staleTime = 30_000ms`
 
-### 11.2 Current research analytics page
+### 11.2 Mock data status
 
-The visible research analytics page under `/instructor/research-analytics` is currently mixed.
-
-What is real:
-
-- the backend instructor analysis stack exists
-- reusable components/types for real snapshot-backed metrics exist
-
-What is still mock/demo-driven:
-
-- `LiveInstructorAnalyticsCard`
-- contest/group/student comparison sections
-- trend charts and export content driven from local mock datasets
-
-So the current page is better described as:
-
-- a partially integrated analytics UI
-- with a real backend metrics subsystem available in the codebase
+`MOCK_INSTRUCTOR_ANALYTICS` and its builder files still exist for component defaults, fixtures, and
+isolated development. `ResearchAnalyticsPage` passes the dashboard query result into its components,
+so those mock values are not the normal data source for the visible page.
 
 ### 11.3 Refresh behavior
 
@@ -494,7 +560,8 @@ Current refresh behavior is query-based, not event-based:
 - no SSE analytics stream
 - no automatic server push
 - no active polling loop in the real analysis hook
-- manual or normal React Query refetch behavior only
+- the Metrics Table Refresh button calls the dashboard query's `refetch`
+- normal React Query refetch behavior also applies
 
 ---
 
@@ -507,7 +574,9 @@ Current refresh behavior is query-based, not event-based:
 - no SSE event exists for "snapshot ready"
 - many timing and hint metrics depend on `ContestProblemSession`, but I did not find that table being written by the current main contest student flow
 - because of that, solve-time and hint-based metrics may be incomplete or empty even when submission data exists
-- the visible research analytics page still leans heavily on mock datasets, so the user-facing screen does not yet fully represent the real backend analytics subsystem
+- the dashboard query loads all instructor-owned contests and computes all segments and student views in one request, so its cost grows with contest, session, submission, and participant volume
+- the visible page currently substitutes an empty payload while data is unavailable; dedicated loading and query-error presentation is limited
+- the dashboard is a current-data view, while `instructorAnalysis.get` is the watermark snapshot view; consumers must not assume the two responses use the same cutoff or shape
 
 ---
 
@@ -515,6 +584,8 @@ Current refresh behavior is query-based, not event-based:
 
 ### Backend analytics
 
+- [x] Database-backed analytics dashboard tRPC query exists
+- [x] All-cohort, Group A/B/C, and per-student metric bundles are computed
 - [x] Instructor-only analytics tRPC router exists
 - [x] Contest selection and problem selection are supported
 - [x] Snapshot preferences `latest`, `preliminary`, and `final` are supported
@@ -523,13 +594,23 @@ Current refresh behavior is query-based, not event-based:
 - [x] Problem-student metrics are computed on demand
 - [x] Snapshot metadata includes status, watermark, computed time, and message
 
+### Frontend analytics
+
+- [x] Research analytics page uses `instructorAnalysis.dashboard`
+- [x] Current metrics can be filtered by contest and cohort
+- [x] Contest, group, and student comparisons use backend data
+- [x] Gamification and AI-hint trends are derived from backend data
+- [x] Manual query refresh is available
+- [x] CSV, JSON, and browser-print/PDF export is available
+
 ### Not implemented from the older design
 
 - [ ] Persisted snapshot tables
 - [ ] Metrics run tracking table
 - [ ] Redis/BullMQ delayed compute jobs
 - [ ] SSE analytics refresh stream
-- [ ] Fully wired production UI based entirely on real instructor analysis data
+- [ ] Persisted or scheduled historical trend snapshots
+- [ ] Dedicated dashboard loading and query-error states
 
 ### Data-quality caveat
 

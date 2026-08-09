@@ -27,13 +27,24 @@ npm install
 
 ## 3. Environment Setup
 
-1. Copy env template:
+1. Choose the template for the authentication mode you need. Do not use `.env.example`.
+
+For normal local development with quick-access accounts:
 
 ```bash
-cp .env.example .env
+cp .env.dev .env
 ```
 
-2. Set database and ports in `.env`:
+For SFU CAS integration or deployment configuration:
+
+```bash
+cp .env.cas .env
+```
+
+The templates are bases only. Keep `.env.dev` and `.env.cas` free of real credentials, then replace
+their placeholders in the untracked `.env` file.
+
+2. Set database credentials and ports in `.env`:
 
 ```env
 POSTGRES_DB="judge"
@@ -45,7 +56,7 @@ SWAGGER_PORT="8081"
 
 `DATABASE_URL` is optional. If omitted, backend/Prisma derives it from `POSTGRES_USER`, `POSTGRES_PASSWORD`, `DB_PORT`, and `POSTGRES_DB`.
 
-For local auth and judging, the current template also includes:
+For local development auth and judging, `.env.dev` includes:
 
 ```env
 AUTH_MODE="dev"
@@ -61,6 +72,14 @@ If port `5432` is already used on your machine, change:
 - `DB_PORT="5433"`
 
 If you explicitly set `DATABASE_URL`, keep it consistent with the values above.
+
+After switching templates or changing auth variables, restart Next.js. If the old auth mode still
+appears, remove the generated build first:
+
+```bash
+rm -rf .next
+npm run dev
+```
 
 ## 4. Start Docker Infrastructure
 
@@ -138,8 +157,10 @@ This repo currently supports two auth paths:
   - Local/dev quick-access flow using signed session cookies
   - Backed by `POST /api/auth/dev-login` and `POST /api/auth/dev-signup`
 - `AUTH_MODE=cas`
-  - CAS login flow through `/api/auth/cas/login` and `/api/auth/cas/callback`
-  - The Next server reads session state through `AUTH_BACKEND_BASE_URL + AUTH_ME_PATH`
+  - SFU CAS login flow through `/api/auth/cas/login` and `/api/auth/cas/callback`
+  - With `CAS_VALIDATE_URL` configured, the callback validates tickets directly with SFU
+  - The Next server signs and verifies its own CAS session with `CAS_AUTH_COOKIE_SECRET`
+  - The external `AUTH_BACKEND_BASE_URL + AUTH_ME_PATH` flow is a compatibility fallback
 
 ### 7.1 Current Dev Auth Endpoints
 
@@ -199,28 +220,71 @@ Then open:
 
 When running in CAS mode:
 
-1. Set `AUTH_MODE="cas"` and `NEXT_PUBLIC_AUTH_MODE="cas"`.
-2. Configure:
-   - `AUTH_BACKEND_BASE_URL`
-   - `AUTH_ME_PATH`
-   - `AUTH_BACKEND_CAS_PATH`
+1. Start from the CAS template:
+
+   ```bash
+   cp .env.cas .env
+   ```
+
+2. Confirm `AUTH_MODE="cas"` and `NEXT_PUBLIC_AUTH_MODE="cas"`.
+3. Configure the direct SFU CAS flow:
+   - `SESSION_COOKIE_NAME`
+   - `CAS_AUTH_COOKIE_SECRET`
    - `CAS_LOGIN_BASE_URL`
-3. Use:
+   - `CAS_VALIDATE_URL`
+   - `CAS_SERVICE_URL`
+4. Set `CAS_SERVICE_URL` to the exact public HTTPS callback registered with SFU CAS:
+
+   ```env
+   CAS_SERVICE_URL="https://coder.cmpt.sfu.ca/api/auth/cas/callback"
+   ```
+
+   Login and ticket validation must use this exact same value. Scheme, hostname, port, path, query,
+   and trailing-slash differences can cause ticket validation to fail.
+5. Replace all secret placeholders in `.env`, then restart/rebuild the app.
+6. Use:
    - `GET /api/auth/cas/login`
    - `POST /api/auth/cas/login`
    - `GET /api/auth/cas/callback`
 
+On a successful first login, Coder reads the computing ID returned by SFU CAS and creates a local
+`STUDENT` user if no matching database user exists. Existing database roles are preserved.
+
+`AUTH_BACKEND_BASE_URL`, `AUTH_ME_PATH`, and `AUTH_BACKEND_CAS_PATH` support the older external auth
+backend fallback. They are not the primary validation path when `CAS_VALIDATE_URL` is configured.
+
+`NEXT_PUBLIC_BACKEND_URL` is the base for the general frontend API client; it does not control where
+the browser is sent for SFU CAS login.
+
 ## 8. Fresh Machine Bootstrap
+
+### 8.1 Development mode (dev)
 
 ```bash
 npm install
-cp .env.example .env
+cp .env.dev .env
+# Replace all placeholders before continuing.
 npm run db:up
 npm run prisma:generate
 npm run prisma:deploy
 npm run prisma:seed
 npm run dev
 ```
+
+### 8.2 CAS mode (cas)
+
+```bash
+npm install
+cp .env.cas .env
+# Replace all placeholders and verify CAS_SERVICE_URL before continuing.
+npm run db:up
+npm run prisma:generate
+npm run prisma:deploy
+npm run dev
+```
+
+Seeding is optional in CAS mode. Unknown authenticated SFU users are provisioned automatically as
+students, while instructor and administrator roles must be assigned deliberately.
 
 ## 9. Legacy SQL Import (Optional)
 
@@ -265,3 +329,8 @@ This bypasses Prisma seed and is only for legacy compatibility checks.
 - Judge-related routes fail in practice or contest submission
   - Confirm `JUDGE_URL` is reachable from the machine running the app.
   - For AI practice judging, confirm `GEMINI_API_KEY` is set when `JUDGING_MODE="gemini"`.
+- CAS returns to the login page
+  - Confirm `CAS_SERVICE_URL` exactly matches the callback registered with SFU and the service value
+    used for ticket validation.
+  - Confirm `CAS_VALIDATE_URL` and `CAS_AUTH_COOKIE_SECRET` are configured.
+  - Restart the app after environment changes; remove `.next` first if an old mode remains compiled.

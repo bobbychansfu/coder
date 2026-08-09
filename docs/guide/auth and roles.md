@@ -33,7 +33,7 @@ The auth system is centered around:
 Current high-level behavior:
 
 - dev mode supports quick demo login and self-service student signup
-- CAS mode delegates identity verification to an external auth backend / CAS flow
+- CAS mode redirects to SFU CAS and can validate tickets directly with SFU
 - most of the app expects normalized roles:
   - `student`
   - `instructor`
@@ -71,8 +71,11 @@ Enabled by:
 Behavior:
 
 - login page uses CAS login
-- the Next app delegates authentication to the configured backend/CAS flow
-- session validation comes from the backend `/me` endpoint rather than local dev token verification
+- the browser is redirected to SFU CAS
+- when `CAS_VALIDATE_URL` is configured, the Next app validates the returned ticket directly with SFU
+- the Next app provisions new CAS users as students and signs its own CAS session cookie
+- session validation comes from the backend /me endpoint rather than local dev token verification
+- an external authentication backend remains available as a fallback when direct validation is not configured
 
 Main routes:
 
@@ -110,11 +113,13 @@ Current TTL:
 
 In CAS mode:
 
-- the callback route validates the CAS ticket against the configured backend
+- the callback route validates the CAS ticket directly with SFU when `CAS_VALIDATE_URL` is set
 - the login and validation requests use the same fixed `CAS_SERVICE_URL`
 - the desired post-login path is kept in a short-lived HttpOnly cookie instead of the CAS service URL
-- if successful, it forwards the backend `set-cookie` header back to the browser
-- later user resolution reads the same cookie and calls the backend `/me` endpoint
+- if successful, the app creates a signed local session using `CAS_AUTH_COOKIE_SECRET`
+- later user resolution verifies that signed session locally
+- if direct validation is not configured, the callback can instead use the external auth backend and
+  forward its `set-cookie` header
 
 ### 3.4 Logout
 
@@ -186,8 +191,11 @@ Purpose:
 Purpose:
 
 - receive the CAS ticket
-- validate it against the configured auth backend, passing both `ticket` and the exact `service`
-- forward session cookie into the app
+- validate it directly against `CAS_VALIDATE_URL`, passing both `ticket` and the exact `service`
+- read the SFU computing ID from the successful CAS XML response
+- preserve an existing database user's role or create a new `STUDENT` user automatically
+- create the signed local CAS session cookie
+- fall back to the configured external auth backend only when direct validation is not configured
 
 ### 4.3 Logout
 
@@ -222,9 +230,24 @@ then the app:
 
 No backend `/me` request is needed in that case.
 
-### 5.2 CAS / backend resolution
+### 5.2 CAS resolution
 
-If dev-mode local verification does not resolve a user:
+When all of these are true:
+
+- `AUTH_MODE === "cas"`
+- the session cookie exists
+- `CAS_AUTH_COOKIE_SECRET` exists
+
+the app verifies the locally signed CAS session and resolves the associated database user. No `/me`
+request is needed for this direct-validation flow.
+
+During the first successful CAS callback, the app uses the SFU computing ID to find a user by
+`computingId` or `<computingId>@sfu.ca`. If none exists, it creates a user with the `STUDENT` role.
+Existing roles are preserved.
+
+### 5.3 External-backend fallback
+
+If local guest, dev, and CAS session verification do not resolve a user:
 
 - the app forwards all cookies to `AUTH_BACKEND_BASE_URL + AUTH_ME_PATH`
 - expects a JSON payload containing:
@@ -301,6 +324,7 @@ Database enum `UserRole` contains:
 - `INSTRUCTOR`
 - `TA`
 - `STUDENT`
+- `GUEST`
 
 ### 7.2 Roles in app authorization
 
@@ -416,9 +440,11 @@ Allowed:
 3. Backend returns a CAS redirect URL
 4. Browser goes to CAS
 5. CAS returns to `/api/auth/cas/callback`
-6. Callback validates the ticket against the auth backend using the same fixed service URL
-7. Backend session cookie is forwarded into the app
-8. Later requests resolve the current user through `/me`
+6. Callback sends the ticket and the same fixed service URL to SFU's validation endpoint
+7. Callback reads the computing ID returned by SFU CAS
+8. The app finds or automatically provisions the database user
+9. The app sets a signed local CAS session cookie
+10. Later requests verify that session locally and redirect the user to the requested page
 
 ### 9.4 Logout
 
@@ -434,8 +460,12 @@ Allowed:
 - middleware only checks whether the session cookie exists, not whether it is valid
 - dev signup only creates student users
 - dev login only allows the predefined demo accounts
-- CAS mode depends on an external backend `/me` endpoint and CAS validation path being configured correctly
 - deployed CAS mode should set `CAS_SERVICE_URL` to the exact HTTPS callback registered with SFU
-- the auth backend must accept `ticket` and `service` query parameters and return a session `Set-Cookie` on success
+- direct CAS mode requires `CAS_LOGIN_BASE_URL`, `CAS_VALIDATE_URL`, `CAS_SERVICE_URL`, and
+  `CAS_AUTH_COOKIE_SECRET`
+- CAS automatically provisions unknown SFU computing IDs as `STUDENT`; an administrator must change
+  the role later when instructor or admin access is required
+- the auth backend must accept `ticket` and `service` query parameters and return a session
+  `Set-Cookie` only when using the external-backend fallback
 - if the backend `/me` payload uses an unexpected role value, the app will treat the user as unauthenticated
 - some older env flags such as `ALLOW_TA_*` exist in `.env`, but the main active role/permission code currently centers on `student`, `instructor`, and `admin`
