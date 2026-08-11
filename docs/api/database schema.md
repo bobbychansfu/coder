@@ -51,6 +51,7 @@ Primary source of truth:
 - `INSTRUCTOR`
 - `TA`
 - `STUDENT`
+- `GUEST`
 
 ### `ContestStatus`
 
@@ -196,10 +197,12 @@ Important fields:
 - `rank`
 - `createdAt`
 - `updatedAt`
+- `teamMemberships`
 
 Main relationships:
 
 - creates contests
+- creates teams/groups
 - authors announcements
 - owns submissions, hints, activities, participations, practice sessions, and contest problem sessions
 
@@ -587,6 +590,47 @@ Current note:
 - there is no unique constraint limiting one contest submission per user/problem
 - multiple contest submissions per problem are currently allowed
 
+### 5.19 `Team`
+
+Purpose:
+
+- Group assignment for Admin when researching or students forming own teams in a contest
+
+Important fields:
+
+- `id`
+- `name`
+- `contestId`
+- `createdAt`
+- `uupdatedAt`
+- `members`
+- `contest`
+
+Indexes:
+
+- `@@index([contestId])`
+
+Current note:
+
+- Used by Create Groups feature in Admin User Management page
+- Used by Create Team in Student contest page
+
+### 5.20 `TeamMember`
+
+Purpose:
+
+- Dictionary design to store keys to find a team
+
+Important fields:
+
+- `id`
+- `teamId`
+- `userId`
+
+Constraints:
+
+- `@@unique([teamId, userId])`
+
 ---
 
 ## 6) Key Relationships
@@ -626,6 +670,16 @@ Current note:
 - `PracticeSession` belongs to one `Problem`
 - `PracticeSession` -> many `PracticeRunRecord`
 
+### 6.5 Team-centered
+
+- `Contest` -> many `Team`
+- `Team` optionally belongs to one `Contest`
+- `Team` -> many `TeamMember`
+- `TeamMember` belongs to one `Team`
+- `TeamMember` belongs to one `User`
+- `User` -> many `TeamMember`
+- `User` <-> many `Team` through `TeamMember`
+
 ---
 
 ## 7) Important Constraints
@@ -648,6 +702,7 @@ Current note:
 - one `PracticeSession` row per user/problem
 - one `ContestProblemSession` row per user/contest/problem
 - one `UserAchievement` row per user/achievement
+- one `TeamMember` row per user/team
 
 ### Lifecycle fields to watch
 
@@ -675,6 +730,12 @@ Current note:
   - `source = PRACTICE`
   - `source = CONTEST`
   - `source = BOTH`
+- `Team` serves two purposes:
+  - admin-created student groups have `contestId = null`
+  - contest teams have a non-null `contestId`
+- `Team.name` is not unique, so different teams can have the same name
+- `TeamMember` prevents duplicate membership within the same team, but it does not prevent a user from belonging to multiple teams
+- application logic must enforce rules such as one team per student within a contest or group-assignment context
 
 ---
 
@@ -685,10 +746,12 @@ If someone is new to the project, a good order is:
 1. `User`
 2. `Problem`
 3. `Contest`
-4. `ContestProblem`
-5. `Participation`
-6. `ProblemStatus`
-7. `Submission`
-8. `PracticeSession`
-9. `PracticeRunRecord`
-10. analytics support tables
+4. `Team`
+5. `TeamMember`
+6. `ContestProblem`
+7. `Participation`
+8. `ProblemStatus`
+9. `Submission`
+10. `PracticeSession`
+11. `PracticeRunRecord`
+12. analytics support tables
