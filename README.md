@@ -13,16 +13,17 @@ Stack: **Next.js**, **Redis**, **PostgreSQL**, and **Flask**
 The platform currently supports:
 
 - Algorithmic problem solving with real-time feedback  
-- AI-assisted hint generation and configurable hint-timing logic   
+- AI-assisted hint generation through the SFU Judge AI Hint API, with configurable contest hint timing
+- SFU Judge integration for contest submissions, asynchronous result callbacks, and optional practice evaluation
 - Instructor contest and problem creation
-- Persisted practice sessions with configurable Gemini or external Judge evaluation
+- Persisted practice sessions with configurable Gemini or SFU Judge evaluation
 - Instructor research analytics and experiment-group comparisons
-- Student contest teams and administrator-managed student groups
+- Student-created contest teams and administrator-managed research groups
 - Development, SFU CAS, and administrator-created guest login flows
 
 Future Plans:
 
-- Team-based submissions and scoreboard aggregation
+- Continued development of SFU Judge capabilities, including broader language support, more robust sandboxed execution, improved verdict reporting, and reliable deployment
 - A guided learning path based on topics, progress, and weak areas
 - Deeper course-workflow integration and learner-support notifications
 
@@ -112,6 +113,8 @@ Practice submissions use the provider selected by `JUDGING_MODE`, while contest 
 | Dingsong Zhou | dza68@sfu.ca   |
 | Ran Wang      | rwa122@sfu.ca  |
 | Shilin Mao    | sma382@sfu.ca  |
+| Yichen Zheng  | yza715@sfu.ca  |
+| Jiahao Han    | jha400@sfu.ca  |
 
 ---
 
