@@ -1,5 +1,5 @@
 # Contest Section - System Design Notes
-**Schedule-based contest registration + optional three-student teams + contest problem workspace + direct judge integration + live scoreboard aggregation**
+**Schedule-based contest registration + optional three-student teams + contest problem workspace + direct judge integration**
 
 ---
 
@@ -35,15 +35,15 @@ In the current project, contests are:
 - able to organize registered students into contest-scoped teams through `Team` and `TeamMember`
 - tracked per problem through `ProblemStatus`
 - judged by forwarding submissions to an external judge service
-- summarized through a live scoreboard derived from stored contest results
+- stores participation and per-problem result data that can support a future scoreboard
 
 Important current behavior:
 
 - contests are **not** using a per-student countdown timer in the main student flow
 - students can submit **multiple times** to the same problem while the contest is active
 - registered students can create one fixed-size team of three for a contest
-- teams are currently organizational; submissions, progress, and scoreboard rows remain per student
-- scoreboard rows are built from current stored scores, not from delayed snapshot publication
+- teams are currently organizational; submissions and progress remain per student
+- a complete student-facing scoreboard is still required
 - practice is now a separate system and should be documented independently
 
 ---
@@ -72,12 +72,12 @@ Behavior:
 - loads the selected contest and the student-facing contest problem list
 - shows:
   - problem list
-  - current scoreboard
+- the complete scoreboard UI and its end-to-end data flow are not yet implemented
 - shows student team controls in the page header:
   - an existing team notice when the student already has a contest team
   - a `Create Team` dialog otherwise
   - a migration warning when team data cannot be loaded
-- only renders the scoreboard tab when there are scoreboard rows to display
+- scoreboard support remains future work
 
 ### 2.3 Contest problem page
 
@@ -224,7 +224,8 @@ The application checks that a user belongs to at most one team in the selected c
   - applies final judge status to contest submissions
   - also supports practice callback updates through the same endpoint
 - **Scoreboard builder**
-  - computes rows from `Participation` + `ProblemStatus`
+  - contains partial aggregation logic based on `Participation` + `ProblemStatus`
+  - is not yet connected to a complete, validated student-facing scoreboard
 - **Contest team service**
   - reads the current student's contest team and eligible teammates
   - creates a three-person team in a serializable transaction
@@ -488,7 +489,7 @@ Once the contest is ended:
 
 - new submissions are rejected
 - students can still review contest pages and prior submissions
-- scoreboard remains available from stored results
+- stored results remain available for a future contest scoreboard
 
 ---
 
@@ -533,8 +534,10 @@ Behavior:
 Returns:
 
 - contest problem status rows for the current user
-- scoreboard rows for the contest
+- supporting contest result data used by the partial scoreboard implementation
 - current user role
+
+The complete student-facing scoreboard and its end-to-end behavior still need to be implemented and validated.
 
 The page also uses `contestTeams.get` to load the student's current contest team and eligible teammates.
 
@@ -595,7 +598,7 @@ Behavior:
   - prepare the user to work on contest problems
 
 - `GET /api/s/contest/:cid`
-  - contest problem list and scoreboard
+  - contest problem list and supporting contest result data; the complete scoreboard remains future work
 
 - `GET /api/s/closed/:cid`
   - closed contest metadata route
@@ -694,7 +697,7 @@ The callback route:
 
 ### 12.1 Scoreboard
 
-Current scoreboard behavior:
+The project contains supporting contest data and aggregation logic that can be used by a future scoreboard:
 
 - rows are derived from `Participation` + `ProblemStatus`
 - score is the sum of per-problem stored scores
@@ -705,9 +708,9 @@ Current scoreboard behavior:
   3. solved descending
   4. display name ascending
 
-This is a **live aggregation** approach, not a delayed snapshot publish model.
+However, the full scoreboard feature has not been completed. The remaining work includes exposing the aggregation reliably through the active contest API, implementing and validating the student-facing scoreboard UI, defining refresh/freeze behavior, and testing ranking and tie-breaking rules end to end.
 
-Contest team membership does not currently change scoreboard aggregation. Each participant continues to have an individual row and score.
+The first version should use individual participant rows. Team scoreboard aggregation is a separate future enhancement because team membership currently does not change how submissions or scores are recorded.
 
 ### 12.2 Hints
 
@@ -728,7 +731,7 @@ Contest announcements exist in schema and admin/instructor surfaces, but the cur
 
 So, today:
 
-- scoreboard is live
+- scoreboard-related data and partial aggregation support exist, but the complete scoreboard remains to be implemented
 - hints are partially integrated
 - clarifications/announcements are not yet a full student-facing contest tab backed by live API data
 
@@ -758,7 +761,7 @@ See:
 - contest status is interpreted both from stored fields and from effective schedule computation
 - cron helps keep stored `Contest.status` aligned, but request-time code still defensively recomputes status
 - submissions depend on external judge availability
-- scoreboard consistency is based on current DB state, not snapshot publication
+- scoreboard display, refresh, ranking, tie-breaking, freeze, and publication behavior still need to be implemented and validated
 - the student flow currently has **no per-user timer lock**, heartbeat, offline, or forfeiture state machine
 - there is no dedicated contest "run against public tests" endpoint in the current student API
 - contest clarifications are not yet fully wired as a live student-facing feature
@@ -777,7 +780,9 @@ See:
 - [x] Students can discover registered and joinable contests
 - [x] Students can register and unregister from contests
 - [x] Students can enter registered contests
-- [x] Contest detail pages show problem lists and scoreboard rows
+- [x] Contest detail pages show problem lists
+- [ ] Implement the complete student-facing contest scoreboard
+- [ ] Validate scoreboard ranking, tie-breaking, refresh, and contest-end behavior
 - [x] Contest problem pages show statements, starter code, and submission history
 - [x] New submissions are blocked for upcoming and ended contests
 - [x] Multiple submissions per contest problem are supported
@@ -811,4 +816,5 @@ See:
 - [ ] Heartbeat / offline / forfeiture flow
 - [ ] One-final-submission-per-problem enforcement
 - [ ] Live student clarifications feed
+- [ ] Complete individual contest scoreboard UI and end-to-end data integration
 - [ ] Delayed scoreboard publish snapshots in the main contest request path
