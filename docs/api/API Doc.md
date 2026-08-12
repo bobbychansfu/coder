@@ -46,6 +46,9 @@ Default app URL:
 - `POST /api/auth/dev-signup`
   - Dev-only student signup plus login.
   - Body: `{ name, computingId, email, studentNumber? }`
+- `POST /api/auth/guest-login`
+  - Signs in an active guest account created by an administrator.
+  - Body: `{ username, password }`
 - `POST /api/auth/logout`
   - Clears the session cookie.
 
@@ -54,7 +57,7 @@ Default app URL:
 - `POST /api/practice/submissions`
   - Creates a practice submission.
   - Students get a persisted queued submission.
-  - Instructors get an ephemeral judged response.
+  - Instructors and admins get an ephemeral judged response without creating practice history.
   - Body: `{ problemId, language, code }`
 - `GET /api/practice/submissions/:submissionId`
   - Returns a persisted practice submission for the current student.
@@ -71,7 +74,8 @@ Default app URL:
   - Returns the current user profile and activity history.
 - `POST /api/s/update_profile`
   - Updates the current user profile.
-  - Body: `{ fname, lname, nickname, student_number }`
+  - Body: `{ fname, lname?, nickname, student_number }`
+  - `lname` may be empty; this supports CAS-provisioned and guest users who do not have a stored last name.
 - `GET /api/s/achievements`
   - Returns achievements plus topic XP and total XP.
 - `GET /api/s/achievements/:id/icon`
@@ -158,6 +162,14 @@ Default app URL:
 
 ## System and judging
 
+### Admin guest accounts (`/api/admin/*`)
+
+- `GET /api/admin/guest-users`
+  - Returns guest accounts for the admin user-management UI.
+- `POST /api/admin/guest-users`
+  - Creates a guest login and its linked user record.
+  - Body: `{ username, firstName, lastName?, password }`
+
 - `POST /api/judge-callback`
   - Main judge webhook.
   - Handles both contest submissions and persisted practice submissions.
@@ -174,6 +186,23 @@ Default app URL:
 - `POST /api/trpc/:trpc`
   - Internal tRPC transport used by the frontend client.
   - Not intended as a normal REST integration surface.
+
+### Current team and group procedures
+
+- `contestTeams.get({ contestId })`
+  - Student-only query returning the student's current contest team and eligible registered teammates.
+- `contestTeams.create({ contestId, name, memberUserIds })`
+  - Student-only mutation that atomically creates a three-person contest team.
+- `adminTeams.summary()`
+  - Admin-only query returning student grouping and membership data.
+- `adminTeams.createGroups(...)`
+  - Admin-only mutation for creating general student groups (`contestId = null`).
+- `adminTeams.updateMembers(...)`
+  - Admin-only mutation for changing group membership.
+- `adminTeams.deleteGroups(...)`
+  - Admin-only mutation for deleting selected general groups.
+- `adminUsers.update(...)` and `adminUsers.delete(...)`
+  - Admin-only mutations used by user management.
 
 ## Instructor note
 

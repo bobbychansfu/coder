@@ -34,6 +34,7 @@ Current high-level behavior:
 
 - dev mode supports quick demo login and self-service student signup
 - CAS mode redirects to SFU CAS and can validate tickets directly with SFU
+- optional guest login uses administrator-created, expiring local credentials
 - most of the app expects normalized roles:
   - `student`
   - `instructor`
@@ -83,6 +84,25 @@ Main routes:
 - `POST /api/auth/cas/login`
 - `GET /api/auth/cas/callback`
 
+### 2.3 Guest login
+
+Enabled independently of the main auth mode by:
+
+- `GUEST_LOGIN_ENABLED="true"`
+- `GUEST_AUTH_COOKIE_SECRET`
+
+Behavior:
+
+- an administrator creates a guest account through `/api/admin/guest-users`
+- the guest signs in with a local username and password through `/api/auth/guest-login`
+- disabled or expired credentials are rejected
+- the app stores the database role as `GUEST` but exposes the session's effective application role as `student`
+- successful guest sessions last 6 hours
+
+Main route:
+
+- `POST /api/auth/guest-login`
+
 ---
 
 ## 3) Session Model
@@ -121,7 +141,16 @@ In CAS mode:
 - if direct validation is not configured, the callback can instead use the external auth backend and
   forward its `set-cookie` header
 
-### 3.4 Logout
+### 3.4 Guest session
+
+When guest login is enabled:
+
+- `POST /api/auth/guest-login` validates the local credential and expiry
+- the backend signs the session using `GUEST_AUTH_COOKIE_SECRET`
+- the session identifies the account as a guest while granting the student-facing application role
+- expired guest users are removed when an administrator lists guest accounts
+
+### 3.5 Logout
 
 `POST /api/auth/logout`
 
@@ -204,6 +233,39 @@ Purpose:
 Purpose:
 
 - clear the current session cookie
+
+### 4.4 Guest auth and administration
+
+#### `POST /api/auth/guest-login`
+
+Purpose:
+
+- authenticate an enabled, unexpired guest credential
+
+Input:
+
+- `username`
+- `password`
+
+#### `GET /api/admin/guest-users`
+
+Purpose:
+
+- let an administrator list current guest accounts and remove expired records
+
+#### `POST /api/admin/guest-users`
+
+Purpose:
+
+- let an administrator create a guest account with an optional expiry
+
+Input:
+
+- `username`
+- `firstName` (optional)
+- `lastName` (optional)
+- `password`
+- `expiresAt` (optional)
 
 ---
 
@@ -446,7 +508,16 @@ Allowed:
 9. The app sets a signed local CAS session cookie
 10. Later requests verify that session locally and redirect the user to the requested page
 
-### 9.4 Logout
+### 9.4 Guest login
+
+1. An administrator creates a credential through `POST /api/admin/guest-users`
+2. The guest enters the assigned username and password
+3. Frontend calls `POST /api/auth/guest-login`
+4. Backend verifies that guest login is enabled and the credential is active and unexpired
+5. The app sets a signed local guest session cookie
+6. Server-side user resolution maps the account to the student-facing application role
+
+### 9.5 Logout
 
 1. Frontend calls `POST /api/auth/logout`
 2. Session cookie is cleared
