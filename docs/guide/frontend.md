@@ -32,7 +32,7 @@ npm run dev
 - `http://localhost:3000`
 
 If pages depend on seeded data, auth mode, or backend routes, also follow the setup in
-`docs/backend.md`.
+`docs/guide/backend.md`.
 
 ## App Structure
 
@@ -169,7 +169,7 @@ The frontend talks to the backend in two main ways:
 
 Useful docs:
 
-- `docs/backend.md`
+- `docs/guide/backend.md`
 - `docs/backendAPI.yaml`
 - `docs/API Doc.md`
 

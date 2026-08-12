@@ -14,13 +14,17 @@ The platform currently supports:
 
 - Algorithmic problem solving with real-time feedback  
 - AI-assisted hint generation and configurable hint-timing logic   
-- Instructor Contest and Problem creation
+- Instructor contest and problem creation
+- Persisted practice sessions with configurable Gemini or external Judge evaluation
+- Instructor research analytics and experiment-group comparisons
+- Student contest teams and administrator-managed student groups
+- Development, SFU CAS, and administrator-created guest login flows
 
 Future Plans:
 
-- Learning analytics dashboards for tracking performance, attempts, and strategy indicators  
-- Research instrumentation for controlled studies in competitive programming pedagogy  
-- Integration with course workflows, allowing instructors to monitor progress and identify learners who may need additional support  
+- Team-based submissions and scoreboard aggregation
+- A guided learning path based on topics, progress, and weak areas
+- Deeper course-workflow integration and learner-support notifications
 
 Coder is actively developed as part of ongoing research in competitive programming education, learning trajectories, and data-driven instructional design. It will be used in pilot studies and upper-division CP courses at Simon Fraser University.
 
@@ -47,21 +51,22 @@ This repository uses continuous deployment to publish different branches to diff
 📌 **Engineering Guide:** please check under `docs/`
 
 This guide covers:
-- Frontend setup: `docs/frontend.md`
-- Backend setup: `docs/backend.md`
+- Frontend setup: `docs/guide/frontend.md`
+- Backend setup: `docs/guide/backend.md`
 - Workflow and standards: `docs/workflow.md`
 
 Quick links:
-<a href="docs/frontend.md"><kbd>Frontend Docs</kbd></a>
-<a href="docs/backend.md"><kbd>Backend Docs</kbd></a>
+<a href="docs/guide/frontend.md"><kbd>Frontend Docs</kbd></a>
+<a href="docs/guide/backend.md"><kbd>Backend Docs</kbd></a>
 <a href="docs/workflow.md"><kbd>Workflow Docs</kbd></a>
 
 ### Practice Judging
 
-Practice submissions use Gemini, while contest submissions continue to use the external SFU Judge.
+Practice submissions use the provider selected by `JUDGING_MODE`, while contest submissions continue to use the external SFU Judge.
 
-- Practice requires `JUDGING_MODE=gemini`, `GEMINI_API_KEY`, and optionally `GEMINI_MODEL`.
-- Practice flow: frontend `POST /api/practice/submissions` -> backend persists the submission -> Gemini evaluates it asynchronously -> frontend receives the normalized result through SSE.
+- Gemini practice mode requires `JUDGING_MODE=gemini`, `GEMINI_API_KEY`, and optionally `GEMINI_MODEL`.
+- External Judge practice mode uses `JUDGING_MODE=judge` and `JUDGE_URL`.
+- Practice flow: frontend `POST /api/practice/submissions` -> backend persists student submissions -> the selected provider evaluates them -> the frontend receives normalized results through polling/SSE as applicable.
 - Contest flow is independent of `JUDGING_MODE`; it submits mapped contest problems to `JUDGE_URL` and receives results through `/api/judge-callback`.
 
 ---
