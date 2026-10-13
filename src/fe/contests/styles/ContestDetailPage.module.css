@@ -218,16 +218,6 @@ a.problemTableRowAttempted:hover {
   color: #0a0a0a;
 }
 
-.scoreboardButton {
-  text-transform: none;
-  font-family: Inter, sans-serif;
-  font-size: 14px;
-  border-radius: 6px;
-  color: #0a0a0a;
-  border-color: rgba(0, 0, 0, 0.1);
-  background-color: #ffffff;
-}
-
 .scoreboardTable {
   display: flex;
   flex-direction: column;
@@ -269,25 +259,6 @@ a.problemTableRowAttempted:hover {
 .userRow {
   font-weight: 600;
   background-color: #eff6ff;
-}
-
-.userRowHighlighted {
-  animation: highlightUser 4s ease-out forwards;
-}
-
-@keyframes highlightUser {
-  0% {
-    background: linear-gradient(90deg, #fef3c7 0%, #fef9e7 100%);
-    box-shadow: 0 0 0 2px #f59e0b inset;
-  }
-  75% {
-    background: linear-gradient(90deg, #fef3c7 0%, #fef9e7 100%);
-    box-shadow: 0 0 0 2px #f59e0b inset;
-  }
-  100% {
-    background: transparent;
-    box-shadow: none;
-  }
 }
 
 .scoreboardHeaderRow {
