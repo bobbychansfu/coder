@@ -116,7 +116,7 @@ function looksLikeJudgeProblemId(value: string | null | undefined): value is str
   return typeof value === "string" && /^\d+$/.test(value.trim());
 }
 
-function resolveJudgeProblemId(problem: JudgeProblemMapping): string | null {
+export function resolveJudgeProblemId(problem: JudgeProblemMapping): string | null {
   if (looksLikeJudgeProblemId(problem.judgeProblemId)) {
     return problem.judgeProblemId.trim();
   }

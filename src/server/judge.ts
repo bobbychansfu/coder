@@ -53,6 +53,55 @@ export function parseJudgeResult(payload: JudgeResultLike): NormalizedJudgeResul
   };
 }
 
+export interface JudgeProblemSample {
+  input: string;
+  output: string;
+}
+
+export interface JudgeProblemFiles {
+  timeSec: number;
+  memMb: number;
+  samples: JudgeProblemSample[];
+}
+
+// Limits and samples are read from the judge's own problem folder, so the
+// problem page shows exactly what the judge enforces and runs.
+export async function fetchJudgeProblemFiles(
+  judgeProblemId: string,
+): Promise<JudgeProblemFiles | null> {
+  const judgeUrl = (process.env.JUDGE_URL ?? "http://127.0.0.1:8000").replace(/\/+$/, "");
+
+  try {
+    const response = await fetch(`${judgeUrl}/problems/${encodeURIComponent(judgeProblemId)}`, {
+      next: { revalidate: 60 },
+      signal: AbortSignal.timeout(2000),
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const payload = (await response.json()) as {
+      time_sec?: unknown;
+      mem_MB?: unknown;
+      samples?: unknown;
+    };
+    const samples: unknown[] = Array.isArray(payload.samples) ? payload.samples : [];
+
+    return {
+      timeSec: toNonNegativeInteger(payload.time_sec),
+      memMb: toNonNegativeInteger(payload.mem_MB),
+      samples: samples.flatMap((sample) => {
+        const { input, output } = (sample ?? {}) as { input?: unknown; output?: unknown };
+        return typeof input === "string" && typeof output === "string" ? [{ input, output }] : [];
+      }),
+    };
+  } catch (error) {
+    console.warn("[judge] could not load problem files", { judgeProblemId, error });
+    return null;
+  }
+}
+
 export function normalizeJudgeStatusToSubmissionStatus(
   status: string | null | undefined,
   score: number,

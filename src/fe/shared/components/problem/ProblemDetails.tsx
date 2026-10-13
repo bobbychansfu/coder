@@ -173,26 +173,46 @@ export default function ProblemDetails({
           </Box>
         </Box>
 
-        <Box display="flex" flexDirection="column" gap="12px">
-          <Typography className={styles.sectionTitle}>Example</Typography>
-          <Box className={styles.exampleCard}>
-            <Typography className={styles.exampleLabel}>Input:</Typography>
-            {detail.example.input.map((line) => (
-              <Typography key={line} className={styles.exampleText}>
-                {line}
-              </Typography>
-            ))}
-            <Typography className={styles.exampleLabel}>Output:</Typography>
-            {detail.example.output.map((line) => (
-              <Typography key={line} className={styles.exampleText}>
-                {line}
-              </Typography>
-            ))}
-            <Typography className={styles.exampleExplanation}>
-              Explanation: {renderInlineCode(detail.example.explanation)}
+        {detail.samples && detail.samples.length > 0 ? (
+          <Box display="flex" flexDirection="column" gap="12px">
+            <Typography className={styles.sectionTitle}>
+              {detail.samples.length > 1 ? "Examples" : "Example"}
             </Typography>
+            {detail.samples.map((sample, index) => (
+              <Box key={index} className={styles.exampleCard}>
+                <Typography className={styles.exampleLabel}>Input:</Typography>
+                <Box component="pre" className={`${styles.exampleText} ${styles.sampleText}`}>
+                  {sample.input}
+                </Box>
+                <Typography className={styles.exampleLabel}>Output:</Typography>
+                <Box component="pre" className={`${styles.exampleText} ${styles.sampleText}`}>
+                  {sample.output}
+                </Box>
+              </Box>
+            ))}
           </Box>
-        </Box>
+        ) : (
+          <Box display="flex" flexDirection="column" gap="12px">
+            <Typography className={styles.sectionTitle}>Example</Typography>
+            <Box className={styles.exampleCard}>
+              <Typography className={styles.exampleLabel}>Input:</Typography>
+              {detail.example.input.map((line) => (
+                <Typography key={line} className={styles.exampleText}>
+                  {line}
+                </Typography>
+              ))}
+              <Typography className={styles.exampleLabel}>Output:</Typography>
+              {detail.example.output.map((line) => (
+                <Typography key={line} className={styles.exampleText}>
+                  {line}
+                </Typography>
+              ))}
+              <Typography className={styles.exampleExplanation}>
+                Explanation: {renderInlineCode(detail.example.explanation)}
+              </Typography>
+            </Box>
+          </Box>
+        )}
       </Box>
     );
   }, [detail, tab, hideEditorial, hideStats, compactSubmissions]);

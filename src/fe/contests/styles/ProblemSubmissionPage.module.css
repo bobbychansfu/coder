@@ -384,6 +384,12 @@
   color: #e2e8f0;
 }
 
+.sampleText {
+  margin: 0;
+  white-space: pre;
+  overflow-x: auto;
+}
+
 .exampleExplanation {
   font-family: Inter, sans-serif;
   font-size: 12px;
