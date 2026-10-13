@@ -218,6 +218,38 @@ a.problemTableRowAttempted:hover {
   color: #0a0a0a;
 }
 
+.scoreboardScrollArea {
+  position: relative;
+}
+
+.scoreboardScrollArea::before,
+.scoreboardScrollArea::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 48px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 1;
+}
+
+.scoreboardScrollArea::before {
+  left: 0;
+  background: linear-gradient(to right, #ffffff, rgba(255, 255, 255, 0));
+}
+
+.scoreboardScrollArea::after {
+  right: 0;
+  background: linear-gradient(to left, #ffffff, rgba(255, 255, 255, 0));
+}
+
+.scoreboardScrollArea[data-more-left="true"]::before,
+.scoreboardScrollArea[data-more-right="true"]::after {
+  opacity: 1;
+}
+
 .scoreboardTable {
   display: flex;
   flex-direction: column;

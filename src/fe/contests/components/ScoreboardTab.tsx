@@ -21,6 +21,8 @@ export default function ScoreboardTab({ rows, problemColumns, scoringRule }: Sco
   const [displayCount, setDisplayCount] = useState(10);
   const [isLoading, setIsLoading] = useState(false);
   const loadingTimeoutRef = useRef<number | null>(null);
+  const tableRef = useRef<HTMLDivElement>(null);
+  const [hiddenColumns, setHiddenColumns] = useState({ left: false, right: false });
 
   const rankIconColor = (rank: number) => {
     if (rank === 1) return "#f59e0b";
@@ -35,8 +37,27 @@ export default function ScoreboardTab({ rows, problemColumns, scoringRule }: Sco
   const displayRows = rows.slice(0, displayCount);
   const hasMore = displayCount < rows.length;
 
+  const updateHiddenColumns = (table: HTMLDivElement) => {
+    const left = table.scrollLeft > 0;
+    const right = table.scrollLeft + table.clientWidth < table.scrollWidth - 1;
+    setHiddenColumns((current) =>
+      current.left === left && current.right === right ? current : { left, right },
+    );
+  };
+
+  // Re-measure when the card resizes or columns change, not only on scroll
+  useEffect(() => {
+    const table = tableRef.current;
+    if (!table) return;
+    updateHiddenColumns(table);
+    const observer = new ResizeObserver(() => updateHiddenColumns(table));
+    observer.observe(table);
+    return () => observer.disconnect();
+  }, [problemColumns.length]);
+
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
+    updateHiddenColumns(target);
     const scrollPosition = target.scrollTop + target.clientHeight;
     const scrollHeight = target.scrollHeight;
 
@@ -66,116 +87,124 @@ export default function ScoreboardTab({ rows, problemColumns, scoringRule }: Sco
         <Typography className={styles.scoreboardTitle}>Contest Standings</Typography>
       </Box>
 
+      {/* Fades mark hidden columns: macOS hides scrollbars until you scroll */}
       <Box
-        className={styles.scoreboardTable}
-        onScroll={handleScroll}
-        // One grid column per problem, however many there are
-        style={{ "--problem-count": problemColumns.length } as React.CSSProperties}
+        className={styles.scoreboardScrollArea}
+        data-more-left={hiddenColumns.left}
+        data-more-right={hiddenColumns.right}
       >
-        <Box className={`${styles.scoreboardRow} ${styles.scoreboardHeaderRow}`}>
-          <span>Rank</span>
-          <span>Team / Participant</span>
-          <span className={`${styles.centerCell} ${styles.headerCell}`}>Solved</span>
-          {isIcpc ? (
-            <span className={`${styles.centerCell} ${styles.headerCell}`}>Penalty</span>
-          ) : (
-            <span className={styles.rightCell}>Score</span>
-          )}
-          {problemColumns.map((code) => (
-            <span key={code} className={`${styles.centerCell} ${styles.headerCell}`}>
-              {code}
-            </span>
-          ))}
-        </Box>
+        <Box
+          className={styles.scoreboardTable}
+          onScroll={handleScroll}
+          ref={tableRef}
+          // One grid column per problem, however many there are
+          style={{ "--problem-count": problemColumns.length } as React.CSSProperties}
+        >
+          <Box className={`${styles.scoreboardRow} ${styles.scoreboardHeaderRow}`}>
+            <span>Rank</span>
+            <span>Team / Participant</span>
+            <span className={`${styles.centerCell} ${styles.headerCell}`}>Solved</span>
+            {isIcpc ? (
+              <span className={`${styles.centerCell} ${styles.headerCell}`}>Penalty</span>
+            ) : (
+              <span className={styles.rightCell}>Score</span>
+            )}
+            {problemColumns.map((code) => (
+              <span key={code} className={`${styles.centerCell} ${styles.headerCell}`}>
+                {code}
+              </span>
+            ))}
+          </Box>
 
-        {displayRows.map((row) => {
-          const isUserRow = !!row.isCurrentUser;
-          return (
-            <Box
-              key={row.rank}
-              className={`${styles.scoreboardRow} ${isUserRow ? styles.userRow : ""}`}
-              data-rank={row.rank}
-            >
-              <Box className={styles.rankCell}>
-                {row.rank <= 3 ? (
-                  <EmojiEventsIcon sx={{ fontSize: 16, color: rankIconColor(row.rank) }} />
-                ) : null}
-                <span>{row.rank}</span>
-              </Box>
-              <span className={styles.participantCell}>
-                <span>{row.name}</span>
-                {row.members ? (
-                  <span className={styles.participantMembers}>{row.members.join(", ")}</span>
-                ) : null}
-              </span>
-              <span className={styles.centerCell}>
-                <span className={styles.solvedBadge}>{row.solved}</span>
-              </span>
-              <span className={`${isIcpc ? styles.centerCell : styles.rightCell} ${styles.scoreValue}`}>
-                {isIcpc ? row.penalty : row.score}
-              </span>
-              {problemColumns.map((code) => {
-                const cell = row.problems[code];
-                if (!cell) {
-                  return (
-                    <span key={code} className={styles.centerCell}>
-                      <span className={styles.emptyCell}>—</span>
-                    </span>
-                  );
-                }
-
-                if (isIcpc) {
-                  // ICPC board notation: "+" solved first try, "+N" solved after N rejected
-                  // tries, "-N" N rejected tries without a solve; the solve minute goes below.
-                  const attempts = cell.attempts ?? 0;
-                  if (!cell.solved) {
+          {displayRows.map((row) => {
+            const isUserRow = !!row.isCurrentUser;
+            return (
+              <Box
+                key={row.rank}
+                className={`${styles.scoreboardRow} ${isUserRow ? styles.userRow : ""}`}
+                data-rank={row.rank}
+              >
+                <Box className={styles.rankCell}>
+                  {row.rank <= 3 ? (
+                    <EmojiEventsIcon sx={{ fontSize: 16, color: rankIconColor(row.rank) }} />
+                  ) : null}
+                  <span>{row.rank}</span>
+                </Box>
+                <span className={styles.participantCell}>
+                  <span>{row.name}</span>
+                  {row.members ? (
+                    <span className={styles.participantMembers}>{row.members.join(", ")}</span>
+                  ) : null}
+                </span>
+                <span className={styles.centerCell}>
+                  <span className={styles.solvedBadge}>{row.solved}</span>
+                </span>
+                <span className={`${isIcpc ? styles.centerCell : styles.rightCell} ${styles.scoreValue}`}>
+                  {isIcpc ? row.penalty : row.score}
+                </span>
+                {problemColumns.map((code) => {
+                  const cell = row.problems[code];
+                  if (!cell) {
                     return (
                       <span key={code} className={styles.centerCell}>
-                        <span className={`${styles.scoreBadge} ${styles.scorePenalty}`}>-{attempts}</span>
+                        <span className={styles.emptyCell}>—</span>
                       </span>
                     );
                   }
-                  const rejected = attempts - 1;
+
+                  if (isIcpc) {
+                    // ICPC board notation: "+" solved first try, "+N" solved after N rejected
+                    // tries, "-N" N rejected tries without a solve; the solve minute goes below.
+                    const attempts = cell.attempts ?? 0;
+                    if (!cell.solved) {
+                      return (
+                        <span key={code} className={styles.centerCell}>
+                          <span className={`${styles.scoreBadge} ${styles.scorePenalty}`}>-{attempts}</span>
+                        </span>
+                      );
+                    }
+                    const rejected = attempts - 1;
+                    return (
+                      <span key={code} className={styles.centerCell}>
+                        <span
+                          className={`${styles.scoreBadge} ${cell.firstSolve ? styles.icpcFirstSolve : styles.icpcSolved}`}
+                          title={cell.firstSolve ? "First to solve" : "Solved"}
+                        >
+                          {rejected > 0 ? `+${rejected}` : "+"}
+                        </span>
+                        <span className={styles.scoreTime}>{formatSolveTime(cell.minutes ?? 0)}</span>
+                      </span>
+                    );
+                  }
+
+                  if (typeof cell.penalty === "number") {
+                    return (
+                      <span key={code} className={styles.centerCell}>
+                        <span className={`${styles.scoreBadge} ${styles.scorePenalty}`}>
+                          {cell.penalty}
+                        </span>
+                      </span>
+                    );
+                  }
+
                   return (
                     <span key={code} className={styles.centerCell}>
-                      <span
-                        className={`${styles.scoreBadge} ${cell.firstSolve ? styles.icpcFirstSolve : styles.icpcSolved}`}
-                        title={cell.firstSolve ? "First to solve" : "Solved"}
-                      >
-                        {rejected > 0 ? `+${rejected}` : "+"}
-                      </span>
-                      <span className={styles.scoreTime}>{formatSolveTime(cell.minutes ?? 0)}</span>
+                      <span className={styles.scoreBadge}>{cell.points}</span>
+                      {cell.time ? <span className={styles.scoreTime}>{cell.time}</span> : null}
                     </span>
                   );
-                }
-
-                if (typeof cell.penalty === "number") {
-                  return (
-                    <span key={code} className={styles.centerCell}>
-                      <span className={`${styles.scoreBadge} ${styles.scorePenalty}`}>
-                        {cell.penalty}
-                      </span>
-                    </span>
-                  );
-                }
-
-                return (
-                  <span key={code} className={styles.centerCell}>
-                    <span className={styles.scoreBadge}>{cell.points}</span>
-                    {cell.time ? <span className={styles.scoreTime}>{cell.time}</span> : null}
-                  </span>
-                );
-              })}
+                })}
+              </Box>
+            );
+          })}
+          {isLoading && (
+            <Box className={styles.loadingIndicator}>
+              <Typography variant="body2" color="textSecondary">
+                Loading more...
+              </Typography>
             </Box>
-          );
-        })}
-        {isLoading && (
-          <Box className={styles.loadingIndicator}>
-            <Typography variant="body2" color="textSecondary">
-              Loading more...
-            </Typography>
-          </Box>
-        )}
+          )}
+        </Box>
       </Box>
     </Box>
   );
