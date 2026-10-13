@@ -2,10 +2,8 @@ import { SubmissionStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { syncStudentGamification } from "@/server/gamification/persistence";
 import { normalizeJudgeStatusToSubmissionStatus } from "./judge";
-import {
-  createVerdictNotifications,
-  publishNotifications,
-} from "./notifications/verdictNotifications";
+import { publishNotifications } from "./notifications/publish";
+import { createVerdictNotifications } from "./notifications/verdictNotifications";
 
 interface ApplyContestJudgeResultArgs {
   submissionId: string;

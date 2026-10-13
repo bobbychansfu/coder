@@ -4,7 +4,7 @@ import { useState, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Badge, Box, IconButton, Menu, MenuItem } from "@mui/material";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
-import { contestProblemHref, describeVerdict } from "@/lib/notifications";
+import { describeVerdict, notificationHref } from "@/lib/notifications";
 import { useNotifications } from "./NotificationsProvider";
 import styles from "../../styles/Navbar.module.css";
 
@@ -63,23 +63,34 @@ export default function NotificationBell() {
               className={unreadWhenOpened.has(item.id) ? styles.notificationUnread : undefined}
               onClick={() => {
                 setAnchor(null);
-                router.push(contestProblemHref(item.data));
+                router.push(notificationHref(item));
               }}
             >
-              <Box className={styles.notificationItem}>
-                <span
-                  className={
-                    item.data.status === "ACCEPTED"
-                      ? styles.notificationAccepted
-                      : styles.notificationRejected
-                  }
-                >
-                  {describeVerdict(item.data)}
-                </span>
-                <span className={styles.notificationMeta}>
-                  {item.data.problemTitle} · {timeAgo(item.createdAt)}
-                </span>
-              </Box>
+              {item.type === "VERDICT" ? (
+                <Box className={styles.notificationItem}>
+                  <span
+                    className={
+                      item.data.status === "ACCEPTED"
+                        ? styles.notificationAccepted
+                        : styles.notificationRejected
+                    }
+                  >
+                    {describeVerdict(item.data)}
+                  </span>
+                  <span className={styles.notificationMeta}>
+                    {item.data.problemTitle} · {timeAgo(item.createdAt)}
+                  </span>
+                </Box>
+              ) : (
+                <Box className={styles.notificationItem}>
+                  <span className={styles.notificationInvite}>
+                    {item.data.invitedByName} invited you to {item.data.teamName}
+                  </span>
+                  <span className={styles.notificationMeta}>
+                    {item.data.contestName} · {timeAgo(item.createdAt)}
+                  </span>
+                </Box>
+              )}
             </MenuItem>
           ))
         )}

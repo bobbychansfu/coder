@@ -19,6 +19,8 @@ import {
   type NotificationPayload,
 } from "@/lib/notifications";
 
+type VerdictNotification = Extract<NotificationPayload, { type: "VERDICT" }>;
+
 interface ViewedSubmissions {
   contestId: string;
   problemId: string;
@@ -47,7 +49,7 @@ export default function NotificationsProvider({ children }: { children: ReactNod
     onSuccess: () => utils.notifications.list.invalidate(),
   });
   const viewedSubmissionsRef = useRef<ViewedSubmissions | null>(null);
-  const [toasts, setToasts] = useState<NotificationPayload[]>([]);
+  const [toasts, setToasts] = useState<VerdictNotification[]>([]);
 
   useEffect(() => {
     const source = new EventSource("/api/notifications/stream");
@@ -56,11 +58,15 @@ export default function NotificationsProvider({ children }: { children: ReactNod
       const notification = JSON.parse((event as MessageEvent<string>).data) as NotificationPayload;
       void utils.notifications.list.invalidate();
 
+      // Verdicts pop a toast (invites wait in the bell), unless they're already on screen
+      if (notification.type !== "VERDICT") {
+        return;
+      }
       const viewed = viewedSubmissionsRef.current;
       const onScreen =
         viewed?.contestId === notification.data.contestId &&
         viewed?.problemId === notification.data.problemId;
-      if (notification.type === "VERDICT" && !onScreen) {
+      if (!onScreen) {
         setToasts((current) => [...current, notification]);
       }
     });

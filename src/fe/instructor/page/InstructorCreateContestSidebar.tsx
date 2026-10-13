@@ -43,6 +43,7 @@ interface InstructorCreateContestSidebarProps {
   isPageLoading: boolean;
   publishLabel: string;
   onFieldChange: (field: keyof ContestFormDraft, value: string) => void;
+  onNumberFieldChange: (field: keyof ContestFormDraft, value: string) => void;
   onPublish: () => void;
 }
 
@@ -56,6 +57,7 @@ export default function InstructorCreateContestSidebar({
   isPageLoading,
   publishLabel,
   onFieldChange,
+  onNumberFieldChange,
   onPublish,
 }: InstructorCreateContestSidebarProps) {
   const contestStatusRows: StatusSummaryRow[] = aiHintEnabled
@@ -203,6 +205,28 @@ export default function InstructorCreateContestSidebar({
               {CONTEST_SCORING_RULE_OPTIONS.map((option) => (
                 <MenuItem key={option.value} value={option.value}>
                   {option.label}
+                </MenuItem>
+              ))}
+            </TextField>
+          </div>
+
+          <div className={styles.fieldBlock}>
+            <Typography className={styles.fieldLabel}>
+              {contestAuthoringCopy.teamSizeLabel}
+            </Typography>
+            <TextField
+              select
+              fullWidth
+              size="small"
+              value={String(formValues.maxTeamSize)}
+              onChange={(event) => onNumberFieldChange("maxTeamSize", event.target.value)}
+              className={styles.inputField}
+              SelectProps={{ IconComponent: KeyboardArrowDownRoundedIcon }}
+              helperText={contestAuthoringCopy.teamSizeHint}
+            >
+              {[1, 2, 3, 4, 5].map((size) => (
+                <MenuItem key={size} value={String(size)}>
+                  {size === 1 ? "1 (individual)" : `${size} people`}
                 </MenuItem>
               ))}
             </TextField>

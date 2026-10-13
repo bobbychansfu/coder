@@ -1,16 +1,17 @@
 import type { Notification, Prisma } from "@prisma/client";
-import type { NotificationPayload, VerdictNotificationData } from "@/lib/notifications";
-import { notificationEvents } from "./notificationEvents";
+import type { VerdictNotificationData } from "@/lib/notifications";
 
 interface JudgedSubmission {
   id: string;
   userId: string;
   contestId: string;
   problemId: string;
+  // The team the submission was made for; every member hears the verdict
+  teamId: string | null;
   status: string;
 }
 
-// One notification per recipient: the submitter and, in a team contest, every teammate.
+// One notification per recipient: the submitter and everyone on the team it was made for.
 export async function createVerdictNotifications(
   tx: Prisma.TransactionClient,
   submission: JudgedSubmission,
@@ -26,10 +27,12 @@ export async function createVerdictNotifications(
       where: { id: submission.userId },
       select: { firstName: true, lastName: true, computingId: true },
     }),
-    tx.team.findFirst({
-      where: { contestId: submission.contestId, members: { some: { userId: submission.userId } } },
-      select: { members: { select: { userId: true } } },
-    }),
+    submission.teamId
+      ? tx.team.findUnique({
+          where: { id: submission.teamId },
+          select: { members: { select: { userId: true } } },
+        })
+      : null,
   ]);
 
   const index = contestProblems.findIndex((row) => row.problemId === submission.problemId);
@@ -60,21 +63,4 @@ export async function createVerdictNotifications(
       } satisfies VerdictNotificationData,
     })),
   });
-}
-
-export function toNotificationPayload(row: Notification): NotificationPayload {
-  return {
-    id: row.id,
-    type: row.type,
-    createdAt: row.createdAt.toISOString(),
-    readAt: row.readAt?.toISOString() ?? null,
-    data: row.data as unknown as VerdictNotificationData,
-  };
-}
-
-// Call after the transaction commits, so listeners never see rolled-back rows
-export function publishNotifications(rows: Notification[]) {
-  for (const row of rows) {
-    notificationEvents.publish(row.userId, toNotificationPayload(row));
-  }
 }

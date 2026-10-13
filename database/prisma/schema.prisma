@@ -114,6 +114,8 @@ model User {
   contestProblemSessions ContestProblemSession[]
   localCredential       LocalCredential?
   notifications          Notification[]
+  teamInvitesReceived    TeamInvite[]            @relation("TeamInvitesReceived")
+  teamInvitesSent        TeamInvite[]            @relation("TeamInvitesSent")
 }
 
 model LocalCredential {
@@ -131,13 +133,15 @@ model LocalCredential {
 }
 
 model Team {
-  id        String       @id @default(cuid())
-  name      String
-  contestId String?
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-  members   TeamMember[]
-  contest   Contest?     @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  id          String       @id @default(cuid())
+  name        String
+  contestId   String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  members     TeamMember[]
+  submissions Submission[]
+  invites     TeamInvite[]
+  contest     Contest?     @relation(fields: [contestId], references: [id], onDelete: Cascade)
 
   @@index([contestId])
 }
@@ -146,11 +150,41 @@ model TeamMember {
   id     String @id @default(cuid())
   teamId String
   userId String
+  // The team's contest (null for admin research groups), so a person can be on
+  // only one team per contest
+  contestId String?
 
   team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([teamId, userId])
+  @@unique([contestId, userId])
+}
+
+enum TeamInviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  REVOKED
+}
+
+// Joining a team needs the invitee's consent; the token makes a shareable link
+model TeamInvite {
+  id            String           @id @default(cuid())
+  teamId        String
+  invitedUserId String
+  invitedById   String
+  token         String           @unique
+  status        TeamInviteStatus @default(PENDING)
+  createdAt     DateTime         @default(now())
+  respondedAt   DateTime?
+
+  team        Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  invitedUser User @relation("TeamInvitesReceived", fields: [invitedUserId], references: [id], onDelete: Cascade)
+  invitedBy   User @relation("TeamInvitesSent", fields: [invitedById], references: [id], onDelete: Cascade)
+
+  @@index([invitedUserId, status])
+  @@index([teamId, status])
 }
 
 model PracticeSession {
@@ -222,6 +256,8 @@ model Contest {
   published       Boolean       @default(false)
   aiHintEnabled   Boolean       @default(false)
   scoringRule     ContestScoringRule @default(POINTS)
+  // Contestants per team; 1 makes it an individual contest
+  maxTeamSize     Int           @default(3)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -241,6 +277,7 @@ model Contest {
 
 enum NotificationType {
   VERDICT
+  TEAM_INVITE
 }
 
 // In-portal notifications shown under the navbar bell (and as toasts for verdicts)
@@ -477,11 +514,15 @@ model Submission {
   userId    String
   contestId String
   problemId String
+  // The submitter's team when it was made, so later roster changes never move results
+  teamId    String?
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
   problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  team    Team?   @relation(fields: [teamId], references: [id], onDelete: SetNull)
 
   @@index([contestId, problemId])
   @@index([userId, createdAt])
+  @@index([teamId])
 }

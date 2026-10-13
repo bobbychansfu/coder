@@ -149,7 +149,8 @@
 }
 
 .notificationAccepted,
-.notificationRejected {
+.notificationRejected,
+.notificationInvite {
   font-size: 14px;
   font-weight: 600;
 }
@@ -160,6 +161,11 @@
 
 .notificationRejected {
   color: #dc2626;
+}
+
+.notificationInvite {
+  color: #0a0a0a;
+  white-space: normal;
 }
 
 .notificationMeta {

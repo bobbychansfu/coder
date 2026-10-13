@@ -1,5 +1,5 @@
 import { protectedProcedure, router, type Context } from "../init";
-import { toNotificationPayload } from "@/server/notifications/verdictNotifications";
+import { toNotificationPayload } from "@/server/notifications/publish";
 
 async function findDbUserId(ctx: Context & { user: NonNullable<Context["user"]> }) {
   const user = await ctx.prisma.user.findUnique({

@@ -7,6 +7,8 @@ import { publicProcedure, router } from "../init";
 
 const visibilitySchema = z.enum(["course-only", "public", "private"]);
 const scoringRuleSchema = z.enum(["points", "icpc"]);
+// People per team; 1 makes it an individual contest
+const maxTeamSizeSchema = z.number().int().min(1).max(5);
 const hintDelayMinutesSchema = z.number().int().min(0).max(10_080);
 const DEFAULT_GROUP_A_HINT_DELAY_MINUTES = 5;
 const DEFAULT_GROUP_B_HINT_DELAY_MINUTES = 10;
@@ -22,6 +24,7 @@ const contestMutationSchema = z.object({
   endUtcOffsetMinutes: z.number().int().nullable().optional(),
   visibility: visibilitySchema,
   scoringRule: scoringRuleSchema.default("points"),
+  maxTeamSize: maxTeamSizeSchema.default(3),
   aiHintEnabled: z.boolean(),
   groupAHintAfterMinutes: hintDelayMinutesSchema.default(DEFAULT_GROUP_A_HINT_DELAY_MINUTES),
   groupBHintAfterMinutes: hintDelayMinutesSchema.default(DEFAULT_GROUP_B_HINT_DELAY_MINUTES),
@@ -41,6 +44,7 @@ const contestPatchSchema = z
     endUtcOffsetMinutes: z.number().int().nullable().optional(),
     visibility: visibilitySchema.optional(),
     scoringRule: scoringRuleSchema.optional(),
+    maxTeamSize: maxTeamSizeSchema.optional(),
     aiHintEnabled: z.boolean().optional(),
     groupAHintAfterMinutes: hintDelayMinutesSchema.optional(),
     groupBHintAfterMinutes: hintDelayMinutesSchema.optional(),
@@ -366,6 +370,7 @@ export const contestAuthoringRouter = router({
         endsAtIso: contest.endsAt?.toISOString() ?? null,
         visibility: toUiVisibility(contest.visibility),
         scoringRule: contest.scoringRule === "ICPC" ? ("icpc" as const) : ("points" as const),
+        maxTeamSize: contest.maxTeamSize,
         aiHintEnabled: contest.aiHintEnabled,
         groupAHintAfterMinutes,
         groupBHintAfterMinutes,
@@ -459,6 +464,7 @@ export const contestAuthoringRouter = router({
             description: input.description.trim() || null,
             visibility: toDbVisibility(input.visibility),
             scoringRule: toDbScoringRule(input.scoringRule),
+            maxTeamSize: input.maxTeamSize,
             startsAt,
             endsAt,
             durationMinutes,
@@ -650,6 +656,10 @@ export const contestAuthoringRouter = router({
 
         if (hasOwnKey(input.data, "scoringRule") && input.data.scoringRule) {
           contestUpdateData.scoringRule = toDbScoringRule(input.data.scoringRule);
+        }
+
+        if (hasOwnKey(input.data, "maxTeamSize") && input.data.maxTeamSize !== undefined) {
+          contestUpdateData.maxTeamSize = input.data.maxTeamSize;
         }
 
         if (hasOwnKey(input.data, "aiHintEnabled") && input.data.aiHintEnabled !== undefined) {

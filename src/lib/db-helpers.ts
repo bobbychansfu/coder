@@ -6,6 +6,11 @@ import {
   resolveContestEndTimestamp,
 } from "./contestStatus";
 import { buildIcpcStandings } from "./icpcStandings";
+import {
+  ensureContestTeam,
+  removeFromContestTeam,
+  userHasContestSubmissions,
+} from "@/server/teams/contestTeamService";
 import { buildPointsStandings } from "./pointsStandings";
 
 function groupByUserId<T extends { userId: string }>(rows: T[]): Map<string, T[]> {
@@ -397,8 +402,8 @@ export const dbHelpers = {
       `${contestant.user.firstName} ${contestant.user.lastName}`.trim() ||
       contestant.user.computingId;
 
-    // A contest team is ranked as one entry; students who are not on a team keep a
-    // row of their own.
+    // Every contestant is on a team (a team of one by default), ranked as one entry.
+    // A contestant somehow without a team still gets a row keyed by their user id.
     const teamByUserId = new Map<string, { id: string; name: string }>();
     for (const team of teams) {
       for (const member of team.members) {
@@ -409,7 +414,7 @@ export const dbHelpers = {
     const entries = new Map<string, { teamName: string | null; members: Contestant[] }>();
     for (const contestant of contestants) {
       const team = teamByUserId.get(contestant.userId);
-      const key = team ? `team:${team.id}` : `user:${contestant.userId}`;
+      const key = team ? team.id : `user:${contestant.userId}`;
       const entry = entries.get(key) ?? { teamName: team?.name ?? null, members: [] };
       entry.members.push(contestant);
       entries.set(key, entry);
@@ -419,28 +424,40 @@ export const dbHelpers = {
       problemId: problem.problemId,
       code: String.fromCharCode(65 + index),
     }));
-    const rankedEntries = [...entries.values()].map((entry) => {
+    const rankedEntries = [...entries.entries()].map(([key, entry]) => {
       const memberNames = entry.members.map(displayNameOf).sort((a, b) => a.localeCompare(b));
       return {
+        key,
         name: entry.teamName ?? memberNames[0],
-        members: entry.teamName ? memberNames : undefined,
+        // A team of one is just its member, so list members only for real teams
+        members: memberNames.length > 1 ? memberNames : undefined,
         isCurrentUser: entry.members.some((member) => member.user.computingId === viewerComputingId),
         userIds: entry.members.map((member) => member.userId),
       };
     });
 
     if (contest.scoringRule === "ICPC") {
-      // A team's submissions are its members' submissions merged in time order.
+      // Each submission counts for the team it was made for; rows from before teams
+      // were recorded fall back to the submitter's current team.
       const submissions = await prisma.submission.findMany({
         where: { contestId },
-        select: { userId: true, problemId: true, status: true, createdAt: true },
+        select: { userId: true, teamId: true, problemId: true, status: true, createdAt: true },
       });
-      const submissionsByUserId = groupByUserId(submissions);
+      const submissionsByEntry = new Map<string, typeof submissions>();
+      for (const submission of submissions) {
+        const key =
+          submission.teamId ?? teamByUserId.get(submission.userId)?.id ?? `user:${submission.userId}`;
+        const list = submissionsByEntry.get(key) ?? [];
+        list.push(submission);
+        submissionsByEntry.set(key, list);
+      }
       return buildIcpcStandings({
         problems,
-        entries: rankedEntries.map(({ userIds, ...entry }) => ({
-          ...entry,
-          submissions: userIds.flatMap((userId) => submissionsByUserId.get(userId) ?? []),
+        entries: rankedEntries.map((entry) => ({
+          name: entry.name,
+          members: entry.members,
+          isCurrentUser: entry.isCurrentUser,
+          submissions: submissionsByEntry.get(entry.key) ?? [],
         })),
         startsAt: contest.startsAt,
         endsAt: resolveContestEndTimestamp(contest),
@@ -454,9 +471,11 @@ export const dbHelpers = {
     const statusesByUserId = groupByUserId(statuses);
     return buildPointsStandings({
       problems,
-      entries: rankedEntries.map(({ userIds, ...entry }) => ({
-        ...entry,
-        statuses: userIds.flatMap((userId) => statusesByUserId.get(userId) ?? []),
+      entries: rankedEntries.map((entry) => ({
+        name: entry.name,
+        members: entry.members,
+        isCurrentUser: entry.isCurrentUser,
+        statuses: entry.userIds.flatMap((userId) => statusesByUserId.get(userId) ?? []),
       })),
     });
   },
@@ -594,6 +613,8 @@ export const dbHelpers = {
             participants: { increment: 1 },
           },
         });
+        // Registering puts you on a team of one; invites can grow it later
+        await ensureContestTeam(tx, contestId, user.id);
       }
 
       return participation;
@@ -631,6 +652,11 @@ export const dbHelpers = {
           },
         },
       });
+
+      // Results stay with the team; only someone who never submitted leaves it
+      if (!(await userHasContestSubmissions(tx, contestId, user.id))) {
+        await removeFromContestTeam(tx, contestId, user.id);
+      }
 
       if (existingParticipation.role === "contestant") {
         const contest = await tx.contest.findUnique({
@@ -724,15 +750,20 @@ export const dbHelpers = {
     const user = await dbHelpers.findUserByComputingId(data.computingId);
     if (!user) throw new Error("User not found");
 
-    return prisma.submission.create({
-      data: {
-        userId: user.id,
-        contestId: data.contestId,
-        problemId: data.problemId,
-        submission: data.submission,
-        language: data.language,
-        status: "PENDING",
-      },
+    return prisma.$transaction(async (tx) => {
+      // Stamped now, so the result stays with this team whatever changes later
+      const teamId = await ensureContestTeam(tx, data.contestId, user.id);
+      return tx.submission.create({
+        data: {
+          userId: user.id,
+          contestId: data.contestId,
+          problemId: data.problemId,
+          teamId,
+          submission: data.submission,
+          language: data.language,
+          status: "PENDING",
+        },
+      });
     });
   },
 

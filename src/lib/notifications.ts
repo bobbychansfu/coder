@@ -14,13 +14,24 @@ export interface VerdictNotificationData {
   submittedBySelf: boolean;
 }
 
-export interface NotificationPayload {
+export interface TeamInviteNotificationData {
+  contestId: string;
+  contestName: string;
+  teamName: string;
+  invitedByName: string;
+  // Opens the confirmation page, where the invitee accepts or declines
+  token: string;
+}
+
+interface NotificationBase {
   id: string;
-  type: "VERDICT";
   createdAt: string;
   readAt: string | null;
-  data: VerdictNotificationData;
 }
+
+export type NotificationPayload =
+  | (NotificationBase & { type: "VERDICT"; data: VerdictNotificationData })
+  | (NotificationBase & { type: "TEAM_INVITE"; data: TeamInviteNotificationData });
 
 export const VERDICT_LABELS: Record<string, string> = {
   ACCEPTED: "Accepted",
@@ -39,4 +50,14 @@ export function describeVerdict(data: VerdictNotificationData): string {
 
 export function contestProblemHref(data: VerdictNotificationData): string {
   return `/contests/${data.contestId}/problems/${data.problemCode.toLowerCase()}`;
+}
+
+export function teamInviteHref(data: TeamInviteNotificationData): string {
+  return `/contests/${data.contestId}/invites/${data.token}`;
+}
+
+export function notificationHref(notification: NotificationPayload): string {
+  return notification.type === "VERDICT"
+    ? contestProblemHref(notification.data)
+    : teamInviteHref(notification.data);
 }
