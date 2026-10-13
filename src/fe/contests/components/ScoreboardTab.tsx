@@ -100,8 +100,9 @@ export default function ScoreboardTab({ rows, problemColumns }: ScoreboardTabPro
           <Typography className={styles.scoreboardTitle}>Contest Standings</Typography>
           {isIcpc ? (
             <Typography className={styles.scoreboardRule}>
-              ICPC rules · penalty = minutes to solve + {ICPC_PENALTY_MINUTES} per rejected attempt ·
-              dark green = first to solve
+              ICPC rules · +N solved after N rejected tries, -N not solved yet, minute of the solve
+              below · penalty = solve minutes + {ICPC_PENALTY_MINUTES} per rejected try · dark green =
+              first to solve
             </Typography>
           ) : null}
         </Box>
@@ -167,20 +168,26 @@ export default function ScoreboardTab({ rows, problemColumns }: ScoreboardTabPro
                 }
 
                 if (isIcpc) {
-                  const tries = `${cell.attempts} ${cell.attempts === 1 ? "try" : "tries"}`;
+                  // ICPC board notation: "+" solved first try, "+N" solved after N rejected
+                  // tries, "-N" N rejected tries without a solve; the solve minute goes below.
+                  const attempts = cell.attempts ?? 0;
+                  if (!cell.solved) {
+                    return (
+                      <span key={code} className={styles.centerCell}>
+                        <span className={`${styles.scoreBadge} ${styles.scorePenalty}`}>-{attempts}</span>
+                      </span>
+                    );
+                  }
+                  const rejected = attempts - 1;
                   return (
                     <span key={code} className={styles.centerCell}>
-                      {cell.solved ? (
-                        <span
-                          className={`${styles.scoreBadge} ${cell.firstSolve ? styles.icpcFirstSolve : styles.icpcSolved}`}
-                          title={cell.firstSolve ? "First to solve" : "Solved"}
-                        >
-                          {cell.minutes}
-                        </span>
-                      ) : (
-                        <span className={`${styles.scoreBadge} ${styles.scorePenalty}`}>✕</span>
-                      )}
-                      <span className={styles.scoreTime}>{tries}</span>
+                      <span
+                        className={`${styles.scoreBadge} ${cell.firstSolve ? styles.icpcFirstSolve : styles.icpcSolved}`}
+                        title={cell.firstSolve ? "First to solve" : "Solved"}
+                      >
+                        {rejected > 0 ? `+${rejected}` : "+"}
+                      </span>
+                      <span className={styles.scoreTime}>{cell.minutes}</span>
                     </span>
                   );
                 }
