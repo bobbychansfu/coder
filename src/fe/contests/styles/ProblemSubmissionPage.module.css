@@ -7,6 +7,10 @@
   min-height: 100%;
 }
 
+.contestNav {
+  align-self: flex-start;
+}
+
 .timerHeaderRow {
   position: relative;
   display: flex;

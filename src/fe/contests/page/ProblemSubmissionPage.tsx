@@ -7,6 +7,8 @@ import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import PageHeader from "@/fe/shared/components/PageHeader";
+import TabSwitcher from "@/fe/shared/components/ui/TabSwitcher";
+import { buildContestTabs } from "@/fe/shared/constants/routes";
 import AiHintDialog from "@/fe/shared/components/problem/AiHintDialog";
 import ProblemHeader from "@/fe/shared/components/problem/ProblemHeader";
 import ProblemDetails from "@/fe/shared/components/problem/ProblemDetails";
@@ -419,6 +421,13 @@ function ProblemSubmissionPageContent({
           />
         ) : null}
       </Box>
+
+      <TabSwitcher
+        value="problems"
+        options={buildContestTabs(contestId)}
+        ariaLabel="Contest navigation"
+        className={styles.contestNav}
+      />
 
       <Box className={styles.container}>
         <Box className={styles.leftColumn}>
