@@ -6,7 +6,14 @@ import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
 import styles from "@/fe/auth/styles/LoginPage.module.css";
 
-export default function GuestLoginPage({ enabled }: { enabled: boolean }) {
+interface GuestLoginPageProps {
+  enabled: boolean;
+  showSignup: boolean;
+}
+
+// Password sign-in for everyone outside SFU CAS: self-registered students (by email)
+// and admin-made guests (by username).
+export default function GuestLoginPage({ enabled, showSignup }: GuestLoginPageProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -28,12 +35,12 @@ export default function GuestLoginPage({ enabled }: { enabled: boolean }) {
       });
       const payload = (await response.json().catch(() => null)) as { message?: string } | null;
       if (!response.ok) {
-        setError(payload?.message ?? "Guest login failed.");
+        setError(payload?.message ?? "Sign-in failed.");
         return;
       }
       window.location.assign("/dashboard");
     } catch {
-      setError("Guest login failed.");
+      setError("Sign-in failed.");
     } finally {
       setSubmitting(false);
     }
@@ -47,14 +54,14 @@ export default function GuestLoginPage({ enabled }: { enabled: boolean }) {
         <p className={styles.brandSubtitle}>Competitive Programming Platform</p>
 
         <article className={styles.card}>
-          <h2 className={styles.cardTitle}>Guest Login</h2>
+          <h2 className={styles.cardTitle}>Sign in with email</h2>
           <p className={styles.cardDescription}>
-            Sign in with the guest username and password provided by an administrator.
+            Use the email you signed up with, or a guest username from an administrator.
           </p>
           {enabled ? (
             <form className={styles.form} onSubmit={(event) => void handleSubmit(event)}>
               <label className={styles.field}>
-                <span className={styles.fieldLabel}>Username</span>
+                <span className={styles.fieldLabel}>Email or username</span>
                 <input
                   className={styles.fieldInput}
                   value={username}
@@ -86,13 +93,21 @@ export default function GuestLoginPage({ enabled }: { enabled: boolean }) {
                 </div>
               </label>
               <button type="submit" className={styles.casButton} disabled={submitting}>
-                {submitting ? "Signing in..." : "Sign in as Guest"}
+                {submitting ? "Signing in..." : "Sign in"}
               </button>
             </form>
           ) : (
-            <p className={styles.errorText}>Guest login is not enabled in this environment.</p>
+            <p className={styles.errorText}>Email sign-in is not enabled in this environment.</p>
           )}
           {error ? <p role="alert" className={styles.errorText}>{error}</p> : null}
+          {showSignup ? (
+            <p className={styles.hint}>
+              No account yet?{" "}
+              <Link href="/signup" className={styles.inlineLink}>
+                Create one
+              </Link>
+            </p>
+          ) : null}
           <Link href="/login" className={styles.secondaryLink}>Back to SFU Login</Link>
         </article>
       </section>

@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import EmailSignupForm from "@/fe/auth/components/EmailSignupForm";
 import styles from "@/fe/auth/styles/LoginPage.module.css";
 
 interface SignupPageProps {
   showDevSignup: boolean;
+  showEmailSignup: boolean;
 }
 
 interface SignupFormState {
@@ -43,7 +45,7 @@ function validateForm(form: SignupFormState): string | null {
   return null;
 }
 
-export default function SignupPage({ showDevSignup }: SignupPageProps) {
+export default function SignupPage({ showDevSignup, showEmailSignup }: SignupPageProps) {
   const router = useRouter();
   const [form, setForm] = useState(INITIAL_FORM_STATE);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -93,6 +95,62 @@ export default function SignupPage({ showDevSignup }: SignupPageProps) {
     }
   };
 
+  const devSignupForm = (
+    <>
+      <p className={styles.cardDescription}>
+        DEV ONLY: Create a student account and sign in immediately.
+      </p>
+      <form className={styles.form} onSubmit={(event) => void handleSubmit(event)}>
+        <label className={styles.field}>
+          <span className={styles.fieldLabel}>Name</span>
+          <input
+            className={styles.fieldInput}
+            value={form.name}
+            onChange={(event) => updateField("name", event.target.value)}
+            autoComplete="name"
+          />
+        </label>
+        <label className={styles.field}>
+          <span className={styles.fieldLabel}>Computing ID</span>
+          <input
+            className={styles.fieldInput}
+            value={form.computingId}
+            onChange={(event) => updateField("computingId", event.target.value)}
+            autoCapitalize="none"
+            autoCorrect="off"
+          />
+        </label>
+        <label className={styles.field}>
+          <span className={styles.fieldLabel}>Email</span>
+          <input
+            className={styles.fieldInput}
+            type="email"
+            value={form.email}
+            onChange={(event) => updateField("email", event.target.value)}
+            autoComplete="email"
+          />
+        </label>
+        <label className={styles.field}>
+          <span className={styles.fieldLabel}>Student Number (Optional)</span>
+          <input
+            className={styles.fieldInput}
+            value={form.studentNumber}
+            onChange={(event) => updateField("studentNumber", event.target.value)}
+            autoComplete="off"
+          />
+        </label>
+        <button type="submit" className={styles.casButton} disabled={isSubmitting}>
+          {isSubmitting ? "Creating account..." : "Create Dev Account"}
+        </button>
+      </form>
+      {error ? (
+        <p role="alert" className={styles.errorText}>
+          {error}
+        </p>
+      ) : null}
+    </>
+  );
+
   return (
     <main className={styles.page}>
       <section className={styles.container}>
@@ -104,55 +162,10 @@ export default function SignupPage({ showDevSignup }: SignupPageProps) {
 
         <article className={styles.card}>
           <h2 className={styles.cardTitle}>Create Account</h2>
-          {showDevSignup ? (
-            <>
-              <p className={styles.cardDescription}>
-                DEV ONLY: Create a student account and sign in immediately.
-              </p>
-              <form className={styles.form} onSubmit={(event) => void handleSubmit(event)}>
-                <label className={styles.field}>
-                  <span className={styles.fieldLabel}>Name</span>
-                  <input
-                    className={styles.fieldInput}
-                    value={form.name}
-                    onChange={(event) => updateField("name", event.target.value)}
-                    autoComplete="name"
-                  />
-                </label>
-                <label className={styles.field}>
-                  <span className={styles.fieldLabel}>Computing ID</span>
-                  <input
-                    className={styles.fieldInput}
-                    value={form.computingId}
-                    onChange={(event) => updateField("computingId", event.target.value)}
-                    autoCapitalize="none"
-                    autoCorrect="off"
-                  />
-                </label>
-                <label className={styles.field}>
-                  <span className={styles.fieldLabel}>Email</span>
-                  <input
-                    className={styles.fieldInput}
-                    type="email"
-                    value={form.email}
-                    onChange={(event) => updateField("email", event.target.value)}
-                    autoComplete="email"
-                  />
-                </label>
-                <label className={styles.field}>
-                  <span className={styles.fieldLabel}>Student Number (Optional)</span>
-                  <input
-                    className={styles.fieldInput}
-                    value={form.studentNumber}
-                    onChange={(event) => updateField("studentNumber", event.target.value)}
-                    autoComplete="off"
-                  />
-                </label>
-                <button type="submit" className={styles.casButton} disabled={isSubmitting}>
-                  {isSubmitting ? "Creating account..." : "Create Dev Account"}
-                </button>
-              </form>
-            </>
+          {showEmailSignup ? (
+            <EmailSignupForm />
+          ) : showDevSignup ? (
+            devSignupForm
           ) : (
             <>
               <p className={styles.cardDescription}>
@@ -165,12 +178,6 @@ export default function SignupPage({ showDevSignup }: SignupPageProps) {
             </>
           )}
 
-          {error ? (
-            <p role="alert" className={styles.errorText}>
-              {error}
-            </p>
-          ) : null}
-
           <p className={styles.hint}>
             Already have access?{" "}
             <Link href="/login" className={styles.inlineLink}>
@@ -178,6 +185,13 @@ export default function SignupPage({ showDevSignup }: SignupPageProps) {
             </Link>
           </p>
         </article>
+
+        {showEmailSignup && showDevSignup ? (
+          <article className={styles.card}>
+            <h2 className={styles.cardTitle}>Dev account</h2>
+            {devSignupForm}
+          </article>
+        ) : null}
       </section>
     </main>
   );

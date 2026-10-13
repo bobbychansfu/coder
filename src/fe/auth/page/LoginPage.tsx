@@ -11,12 +11,25 @@ import { safeNextPath } from "@/lib/safeNextPath";
 interface LoginPageProps {
   showDevQuickAccess: boolean;
   showGuestLogin: boolean;
+  showSignup: boolean;
 }
 
-export default function LoginPage({ showDevQuickAccess, showGuestLogin }: LoginPageProps) {
+export default function LoginPage({ showDevQuickAccess, showGuestLogin, showSignup }: LoginPageProps) {
   return (
-    <Suspense fallback={<LoginPageView showDevQuickAccess={showDevQuickAccess} showGuestLogin={showGuestLogin} />}>
-      <LoginPageContent showDevQuickAccess={showDevQuickAccess} showGuestLogin={showGuestLogin} />
+    <Suspense
+      fallback={
+        <LoginPageView
+          showDevQuickAccess={showDevQuickAccess}
+          showGuestLogin={showGuestLogin}
+          showSignup={showSignup}
+        />
+      }
+    >
+      <LoginPageContent
+        showDevQuickAccess={showDevQuickAccess}
+        showGuestLogin={showGuestLogin}
+        showSignup={showSignup}
+      />
     </Suspense>
   );
 }
@@ -24,6 +37,7 @@ export default function LoginPage({ showDevQuickAccess, showGuestLogin }: LoginP
 interface LoginPageViewProps {
   showDevQuickAccess: boolean;
   showGuestLogin: boolean;
+  showSignup: boolean;
   isLoading?: boolean;
   loadingEmail?: string | null;
   casError?: string | null;
@@ -35,6 +49,7 @@ interface LoginPageViewProps {
 function LoginPageView({
   showDevQuickAccess,
   showGuestLogin,
+  showSignup,
   isLoading = false,
   loadingEmail = null,
   casError = null,
@@ -55,6 +70,7 @@ function LoginPageView({
           onCasLogin={onCasLogin}
           loading={isLoading && loadingEmail === null}
           showGuestLogin={showGuestLogin}
+          showSignup={showSignup}
           error={casError}
         />
 
@@ -72,7 +88,7 @@ function LoginPageView({
   );
 }
 
-function LoginPageContent({ showDevQuickAccess, showGuestLogin }: LoginPageProps) {
+function LoginPageContent({ showDevQuickAccess, showGuestLogin, showSignup }: LoginPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
@@ -175,6 +191,7 @@ function LoginPageContent({ showDevQuickAccess, showGuestLogin }: LoginPageProps
     <LoginPageView
       showDevQuickAccess={showDevQuickAccess}
       showGuestLogin={showGuestLogin}
+      showSignup={showSignup}
       isLoading={isLoading}
       loadingEmail={loadingEmail}
       casError={casError}

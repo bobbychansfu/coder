@@ -49,11 +49,58 @@ test("admin can create a guest account and the guest can sign in", async ({ page
   await page.request.post("/api/auth/logout");
 
   await page.goto("/guest-login");
-  await page.getByLabel("Username").fill(username);
+  await page.getByLabel("Email or username").fill(username);
   // exact: the "Show password" toggle button is also labelled with "password".
   await page.getByLabel("Password", { exact: true }).fill(password);
-  await page.getByRole("button", { name: "Sign in as Guest" }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
+});
+
+test("a student outside SFU can sign up, sign out, and sign back in with their email", async ({ page }) => {
+  const email = `signup-${Date.now()}@example.com`;
+  const password = "SignupPass123!";
+
+  await page.goto("/login");
+  await page.getByRole("link", { name: "Create an account" }).click();
+  await expect(page).toHaveURL(/\/signup$/);
+
+  const signupCard = page.locator("article").filter({ hasText: "Students outside SFU" });
+  await signupCard.getByLabel("First name").fill("Ada");
+  await signupCard.getByLabel("Last name (optional)").fill("Lovelace");
+  await signupCard.getByLabel("Email").fill(email);
+  await signupCard.getByLabel(/^Password/).fill(password);
+  await signupCard.getByRole("button", { name: "Create account" }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+
+  await page.request.post("/api/auth/logout");
+  await page.goto("/guest-login");
+  await page.getByLabel("Email or username").fill(email.toUpperCase());
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+});
+
+test("sign-up refuses SFU emails, taken emails, and short passwords", async ({ request }) => {
+  const sfu = await request.post("/api/auth/signup", {
+    data: { firstName: "Sam", email: "sam@cs.sfu.ca", password: "LongEnough123!" },
+  });
+  expect(sfu.status()).toBe(400);
+  await expect(sfu.json()).resolves.toEqual({ message: "SFU students sign in with their SFU account instead." });
+
+  const shortPassword = await request.post("/api/auth/signup", {
+    data: { firstName: "Sam", email: `short-${Date.now()}@example.com`, password: "short" },
+  });
+  expect(shortPassword.status()).toBe(400);
+
+  const email = `taken-${Date.now()}@example.com`;
+  const first = await request.post("/api/auth/signup", {
+    data: { firstName: "Sam", email, password: "LongEnough123!" },
+  });
+  expect(first.status()).toBe(201);
+  const second = await request.post("/api/auth/signup", {
+    data: { firstName: "Sam", email: email.toUpperCase(), password: "LongEnough123!" },
+  });
+  expect(second.status()).toBe(409);
 });
 
 test("guest login does not reveal whether a username exists", async ({ request }) => {

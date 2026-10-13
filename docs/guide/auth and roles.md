@@ -260,6 +260,37 @@ Input:
 Unknown usernames are checked against a throwaway hash, so they take as long as a wrong password and
 return the same error.
 
+#### `POST /api/auth/signup`
+
+Purpose:
+
+- self-service sign-up for students outside SFU (v0: no email confirmation)
+
+Enabled by:
+
+- `EXTERNAL_SIGNUP_ENABLED="true"` (API) and `NEXT_PUBLIC_EXTERNAL_SIGNUP_ENABLED="true"` (shows the
+  "Create an account" and "Sign in with email" links and the `/signup` form)
+
+Input:
+
+- `firstName`
+- `lastName` (optional)
+- `email`
+- `password` (8–128 characters)
+
+Behavior:
+
+- refuses `@sfu.ca` and `*.sfu.ca` addresses; SFU students use CAS
+- refuses an email that already belongs to an account (`409`)
+- creates a `STUDENT` user with a generated `guest_<id>` computing ID and a local credential whose
+  username is the email, with no expiry
+- signs the new account in immediately with the same session as guest login
+- later sign-ins go through `POST /api/auth/guest-login` with the email as the username; that endpoint
+  stays on whenever either `GUEST_LOGIN_ENABLED` or `EXTERNAL_SIGNUP_ENABLED` is on
+
+Without email confirmation, anyone can register an address they do not own, which blocks its real
+owner from signing up with it. Adding confirmation is a follow-up.
+
 #### `GET /api/admin/guest-users`
 
 Purpose:

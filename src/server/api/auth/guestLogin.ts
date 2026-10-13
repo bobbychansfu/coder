@@ -27,8 +27,9 @@ function loginError(): NextResponse {
 }
 
 export async function handleGuestLogin(request: NextRequest): Promise<NextResponse> {
-  if (process.env.GUEST_LOGIN_ENABLED !== "true") {
-    return NextResponse.json({ message: "Guest login is disabled." }, { status: 403 });
+  // Self-registered accounts sign in here too, so open sign-up keeps this endpoint on.
+  if (process.env.GUEST_LOGIN_ENABLED !== "true" && process.env.EXTERNAL_SIGNUP_ENABLED !== "true") {
+    return NextResponse.json({ message: "Password sign-in is disabled." }, { status: 403 });
   }
 
   const secret = process.env.GUEST_AUTH_COOKIE_SECRET;
