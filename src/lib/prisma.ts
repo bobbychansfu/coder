@@ -32,11 +32,18 @@ const pool =
 
 const adapter = new PrismaPg(pool);
 
+// Logging every SQL query floods the dev terminal, so it is opt-in: set
+// PRISMA_LOG_QUERIES=true while debugging a query. Production logs errors only.
+function getPrismaLogLevels(): ("query" | "warn" | "error")[] {
+  if (process.env.NODE_ENV !== "development") return ["error"];
+  return process.env.PRISMA_LOG_QUERIES === "true" ? ["query", "error", "warn"] : ["error", "warn"];
+}
+
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
     adapter,
-    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
+    log: getPrismaLogLevels(),
   });
 
 if (process.env.NODE_ENV !== "production") {
