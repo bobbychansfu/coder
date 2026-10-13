@@ -405,7 +405,8 @@ function ProblemSubmissionPageContent({
           flexWrap="nowrap"
           gap="12px"
         >
-          <PageHeader onBack={() => router.back()} />
+          {/* Always this problem's contest: browser history may hold another page or nothing at all. */}
+          <PageHeader onBack={() => router.push(`/contests/${contestId}`)} />
           <ContestTimer
             startsAt={contestStartsAt}
             endsAt={contestEndsAt}
