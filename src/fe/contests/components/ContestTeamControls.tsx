@@ -31,15 +31,30 @@ interface AvailableStudent {
   email: string;
 }
 
+// Every typed word must start the student's first or last name, computing ID, or email.
+function matchesPrefixSearch(student: AvailableStudent, query: string): boolean {
+  const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return true;
+
+  const words = [
+    ...student.name.toLowerCase().split(/\s+/),
+    student.computingId.toLowerCase(),
+    student.email.toLowerCase(),
+  ];
+  return terms.every((term) => words.some((word) => word.startsWith(term)));
+}
+
 export default function ContestTeamControls({ contestId }: ContestTeamControlsProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [teamName, setTeamName] = useState("");
+  const [search, setSearch] = useState("");
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const teamQuery = trpc.contestTeams.get.useQuery({ contestId }, { retry: false });
   const createTeam = trpc.contestTeams.create.useMutation({
     onSuccess: async () => {
       setDialogOpen(false);
       setTeamName("");
+      setSearch("");
       setSelectedStudentIds([]);
       await teamQuery.refetch();
     },
@@ -61,6 +76,12 @@ export default function ContestTeamControls({ contestId }: ContestTeamControlsPr
     );
   }
 
+  const availableStudents: AvailableStudent[] = teamQuery.data?.availableStudents ?? [];
+  // Ticked students stay visible so a search never hides who is already on the team.
+  const visibleStudents = availableStudents.filter(
+    (student) => selectedStudentIds.includes(student.id) || matchesPrefixSearch(student, search),
+  );
+
   return (
     <>
       <Button
@@ -71,6 +92,7 @@ export default function ContestTeamControls({ contestId }: ContestTeamControlsPr
         disabled={teamQuery.isLoading}
         onClick={() => {
           createTeam.reset();
+          setSearch("");
           setDialogOpen(true);
         }}
       >
@@ -96,13 +118,26 @@ export default function ContestTeamControls({ contestId }: ContestTeamControlsPr
             slotProps={{ htmlInput: { maxLength: 50 } }}
             fullWidth
           />
+          <TextField
+            label="Search students"
+            placeholder="Name, computing ID or email"
+            type="search"
+            size="small"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            fullWidth
+          />
           <Box className={styles.studentList}>
-            {(teamQuery.data?.availableStudents.length ?? 0) === 0 ? (
+            {availableStudents.length === 0 ? (
               <Typography color="text.secondary" className={styles.emptyState}>
                 No students are currently available.
               </Typography>
+            ) : visibleStudents.length === 0 ? (
+              <Typography color="text.secondary" className={styles.emptyState}>
+                No students match “{search.trim()}”.
+              </Typography>
             ) : (
-              teamQuery.data?.availableStudents.map((student: AvailableStudent) => {
+              visibleStudents.map((student) => {
                 const selected = selectedStudentIds.includes(student.id);
                 const selectionFull = selectedStudentIds.length >= CONTEST_TEAM_MAX_TEAMMATES;
 
