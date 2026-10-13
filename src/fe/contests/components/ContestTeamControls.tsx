@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import { useState } from "react";
 
+import { CONTEST_TEAM_MAX_TEAMMATES } from "@/lib/contestTeamSize";
 import { trpc } from "@/lib/trpc/client";
 import styles from "@/fe/contests/styles/ContestTeamControls.module.css";
 
@@ -82,11 +83,11 @@ export default function ContestTeamControls({ contestId }: ContestTeamControlsPr
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Create a team of three</DialogTitle>
+        <DialogTitle>Create a team</DialogTitle>
         <DialogContent className={styles.dialogContent}>
           <Typography color="text.secondary">
-            You are the first member. Select exactly two available students registered for this
-            contest.
+            You are the first member. Add up to {CONTEST_TEAM_MAX_TEAMMATES} available students
+            registered for this contest, or create the team on your own.
           </Typography>
           <TextField
             label="Team name"
@@ -103,7 +104,7 @@ export default function ContestTeamControls({ contestId }: ContestTeamControlsPr
             ) : (
               teamQuery.data?.availableStudents.map((student: AvailableStudent) => {
                 const selected = selectedStudentIds.includes(student.id);
-                const selectionFull = selectedStudentIds.length >= 2;
+                const selectionFull = selectedStudentIds.length >= CONTEST_TEAM_MAX_TEAMMATES;
 
                 return (
                   <FormControlLabel
@@ -136,7 +137,7 @@ export default function ContestTeamControls({ contestId }: ContestTeamControlsPr
             )}
           </Box>
           <Typography color="text.secondary" className={styles.selectionCount}>
-            {selectedStudentIds.length} of 2 students selected
+            {selectedStudentIds.length} of up to {CONTEST_TEAM_MAX_TEAMMATES} teammates selected
           </Typography>
           {createTeam.error ? <Alert severity="error">{createTeam.error.message}</Alert> : null}
         </DialogContent>
@@ -147,11 +148,7 @@ export default function ContestTeamControls({ contestId }: ContestTeamControlsPr
           <Button
             variant="contained"
             color="error"
-            disabled={
-              createTeam.isPending ||
-              teamName.trim().length === 0 ||
-              selectedStudentIds.length !== 2
-            }
+            disabled={createTeam.isPending || teamName.trim().length === 0}
             onClick={() =>
               createTeam.mutate({
                 contestId,
