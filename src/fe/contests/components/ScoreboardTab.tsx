@@ -118,7 +118,11 @@ export default function ScoreboardTab({ rows, problemColumns }: ScoreboardTabPro
           <span>Rank</span>
           <span>Team / Participant</span>
           <span className={`${styles.centerCell} ${styles.headerCell}`}>Solved</span>
-          <span className={styles.rightCell}>{isIcpc ? "Penalty" : "Score"}</span>
+          {isIcpc ? (
+            <span className={`${styles.centerCell} ${styles.headerCell}`}>Penalty</span>
+          ) : (
+            <span className={styles.rightCell}>Score</span>
+          )}
           {problemColumns.map((code) => (
             <span key={code} className={`${styles.centerCell} ${styles.headerCell}`}>
               {code}
@@ -149,7 +153,7 @@ export default function ScoreboardTab({ rows, problemColumns }: ScoreboardTabPro
               <span className={styles.centerCell}>
                 <span className={styles.solvedBadge}>{row.solved}</span>
               </span>
-              <span className={`${styles.rightCell} ${styles.scoreValue}`}>
+              <span className={`${isIcpc ? styles.centerCell : styles.rightCell} ${styles.scoreValue}`}>
                 {isIcpc ? row.penalty : row.score}
               </span>
               {problemColumns.map((code) => {
