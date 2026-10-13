@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Box, ButtonBase, CircularProgress, Typography } from "@mui/material";
 import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import PageHeader from "@/fe/shared/components/PageHeader";
+import { useNotifications } from "@/fe/shared/components/notifications/NotificationsProvider";
 import AiHintDialog from "@/fe/shared/components/problem/AiHintDialog";
 import ProblemHeader from "@/fe/shared/components/problem/ProblemHeader";
 import ProblemDetails from "@/fe/shared/components/problem/ProblemDetails";
@@ -131,6 +132,16 @@ function ProblemSubmissionPageContent({
   const [tab, setTab] = useState("description");
   const [language, setLanguage] = useState<SupportedLanguage>(DEFAULT_LANGUAGE);
   const [drafts, setDrafts] = useState<Partial<Record<SupportedLanguage, string>>>({});
+  const setViewedSubmissions = useNotifications()?.setViewedSubmissions;
+
+  // This problem's verdicts are already visible on its Submissions tab, so no toast
+  useEffect(() => {
+    if (!setViewedSubmissions || tab !== "submissions" || !detail.problemId) {
+      return;
+    }
+    setViewedSubmissions({ contestId, problemId: detail.problemId });
+    return () => setViewedSubmissions(null);
+  }, [setViewedSubmissions, tab, contestId, detail.problemId]);
   const [hasRun, setHasRun] = useState(false);
   const [hasLocalDraftState, setHasLocalDraftState] = useState(false);
   const [submitState, setSubmitState] = useState<"idle" | "submitting" | "done" | "failed">(

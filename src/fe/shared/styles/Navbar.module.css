@@ -120,6 +120,56 @@
   font-size: 16px;
 }
 
+.rightGroup {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bellButton {
+  color: #e7000b !important;
+}
+
+.notificationMenu {
+  width: 320px;
+  max-height: 420px;
+  border-radius: 8px !important;
+}
+
+.notificationUnread {
+  background-color: #eff6ff !important;
+}
+
+.notificationItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-family: Inter, sans-serif;
+}
+
+.notificationAccepted,
+.notificationRejected {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.notificationAccepted {
+  color: #16a34a;
+}
+
+.notificationRejected {
+  color: #dc2626;
+}
+
+.notificationMeta {
+  font-size: 12px;
+  color: #6a7282;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .profileMenuWrapper {
   position: relative;
   display: flex;
