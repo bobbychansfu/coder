@@ -76,7 +76,11 @@ export default function ContestDetailPage({
         />
 
         {tab === "problems" || !hasScoreboard ? (
-          <ProblemsTab contestId={contest.id} problems={contest.problems} />
+          <ProblemsTab
+            contestId={contest.id}
+            problems={contest.problems}
+            showPoints={contest.scoringRule !== "ICPC"}
+          />
         ) : (
           <ScoreboardTab rows={contest.scoreboard} problemColumns={problemColumns} />
         )}

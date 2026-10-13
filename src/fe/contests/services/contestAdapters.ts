@@ -152,10 +152,16 @@ export function toContestDetail(
   contest: BackendContestSummary,
   liveDetail?: ContestProblemStatusResponse | null,
 ): ContestDetail {
+  const scoreboard = (liveDetail?.scoreboard ?? []).map(toScoreboardRow);
+  // Solves come from the standings, so a team counts once, as on the scoreboard
   const problems = (liveDetail?.contestProblemsStatus ?? [])
     .slice()
     .sort((left, right) => left.ordering - right.ordering)
-    .map((row, index) => toContestProblem(row, index));
+    .map((row, index) => toContestProblem(row, index))
+    .map((problem) => ({
+      ...problem,
+      solvedBy: scoreboard.filter((entry) => entry.problems[problem.code]?.solved).length,
+    }));
 
   return {
     id: contest.id,
@@ -167,7 +173,8 @@ export function toContestDetail(
     problemsCount: problems.length,
     participantsLabel: `${contest.participants} registered`,
     problems,
-    scoreboard: (liveDetail?.scoreboard ?? []).map(toScoreboardRow),
+    scoringRule: contest.scoringRule,
+    scoreboard,
     clarifications: [],
   };
 }

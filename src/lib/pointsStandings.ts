@@ -27,7 +27,8 @@ export interface PointsStandingsRow {
   members?: string[];
   solved: number;
   score: number;
-  problems: Record<string, { points: number }>;
+  // solved feeds the per-problem solve counts on the problem list
+  problems: Record<string, { points: number; solved: boolean }>;
   isCurrentUser: boolean;
 }
 
@@ -56,7 +57,7 @@ export function buildPointsStandings(input: {
       problems: Object.fromEntries(
         results.flatMap(([problemId, result]) => {
           const code = codeByProblemId.get(problemId);
-          return code ? [[code, { points: result.points }] as const] : [];
+          return code ? [[code, { points: result.points, solved: result.solved }] as const] : [];
         }),
       ),
     };

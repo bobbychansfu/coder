@@ -120,6 +120,67 @@
   width: 100%;
 }
 
+.problemTable {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  background-color: #ffffff;
+  overflow: hidden;
+}
+
+.problemTableRow {
+  display: grid;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  color: #0a0a0a;
+  text-decoration: none;
+}
+
+.problemTableRow:last-child {
+  border-bottom: none;
+}
+
+a.problemTableRow:hover {
+  background-color: #f9fafb;
+}
+
+.problemTableHeader {
+  min-height: 40px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6a7282;
+  background-color: #f9fafb;
+}
+
+.problemTableCenter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.problemTableCode {
+  font-weight: 700;
+}
+
+.problemTableName {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.problemTableSolves {
+  color: #364153;
+}
+
 .scoreboardCard {
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 12px;

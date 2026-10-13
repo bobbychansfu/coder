@@ -63,6 +63,8 @@ export interface ContestDetail {
   problemsCount: number;
   participantsLabel: string;
   problems: ContestProblem[];
+  // Known even before anyone registers, unlike the rule on scoreboard rows
+  scoringRule?: "POINTS" | "ICPC";
   scoreboard: ScoreboardRow[];
   clarifications: ClarificationItem[];
 }
