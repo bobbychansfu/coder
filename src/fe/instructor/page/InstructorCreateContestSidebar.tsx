@@ -184,7 +184,10 @@ export default function InstructorCreateContestSidebar({
               checked={showDifficulty}
               onChange={(_, checked) => onShowDifficultyChange(checked)}
               className={styles.aiSwitch}
-              slotProps={{ input: { "aria-label": contestAuthoringCopy.showDifficultyLabel } }}
+              // Setting slotProps.input drops MUI's default role, so it is restated here.
+              slotProps={{
+                input: { role: "switch", "aria-label": contestAuthoringCopy.showDifficultyLabel },
+              }}
             />
           </div>
         </CardContent>
