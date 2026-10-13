@@ -100,9 +100,8 @@ export default function ScoreboardTab({ rows, problemColumns }: ScoreboardTabPro
           <Typography className={styles.scoreboardTitle}>Contest Standings</Typography>
           {isIcpc ? (
             <Typography className={styles.scoreboardRule}>
-              ICPC rules · +N solved after N rejected tries, -N not solved yet, minute of the solve
-              below · penalty = solve minutes + {ICPC_PENALTY_MINUTES} per rejected try · dark green =
-              first to solve
+              ICPC · +N solved after N wrong tries · −N unsolved · penalty = minutes + {ICPC_PENALTY_MINUTES}{" "}
+              per wrong try
             </Typography>
           ) : null}
         </Box>
@@ -111,7 +110,7 @@ export default function ScoreboardTab({ rows, problemColumns }: ScoreboardTabPro
           size="small"
           startIcon={<LaunchOutlinedIcon />}
           className={styles.scoreboardButton}
-          sx={{ borderColor: "rgba(0, 0, 0, 0.1)", color: "#0a0a0a" }}
+          sx={{ borderColor: "rgba(0, 0, 0, 0.1)", color: "#0a0a0a", whiteSpace: "nowrap", flexShrink: 0 }}
           onClick={scrollToMyRank}
         >
           Find My Rank
