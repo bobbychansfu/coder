@@ -4,7 +4,6 @@ import { Box, Button, Typography } from "@mui/material";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import LaunchOutlinedIcon from "@mui/icons-material/LaunchOutlined";
 import type { ScoreboardRow } from "@/fe/contests/data/contestDetails";
-import { ICPC_PENALTY_MINUTES } from "@/lib/icpcStandings";
 import styles from "@/fe/contests/styles/ContestDetailPage.module.css";
 
 // Minutes into the contest as h:mm, the way ICPC boards show solve times (12 → "0:12").
@@ -101,21 +100,13 @@ export default function ScoreboardTab({ rows, problemColumns }: ScoreboardTabPro
   return (
     <Box className={styles.scoreboardCard}>
       <Box className={styles.scoreboardHeader}>
-        <Box>
-          <Typography className={styles.scoreboardTitle}>Contest Standings</Typography>
-          {isIcpc ? (
-            <Typography className={styles.scoreboardRule}>
-              ICPC · +N solved after N wrong tries · −N unsolved · penalty = minutes + {ICPC_PENALTY_MINUTES}{" "}
-              per wrong try
-            </Typography>
-          ) : null}
-        </Box>
+        <Typography className={styles.scoreboardTitle}>Contest Standings</Typography>
         <Button
           variant="outlined"
           size="small"
           startIcon={<LaunchOutlinedIcon />}
           className={styles.scoreboardButton}
-          sx={{ borderColor: "rgba(0, 0, 0, 0.1)", color: "#0a0a0a", whiteSpace: "nowrap", flexShrink: 0 }}
+          sx={{ borderColor: "rgba(0, 0, 0, 0.1)", color: "#0a0a0a" }}
           onClick={scrollToMyRank}
         >
           Find My Rank
