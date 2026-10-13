@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import ContestRegisterInvite from "@/fe/contests/components/ContestRegisterInvite";
 import ContestDetailPage from "@/fe/contests/page/ContestDetailPage";
 import { toContestDetail } from "@/fe/contests/services/contestAdapters";
 import {
@@ -9,6 +10,7 @@ import { can, normalizeRole } from "@/lib/authz";
 import { getEffectiveContestStatus } from "@/lib/contestStatus";
 import { dbHelpers } from "@/lib/db-helpers";
 import { getCurrentUser } from "@/lib/session";
+import { findContestInvitationOrDeny } from "@/server/studentContestAccess";
 
 interface ContestDetailRouteProps {
   params: Promise<{ id: string }>;
@@ -77,7 +79,9 @@ export default async function ContestDetailRoute({ params }: ContestDetailRouteP
   const contestId = id ?? "";
   let contest = null;
 
-  if (can(user.role).canManageContest) {
+  const isManager = can(user.role).canManageContest;
+
+  if (isManager) {
     contest = await dbHelpers.findContestForViewer(contestId, user.computingId, user.role);
   } else {
     const registeredContests = await dbHelpers.findContestsForUser(user.computingId, "contestant");
@@ -85,7 +89,19 @@ export default async function ContestDetailRoute({ params }: ContestDetailRouteP
   }
 
   if (!contest) {
-    notFound();
+    if (isManager) {
+      notFound();
+    }
+
+    const invitation = await findContestInvitationOrDeny(user.computingId, contestId);
+    return (
+      <ContestRegisterInvite
+        contestId={invitation.id}
+        name={invitation.name}
+        statusLabel={getEffectiveContestStatus(invitation) === "ACTIVE" ? "In progress" : "Upcoming"}
+        startsAtIso={invitation.startsAt.toISOString()}
+      />
+    );
   }
 
   const contestProblemStatus = await getContestProblemStatusDirect(
@@ -94,6 +110,10 @@ export default async function ContestDetailRoute({ params }: ContestDetailRouteP
     user.role,
   );
   if (!contestProblemStatus) {
+    // A registered student whose contest exists but is closed to them gets 403, not 404.
+    if (!isManager) {
+      redirect("/403");
+    }
     notFound();
   }
 
