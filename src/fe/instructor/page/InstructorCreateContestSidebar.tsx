@@ -184,7 +184,7 @@ export default function InstructorCreateContestSidebar({
               checked={showDifficulty}
               onChange={(_, checked) => onShowDifficultyChange(checked)}
               className={styles.aiSwitch}
-              inputProps={{ "aria-label": contestAuthoringCopy.showDifficultyLabel }}
+              slotProps={{ input: { "aria-label": contestAuthoringCopy.showDifficultyLabel } }}
             />
           </div>
         </CardContent>
