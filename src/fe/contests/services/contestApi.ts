@@ -36,6 +36,7 @@ interface BackendScoreboardCell {
 export interface BackendContestScoreboardRow {
   rank: number;
   name: string;
+  members?: string[];
   solved: number;
   score: number;
   problems: Record<string, BackendScoreboardCell>;

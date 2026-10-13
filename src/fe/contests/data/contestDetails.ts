@@ -11,7 +11,10 @@ export interface ScoreboardCell {
 
 export interface ScoreboardRow {
   rank: number;
+  // A team's name, or the student's own name when they are not on a team.
   name: string;
+  // Present only for team rows: the members' display names.
+  members?: string[];
   solved: number;
   score: number;
   problems: Record<string, ScoreboardCell>;
