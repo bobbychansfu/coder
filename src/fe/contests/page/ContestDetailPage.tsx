@@ -39,7 +39,14 @@ export default function ContestDetailPage({
       <PageHeader
         title={contest.title}
         status={CONTEST_STATUS_CONFIG[contest.status]}
-        onBack={() => router.back()}
+        onBack={() => {
+          // Opened directly (new tab, pasted link) there is no earlier page to return to.
+          if (window.history.length > 1) {
+            router.back();
+          } else {
+            router.push("/contests");
+          }
+        }}
         backButtonClassName={styles.backButton}
         headerClassName={styles.headerRow}
         titleClassName={styles.title}
