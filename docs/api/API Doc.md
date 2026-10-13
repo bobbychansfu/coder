@@ -192,7 +192,7 @@ Default app URL:
 - `contestTeams.get({ contestId })`
   - Student-only query returning the student's current contest team and eligible registered teammates.
 - `contestTeams.create({ contestId, name, memberUserIds })`
-  - Student-only mutation that atomically creates a three-person contest team.
+  - Student-only mutation that atomically creates a contest team of one to three people (`memberUserIds` holds up to two teammates besides the creator).
 - `adminTeams.summary()`
   - Admin-only query returning student grouping and membership data.
 - `adminTeams.createGroups(...)`

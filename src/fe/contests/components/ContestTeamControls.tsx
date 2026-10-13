@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import { useState } from "react";
 
+import { CONTEST_TEAM_MAX_TEAMMATES } from "@/lib/contestTeamSize";
 import { trpc } from "@/lib/trpc/client";
 import styles from "@/fe/contests/styles/ContestTeamControls.module.css";
 
@@ -30,15 +31,30 @@ interface AvailableStudent {
   email: string;
 }
 
+// Every typed word must start the student's first or last name, computing ID, or email.
+function matchesPrefixSearch(student: AvailableStudent, query: string): boolean {
+  const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return true;
+
+  const words = [
+    ...student.name.toLowerCase().split(/\s+/),
+    student.computingId.toLowerCase(),
+    student.email.toLowerCase(),
+  ];
+  return terms.every((term) => words.some((word) => word.startsWith(term)));
+}
+
 export default function ContestTeamControls({ contestId }: ContestTeamControlsProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [teamName, setTeamName] = useState("");
+  const [search, setSearch] = useState("");
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const teamQuery = trpc.contestTeams.get.useQuery({ contestId }, { retry: false });
   const createTeam = trpc.contestTeams.create.useMutation({
     onSuccess: async () => {
       setDialogOpen(false);
       setTeamName("");
+      setSearch("");
       setSelectedStudentIds([]);
       await teamQuery.refetch();
     },
@@ -60,6 +76,12 @@ export default function ContestTeamControls({ contestId }: ContestTeamControlsPr
     );
   }
 
+  const availableStudents: AvailableStudent[] = teamQuery.data?.availableStudents ?? [];
+  // Ticked students stay visible so a search never hides who is already on the team.
+  const visibleStudents = availableStudents.filter(
+    (student) => selectedStudentIds.includes(student.id) || matchesPrefixSearch(student, search),
+  );
+
   return (
     <>
       <Button
@@ -70,6 +92,7 @@ export default function ContestTeamControls({ contestId }: ContestTeamControlsPr
         disabled={teamQuery.isLoading}
         onClick={() => {
           createTeam.reset();
+          setSearch("");
           setDialogOpen(true);
         }}
       >
@@ -82,11 +105,11 @@ export default function ContestTeamControls({ contestId }: ContestTeamControlsPr
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Create a team of three</DialogTitle>
+        <DialogTitle>Create a team</DialogTitle>
         <DialogContent className={styles.dialogContent}>
           <Typography color="text.secondary">
-            You are the first member. Select exactly two available students registered for this
-            contest.
+            You are the first member. Add up to {CONTEST_TEAM_MAX_TEAMMATES} available students
+            registered for this contest, or create the team on your own.
           </Typography>
           <TextField
             label="Team name"
@@ -95,15 +118,28 @@ export default function ContestTeamControls({ contestId }: ContestTeamControlsPr
             slotProps={{ htmlInput: { maxLength: 50 } }}
             fullWidth
           />
+          <TextField
+            label="Search students"
+            placeholder="Name, computing ID or email"
+            type="search"
+            size="small"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            fullWidth
+          />
           <Box className={styles.studentList}>
-            {(teamQuery.data?.availableStudents.length ?? 0) === 0 ? (
+            {availableStudents.length === 0 ? (
               <Typography color="text.secondary" className={styles.emptyState}>
                 No students are currently available.
               </Typography>
+            ) : visibleStudents.length === 0 ? (
+              <Typography color="text.secondary" className={styles.emptyState}>
+                No students match “{search.trim()}”.
+              </Typography>
             ) : (
-              teamQuery.data?.availableStudents.map((student: AvailableStudent) => {
+              visibleStudents.map((student) => {
                 const selected = selectedStudentIds.includes(student.id);
-                const selectionFull = selectedStudentIds.length >= 2;
+                const selectionFull = selectedStudentIds.length >= CONTEST_TEAM_MAX_TEAMMATES;
 
                 return (
                   <FormControlLabel
@@ -136,7 +172,7 @@ export default function ContestTeamControls({ contestId }: ContestTeamControlsPr
             )}
           </Box>
           <Typography color="text.secondary" className={styles.selectionCount}>
-            {selectedStudentIds.length} of 2 students selected
+            {selectedStudentIds.length} of up to {CONTEST_TEAM_MAX_TEAMMATES} teammates selected
           </Typography>
           {createTeam.error ? <Alert severity="error">{createTeam.error.message}</Alert> : null}
         </DialogContent>
@@ -147,11 +183,7 @@ export default function ContestTeamControls({ contestId }: ContestTeamControlsPr
           <Button
             variant="contained"
             color="error"
-            disabled={
-              createTeam.isPending ||
-              teamName.trim().length === 0 ||
-              selectedStudentIds.length !== 2
-            }
+            disabled={createTeam.isPending || teamName.trim().length === 0}
             onClick={() =>
               createTeam.mutate({
                 contestId,

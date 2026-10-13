@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import { CONTEST_TEAM_MAX_TEAMMATES } from "@/lib/contestTeamSize";
 import { studentProcedure, router, type Context } from "../init";
 
 const contestInput = z.object({
@@ -9,7 +10,7 @@ const contestInput = z.object({
 
 const createContestTeamInput = contestInput.extend({
   name: z.string().trim().min(1).max(50),
-  memberUserIds: z.array(z.string().min(1)).length(2),
+  memberUserIds: z.array(z.string().min(1)).max(CONTEST_TEAM_MAX_TEAMMATES),
 });
 
 async function getStudentContext(
@@ -127,10 +128,10 @@ export const contestTeamsRouter = router({
   create: studentProcedure
     .input(createContestTeamInput)
     .mutation(async ({ ctx, input }) => {
-      if (new Set(input.memberUserIds).size !== 2) {
+      if (new Set(input.memberUserIds).size !== input.memberUserIds.length) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Select two different students.",
+          message: "Select different students.",
         });
       }
 
@@ -161,7 +162,7 @@ export const contestTeamsRouter = router({
             }),
           ]);
 
-          if (eligibleStudents !== 3) {
+          if (eligibleStudents !== allMemberIds.length) {
             throw new TRPCError({
               code: "BAD_REQUEST",
               message: "Every team member must be a registered student in this contest.",
@@ -186,7 +187,7 @@ export const contestTeamsRouter = router({
             select: { id: true, name: true },
           });
 
-          return { ...team, memberCount: 3 };
+          return { ...team, memberCount: allMemberIds.length };
         },
         { isolationLevel: "Serializable" },
       );
