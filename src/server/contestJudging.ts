@@ -2,6 +2,10 @@ import { SubmissionStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { syncStudentGamification } from "@/server/gamification/persistence";
 import { normalizeJudgeStatusToSubmissionStatus } from "./judge";
+import {
+  createVerdictNotifications,
+  publishNotifications,
+} from "./notifications/verdictNotifications";
 
 interface ApplyContestJudgeResultArgs {
   submissionId: string;
@@ -109,18 +113,27 @@ export async function applyContestJudgeResult(
       });
     }
 
+    // Notify once, when the submission first leaves PENDING
+    const notifications =
+      previousStatus === "PENDING" && nextStatus !== "PENDING"
+        ? await createVerdictNotifications(tx, { ...submission, status: nextStatus })
+        : [];
+
     return {
       computingId: submission.user.computingId,
       shouldSyncGamification:
         shouldIncrementTries || pointsDelta > 0 || problemsSolvedDelta > 0,
       submissionStatus: nextStatus,
       score: nextScore,
+      notifications,
     };
   });
 
   if (!outcome) {
     return null;
   }
+
+  publishNotifications(outcome.notifications);
 
   if (outcome.shouldSyncGamification) {
     await syncStudentGamification(outcome.computingId);

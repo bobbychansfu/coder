@@ -7,6 +7,7 @@ import { contestTeamsRouter } from "./contestTeams";
 import { dashboardMetadataRouter } from "./dashboardMetadata";
 import { instructorAnalysisRouter } from "./instructorAnalysis";
 import { instructorManageContentRouter } from "./instructorManageContent";
+import { notificationsRouter } from "./notifications";
 import { problemAuthoringRouter } from "./problemAuthoring";
 import { instructorDashboardRouter } from "./instructorDashboard";
 import { practiceRouter } from "./practice";
@@ -25,5 +26,6 @@ export const appRouter = router({
   contestTeams: contestTeamsRouter,
   problemAuthoring: problemAuthoringRouter,
   instructorManageContent: instructorManageContentRouter,
+  notifications: notificationsRouter,
 });
 export type AppRouter = typeof appRouter;

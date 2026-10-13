@@ -113,6 +113,7 @@ model User {
   practiceSessions       PracticeSession[]
   contestProblemSessions ContestProblemSession[]
   localCredential       LocalCredential?
+  notifications          Notification[]
 }
 
 model LocalCredential {
@@ -235,6 +236,28 @@ model Contest {
   experimentGroups       ContestExperimentGroup[]
   contestProblemSessions ContestProblemSession[]
   teams                  Team[]
+  notifications          Notification[]
+}
+
+enum NotificationType {
+  VERDICT
+}
+
+// In-portal notifications shown under the navbar bell (and as toasts for verdicts)
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  contestId String?
+  // Type-specific details, e.g. a verdict's problem letter, title, status and submitter
+  data      Json
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contest Contest? @relation(fields: [contestId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
 
 model Problem {
