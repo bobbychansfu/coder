@@ -56,6 +56,8 @@ interface ContestJudgeProblemApiModel {
   timeSec: number;
   memMb: number;
   samples: { input: string; output: string }[];
+  // Statement rendered on the server from the judge's LaTeX source
+  statementHtml?: string;
 }
 
 export interface ContestProblemDetailResponse {
@@ -208,6 +210,7 @@ export function adaptContestProblemDetail(
       : "1 second",
     memory: memoryMb ? `${memoryMb} MB` : "256 MB",
     statement: problem?.statement ? [problem.statement] : [],
+    statementHtml: judgeProblem?.statementHtml,
     inputFormat: splitLines(problem?.inputFormat),
     outputFormat: splitLines(problem?.outputFormat),
     constraints: splitLines(problem?.constraints),

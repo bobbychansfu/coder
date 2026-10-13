@@ -59,6 +59,8 @@ export interface JudgeProblemSample {
 }
 
 export interface JudgeProblemFiles {
+  // LaTeX source of problem_statement/problem.tex, or "" when there is none
+  statement: string;
   timeSec: number;
   memMb: number;
   samples: JudgeProblemSample[];
@@ -82,6 +84,7 @@ export async function fetchJudgeProblemFiles(
     }
 
     const payload = (await response.json()) as {
+      statement?: unknown;
       time_sec?: unknown;
       mem_MB?: unknown;
       samples?: unknown;
@@ -89,6 +92,7 @@ export async function fetchJudgeProblemFiles(
     const samples: unknown[] = Array.isArray(payload.samples) ? payload.samples : [];
 
     return {
+      statement: typeof payload.statement === "string" ? payload.statement : "",
       timeSec: toNonNegativeInteger(payload.time_sec),
       memMb: toNonNegativeInteger(payload.mem_MB),
       samples: samples.flatMap((sample) => {

@@ -288,6 +288,86 @@
   color: #364153;
 }
 
+.statementHtml {
+  font-family: Inter, sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: -0.3125px;
+  color: #364153;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.statementHtml p,
+.statementHtml ul,
+.statementHtml ol,
+.statementHtml pre {
+  margin: 0;
+}
+
+.statementHtml h3,
+.statementHtml h4,
+.statementHtml h5 {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px;
+  color: #0a0a0a;
+  margin: 8px 0 0;
+}
+
+.statementHtml ul,
+.statementHtml ol {
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.statementHtml code,
+.statementHtml pre {
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  background-color: #f3f4f6;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.statementHtml code {
+  padding: 1px 6px;
+}
+
+.statementHtml pre {
+  padding: 8px 12px;
+  overflow-x: auto;
+}
+
+.statementHtml :global(.statement-table) {
+  overflow-x: auto;
+}
+
+.statementHtml :global(.statement-center) {
+  text-align: center;
+}
+
+.statementHtml :global(.statement-center) table {
+  margin: 0 auto;
+}
+
+.statementHtml table {
+  border-collapse: collapse;
+}
+
+.statementHtml td {
+  border: 1px solid #e5e7eb;
+  padding: 4px 12px;
+}
+
+.statementHtml :global(.katex-display) {
+  margin: 4px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
 .list {
   margin: 0;
   padding-left: 20px;
