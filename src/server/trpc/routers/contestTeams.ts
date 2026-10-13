@@ -197,6 +197,12 @@ export const contestTeamsRouter = router({
           if (team.invites.some((invite) => invite.invitedUserId === input.userId)) {
             throw new TRPCError({ code: "CONFLICT", message: "They already have an invite." });
           }
+          if (await userHasContestSubmissions(tx, input.contestId, input.userId)) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "They've already submitted in this contest, so they stay on their own team.",
+            });
+          }
 
           const invite = await tx.teamInvite.create({
             data: {
