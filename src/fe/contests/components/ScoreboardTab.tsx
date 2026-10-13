@@ -7,6 +7,11 @@ import type { ScoreboardRow } from "@/fe/contests/data/contestDetails";
 import { ICPC_PENALTY_MINUTES } from "@/lib/icpcStandings";
 import styles from "@/fe/contests/styles/ContestDetailPage.module.css";
 
+// Minutes into the contest as h:mm, the way ICPC boards show solve times (12 → "0:12").
+function formatSolveTime(minutes: number) {
+  return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, "0")}`;
+}
+
 interface ScoreboardTabProps {
   rows: ScoreboardRow[];
   problemColumns: string[];
@@ -186,7 +191,7 @@ export default function ScoreboardTab({ rows, problemColumns }: ScoreboardTabPro
                       >
                         {rejected > 0 ? `+${rejected}` : "+"}
                       </span>
-                      <span className={styles.scoreTime}>{cell.minutes}</span>
+                      <span className={styles.scoreTime}>{formatSolveTime(cell.minutes ?? 0)}</span>
                     </span>
                   );
                 }
