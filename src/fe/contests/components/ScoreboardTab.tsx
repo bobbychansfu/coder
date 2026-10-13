@@ -14,9 +14,11 @@ function formatSolveTime(minutes: number) {
 interface ScoreboardTabProps {
   rows: ScoreboardRow[];
   problemColumns: string[];
+  // The contest's rule; rows only carry it once someone has registered
+  scoringRule?: "POINTS" | "ICPC";
 }
 
-export default function ScoreboardTab({ rows, problemColumns }: ScoreboardTabProps) {
+export default function ScoreboardTab({ rows, problemColumns, scoringRule }: ScoreboardTabProps) {
   const [displayCount, setDisplayCount] = useState(10);
   const [isLoading, setIsLoading] = useState(false);
   const [highlightUser, setHighlightUser] = useState(false);
@@ -33,7 +35,9 @@ export default function ScoreboardTab({ rows, problemColumns }: ScoreboardTabPro
     return "#cbd5e1";
   };
 
-  const isIcpc = rows.some((row) => row.scoringRule === "ICPC");
+  const isIcpc = scoringRule
+    ? scoringRule === "ICPC"
+    : rows.some((row) => row.scoringRule === "ICPC");
   const displayRows = rows.slice(0, displayCount);
   const hasMore = displayCount < rows.length;
   const userRank = rows.findIndex((row) => row.isCurrentUser) + 1;
@@ -113,7 +117,13 @@ export default function ScoreboardTab({ rows, problemColumns }: ScoreboardTabPro
         </Button>
       </Box>
 
-      <Box className={styles.scoreboardTable} onScroll={handleScroll} ref={tableRef}>
+      <Box
+        className={styles.scoreboardTable}
+        onScroll={handleScroll}
+        ref={tableRef}
+        // One grid column per problem, however many there are
+        style={{ "--problem-count": problemColumns.length } as React.CSSProperties}
+      >
         <Box className={`${styles.scoreboardRow} ${styles.scoreboardHeaderRow}`}>
           <span>Rank</span>
           <span>Team / Participant</span>

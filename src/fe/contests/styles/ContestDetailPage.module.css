@@ -218,7 +218,8 @@ a.problemTableRow:hover {
   gap: 0;
   max-height: 600px;
   overflow-y: auto;
-  overflow-x: hidden;
+  /* Many problems scroll sideways instead of wrapping */
+  overflow-x: auto;
 }
 
 .loadingIndicator {
@@ -233,7 +234,9 @@ a.problemTableRow:hover {
 
 .scoreboardRow {
   display: grid;
-  grid-template-columns: 64px 180px 90px 90px repeat(5, minmax(72px, 1fr));
+  grid-template-columns: 64px 180px 90px 90px repeat(var(--problem-count, 5), minmax(72px, 1fr));
+  /* Rows grow past the card so every column keeps its minimum width */
+  min-width: max-content;
   align-items: center;
   gap: 0;
   padding: 12px 0;
@@ -492,7 +495,7 @@ a.problemTableRow:hover {
   }
 
   .scoreboardRow {
-    grid-template-columns: 56px 160px 72px 72px repeat(5, minmax(60px, 1fr));
+    grid-template-columns: 56px 160px 72px 72px repeat(var(--problem-count, 5), minmax(60px, 1fr));
   }
 
 }
@@ -507,7 +510,7 @@ a.problemTableRow:hover {
   }
 
   .scoreboardRow {
-    grid-template-columns: 48px 1fr 64px 64px repeat(5, minmax(52px, 1fr));
+    grid-template-columns: 48px 1fr 64px 64px repeat(var(--problem-count, 5), minmax(52px, 1fr));
     font-size: 12px;
   }
 }

@@ -82,7 +82,11 @@ export default function ContestDetailPage({
             showPoints={contest.scoringRule !== "ICPC"}
           />
         ) : (
-          <ScoreboardTab rows={contest.scoreboard} problemColumns={problemColumns} />
+          <ScoreboardTab
+            rows={contest.scoreboard}
+            problemColumns={problemColumns}
+            scoringRule={contest.scoringRule}
+          />
         )}
       </Box>
     </Box>
