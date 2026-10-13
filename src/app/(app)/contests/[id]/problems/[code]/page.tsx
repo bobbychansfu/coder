@@ -143,6 +143,10 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
   const judgeProblemId = resolveJudgeProblemId(problemDetail);
   const judgeProblemFiles = judgeProblemId ? await fetchJudgeProblemFiles(judgeProblemId) : null;
 
+  const renderedStatement = judgeProblemFiles?.statement
+    ? renderLatexStatement(judgeProblemFiles.statement)
+    : null;
+
   const problemDetailPayload: ContestProblemDetailResponse = {
     computingId: user.computingId,
     cid: contestId,
@@ -152,9 +156,8 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
       timeSec: judgeProblemFiles.timeSec,
       memMb: judgeProblemFiles.memMb,
       samples: judgeProblemFiles.samples,
-      statementHtml: judgeProblemFiles.statement
-        ? renderLatexStatement(judgeProblemFiles.statement)
-        : undefined,
+      statementHtml: renderedStatement?.statement,
+      notesHtml: renderedStatement?.notes || undefined,
     },
     downloadContents: [],
     role: user.role,

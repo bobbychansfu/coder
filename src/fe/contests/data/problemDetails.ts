@@ -26,6 +26,8 @@ export interface ProblemNarrative {
   // Server-rendered LaTeX statement from the judge; replaces `statement` and
   // the input/output/constraints sections, which it already contains
   statementHtml?: string;
+  // Sample explanations / notes split off that statement, shown after the samples
+  notesHtml?: string;
   inputFormat: string[];
   outputFormat: string[];
   constraints: string[];

@@ -226,6 +226,14 @@ export default function ProblemDetails({
             </Box>
           </Box>
         )}
+
+        {detail.notesHtml ? (
+          // Sample explanations from the LaTeX statement, after the samples they explain
+          <Box
+            className={styles.statementHtml}
+            dangerouslySetInnerHTML={{ __html: detail.notesHtml }}
+          />
+        ) : null}
       </Box>
     );
   }, [detail, tab, hideEditorial, hideStats, compactSubmissions]);

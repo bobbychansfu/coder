@@ -429,6 +429,34 @@ function renderBlocks(nodes: LatexNode[]): string {
   return html.join("");
 }
 
-export function renderLatexStatement(source: string): string {
-  return renderBlocks(new LatexParser(source).parse());
+function plainText(nodes: LatexNode[]): string {
+  return nodes
+    .map((node) => {
+      if (node.kind === "text") return node.value;
+      if (node.kind === "group") return plainText(node.children);
+      if (node.kind === "command") return node.args.map(plainText).join("");
+      return "";
+    })
+    .join("");
+}
+
+// Sample explanations and notes, which the page shows after the samples as on Codeforces
+const NOTES_HEADING = /^(explanation|notes?)\b/i;
+
+export function renderLatexStatement(source: string): { statement: string; notes: string } {
+  const nodes = new LatexParser(source).parse();
+  const notesStart = nodes.findIndex(
+    (node) =>
+      node.kind === "command" &&
+      node.name in HEADING_TAGS &&
+      NOTES_HEADING.test(plainText(node.args[0] ?? []).trim()),
+  );
+
+  if (notesStart < 0) {
+    return { statement: renderBlocks(nodes), notes: "" };
+  }
+  return {
+    statement: renderBlocks(nodes.slice(0, notesStart)),
+    notes: renderBlocks(nodes.slice(notesStart)),
+  };
 }
