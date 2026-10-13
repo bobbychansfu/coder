@@ -358,6 +358,19 @@ a.problemTableRowAttempted:hover {
   justify-content: center;
 }
 
+.problemColumnLink {
+  color: inherit;
+  text-decoration: none;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.problemColumnLink:hover {
+  color: #dc2626;
+  background-color: #fef2f2;
+  text-decoration: underline;
+}
+
 .rightCell {
   text-align: right;
   padding-right: 8px;
