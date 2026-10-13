@@ -1,11 +1,12 @@
--- Every contestant is on a team (a team of one by default), submissions record the
--- team they were made for, and joining a team goes through an accepted invite.
+-- In-portal notifications, and contest teams that grow only through accepted
+-- invites. Teams of one are created on demand (registering, submitting, opening
+-- the team view), so existing contestants need no backfill.
+
+-- CreateEnum
+CREATE TYPE "NotificationType" AS ENUM ('VERDICT', 'TEAM_INVITE');
 
 -- CreateEnum
 CREATE TYPE "TeamInviteStatus" AS ENUM ('PENDING', 'ACCEPTED', 'DECLINED', 'REVOKED');
-
--- AlterEnum
-ALTER TYPE "NotificationType" ADD VALUE 'TEAM_INVITE';
 
 -- AlterTable
 ALTER TABLE "Contest" ADD COLUMN     "maxTeamSize" INTEGER NOT NULL DEFAULT 3;
@@ -19,48 +20,28 @@ SET "contestId" = t."contestId"
 FROM "Team" t
 WHERE tm."teamId" = t."id";
 
--- A team of one for every contestant who is not on a team yet, named like the scoreboard names them
-INSERT INTO "Team" ("id", "name", "contestId", "createdAt", "updatedAt")
-SELECT
-  'solo_' || md5(p."contestId" || ':' || p."userId"),
-  COALESCE(
-    NULLIF(btrim(u."nickname"), ''),
-    NULLIF(btrim(u."firstName" || ' ' || u."lastName"), ''),
-    u."computingId"
-  ),
-  p."contestId",
-  CURRENT_TIMESTAMP,
-  CURRENT_TIMESTAMP
-FROM "Participation" p
-JOIN "User" u ON u."id" = p."userId"
-WHERE p."role" = 'contestant'
-  AND NOT EXISTS (
-    SELECT 1 FROM "TeamMember" tm
-    WHERE tm."userId" = p."userId" AND tm."contestId" = p."contestId"
-  );
-
-INSERT INTO "TeamMember" ("id", "teamId", "userId", "contestId")
-SELECT
-  'solo_member_' || md5(p."contestId" || ':' || p."userId"),
-  t."id",
-  p."userId",
-  p."contestId"
-FROM "Participation" p
-JOIN "Team" t ON t."id" = 'solo_' || md5(p."contestId" || ':' || p."userId")
-WHERE p."role" = 'contestant'
-  AND NOT EXISTS (
-    SELECT 1 FROM "TeamMember" tm
-    WHERE tm."userId" = p."userId" AND tm."contestId" = p."contestId"
-  );
-
 -- AlterTable
 ALTER TABLE "Submission" ADD COLUMN     "teamId" TEXT;
 
--- Past submissions belong to the submitter's team as it is today
+-- Existing team members' submissions belong to their team, so those results stay
+-- put if someone later leaves. Everyone else's stay unstamped until they join a team.
 UPDATE "Submission" s
 SET "teamId" = tm."teamId"
 FROM "TeamMember" tm
 WHERE tm."userId" = s."userId" AND tm."contestId" = s."contestId";
+
+-- CreateTable
+CREATE TABLE "Notification" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "type" "NotificationType" NOT NULL,
+    "contestId" TEXT,
+    "data" JSONB NOT NULL,
+    "readAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Notification_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
 CREATE TABLE "TeamInvite" (
@@ -77,6 +58,9 @@ CREATE TABLE "TeamInvite" (
 );
 
 -- CreateIndex
+CREATE INDEX "Notification_userId_createdAt_idx" ON "Notification"("userId", "createdAt");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "TeamInvite_token_key" ON "TeamInvite"("token");
 
 -- CreateIndex
@@ -90,6 +74,12 @@ CREATE UNIQUE INDEX "TeamMember_contestId_userId_key" ON "TeamMember"("contestId
 
 -- CreateIndex
 CREATE INDEX "Submission_teamId_idx" ON "Submission"("teamId");
+
+-- AddForeignKey
+ALTER TABLE "Notification" ADD CONSTRAINT "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Notification" ADD CONSTRAINT "Notification_contestId_fkey" FOREIGN KEY ("contestId") REFERENCES "Contest"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "TeamInvite" ADD CONSTRAINT "TeamInvite_teamId_fkey" FOREIGN KEY ("teamId") REFERENCES "Team"("id") ON DELETE CASCADE ON UPDATE CASCADE;
