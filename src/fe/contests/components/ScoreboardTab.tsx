@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import * as React from "react";
-import { Box, Typography } from "@mui/material";
+import { Box, IconButton, Typography } from "@mui/material";
+import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
+import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import type { ScoreboardRow } from "@/fe/contests/data/contestDetails";
 import styles from "@/fe/contests/styles/ContestDetailPage.module.css";
@@ -45,19 +47,28 @@ export default function ScoreboardTab({ rows, problemColumns, scoringRule }: Sco
     );
   };
 
-  // Re-measure when the card resizes or columns change, not only on scroll
+  // Re-measure on every scroll (including the arrow buttons'), resize, or column change
   useEffect(() => {
     const table = tableRef.current;
     if (!table) return;
-    updateHiddenColumns(table);
-    const observer = new ResizeObserver(() => updateHiddenColumns(table));
+    const update = () => updateHiddenColumns(table);
+    update();
+    table.addEventListener("scroll", update, { passive: true });
+    const observer = new ResizeObserver(update);
     observer.observe(table);
-    return () => observer.disconnect();
+    return () => {
+      table.removeEventListener("scroll", update);
+      observer.disconnect();
+    };
   }, [problemColumns.length]);
+
+  const scrollColumns = (direction: 1 | -1) => {
+    const table = tableRef.current;
+    table?.scrollBy({ left: direction * table.clientWidth * 0.75, behavior: "smooth" });
+  };
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
-    updateHiddenColumns(target);
     const scrollPosition = target.scrollTop + target.clientHeight;
     const scrollHeight = target.scrollHeight;
 
@@ -87,12 +98,30 @@ export default function ScoreboardTab({ rows, problemColumns, scoringRule }: Sco
         <Typography className={styles.scoreboardTitle}>Contest Standings</Typography>
       </Box>
 
-      {/* Fades mark hidden columns: macOS hides scrollbars until you scroll */}
+      {/* Fades and arrows mark hidden columns: macOS hides scrollbars until you scroll */}
       <Box
         className={styles.scoreboardScrollArea}
         data-more-left={hiddenColumns.left}
         data-more-right={hiddenColumns.right}
       >
+        {hiddenColumns.left ? (
+          <IconButton
+            className={`${styles.scoreboardScrollButton} ${styles.scoreboardScrollButtonLeft}`}
+            aria-label="Show earlier problems"
+            onClick={() => scrollColumns(-1)}
+          >
+            <ChevronLeftRoundedIcon />
+          </IconButton>
+        ) : null}
+        {hiddenColumns.right ? (
+          <IconButton
+            className={`${styles.scoreboardScrollButton} ${styles.scoreboardScrollButtonRight}`}
+            aria-label="Show more problems"
+            onClick={() => scrollColumns(1)}
+          >
+            <ChevronRightRoundedIcon />
+          </IconButton>
+        ) : null}
         <Box
           className={styles.scoreboardTable}
           onScroll={handleScroll}
