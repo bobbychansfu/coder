@@ -697,30 +697,32 @@ The callback route:
 
 ### 12.1 Scoreboard
 
-The project contains supporting contest data and aggregation logic that can be used by a future scoreboard:
+Each contest has a **scoring rule** (`Contest.scoringRule`), chosen by the instructor or admin when
+creating or editing the contest. `findScoreboardRowsForContest` in `src/lib/db-helpers.ts` builds the
+standings with the matching rule.
 
-- rows are derived from `Participation` + `ProblemStatus`
-- score is the sum of per-problem stored scores
-- solved count is based on `correct` or positive-score statuses
-- ranks are sorted by:
-  1. preset rank when present
-  2. total score descending
-  3. solved descending
-  4. display name ascending
-
-However, the full scoreboard feature has not been completed. The remaining work includes exposing the aggregation reliably through the active contest API, implementing and validating the student-facing scoreboard UI, defining refresh/freeze behavior, and testing ranking and tie-breaking rules end to end.
-
-Contest teams are ranked as one row (`findScoreboardRowsForContest` in `src/lib/db-helpers.ts`):
-
-- each team is one entry named after the team, with its members listed under the name
-- a team solves a problem when any member has solved it
-- a team's points on a problem are its best member's points, so two teammates solving the same problem
-  count once; the team score is the sum of those
-- a team's preset rank is the best preset rank among its members
-- students who are not on a team keep a row of their own
-- "Find my rank" highlights the viewer's team row
-
+Contest teams are ranked as one entry, named after the team with its members listed under the name.
+Students who are not on a team keep an entry of their own. "Find my rank" highlights the viewer's entry.
 Submissions and `ProblemStatus` are still recorded per student; teams only change how they are ranked.
+
+**Problem score** (`POINTS`, the default; `src/lib/pointsStandings.ts`), from `ProblemStatus`:
+
+- an entry solves a problem when any member's status is `correct` or scores points
+- an entry earns its best member's points on each problem, so two teammates solving the same problem
+  count once; the score is the sum of those
+- ranks: score descending, then solved descending, then name
+
+**ICPC** (`src/lib/icpcStandings.ts`), from `Submission` records:
+
+- a team's submissions are its members' submissions merged in time order
+- a solved problem costs the minutes from contest start to its first accepted submission plus 20 minutes
+  per rejected submission before it (wrong answer, time limit, runtime error); compile errors, system
+  errors and pending submissions do not count, and submissions after the first accept are ignored
+- only submissions made while the contest runs count, so practising after it ends changes nothing
+- ranks: solved descending, then penalty ascending, then the earliest last accepted submission, then name
+- each cell shows the attempts and the solve minute; the first entry to solve a problem is highlighted
+
+Refresh/freeze behaviour (a frozen final hour) is not implemented.
 
 ### 12.2 Hints
 

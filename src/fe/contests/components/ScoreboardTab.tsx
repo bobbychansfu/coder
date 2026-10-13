@@ -4,6 +4,7 @@ import { Box, Button, Typography } from "@mui/material";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import LaunchOutlinedIcon from "@mui/icons-material/LaunchOutlined";
 import type { ScoreboardRow } from "@/fe/contests/data/contestDetails";
+import { ICPC_PENALTY_MINUTES } from "@/lib/icpcStandings";
 import styles from "@/fe/contests/styles/ContestDetailPage.module.css";
 
 interface ScoreboardTabProps {
@@ -28,6 +29,7 @@ export default function ScoreboardTab({ rows, problemColumns }: ScoreboardTabPro
     return "#cbd5e1";
   };
 
+  const isIcpc = rows.some((row) => row.scoringRule === "ICPC");
   const displayRows = rows.slice(0, displayCount);
   const hasMore = displayCount < rows.length;
   const userRank = rows.findIndex((row) => row.isCurrentUser) + 1;
@@ -94,7 +96,15 @@ export default function ScoreboardTab({ rows, problemColumns }: ScoreboardTabPro
   return (
     <Box className={styles.scoreboardCard}>
       <Box className={styles.scoreboardHeader}>
-        <Typography className={styles.scoreboardTitle}>Contest Standings</Typography>
+        <Box>
+          <Typography className={styles.scoreboardTitle}>Contest Standings</Typography>
+          {isIcpc ? (
+            <Typography className={styles.scoreboardRule}>
+              ICPC rules · penalty = minutes to solve + {ICPC_PENALTY_MINUTES} per rejected attempt ·
+              dark green = first to solve
+            </Typography>
+          ) : null}
+        </Box>
         <Button
           variant="outlined"
           size="small"
@@ -112,7 +122,7 @@ export default function ScoreboardTab({ rows, problemColumns }: ScoreboardTabPro
           <span>Rank</span>
           <span>Team / Participant</span>
           <span className={`${styles.centerCell} ${styles.headerCell}`}>Solved</span>
-          <span className={styles.rightCell}>Score</span>
+          <span className={styles.rightCell}>{isIcpc ? "Penalty" : "Score"}</span>
           {problemColumns.map((code) => (
             <span key={code} className={`${styles.centerCell} ${styles.headerCell}`}>
               {code}
@@ -143,13 +153,34 @@ export default function ScoreboardTab({ rows, problemColumns }: ScoreboardTabPro
               <span className={styles.centerCell}>
                 <span className={styles.solvedBadge}>{row.solved}</span>
               </span>
-              <span className={`${styles.rightCell} ${styles.scoreValue}`}>{row.score}</span>
+              <span className={`${styles.rightCell} ${styles.scoreValue}`}>
+                {isIcpc ? row.penalty : row.score}
+              </span>
               {problemColumns.map((code) => {
                 const cell = row.problems[code];
                 if (!cell) {
                   return (
                     <span key={code} className={styles.centerCell}>
                       <span className={styles.emptyCell}>—</span>
+                    </span>
+                  );
+                }
+
+                if (isIcpc) {
+                  const tries = `${cell.attempts} ${cell.attempts === 1 ? "try" : "tries"}`;
+                  return (
+                    <span key={code} className={styles.centerCell}>
+                      {cell.solved ? (
+                        <span
+                          className={`${styles.scoreBadge} ${cell.firstSolve ? styles.icpcFirstSolve : styles.icpcSolved}`}
+                          title={cell.firstSolve ? "First to solve" : "Solved"}
+                        >
+                          {cell.minutes}
+                        </span>
+                      ) : (
+                        <span className={`${styles.scoreBadge} ${styles.scorePenalty}`}>✕</span>
+                      )}
+                      <span className={styles.scoreTime}>{tries}</span>
                     </span>
                   );
                 }

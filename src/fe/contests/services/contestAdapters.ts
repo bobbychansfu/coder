@@ -108,11 +108,13 @@ function toContestProblem(row: BackendContestProblemStatus, index: number): Cont
 
 function toScoreboardRow(row: BackendContestScoreboardRow) {
   return {
+    scoringRule: row.scoringRule,
     rank: row.rank,
     name: row.name,
     members: row.members,
     solved: row.solved,
     score: row.score,
+    penalty: row.penalty,
     problems: row.problems,
     isCurrentUser: row.isCurrentUser,
   };

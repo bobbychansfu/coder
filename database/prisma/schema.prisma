@@ -31,6 +31,13 @@ enum ManageLifecycleStatus {
   DELETED
 }
 
+// How a contest's scoreboard ranks entries: by summed problem points, or by ICPC rules
+// (problems solved, then penalty time).
+enum ContestScoringRule {
+  POINTS
+  ICPC
+}
+
 enum Visibility {
   PUBLIC
   PRIVATE
@@ -213,6 +220,7 @@ model Contest {
   participants    Int           @default(0)
   published       Boolean       @default(false)
   aiHintEnabled   Boolean       @default(false)
+  scoringRule     ContestScoringRule @default(POINTS)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 

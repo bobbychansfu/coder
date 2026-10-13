@@ -16,7 +16,7 @@ function toTimestamp(value: Date | string | null | undefined) {
   return Number.isFinite(parsed) ? parsed : Number.NaN;
 }
 
-function resolveContestEndTimestamp(contest: ContestStatusInput) {
+export function resolveContestEndTimestamp(contest: ContestStatusInput) {
   const explicitEnd = toTimestamp(contest.endsAt);
 
   if (Number.isFinite(explicitEnd)) {
