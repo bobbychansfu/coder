@@ -30,7 +30,7 @@ export interface ContestProblem {
   code: string;
   title: string;
   practiceProblemCode?: string;
-  difficulty: "easy" | "medium" | "hard";
+  difficulty?: "easy" | "medium" | "hard";
   tags: string[];
   timeComplexity?: string;
   spaceComplexity?: string;

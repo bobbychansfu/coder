@@ -39,6 +39,7 @@ export interface ContestAuthoringCopy {
   visibilityTitle: string;
   visibilityDescription: string;
   visibilityLabel: string;
+  showDifficultyLabel: string;
   publishLabel: string;
   selectProblemsTitle: string;
   selectProblemsDescription: string;
@@ -133,6 +134,7 @@ export const contestAuthoringCopy: ContestAuthoringCopy = {
   visibilityTitle: "Visibility",
   visibilityDescription: "Control who can see this contest",
   visibilityLabel: "Visibility *",
+  showDifficultyLabel: "Show problem difficulty",
   publishLabel: "Publish Contest",
   selectProblemsTitle: "Select Problems",
   selectProblemsDescription: "Choose problems from your problem bank to include in this contest",

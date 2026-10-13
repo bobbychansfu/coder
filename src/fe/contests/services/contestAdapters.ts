@@ -33,7 +33,12 @@ function mapContestDetailStatus(contest: BackendContestSummary): ContestDetailSt
 }
 
 function mapDifficulty(value: string | null | undefined): ContestProblem["difficulty"] {
-  const normalized = value?.trim().toLowerCase();
+  // Null means the contest hides difficulty, so no label is shown.
+  if (value == null) {
+    return undefined;
+  }
+
+  const normalized = value.trim().toLowerCase();
 
   if (normalized === "easy" || normalized === "medium" || normalized === "hard") {
     return normalized;

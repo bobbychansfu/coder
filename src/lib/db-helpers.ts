@@ -280,26 +280,38 @@ export const dbHelpers = {
   },
 
   findContestsProblemsStatusForUser: async (computingId: string, contestId: string) => {
-    return prisma.contestProblem.findMany({
-      where: {
-        contestId,
-        contest: { manageStatus: "ACTIVE" },
-        problem: { isDraft: false, manageStatus: "ACTIVE" },
-      },
-      include: {
-        problem: {
-          include: {
-            problemStatuses: {
-              where: {
-                user: { computingId },
-                contestId,
+    const [contest, rows] = await Promise.all([
+      prisma.contest.findUnique({ where: { id: contestId }, select: { showDifficulty: true } }),
+      prisma.contestProblem.findMany({
+        where: {
+          contestId,
+          contest: { manageStatus: "ACTIVE" },
+          problem: { isDraft: false, manageStatus: "ACTIVE" },
+        },
+        include: {
+          problem: {
+            include: {
+              problemStatuses: {
+                where: {
+                  user: { computingId },
+                  contestId,
+                },
               },
             },
           },
         },
+        orderBy: { ordering: "asc" },
+      }),
+    ]);
+
+    // Strip difficulty server-side so a hidden value never reaches the browser.
+    return rows.map((row) => ({
+      ...row,
+      problem: {
+        ...row.problem,
+        difficulty: contest?.showDifficulty ? row.problem.difficulty : null,
       },
-      orderBy: { ordering: "asc" },
-    });
+    }));
   },
 
   getProblemsForContest: async (contestId: string) => {
