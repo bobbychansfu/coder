@@ -113,6 +113,8 @@ model LocalCredential {
   userId       String    @unique
   username     String    @unique
   passwordHash String
+  // Sessions issued before this moment are rejected, so changing a password signs out everywhere.
+  passwordChangedAt DateTime @default(now())
   enabled      Boolean   @default(true)
   expiresAt    DateTime?
   lastLoginAt  DateTime?

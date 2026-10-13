@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { normalizeRole, type Role } from "@/lib/authz";
+import { localAccountAccess, normalizeRole, type Role } from "@/lib/authz";
 import { verifyCasSessionToken } from "@/lib/casAuthSession";
 import { verifyDevSessionToken } from "@/lib/devAuthSession";
 import { verifyGuestSessionToken } from "@/lib/guestAuthSession";
@@ -10,11 +10,13 @@ export interface CurrentUser {
   role: Role;
   displayName: string;
   identifier: string;
-  accountType: "guest" | "sfu";
+  // "external": a non-guest account that signs in with a Coder password.
+  accountType: "guest" | "sfu" | "external";
 }
 
 const AUTH_BACKEND_BASE_URL = process.env.AUTH_BACKEND_BASE_URL;
 const AUTH_ME_PATH = process.env.AUTH_ME_PATH || "/me";
+const AUTH_ME_FALLBACK_ENABLED = process.env.AUTH_ME_FALLBACK_ENABLED === "true";
 const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "session";
 const AUTH_MODE = process.env.AUTH_MODE;
 const CAS_AUTH_COOKIE_SECRET = process.env.CAS_AUTH_COOKIE_SECRET;
@@ -58,16 +60,17 @@ async function buildCurrentUser(
       },
     });
     if (dbUser) {
-      const isGuest = accountType === "guest" || Boolean(dbUser.localCredential);
-      const guestUsername = dbUser.localCredential?.username;
+      if (accountType === "guest") {
+        // Guests are known by the username an admin gave them, not a name or email.
+        const guestUsername = dbUser.localCredential?.username ?? computingId;
+        return { computingId, role, displayName: guestUsername, identifier: guestUsername, accountType };
+      }
       return {
         computingId,
         role,
-        displayName: isGuest
-          ? (guestUsername ?? computingId)
-          : (`${dbUser.firstName} ${dbUser.lastName}`.trim() || computingId),
-        identifier: isGuest ? (guestUsername ?? computingId) : dbUser.email,
-        accountType: isGuest ? "guest" : "sfu",
+        displayName: `${dbUser.firstName} ${dbUser.lastName}`.trim() || computingId,
+        identifier: dbUser.email,
+        accountType,
       };
     }
   } catch {
@@ -81,26 +84,33 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   const cookieStore = await cookies();
   const sessionCookieValue = cookieStore.get(SESSION_COOKIE_NAME)?.value;
 
+  // Password-based accounts (admin-made guests and self-registered users) share
+  // one session token, checked against the database on every request.
   if (sessionCookieValue && GUEST_AUTH_COOKIE_SECRET) {
-    const guestSession = verifyGuestSessionToken(sessionCookieValue, GUEST_AUTH_COOKIE_SECRET);
-    if (guestSession) {
+    const localSession = verifyGuestSessionToken(sessionCookieValue, GUEST_AUTH_COOKIE_SECRET);
+    if (localSession) {
       const credential = await prisma.localCredential.findUnique({
-        where: { userId: guestSession.userId },
+        where: { userId: localSession.userId },
         select: {
           enabled: true,
           expiresAt: true,
+          passwordChangedAt: true,
           user: { select: { computingId: true, role: true } },
         },
       });
+      const access = credential ? localAccountAccess(credential.user.role) : null;
       const active =
-        credential?.enabled &&
+        credential !== null &&
+        access !== null &&
+        credential.enabled &&
         (!credential.expiresAt || credential.expiresAt.getTime() > Date.now()) &&
-        credential.user.role === "GUEST" &&
-        credential.user.computingId === guestSession.computingId;
+        credential.user.computingId === localSession.computingId &&
+        // A password change revokes every session issued before it.
+        localSession.iat >= Math.floor(credential.passwordChangedAt.getTime() / 1000);
 
-      // Guest is an account type in the database, but intentionally receives the
-      // existing student authorization profile throughout the application.
-      if (active) return buildCurrentUser(guestSession.computingId, "student", "guest");
+      if (active && access) {
+        return buildCurrentUser(localSession.computingId, access.role, access.accountType);
+      }
     }
   }
 
@@ -118,13 +128,10 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     }
   }
 
-  const allCookies = cookieStore.getAll();
-  if (allCookies.length === 0) {
-    return null;
-  }
-  const forwardedCookieHeader = allCookies.map((c) => `${c.name}=${c.value}`).join("; ");
-
-  if (!AUTH_BACKEND_BASE_URL) {
+  // Legacy fallback: ask an external auth backend who this is. It is off unless
+  // explicitly enabled, and it only ever receives the session cookie — never the
+  // visitor's other cookies.
+  if (!AUTH_ME_FALLBACK_ENABLED || !AUTH_BACKEND_BASE_URL || !sessionCookieValue) {
     return null;
   }
 
@@ -134,7 +141,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     const response = await fetch(endpoint, {
       method: "GET",
       headers: {
-        Cookie: forwardedCookieHeader,
+        Cookie: `${SESSION_COOKIE_NAME}=${sessionCookieValue}`,
         Accept: "application/json",
       },
       cache: "no-store",

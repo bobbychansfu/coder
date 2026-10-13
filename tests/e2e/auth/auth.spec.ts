@@ -50,7 +50,8 @@ test("admin can create a guest account and the guest can sign in", async ({ page
 
   await page.goto("/guest-login");
   await page.getByLabel("Username").fill(username);
-  await page.getByLabel("Password").fill(password);
+  // exact: the "Show password" toggle button is also labelled with "password".
+  await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Sign in as Guest" }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
 });
@@ -61,6 +62,37 @@ test("guest login does not reveal whether a username exists", async ({ request }
   });
   expect(response.status()).toBe(401);
   await expect(response.json()).resolves.toEqual({ message: "Invalid username or password." });
+});
+
+test("guest usernames cannot contain @, so they never collide with self-registered emails", async ({ page }) => {
+  const adminLogin = await page.request.post("/api/auth/dev-login", {
+    data: { email: "admin@sfu.ca", role: "ADMIN" },
+  });
+  expect(adminLogin.status()).toBe(200);
+
+  const response = await page.request.post("/api/admin/guest-users", {
+    data: { username: `someone-${Date.now()}@example.com`, password: "GuestPass123!", expiresAt: null },
+  });
+  expect(response.status()).toBe(400);
+  await expect(response.json()).resolves.toEqual({ message: "Guest usernames cannot contain @." });
+});
+
+test("CAS login keeps only same-site return paths", async ({ request }) => {
+  for (const next of ["/\\evil.com", "//evil.com", "https://evil.com/", "/\t/evil.com"]) {
+    // maxRedirects 0: inspect the hand-off without following it to SFU's CAS server.
+    const response = await request.get(`/api/auth/cas/login?next=${encodeURIComponent(next)}`, {
+      maxRedirects: 0,
+    });
+    const setCookie = response.headers()["set-cookie"] ?? "";
+    expect(setCookie, `next=${JSON.stringify(next)}`).toContain("cas_post_login_path=%2Fdashboard");
+  }
+
+  const sameSite = await request.get(`/api/auth/cas/login?next=${encodeURIComponent("/contests?tab=upcoming")}`, {
+    maxRedirects: 0,
+  });
+  expect(sameSite.headers()["set-cookie"] ?? "").toContain(
+    `cas_post_login_path=${encodeURIComponent("/contests?tab=upcoming")}`,
+  );
 });
 
 test("an expired guest username can be registered again without exposing old history", async ({ page }) => {

@@ -6,7 +6,14 @@ import { hashLocalPassword } from "@/lib/localCredential";
 import { prisma } from "@/lib/prisma";
 
 const createGuestSchema = z.object({
-  username: z.string().trim().min(1).transform((value) => value.toLowerCase()),
+  username: z
+    .string()
+    .trim()
+    .min(1)
+    .transform((value) => value.toLowerCase())
+    // Self-registered accounts use their email as the username; keeping "@" out of
+    // guest usernames means the two can never collide.
+    .refine((value) => !value.includes("@"), "Guest usernames cannot contain @."),
   firstName: z.string().trim().optional().default("Guest"),
   lastName: z.string().trim().optional().default(""),
   password: z.string().min(1),

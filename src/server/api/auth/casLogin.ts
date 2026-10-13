@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { normalizeRole } from "@/lib/authz";
 import { createCasSessionToken } from "@/lib/casAuthSession";
 import { prisma } from "@/lib/prisma";
+import { safeNextPath } from "@/lib/safeNextPath";
 import { recordDailyLogin, syncStudentGamification } from "@/server/gamification/persistence";
 
 const AUTH_BACKEND_BASE_URL = process.env.AUTH_BACKEND_BASE_URL;
@@ -21,15 +22,7 @@ interface CasLoginRequestBody {
 }
 
 function normalizeNextPath(next: unknown): string {
-  if (typeof next !== "string" || next.length === 0) {
-    return DEFAULT_POST_LOGIN_PATH;
-  }
-
-  if (!next.startsWith("/") || next.startsWith("//")) {
-    return DEFAULT_POST_LOGIN_PATH;
-  }
-
-  return next;
+  return safeNextPath(next, DEFAULT_POST_LOGIN_PATH);
 }
 
 function getLoginErrorRedirectUrl(request: NextRequest, nextPath: string, error: string): URL {
@@ -147,8 +140,12 @@ async function validateDirectlyWithSfu(ticket: string, serviceUrl: string): Prom
   const email = `${computingId}@sfu.ca`;
   const existingUser = await prisma.user.findFirst({
     where: { OR: [{ computingId }, { email }] },
-    select: { id: true, computingId: true, role: true },
+    select: { id: true, computingId: true, role: true, localCredential: { select: { id: true } } },
   });
+
+  // An account with its own password was created outside CAS (a guest or a
+  // self-registered user), so it is never handed to whoever CAS vouches for.
+  if (existingUser?.localCredential) return null;
 
   // CAS has already proved ownership of this SFU computing ID. Provision new
   // users as students, while preserving the role of any existing account.

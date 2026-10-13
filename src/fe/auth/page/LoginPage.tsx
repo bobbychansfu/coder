@@ -6,6 +6,7 @@ import CasLoginCard from "@/fe/auth/components/CasLoginCard";
 import DevQuickAccessCard from "@/fe/auth/components/DevQuickAccessCard";
 import { demoUsers, type DemoRole } from "@/fe/auth/constants/demoUsers";
 import styles from "@/fe/auth/styles/LoginPage.module.css";
+import { safeNextPath } from "@/lib/safeNextPath";
 
 interface LoginPageProps {
   showDevQuickAccess: boolean;
@@ -151,8 +152,7 @@ function LoginPageContent({ showDevQuickAccess, showGuestLogin }: LoginPageProps
       });
 
       if (response.ok) {
-        const nextPath = searchParams.get("next");
-        router.push(nextPath?.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "/dashboard");
+        router.push(safeNextPath(searchParams.get("next")));
         router.refresh();
         return;
       }

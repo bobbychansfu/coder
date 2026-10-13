@@ -2,6 +2,9 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 const GUEST_AUTH_VERSION = "guest-auth-v1";
 
+// The session token for every account that signs in with a Coder password — admin-made
+// guests and self-registered users alike. `role: "guest"` marks the token kind; the
+// account's real role is read from the database when the token is verified.
 export interface GuestSessionPayload {
   v: typeof GUEST_AUTH_VERSION;
   userId: string;
