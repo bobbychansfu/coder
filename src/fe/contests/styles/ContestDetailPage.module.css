@@ -147,6 +147,22 @@ a.problemTableRow:hover {
   background-color: #f9fafb;
 }
 
+.problemTableRowSolved {
+  background-color: #ecfdf3;
+}
+
+a.problemTableRowSolved:hover {
+  background-color: #dcfce7;
+}
+
+.problemTableRowAttempted {
+  background-color: #fef2f2;
+}
+
+a.problemTableRowAttempted:hover {
+  background-color: #fee2e2;
+}
+
 .problemTableHeader {
   min-height: 40px;
   font-size: 12px;

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Box, Chip } from "@mui/material";
-import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
 import type { ContestProblem } from "@/fe/contests/data/contestDetails";
 import styles from "@/fe/contests/styles/ContestDetailPage.module.css";
@@ -17,6 +16,12 @@ const DIFFICULTY_CLASS = {
   easy: cardStyles.diffEasy,
   medium: cardStyles.diffMedium,
   hard: cardStyles.diffHard,
+};
+
+const RESULT_CLASS = {
+  solved: styles.problemTableRowSolved,
+  attempted: styles.problemTableRowAttempted,
+  none: "",
 };
 
 // A compact table in the style of Codeforces and Kattis: one line per problem
@@ -46,18 +51,14 @@ export default function ProblemsTab({ contestId, problems, showPoints = true }: 
         <Link
           key={problem.code}
           href={`/contests/${contestId}/problems/${problem.code.toLowerCase()}`}
-          className={styles.problemTableRow}
+          // Green once solved, red while tried but unsolved, as on Codeforces
+          className={`${styles.problemTableRow} ${RESULT_CLASS[problem.viewerResult ?? "none"]}`}
           style={{ gridTemplateColumns }}
         >
           <span className={`${styles.problemTableCenter} ${styles.problemTableCode}`}>
             {problem.code}
           </span>
-          <span className={styles.problemTableName}>
-            {problem.solved ? (
-              <EmojiEventsIcon sx={{ fontSize: 16, color: "#16a34a" }} aria-label="Solved" />
-            ) : null}
-            {problem.title}
-          </span>
+          <span className={styles.problemTableName}>{problem.title}</span>
           {showDifficulty ? (
             <span>
               {problem.difficulty ? (

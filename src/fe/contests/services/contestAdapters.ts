@@ -153,15 +153,22 @@ export function toContestDetail(
   liveDetail?: ContestProblemStatusResponse | null,
 ): ContestDetail {
   const scoreboard = (liveDetail?.scoreboard ?? []).map(toScoreboardRow);
+  // The viewer's row is their team's row when they are on one
+  const viewerRow = scoreboard.find((entry) => entry.isCurrentUser);
   // Solves come from the standings, so a team counts once, as on the scoreboard
   const problems = (liveDetail?.contestProblemsStatus ?? [])
     .slice()
     .sort((left, right) => left.ordering - right.ordering)
     .map((row, index) => toContestProblem(row, index))
-    .map((problem) => ({
-      ...problem,
-      solvedBy: scoreboard.filter((entry) => entry.problems[problem.code]?.solved).length,
-    }));
+    .map((problem) => {
+      // A cell exists only once there is a counted submission for the problem
+      const viewerCell = viewerRow?.problems[problem.code];
+      return {
+        ...problem,
+        solvedBy: scoreboard.filter((entry) => entry.problems[problem.code]?.solved).length,
+        viewerResult: viewerCell ? (viewerCell.solved ? "solved" : "attempted") : undefined,
+      } satisfies ContestProblem;
+    });
 
   return {
     id: contest.id,
