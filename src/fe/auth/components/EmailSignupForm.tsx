@@ -77,8 +77,7 @@ export default function EmailSignupForm() {
   return (
     <>
       <p className={styles.cardDescription}>
-        Students outside SFU can create an account with their email. SFU students: use the SFU
-        login instead.
+        For students outside SFU.
       </p>
       <form className={styles.form} onSubmit={(event) => void handleSubmit(event)} noValidate>
         <label className={styles.field}>
@@ -102,7 +101,7 @@ export default function EmailSignupForm() {
           />
         </label>
         <label className={styles.field}>
-          <span className={styles.fieldLabel}>Nickname (shown on scoreboards)</span>
+          <span className={styles.fieldLabel}>Nickname</span>
           <input
             className={styles.fieldInput}
             value={form.nickname}

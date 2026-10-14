@@ -55,9 +55,6 @@ export default function GuestLoginPage({ enabled, showSignup }: GuestLoginPagePr
 
         <article className={styles.card}>
           <h2 className={styles.cardTitle}>Sign in with email</h2>
-          <p className={styles.cardDescription}>
-            Use the email you signed up with, or a guest username from an administrator.
-          </p>
           {enabled ? (
             <form className={styles.form} onSubmit={(event) => void handleSubmit(event)}>
               <label className={styles.field}>
