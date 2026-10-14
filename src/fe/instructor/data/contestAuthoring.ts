@@ -39,6 +39,9 @@ export interface ContestAuthoringCopy {
   visibilityTitle: string;
   visibilityDescription: string;
   visibilityLabel: string;
+  scoringRuleTitle: string;
+  scoringRuleDescription: string;
+  scoringRuleLabel: string;
   publishLabel: string;
   selectProblemsTitle: string;
   selectProblemsDescription: string;
@@ -61,6 +64,21 @@ export interface ContestProblemRecord {
   source?: "public" | "contest-only";
 }
 
+export type ContestScoringRule = "points" | "icpc";
+
+export const CONTEST_SCORING_RULE_OPTIONS: { value: ContestScoringRule; label: string; hint: string }[] = [
+  {
+    value: "points",
+    label: "Problem score",
+    hint: "Rank by total points; each problem counts its best score.",
+  },
+  {
+    value: "icpc",
+    label: "ICPC",
+    hint: "Rank by problems solved, then penalty: minutes to solve plus 20 per rejected attempt.",
+  },
+];
+
 export interface ContestFormDraft {
   contestName: string;
   description: string;
@@ -69,6 +87,7 @@ export interface ContestFormDraft {
   endDate: string;
   endTime: string;
   visibility: "course-only" | "public" | "private";
+  scoringRule: ContestScoringRule;
   groupAHintAfterMinutes: number;
   groupBHintAfterMinutes: number;
 }
@@ -133,6 +152,9 @@ export const contestAuthoringCopy: ContestAuthoringCopy = {
   visibilityTitle: "Visibility",
   visibilityDescription: "Control who can see this contest",
   visibilityLabel: "Visibility *",
+  scoringRuleTitle: "Scoring Rule",
+  scoringRuleDescription: "How the scoreboard ranks contestants and teams",
+  scoringRuleLabel: "Scoring rule *",
   publishLabel: "Publish Contest",
   selectProblemsTitle: "Select Problems",
   selectProblemsDescription: "Choose problems from your problem bank to include in this contest",
@@ -215,6 +237,7 @@ export const contestFormDraft: ContestFormDraft = {
   endDate: "",
   endTime: "",
   visibility: "public",
+  scoringRule: "points",
   groupAHintAfterMinutes: contestAiHintConfig.groupAHintAfterMinutes,
   groupBHintAfterMinutes: contestAiHintConfig.groupBHintAfterMinutes,
 };

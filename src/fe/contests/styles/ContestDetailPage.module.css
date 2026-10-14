@@ -188,6 +188,7 @@
 
 .userRow {
   font-weight: 600;
+  background-color: #eff6ff;
 }
 
 .userRowHighlighted {
@@ -293,6 +294,17 @@
 .scoreTime {
   font-size: 12px;
   color: #6a7282;
+}
+
+/* ICPC cells: solved (green, shows the solve minute) and first to solve (dark green). */
+.icpcSolved {
+  background-color: rgba(22, 163, 74, 0.14);
+  color: #15803d;
+}
+
+.icpcFirstSolve {
+  background-color: #15803d;
+  color: #ffffff;
 }
 
 .emptyCell {

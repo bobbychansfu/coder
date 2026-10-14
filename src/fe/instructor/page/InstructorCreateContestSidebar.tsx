@@ -4,6 +4,7 @@ import StatusSummaryCard, {
   type StatusSummaryRow,
 } from "@/fe/instructor/components/StatusSummaryCard";
 import {
+  CONTEST_SCORING_RULE_OPTIONS,
   contestAiHintConfig,
   contestAuthoringCopy,
   type ContestFormDraft,
@@ -167,6 +168,41 @@ export default function InstructorCreateContestSidebar({
               {VISIBILITY_OPTIONS.map((option) => (
                 <MenuItem key={option.value} value={option.value}>
                   {toVisibilityLabel(option.value)}
+                </MenuItem>
+              ))}
+            </TextField>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className={styles.card} elevation={0}>
+        <CardContent className={styles.sideCardContent}>
+          <Typography className={styles.sideTitle}>
+            {contestAuthoringCopy.scoringRuleTitle}
+          </Typography>
+          <Typography className={styles.sectionDescription}>
+            {contestAuthoringCopy.scoringRuleDescription}
+          </Typography>
+
+          <div className={styles.fieldBlock}>
+            <Typography className={styles.fieldLabel}>
+              {contestAuthoringCopy.scoringRuleLabel}
+            </Typography>
+            <TextField
+              select
+              fullWidth
+              size="small"
+              value={formValues.scoringRule}
+              onChange={(event) => onFieldChange("scoringRule", event.target.value)}
+              className={styles.inputField}
+              SelectProps={{ IconComponent: KeyboardArrowDownRoundedIcon }}
+              helperText={
+                CONTEST_SCORING_RULE_OPTIONS.find((option) => option.value === formValues.scoringRule)?.hint
+              }
+            >
+              {CONTEST_SCORING_RULE_OPTIONS.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
                 </MenuItem>
               ))}
             </TextField>

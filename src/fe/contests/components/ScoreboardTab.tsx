@@ -6,6 +6,11 @@ import LaunchOutlinedIcon from "@mui/icons-material/LaunchOutlined";
 import type { ScoreboardRow } from "@/fe/contests/data/contestDetails";
 import styles from "@/fe/contests/styles/ContestDetailPage.module.css";
 
+// Minutes into the contest as h:mm, the way ICPC boards show solve times (12 → "0:12").
+function formatSolveTime(minutes: number) {
+  return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, "0")}`;
+}
+
 interface ScoreboardTabProps {
   rows: ScoreboardRow[];
   problemColumns: string[];
@@ -28,6 +33,7 @@ export default function ScoreboardTab({ rows, problemColumns }: ScoreboardTabPro
     return "#cbd5e1";
   };
 
+  const isIcpc = rows.some((row) => row.scoringRule === "ICPC");
   const displayRows = rows.slice(0, displayCount);
   const hasMore = displayCount < rows.length;
   const userRank = rows.findIndex((row) => row.isCurrentUser) + 1;
@@ -112,7 +118,11 @@ export default function ScoreboardTab({ rows, problemColumns }: ScoreboardTabPro
           <span>Rank</span>
           <span>Team / Participant</span>
           <span className={`${styles.centerCell} ${styles.headerCell}`}>Solved</span>
-          <span className={styles.rightCell}>Score</span>
+          {isIcpc ? (
+            <span className={`${styles.centerCell} ${styles.headerCell}`}>Penalty</span>
+          ) : (
+            <span className={styles.rightCell}>Score</span>
+          )}
           {problemColumns.map((code) => (
             <span key={code} className={`${styles.centerCell} ${styles.headerCell}`}>
               {code}
@@ -143,13 +153,40 @@ export default function ScoreboardTab({ rows, problemColumns }: ScoreboardTabPro
               <span className={styles.centerCell}>
                 <span className={styles.solvedBadge}>{row.solved}</span>
               </span>
-              <span className={`${styles.rightCell} ${styles.scoreValue}`}>{row.score}</span>
+              <span className={`${isIcpc ? styles.centerCell : styles.rightCell} ${styles.scoreValue}`}>
+                {isIcpc ? row.penalty : row.score}
+              </span>
               {problemColumns.map((code) => {
                 const cell = row.problems[code];
                 if (!cell) {
                   return (
                     <span key={code} className={styles.centerCell}>
                       <span className={styles.emptyCell}>—</span>
+                    </span>
+                  );
+                }
+
+                if (isIcpc) {
+                  // ICPC board notation: "+" solved first try, "+N" solved after N rejected
+                  // tries, "-N" N rejected tries without a solve; the solve minute goes below.
+                  const attempts = cell.attempts ?? 0;
+                  if (!cell.solved) {
+                    return (
+                      <span key={code} className={styles.centerCell}>
+                        <span className={`${styles.scoreBadge} ${styles.scorePenalty}`}>-{attempts}</span>
+                      </span>
+                    );
+                  }
+                  const rejected = attempts - 1;
+                  return (
+                    <span key={code} className={styles.centerCell}>
+                      <span
+                        className={`${styles.scoreBadge} ${cell.firstSolve ? styles.icpcFirstSolve : styles.icpcSolved}`}
+                        title={cell.firstSolve ? "First to solve" : "Solved"}
+                      >
+                        {rejected > 0 ? `+${rejected}` : "+"}
+                      </span>
+                      <span className={styles.scoreTime}>{formatSolveTime(cell.minutes ?? 0)}</span>
                     </span>
                   );
                 }

@@ -196,6 +196,7 @@ export default function InstructorCreateContestPage() {
         endDate: toLocalDateInputValue(contestQuery.data.endsAtIso),
         endTime: toLocalTimeInputValue(contestQuery.data.endsAtIso),
         visibility: contestQuery.data.visibility,
+        scoringRule: contestQuery.data.scoringRule,
         groupAHintAfterMinutes: contestQuery.data.groupAHintAfterMinutes,
         groupBHintAfterMinutes: contestQuery.data.groupBHintAfterMinutes,
       });

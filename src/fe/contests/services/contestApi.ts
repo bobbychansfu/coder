@@ -31,14 +31,20 @@ interface BackendScoreboardCell {
   points?: number;
   time?: string;
   penalty?: number;
+  solved?: boolean;
+  attempts?: number;
+  minutes?: number;
+  firstSolve?: boolean;
 }
 
 export interface BackendContestScoreboardRow {
+  scoringRule?: "POINTS" | "ICPC";
   rank: number;
   name: string;
   members?: string[];
   solved: number;
-  score: number;
+  score?: number;
+  penalty?: number;
   problems: Record<string, BackendScoreboardCell>;
   isCurrentUser?: boolean;
 }

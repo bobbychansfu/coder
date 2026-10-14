@@ -6,6 +6,7 @@ import type { Context } from "../init";
 import { publicProcedure, router } from "../init";
 
 const visibilitySchema = z.enum(["course-only", "public", "private"]);
+const scoringRuleSchema = z.enum(["points", "icpc"]);
 const hintDelayMinutesSchema = z.number().int().min(0).max(10_080);
 const DEFAULT_GROUP_A_HINT_DELAY_MINUTES = 5;
 const DEFAULT_GROUP_B_HINT_DELAY_MINUTES = 10;
@@ -20,6 +21,7 @@ const contestMutationSchema = z.object({
   endTime: z.string(),
   endUtcOffsetMinutes: z.number().int().nullable().optional(),
   visibility: visibilitySchema,
+  scoringRule: scoringRuleSchema.default("points"),
   aiHintEnabled: z.boolean(),
   groupAHintAfterMinutes: hintDelayMinutesSchema.default(DEFAULT_GROUP_A_HINT_DELAY_MINUTES),
   groupBHintAfterMinutes: hintDelayMinutesSchema.default(DEFAULT_GROUP_B_HINT_DELAY_MINUTES),
@@ -38,6 +40,7 @@ const contestPatchSchema = z
     endTime: z.string().optional(),
     endUtcOffsetMinutes: z.number().int().nullable().optional(),
     visibility: visibilitySchema.optional(),
+    scoringRule: scoringRuleSchema.optional(),
     aiHintEnabled: z.boolean().optional(),
     groupAHintAfterMinutes: hintDelayMinutesSchema.optional(),
     groupBHintAfterMinutes: hintDelayMinutesSchema.optional(),
@@ -64,6 +67,10 @@ function toUiVisibility(value: "PUBLIC" | "PRIVATE" | "COURSE_ONLY") {
   }
 
   return value.toLowerCase() as z.infer<typeof visibilitySchema>;
+}
+
+function toDbScoringRule(value: z.infer<typeof scoringRuleSchema>) {
+  return value === "icpc" ? ("ICPC" as const) : ("POINTS" as const);
 }
 
 function toDbVisibility(value: z.infer<typeof visibilitySchema>) {
@@ -358,6 +365,7 @@ export const contestAuthoringRouter = router({
         startsAtIso: hasImplicitDraftSchedule(contest) ? null : contest.startsAt.toISOString(),
         endsAtIso: contest.endsAt?.toISOString() ?? null,
         visibility: toUiVisibility(contest.visibility),
+        scoringRule: contest.scoringRule === "ICPC" ? ("icpc" as const) : ("points" as const),
         aiHintEnabled: contest.aiHintEnabled,
         groupAHintAfterMinutes,
         groupBHintAfterMinutes,
@@ -450,6 +458,7 @@ export const contestAuthoringRouter = router({
             name: input.contestName.trim(),
             description: input.description.trim() || null,
             visibility: toDbVisibility(input.visibility),
+            scoringRule: toDbScoringRule(input.scoringRule),
             startsAt,
             endsAt,
             durationMinutes,
@@ -637,6 +646,10 @@ export const contestAuthoringRouter = router({
 
         if (hasOwnKey(input.data, "visibility") && input.data.visibility) {
           contestUpdateData.visibility = toDbVisibility(input.data.visibility);
+        }
+
+        if (hasOwnKey(input.data, "scoringRule") && input.data.scoringRule) {
+          contestUpdateData.scoringRule = toDbScoringRule(input.data.scoringRule);
         }
 
         if (hasOwnKey(input.data, "aiHintEnabled") && input.data.aiHintEnabled !== undefined) {
