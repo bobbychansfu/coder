@@ -51,6 +51,8 @@ export interface ContestProblem {
   solvedBy?: number;
   points: number;
   solved?: boolean;
+  // The viewer's (or their team's) standing on this problem, from the scoreboard
+  viewerResult?: "solved" | "attempted";
 }
 
 export interface ContestDetail {
@@ -63,6 +65,8 @@ export interface ContestDetail {
   problemsCount: number;
   participantsLabel: string;
   problems: ContestProblem[];
+  // Known even before anyone registers, unlike the rule on scoreboard rows
+  scoringRule?: "POINTS" | "ICPC";
   scoreboard: ScoreboardRow[];
   clarifications: ClarificationItem[];
 }

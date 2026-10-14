@@ -120,6 +120,83 @@
   width: 100%;
 }
 
+.problemTable {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  background-color: #ffffff;
+  overflow: hidden;
+}
+
+.problemTableRow {
+  display: grid;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  color: #0a0a0a;
+  text-decoration: none;
+}
+
+.problemTableRow:last-child {
+  border-bottom: none;
+}
+
+a.problemTableRow:hover {
+  background-color: #f9fafb;
+}
+
+.problemTableRowSolved {
+  background-color: #ecfdf3;
+}
+
+a.problemTableRowSolved:hover {
+  background-color: #dcfce7;
+}
+
+.problemTableRowAttempted {
+  background-color: #fef2f2;
+}
+
+a.problemTableRowAttempted:hover {
+  background-color: #fee2e2;
+}
+
+.problemTableHeader {
+  min-height: 40px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6a7282;
+  background-color: #f9fafb;
+}
+
+.problemTableCenter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.problemTableCode {
+  font-weight: 700;
+}
+
+.problemTableName {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.problemTableSolves {
+  color: #364153;
+}
+
 .scoreboardCard {
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 12px;
@@ -157,7 +234,8 @@
   gap: 0;
   max-height: 600px;
   overflow-y: auto;
-  overflow-x: hidden;
+  /* Many problems scroll sideways instead of wrapping */
+  overflow-x: auto;
 }
 
 .loadingIndicator {
@@ -172,7 +250,9 @@
 
 .scoreboardRow {
   display: grid;
-  grid-template-columns: 64px 180px 90px 90px repeat(5, minmax(72px, 1fr));
+  grid-template-columns: 64px 180px 90px 90px repeat(var(--problem-count, 5), minmax(72px, 1fr));
+  /* Rows grow past the card so every column keeps its minimum width */
+  min-width: max-content;
   align-items: center;
   gap: 0;
   padding: 12px 0;
@@ -431,7 +511,7 @@
   }
 
   .scoreboardRow {
-    grid-template-columns: 56px 160px 72px 72px repeat(5, minmax(60px, 1fr));
+    grid-template-columns: 56px 160px 72px 72px repeat(var(--problem-count, 5), minmax(60px, 1fr));
   }
 
 }
@@ -446,7 +526,7 @@
   }
 
   .scoreboardRow {
-    grid-template-columns: 48px 1fr 64px 64px repeat(5, minmax(52px, 1fr));
+    grid-template-columns: 48px 1fr 64px 64px repeat(var(--problem-count, 5), minmax(52px, 1fr));
     font-size: 12px;
   }
 }

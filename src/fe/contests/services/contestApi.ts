@@ -13,6 +13,7 @@ export interface BackendContestSummary {
   participants: number;
   published: boolean;
   aiHintEnabled: boolean;
+  scoringRule?: "POINTS" | "ICPC";
 }
 
 export interface StudentContestInfoResponse {
