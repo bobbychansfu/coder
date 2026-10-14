@@ -1,5 +1,5 @@
 # Contest Section - System Design Notes
-**Schedule-based contest registration + optional three-student teams + contest problem workspace + direct judge integration**
+**Schedule-based contest registration + optional teams of up to three students + contest problem workspace + direct judge integration**
 
 ---
 
@@ -41,7 +41,7 @@ Important current behavior:
 
 - contests are **not** using a per-student countdown timer in the main student flow
 - students can submit **multiple times** to the same problem while the contest is active
-- registered students can create one fixed-size team of three for a contest
+- registered students can create one team of up to three for a contest
 - teams are currently organizational; submissions and progress remain per student
 - a complete student-facing scoreboard is still required
 - practice is now a separate system and should be documented independently
@@ -106,9 +106,9 @@ The student contest detail page supports self-service team creation:
 
 - the creator must be a registered `STUDENT` contestant
 - the creator supplies a team name of 1-50 trimmed characters
-- the creator selects exactly two other registered students
+- the creator selects up to two other registered students (none for a solo team)
 - selected students must not already belong to another team for that contest
-- the resulting contest team always has three members, including the creator
+- the resulting contest team has one to three members, including the creator
 
 There is currently no student join-request, leave-team, rename-team, or delete-team flow.
 
@@ -228,7 +228,7 @@ The application checks that a user belongs to at most one team in the selected c
   - is not yet connected to a complete, validated student-facing scoreboard
 - **Contest team service**
   - reads the current student's contest team and eligible teammates
-  - creates a three-person team in a serializable transaction
+  - creates a team of one to three people in a serializable transaction
 - **Contest status sync cron**
   - keeps stored `Contest.status` aligned with wall-clock schedule
 - **Instructor analytics sidecar**
@@ -479,7 +479,7 @@ Student participation lifecycle:
 
 1. Discover contest from `/api/s/info`
 2. Register through `/api/s/contest/register/:cid`
-3. Optionally create a three-person contest team through `contestTeams.create`
+3. Optionally create a contest team of up to three people through `contestTeams.create`
 4. Enter through `/api/s/entercontest/:cid`
 5. Work on contest problems while the contest is active
 
@@ -552,7 +552,7 @@ Behavior:
 
 - returns the student's existing team, if any
 - otherwise returns registered, unassigned student candidates
-- creates the team and its three membership rows atomically
+- creates the team and its membership rows (one to three) atomically
 - rejects duplicate selections, ineligible users, and members already assigned to a contest team
 
 ### 9.6 Problem detail and submissions
@@ -649,7 +649,7 @@ Contest teams use authenticated student tRPC procedures:
   - returns the current team and available registered students
 
 - `contestTeams.create({ contestId, name, memberUserIds })`
-  - creates one three-student contest team
+  - creates one contest team of one to three students
 
 The related `adminTeams` router manages general student groups where `contestId` is null; it is not the student contest-team API.
 
@@ -790,7 +790,7 @@ See:
 ### Contest teams
 
 - [x] Registered students can view their current contest team
-- [x] Unassigned students can create a named team with exactly two other eligible students
+- [x] Unassigned students can create a named team with up to two other eligible students
 - [x] Contest teams are separated from general admin-created groups by `Team.contestId`
 - [x] Contest deletion cascades to contest teams and memberships
 - [ ] Team-based submissions and scoreboard aggregation
