@@ -22,6 +22,7 @@ const contestMutationSchema = z.object({
   endUtcOffsetMinutes: z.number().int().nullable().optional(),
   visibility: visibilitySchema,
   scoringRule: scoringRuleSchema.default("points"),
+  showDifficulty: z.boolean().default(false),
   aiHintEnabled: z.boolean(),
   groupAHintAfterMinutes: hintDelayMinutesSchema.default(DEFAULT_GROUP_A_HINT_DELAY_MINUTES),
   groupBHintAfterMinutes: hintDelayMinutesSchema.default(DEFAULT_GROUP_B_HINT_DELAY_MINUTES),
@@ -41,6 +42,7 @@ const contestPatchSchema = z
     endUtcOffsetMinutes: z.number().int().nullable().optional(),
     visibility: visibilitySchema.optional(),
     scoringRule: scoringRuleSchema.optional(),
+    showDifficulty: z.boolean().optional(),
     aiHintEnabled: z.boolean().optional(),
     groupAHintAfterMinutes: hintDelayMinutesSchema.optional(),
     groupBHintAfterMinutes: hintDelayMinutesSchema.optional(),
@@ -366,6 +368,7 @@ export const contestAuthoringRouter = router({
         endsAtIso: contest.endsAt?.toISOString() ?? null,
         visibility: toUiVisibility(contest.visibility),
         scoringRule: contest.scoringRule === "ICPC" ? ("icpc" as const) : ("points" as const),
+        showDifficulty: contest.showDifficulty,
         aiHintEnabled: contest.aiHintEnabled,
         groupAHintAfterMinutes,
         groupBHintAfterMinutes,
@@ -459,6 +462,7 @@ export const contestAuthoringRouter = router({
             description: input.description.trim() || null,
             visibility: toDbVisibility(input.visibility),
             scoringRule: toDbScoringRule(input.scoringRule),
+            showDifficulty: input.showDifficulty,
             startsAt,
             endsAt,
             durationMinutes,
@@ -654,6 +658,10 @@ export const contestAuthoringRouter = router({
 
         if (hasOwnKey(input.data, "aiHintEnabled") && input.data.aiHintEnabled !== undefined) {
           contestUpdateData.aiHintEnabled = input.data.aiHintEnabled;
+        }
+
+        if (hasOwnKey(input.data, "showDifficulty") && input.data.showDifficulty !== undefined) {
+          contestUpdateData.showDifficulty = input.data.showDifficulty;
         }
 
         if (hasOwnKey(input.data, "isDraft") && input.data.isDraft !== undefined) {

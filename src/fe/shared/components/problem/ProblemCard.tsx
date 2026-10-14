@@ -9,7 +9,7 @@ export interface ProblemCardProps {
   density?: "default" | "compact";
   code?: string;
   title: string;
-  difficulty: "easy" | "medium" | "hard";
+  difficulty?: "easy" | "medium" | "hard";
   tags?: string[];
   timeComplexity?: string;
   spaceComplexity?: string;
@@ -32,7 +32,9 @@ export default function ProblemCard({
   solved,
   href,
 }: ProblemCardProps) {
-  const difficultyLabel = `${difficulty.charAt(0).toUpperCase()}${difficulty.slice(1)}`;
+  const difficultyLabel = difficulty
+    ? `${difficulty.charAt(0).toUpperCase()}${difficulty.slice(1)}`
+    : null;
 
   // Tile Variant
   if (variant === "tile") {
@@ -54,9 +56,11 @@ export default function ProblemCard({
           {solved ? <EmojiEventsIcon className={styles.tileSolved} /> : null}
         </div>
         <div className={styles.tileMeta}>
-          <span className={`${styles.tileBadge} ${tileDifficultyClass}`}>
-            {difficultyLabel}
-          </span>
+          {difficultyLabel ? (
+            <span className={`${styles.tileBadge} ${tileDifficultyClass}`}>
+              {difficultyLabel}
+            </span>
+          ) : null}
         </div>
       </div>
     );
@@ -99,14 +103,16 @@ export default function ProblemCard({
               >
                 {title}
               </Typography>
-              <Chip
-                className={`${styles.difficultyChip} ${rowDifficultyClass} ${
-                  density === "compact" ? styles.difficultyChipCompact : ""
-                }`}
-                label={difficultyLabel}
-                size="small"
-                variant="outlined"
-              />
+              {difficultyLabel ? (
+                <Chip
+                  className={`${styles.difficultyChip} ${rowDifficultyClass} ${
+                    density === "compact" ? styles.difficultyChipCompact : ""
+                  }`}
+                  label={difficultyLabel}
+                  size="small"
+                  variant="outlined"
+                />
+              ) : null}
             </Box>
             <Box className={styles.problemTitleRow}>
               {tags.map((tag) => (

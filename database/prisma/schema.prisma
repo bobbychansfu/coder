@@ -221,6 +221,8 @@ model Contest {
   published       Boolean       @default(false)
   aiHintEnabled   Boolean       @default(false)
   scoringRule     ContestScoringRule @default(POINTS)
+  // Contestants see problem difficulty only when the setter turns this on.
+  showDifficulty  Boolean       @default(false)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 

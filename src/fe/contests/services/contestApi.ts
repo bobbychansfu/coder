@@ -53,7 +53,8 @@ interface BackendContestProblem {
   id: string;
   code: string;
   title: string;
-  difficulty: string;
+  // Null when the contest hides difficulty.
+  difficulty: string | null;
   points: number | null;
   problemStatuses: BackendProblemStatus[];
 }

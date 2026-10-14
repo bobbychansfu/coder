@@ -1,5 +1,5 @@
 import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
-import { Button, Card, CardContent, MenuItem, TextField, Typography } from "@mui/material";
+import { Button, Card, CardContent, MenuItem, Switch, TextField, Typography } from "@mui/material";
 import StatusSummaryCard, {
   type StatusSummaryRow,
 } from "@/fe/instructor/components/StatusSummaryCard";
@@ -38,11 +38,13 @@ interface InstructorCreateContestSidebarProps {
   selectedProblemsCount: number;
   draftContestsCount: number;
   aiHintEnabled: boolean;
+  showDifficulty: boolean;
   isEditMode: boolean;
   isSaving: boolean;
   isPageLoading: boolean;
   publishLabel: string;
   onFieldChange: (field: keyof ContestFormDraft, value: string) => void;
+  onShowDifficultyChange: (enabled: boolean) => void;
   onPublish: () => void;
 }
 
@@ -51,11 +53,13 @@ export default function InstructorCreateContestSidebar({
   selectedProblemsCount,
   draftContestsCount,
   aiHintEnabled,
+  showDifficulty,
   isEditMode,
   isSaving,
   isPageLoading,
   publishLabel,
   onFieldChange,
+  onShowDifficultyChange,
   onPublish,
 }: InstructorCreateContestSidebarProps) {
   const contestStatusRows: StatusSummaryRow[] = aiHintEnabled
@@ -171,6 +175,21 @@ export default function InstructorCreateContestSidebar({
                 </MenuItem>
               ))}
             </TextField>
+          </div>
+
+          <div className={styles.aiHeaderRow}>
+            <Typography className={styles.fieldLabel}>
+              {contestAuthoringCopy.showDifficultyLabel}
+            </Typography>
+            <Switch
+              checked={showDifficulty}
+              onChange={(_, checked) => onShowDifficultyChange(checked)}
+              className={styles.aiSwitch}
+              // Setting slotProps.input drops MUI's default role, so it is restated here.
+              slotProps={{
+                input: { role: "switch", "aria-label": contestAuthoringCopy.showDifficultyLabel },
+              }}
+            />
           </div>
         </CardContent>
       </Card>

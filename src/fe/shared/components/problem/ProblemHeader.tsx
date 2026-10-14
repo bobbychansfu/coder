@@ -6,7 +6,7 @@ import styles from "@/fe/contests/styles/ProblemSubmissionPage.module.css";
 
 interface ProblemHeaderProps {
   title: string;
-  difficulty: string;
+  difficulty?: string;
   tags: string[];
   points: number;
   showPoints?: boolean;
@@ -21,7 +21,7 @@ export default function ProblemHeader({
   showPoints = true,
   headerActions,
 }: ProblemHeaderProps) {
-  const normalizedDifficulty = difficulty.toLowerCase();
+  const normalizedDifficulty = difficulty?.toLowerCase() ?? "";
   const difficultyLabel = `${normalizedDifficulty.charAt(0).toUpperCase()}${normalizedDifficulty.slice(1)}`;
   const difficultyClassName =
     normalizedDifficulty === "easy"
@@ -40,11 +40,13 @@ export default function ProblemHeader({
           <Typography className={styles.problemTitle}>{title}</Typography>
         </Box>
         <Box className={styles.problemMetaRow}>
-          <Chip
-            className={`${chipStyles.difficultyChip} ${chipStyles.difficultyChipCompact} ${difficultyClassName}`}
-            label={difficultyLabel}
-            size="small"
-          />
+          {normalizedDifficulty ? (
+            <Chip
+              className={`${chipStyles.difficultyChip} ${chipStyles.difficultyChipCompact} ${difficultyClassName}`}
+              label={difficultyLabel}
+              size="small"
+            />
+          ) : null}
           {tags.map((tag) => (
             <Chip
               key={tag}

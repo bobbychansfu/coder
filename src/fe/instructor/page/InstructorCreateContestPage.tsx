@@ -138,6 +138,7 @@ export default function InstructorCreateContestPage() {
   const [selectProblemsOpen, setSelectProblemsOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [aiHintEnabled, setAiHintEnabled] = useState(false);
+  const [showDifficulty, setShowDifficulty] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const contestQuery = trpc.contestAuthoring.getContestById.useQuery(
     { contestId: contestId ?? "" },
@@ -202,6 +203,7 @@ export default function InstructorCreateContestPage() {
       });
       setSelectedProblemIds(contestQuery.data.selectedProblemIds);
       setAiHintEnabled(contestQuery.data.aiHintEnabled);
+      setShowDifficulty(contestQuery.data.showDifficulty);
       initializedContestIdRef.current = contestQuery.data.id;
     });
   }, [contestQuery.data]);
@@ -218,6 +220,7 @@ export default function InstructorCreateContestPage() {
       setSelectedProblemIds([]);
       setPendingProblemIds([]);
       setAiHintEnabled(false);
+      setShowDifficulty(false);
       setSaveError(null);
     });
   }, [isEditMode]);
@@ -302,6 +305,7 @@ export default function InstructorCreateContestPage() {
         : null,
     isDraft,
     aiHintEnabled,
+    showDifficulty,
     selectedProblemIds,
   });
 
@@ -458,6 +462,7 @@ export default function InstructorCreateContestPage() {
             formValues={formValues} selectedProblemsCount={selectedProblems.length}
             draftContestsCount={draftContests.length} aiHintEnabled={aiHintEnabled}
             isEditMode={isEditMode} isSaving={isSaving} isPageLoading={isPageLoading}
+            showDifficulty={showDifficulty} onShowDifficultyChange={setShowDifficulty}
             publishLabel={publishLabel} onFieldChange={updateField}
             onPublish={() => void handlePublish()}
           />
