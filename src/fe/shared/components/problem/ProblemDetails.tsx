@@ -1,5 +1,6 @@
 import { useMemo, type ReactNode } from "react";
 import { Box, Typography } from "@mui/material";
+import "katex/dist/katex.min.css";
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
 import MemoryOutlinedIcon from "@mui/icons-material/MemoryOutlined";
 import TabSwitcher from "@/fe/shared/components/ui/TabSwitcher";
@@ -133,45 +134,57 @@ export default function ProblemDetails({
 
         <Box display="flex" flexDirection="column" gap="12px">
           <Typography className={styles.sectionTitle}>Problem Statement</Typography>
-          {detail.statement.map((paragraph) => (
-            <Typography key={paragraph} className={styles.paragraph}>
-              {renderInlineCode(paragraph)}
-            </Typography>
-          ))}
+          {detail.statementHtml ? (
+            // Rendered on the server from LaTeX: text is escaped, math is KaTeX output
+            <Box
+              className={styles.statementHtml}
+              dangerouslySetInnerHTML={{ __html: detail.statementHtml }}
+            />
+          ) : (
+            detail.statement.map((paragraph) => (
+              <Typography key={paragraph} className={styles.paragraph}>
+                {renderInlineCode(paragraph)}
+              </Typography>
+            ))
+          )}
         </Box>
 
-        <Box display="flex" flexDirection="column" gap="12px">
-          <Typography className={styles.sectionTitle}>Input Format</Typography>
-          <Box component="ul" className={styles.list}>
-            {detail.inputFormat.map((item) => (
-              <li key={item} className={styles.listItem}>
-                {renderInlineCode(item)}
-              </li>
-            ))}
-          </Box>
-        </Box>
+        {!detail.statementHtml && (
+          <>
+            <Box display="flex" flexDirection="column" gap="12px">
+              <Typography className={styles.sectionTitle}>Input Format</Typography>
+              <Box component="ul" className={styles.list}>
+                {detail.inputFormat.map((item) => (
+                  <li key={item} className={styles.listItem}>
+                    {renderInlineCode(item)}
+                  </li>
+                ))}
+              </Box>
+            </Box>
 
-        <Box display="flex" flexDirection="column" gap="12px">
-          <Typography className={styles.sectionTitle}>Output Format</Typography>
-          <Box component="ul" className={styles.list}>
-            {detail.outputFormat.map((item) => (
-              <li key={item} className={styles.listItem}>
-                {renderInlineCode(item)}
-              </li>
-            ))}
-          </Box>
-        </Box>
+            <Box display="flex" flexDirection="column" gap="12px">
+              <Typography className={styles.sectionTitle}>Output Format</Typography>
+              <Box component="ul" className={styles.list}>
+                {detail.outputFormat.map((item) => (
+                  <li key={item} className={styles.listItem}>
+                    {renderInlineCode(item)}
+                  </li>
+                ))}
+              </Box>
+            </Box>
 
-        <Box display="flex" flexDirection="column" gap="12px">
-          <Typography className={styles.sectionTitle}>Constraints</Typography>
-          <Box component="ul" className={styles.list}>
-            {detail.constraints.map((item) => (
-              <li key={item} className={styles.listItem}>
-                {renderInlineCode(item)}
-              </li>
-            ))}
-          </Box>
-        </Box>
+            <Box display="flex" flexDirection="column" gap="12px">
+              <Typography className={styles.sectionTitle}>Constraints</Typography>
+              <Box component="ul" className={styles.list}>
+                {detail.constraints.map((item) => (
+                  <li key={item} className={styles.listItem}>
+                    {renderInlineCode(item)}
+                  </li>
+                ))}
+              </Box>
+            </Box>
+          </>
+        )}
 
         {detail.samples && detail.samples.length > 0 ? (
           <Box display="flex" flexDirection="column" gap="12px">
@@ -213,6 +226,14 @@ export default function ProblemDetails({
             </Box>
           </Box>
         )}
+
+        {detail.notesHtml ? (
+          // Sample explanations from the LaTeX statement, after the samples they explain
+          <Box
+            className={styles.statementHtml}
+            dangerouslySetInnerHTML={{ __html: detail.notesHtml }}
+          />
+        ) : null}
       </Box>
     );
   }, [detail, tab, hideEditorial, hideStats, compactSubmissions]);

@@ -17,6 +17,7 @@ import { getCurrentUser } from "@/lib/session";
 import { resolveJudgeProblemId } from "@/server/api/s/problem";
 import { codingLanguageToLabel } from "@/server/coding-language";
 import { fetchJudgeProblemFiles } from "@/server/judge";
+import { renderLatexStatement } from "@/server/latexStatement";
 import { findContestInvitationOrDeny } from "@/server/studentContestAccess";
 
 interface ContestProblemRouteProps {
@@ -146,14 +147,24 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
   }
 
   const judgeProblemId = resolveJudgeProblemId(problemDetail);
-  const judgeProblem = judgeProblemId ? await fetchJudgeProblemFiles(judgeProblemId) : null;
+  const judgeProblemFiles = judgeProblemId ? await fetchJudgeProblemFiles(judgeProblemId) : null;
+
+  const renderedStatement = judgeProblemFiles?.statement
+    ? renderLatexStatement(judgeProblemFiles.statement)
+    : null;
 
   const problemDetailPayload: ContestProblemDetailResponse = {
     computingId: user.computingId,
     cid: contestId,
     pid: problem.problemId,
     problem: problemDetail,
-    judgeProblem,
+    judgeProblem: judgeProblemFiles && {
+      timeSec: judgeProblemFiles.timeSec,
+      memMb: judgeProblemFiles.memMb,
+      samples: judgeProblemFiles.samples,
+      statementHtml: renderedStatement?.statement,
+      notesHtml: renderedStatement?.notes || undefined,
+    },
     downloadContents: [],
     role: user.role,
     htmlContents: [],
