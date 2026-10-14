@@ -39,7 +39,8 @@ export default function ContestDetailPage({
       <PageHeader
         title={contest.title}
         status={CONTEST_STATUS_CONFIG[contest.status]}
-        onBack={() => router.back()}
+        // Always the contest list: browser history may hold another site or nothing at all.
+        onBack={() => router.push("/contests")}
         backButtonClassName={styles.backButton}
         headerClassName={styles.headerRow}
         titleClassName={styles.title}
