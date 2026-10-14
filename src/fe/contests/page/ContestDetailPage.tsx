@@ -32,7 +32,6 @@ export default function ContestDetailPage({
   useTimedRouterRefresh(contest.status !== "closed");
   const [tab, setTab] = useState<string>("problems");
   const problemColumns = contest.problems.map((problem) => problem.code);
-  const hasScoreboard = contest.scoreboard.length > 0;
 
   return (
     <Box className={styles.page}>
@@ -65,18 +64,14 @@ export default function ContestDetailPage({
         <TabSwitcher
           value={tab}
           onChange={setTab}
-          options={
-            hasScoreboard
-              ? [
-                  { value: "problems", label: "Problems" },
-                  { value: "scoreboard", label: "Scoreboard" },
-                ]
-              : [{ value: "problems", label: "Problems" }]
-          }
+          options={[
+            { value: "problems", label: "Problems" },
+            { value: "scoreboard", label: "Scoreboard" },
+          ]}
           ariaLabel="Contest detail tabs"
         />
 
-        {tab === "problems" || !hasScoreboard ? (
+        {tab === "problems" ? (
           <ProblemsTab contestId={contest.id} problems={contest.problems} />
         ) : (
           <ScoreboardTab rows={contest.scoreboard} problemColumns={problemColumns} />
