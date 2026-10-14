@@ -218,6 +218,63 @@ a.problemTableRowAttempted:hover {
   color: #0a0a0a;
 }
 
+.scoreboardScrollArea {
+  position: relative;
+}
+
+.scoreboardScrollArea::before,
+.scoreboardScrollArea::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 96px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 1;
+}
+
+.scoreboardScrollArea::before {
+  left: 0;
+  background: linear-gradient(to right, #ffffff 30%, rgba(255, 255, 255, 0));
+}
+
+.scoreboardScrollArea::after {
+  right: 0;
+  background: linear-gradient(to left, #ffffff 30%, rgba(255, 255, 255, 0));
+}
+
+.scoreboardScrollButton {
+  position: absolute !important;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 36px;
+  height: 36px;
+  background-color: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  color: #0a0a0a !important;
+}
+
+.scoreboardScrollButton:hover {
+  background-color: #f3f4f6 !important;
+}
+
+.scoreboardScrollButtonLeft {
+  left: 4px;
+}
+
+.scoreboardScrollButtonRight {
+  right: 4px;
+}
+
+.scoreboardScrollArea[data-more-left="true"]::before,
+.scoreboardScrollArea[data-more-right="true"]::after {
+  opacity: 1;
+}
+
 .scoreboardTable {
   display: flex;
   flex-direction: column;
