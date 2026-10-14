@@ -492,7 +492,6 @@ function ProblemSubmissionPageContent({
             tab={tab}
             onTabChange={setTab}
             hideEditorial
-            hideStats
             compactSubmissions
             outputSection={outputSection}
           />
