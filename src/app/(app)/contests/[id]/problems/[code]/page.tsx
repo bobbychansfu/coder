@@ -15,6 +15,7 @@ import { getEffectiveContestStatus } from "@/lib/contestStatus";
 import { dbHelpers } from "@/lib/db-helpers";
 import { getCurrentUser } from "@/lib/session";
 import { codingLanguageToLabel } from "@/server/coding-language";
+import { findContestInvitationOrDeny } from "@/server/studentContestAccess";
 
 interface ContestProblemRouteProps {
   params: Promise<{ id: string; code: string }>;
@@ -98,6 +99,11 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
   }
 
   if (!contestSummary || !isContestViewableByRegisteredUser(contestSummary)) {
+    if (!can(user.role).canManageContest) {
+      // Not registered: the contest page invites them when registration is allowed.
+      await findContestInvitationOrDeny(user.computingId, contestId);
+      redirect(`/contests/${encodeURIComponent(contestId)}`);
+    }
     notFound();
   }
 

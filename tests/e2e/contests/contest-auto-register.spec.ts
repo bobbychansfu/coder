@@ -31,7 +31,8 @@ test.describe("Contest registration", () => {
     }
 
     const directAccessResponse = await page.goto(`/contests/${openContest.id}`);
-    expect(directAccessResponse?.status()).toBe(404);
+    expect(directAccessResponse?.status()).toBe(200);
+    await expect(page.getByText("You are not registered for this contest.")).toBeVisible();
 
     await page.goto("/contests");
     await page.getByRole("tab", { name: "Available Contests" }).click();
