@@ -130,7 +130,10 @@
   position: absolute;
   right: 0;
   top: 44px;
-  width: 192px;
+  /* Grow to fit long names and emails, but never past the viewport edge. */
+  width: max-content;
+  min-width: 192px;
+  max-width: calc(100vw - 32px);
   background-color: #ffffff;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 6px;
@@ -185,6 +188,7 @@
 }
 
 .profileEmail {
+  overflow-wrap: anywhere;
   font-size: 13px;
   font-weight: 500;
   line-height: 18px;
