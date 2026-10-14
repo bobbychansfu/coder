@@ -139,7 +139,7 @@ export default function ContestTeamControls({ contestId }: ContestTeamControlsPr
                 <Box>
                   <Typography className={styles.studentName}>{pending.name}</Typography>
                   <Typography color="text.secondary" className={styles.studentMeta}>
-                    Invited, waiting for them to accept
+                    Invited
                   </Typography>
                 </Box>
                 <Box className={styles.rowActions}>
@@ -173,8 +173,7 @@ export default function ContestTeamControls({ contestId }: ContestTeamControlsPr
               <Box className={styles.studentList}>
                 {data.invitableStudents.length === 0 ? (
                   <Typography color="text.secondary" className={styles.emptyState}>
-                    No one can be invited right now. Teammates need to register for the contest
-                    and not have submitted yet.
+                    No registered students to invite.
                   </Typography>
                 ) : visibleStudents.length === 0 ? (
                   <Typography color="text.secondary" className={styles.emptyState}>
@@ -203,10 +202,6 @@ export default function ContestTeamControls({ contestId }: ContestTeamControlsPr
             </>
           ) : null}
 
-          <Typography color="text.secondary" className={styles.studentMeta}>
-            Teams have up to {data.maxTeamSize} people. Invited students join once they accept,
-            any time before the contest ends, as long as they haven&apos;t submitted yet.
-          </Typography>
           {error ? <Alert severity="error">{error.message}</Alert> : null}
         </DialogContent>
         <DialogActions>

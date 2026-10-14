@@ -200,7 +200,7 @@ export const contestTeamsRouter = router({
           if (await userHasContestSubmissions(tx, input.contestId, input.userId)) {
             throw new TRPCError({
               code: "BAD_REQUEST",
-              message: "They've already submitted in this contest, so they stay on their own team.",
+              message: "They've already submitted in this contest.",
             });
           }
 
@@ -305,7 +305,7 @@ export const contestTeamsRouter = router({
           if (await userHasContestSubmissions(tx, contestId, studentId)) {
             throw new TRPCError({
               code: "BAD_REQUEST",
-              message: "You've already submitted in this contest, so your results stay with your current team.",
+              message: "You've already submitted in this contest.",
             });
           }
 
@@ -372,7 +372,7 @@ export const contestTeamsRouter = router({
         if (await teamHasSubmissions(tx, teamId)) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "Your team has submissions, so its members stay together.",
+            message: "Your team has already submitted.",
           });
         }
         await removeFromContestTeam(tx, input.contestId, studentId);

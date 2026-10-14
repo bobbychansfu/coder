@@ -40,11 +40,9 @@ export interface ContestAuthoringCopy {
   visibilityDescription: string;
   visibilityLabel: string;
   scoringRuleTitle: string;
-  scoringRuleDescription: string;
   scoringRuleLabel: string;
   showDifficultyLabel: string;
   teamSizeLabel: string;
-  teamSizeHint: string;
   publishLabel: string;
   selectProblemsTitle: string;
   selectProblemsDescription: string;
@@ -69,17 +67,9 @@ export interface ContestProblemRecord {
 
 export type ContestScoringRule = "points" | "icpc";
 
-export const CONTEST_SCORING_RULE_OPTIONS: { value: ContestScoringRule; label: string; hint: string }[] = [
-  {
-    value: "points",
-    label: "Problem score",
-    hint: "Rank by total points; each problem counts its best score.",
-  },
-  {
-    value: "icpc",
-    label: "ICPC",
-    hint: "Rank by problems solved, then penalty: minutes to solve plus 20 per rejected attempt.",
-  },
+export const CONTEST_SCORING_RULE_OPTIONS: { value: ContestScoringRule; label: string }[] = [
+  { value: "points", label: "Problem score" },
+  { value: "icpc", label: "ICPC" },
 ];
 
 export interface ContestFormDraft {
@@ -157,11 +147,9 @@ export const contestAuthoringCopy: ContestAuthoringCopy = {
   visibilityDescription: "Control who can see this contest",
   visibilityLabel: "Visibility *",
   scoringRuleTitle: "Scoring Rule",
-  scoringRuleDescription: "How the scoreboard ranks contestants and teams",
   scoringRuleLabel: "Scoring rule *",
   showDifficultyLabel: "Show problem difficulty",
   teamSizeLabel: "Max team size",
-  teamSizeHint: "Everyone starts as a team of one and can invite teammates up to this size. 1 makes it an individual contest.",
   publishLabel: "Publish Contest",
   selectProblemsTitle: "Select Problems",
   selectProblemsDescription: "Choose problems from your problem bank to include in this contest",

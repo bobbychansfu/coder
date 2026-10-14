@@ -54,10 +54,6 @@ export default function TeamInviteResponse({
           <Alert severity="info">{CLOSED_MESSAGES[status]}</Alert>
         ) : (
           <>
-            <Typography className={styles.studentMeta} color="text.secondary">
-              You can join only if you haven&apos;t submitted in this contest yet. Once your team
-              has submitted, you stay on it until the contest ends.
-            </Typography>
             {respond.error ? <Alert severity="error">{respond.error.message}</Alert> : null}
             <Box className={styles.rowActions}>
               <Button

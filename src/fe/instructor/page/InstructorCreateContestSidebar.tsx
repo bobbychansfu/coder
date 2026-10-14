@@ -201,9 +201,6 @@ export default function InstructorCreateContestSidebar({
           <Typography className={styles.sideTitle}>
             {contestAuthoringCopy.scoringRuleTitle}
           </Typography>
-          <Typography className={styles.sectionDescription}>
-            {contestAuthoringCopy.scoringRuleDescription}
-          </Typography>
 
           <div className={styles.fieldBlock}>
             <Typography className={styles.fieldLabel}>
@@ -217,9 +214,6 @@ export default function InstructorCreateContestSidebar({
               onChange={(event) => onFieldChange("scoringRule", event.target.value)}
               className={styles.inputField}
               SelectProps={{ IconComponent: KeyboardArrowDownRoundedIcon }}
-              helperText={
-                CONTEST_SCORING_RULE_OPTIONS.find((option) => option.value === formValues.scoringRule)?.hint
-              }
             >
               {CONTEST_SCORING_RULE_OPTIONS.map((option) => (
                 <MenuItem key={option.value} value={option.value}>
@@ -241,11 +235,10 @@ export default function InstructorCreateContestSidebar({
               onChange={(event) => onNumberFieldChange("maxTeamSize", event.target.value)}
               className={styles.inputField}
               SelectProps={{ IconComponent: KeyboardArrowDownRoundedIcon }}
-              helperText={contestAuthoringCopy.teamSizeHint}
             >
               {[1, 2, 3, 4, 5].map((size) => (
                 <MenuItem key={size} value={String(size)}>
-                  {size === 1 ? "1 (individual)" : `${size} people`}
+                  {size}
                 </MenuItem>
               ))}
             </TextField>
