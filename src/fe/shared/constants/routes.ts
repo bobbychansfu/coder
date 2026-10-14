@@ -21,6 +21,20 @@ export function buildContestRoute(contestId: string) {
   return `${ROUTES.contests}/${contestId}`;
 }
 
+export type ContestTab = "problems" | "scoreboard";
+
+export function parseContestTab(value: string | null | undefined): ContestTab {
+  return value === "scoreboard" ? "scoreboard" : "problems";
+}
+
+// Contest menu shared by the contest page and its problem pages, like Codeforces
+export function buildContestTabs(contestId: string) {
+  return [
+    { value: "problems", label: "Problems", href: buildContestRoute(contestId) },
+    { value: "scoreboard", label: "Scoreboard", href: `${buildContestRoute(contestId)}?tab=scoreboard` },
+  ];
+}
+
 export function buildContestEditRoute(contestId: string) {
   return `${ROUTES.instructorCreateContest}?contestId=${encodeURIComponent(contestId)}`;
 }

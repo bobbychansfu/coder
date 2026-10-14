@@ -16,6 +16,8 @@ import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import PageHeader from "@/fe/shared/components/PageHeader";
+import TabSwitcher from "@/fe/shared/components/ui/TabSwitcher";
+import { buildContestTabs } from "@/fe/shared/constants/routes";
 import AiHintDialog from "@/fe/shared/components/problem/AiHintDialog";
 import ProblemHeader from "@/fe/shared/components/problem/ProblemHeader";
 import ProblemDetails from "@/fe/shared/components/problem/ProblemDetails";
@@ -430,6 +432,13 @@ function ProblemSubmissionPageContent({
           />
         ) : null}
       </Box>
+
+      <TabSwitcher
+        value="problems"
+        options={buildContestTabs(contestId)}
+        ariaLabel="Contest navigation"
+        className={styles.contestNav}
+      />
 
       {/* The statement takes the full width; the editor opens from Submit, as on Kattis */}
       <Box className={`${styles.container} ${styles.containerSingle}`}>
