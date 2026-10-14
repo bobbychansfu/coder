@@ -222,7 +222,19 @@
 }
 
 .participantCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
   padding-left: 8px;
+}
+
+/* Team members listed under the team name. */
+.participantMembers {
+  font-size: 12px;
+  font-weight: 400;
+  color: #6b7280;
+  overflow-wrap: anywhere;
 }
 
 .centerCell {

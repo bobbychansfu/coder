@@ -334,7 +334,7 @@ export const dbHelpers = {
   },
 
   findScoreboardRowsForContest: async (contestId: string, viewerComputingId?: string) => {
-    const [contestProblems, contestants, problemStatuses] = await Promise.all([
+    const [contestProblems, contestants, problemStatuses, teams] = await Promise.all([
       prisma.contestProblem.findMany({
         where: {
           contestId,
@@ -374,6 +374,10 @@ export const dbHelpers = {
           score: true,
         },
       }),
+      prisma.team.findMany({
+        where: { contestId },
+        select: { id: true, name: true, members: { select: { userId: true } } },
+      }),
     ]);
 
     const problemCodeById = new Map(
@@ -387,36 +391,69 @@ export const dbHelpers = {
       statusesByUserId.set(status.userId, existing);
     }
 
-    const rows = contestants.map((contestant) => {
-      const statuses = statusesByUserId.get(contestant.userId) ?? [];
-      const solvedStatuses = statuses.filter((status) => {
-        const normalizedStatus = status.status.trim().toLowerCase();
-        return normalizedStatus === "correct" || status.score > 0;
-      });
-      const totalScore = statuses.reduce((sum, status) => sum + Math.max(0, status.score), 0);
-      const displayName =
-        contestant.user.nickname?.trim() ||
-        `${contestant.user.firstName} ${contestant.user.lastName}`.trim() ||
-        contestant.user.computingId;
+    type Contestant = (typeof contestants)[number];
+    const displayNameOf = (contestant: Contestant) =>
+      contestant.user.nickname?.trim() ||
+      `${contestant.user.firstName} ${contestant.user.lastName}`.trim() ||
+      contestant.user.computingId;
+
+    // A contest team is ranked as one entry; students who are not on a team keep a
+    // row of their own.
+    const teamByUserId = new Map<string, { id: string; name: string }>();
+    for (const team of teams) {
+      for (const member of team.members) {
+        teamByUserId.set(member.userId, { id: team.id, name: team.name });
+      }
+    }
+
+    const entries = new Map<string, { teamName: string | null; members: Contestant[] }>();
+    for (const contestant of contestants) {
+      const team = teamByUserId.get(contestant.userId);
+      const key = team ? `team:${team.id}` : `user:${contestant.userId}`;
+      const entry = entries.get(key) ?? { teamName: team?.name ?? null, members: [] };
+      entry.members.push(contestant);
+      entries.set(key, entry);
+    }
+
+    const rows = [...entries.values()].map((entry) => {
+      // An entry solves a problem when any member does and earns its best member's
+      // points on it, so two teammates solving the same problem count once.
+      const bestByProblemId = new Map<string, { points: number; solved: boolean }>();
+      for (const member of entry.members) {
+        for (const status of statusesByUserId.get(member.userId) ?? []) {
+          const best = bestByProblemId.get(status.problemId);
+          const solved = status.status.trim().toLowerCase() === "correct" || status.score > 0;
+          bestByProblemId.set(status.problemId, {
+            points: best ? Math.max(best.points, status.score) : status.score,
+            solved: (best?.solved ?? false) || solved,
+          });
+        }
+      }
+
+      const results = [...bestByProblemId.entries()];
+      const presetRanks = entry.members
+        .map((member) => member.rank)
+        .filter((rank): rank is number => typeof rank === "number");
+      const memberNames = entry.members.map(displayNameOf).sort((a, b) => a.localeCompare(b));
 
       return {
-        computingId: contestant.user.computingId,
-        name: displayName,
-        solved: solvedStatuses.length,
-        score: totalScore,
-        presetRank: contestant.rank,
+        name: entry.teamName ?? memberNames[0],
+        members: entry.teamName ? memberNames : undefined,
+        solved: results.filter(([, result]) => result.solved).length,
+        score: results.reduce((sum, [, result]) => sum + Math.max(0, result.points), 0),
+        presetRank: presetRanks.length > 0 ? Math.min(...presetRanks) : null,
         problems: Object.fromEntries(
-          statuses.flatMap((status) => {
-            const code = problemCodeById.get(status.problemId);
+          results.flatMap(([problemId, result]) => {
+            const code = problemCodeById.get(problemId);
 
             if (!code) {
               return [];
             }
 
-            return [[code, { points: status.score }]] as const;
+            return [[code, { points: result.points }]] as const;
           }),
         ),
-        isCurrentUser: contestant.user.computingId === viewerComputingId,
+        isCurrentUser: entry.members.some((member) => member.user.computingId === viewerComputingId),
       };
     });
 

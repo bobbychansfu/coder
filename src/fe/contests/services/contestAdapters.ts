@@ -110,6 +110,7 @@ function toScoreboardRow(row: BackendContestScoreboardRow) {
   return {
     rank: row.rank,
     name: row.name,
+    members: row.members,
     solved: row.solved,
     score: row.score,
     problems: row.problems,

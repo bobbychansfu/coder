@@ -110,7 +110,7 @@ export default function ScoreboardTab({ rows, problemColumns }: ScoreboardTabPro
       <Box className={styles.scoreboardTable} onScroll={handleScroll} ref={tableRef}>
         <Box className={`${styles.scoreboardRow} ${styles.scoreboardHeaderRow}`}>
           <span>Rank</span>
-          <span>Participant</span>
+          <span>Team / Participant</span>
           <span className={`${styles.centerCell} ${styles.headerCell}`}>Solved</span>
           <span className={styles.rightCell}>Score</span>
           {problemColumns.map((code) => (
@@ -134,7 +134,12 @@ export default function ScoreboardTab({ rows, problemColumns }: ScoreboardTabPro
                 ) : null}
                 <span>{row.rank}</span>
               </Box>
-              <span className={styles.participantCell}>{row.name}</span>
+              <span className={styles.participantCell}>
+                <span>{row.name}</span>
+                {row.members ? (
+                  <span className={styles.participantMembers}>{row.members.join(", ")}</span>
+                ) : null}
+              </span>
               <span className={styles.centerCell}>
                 <span className={styles.solvedBadge}>{row.solved}</span>
               </span>

@@ -710,7 +710,17 @@ The project contains supporting contest data and aggregation logic that can be u
 
 However, the full scoreboard feature has not been completed. The remaining work includes exposing the aggregation reliably through the active contest API, implementing and validating the student-facing scoreboard UI, defining refresh/freeze behavior, and testing ranking and tie-breaking rules end to end.
 
-The first version should use individual participant rows. Team scoreboard aggregation is a separate future enhancement because team membership currently does not change how submissions or scores are recorded.
+Contest teams are ranked as one row (`findScoreboardRowsForContest` in `src/lib/db-helpers.ts`):
+
+- each team is one entry named after the team, with its members listed under the name
+- a team solves a problem when any member has solved it
+- a team's points on a problem are its best member's points, so two teammates solving the same problem
+  count once; the team score is the sum of those
+- a team's preset rank is the best preset rank among its members
+- students who are not on a team keep a row of their own
+- "Find my rank" highlights the viewer's team row
+
+Submissions and `ProblemStatus` are still recorded per student; teams only change how they are ranked.
 
 ### 12.2 Hints
 
