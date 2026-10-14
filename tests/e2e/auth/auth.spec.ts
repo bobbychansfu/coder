@@ -67,6 +67,7 @@ test("a student outside SFU can sign up, sign out, and sign back in with their e
   const signupCard = page.locator("article").filter({ hasText: "Students outside SFU" });
   await signupCard.getByLabel("First name").fill("Ada");
   await signupCard.getByLabel("Last name (optional)").fill("Lovelace");
+  await signupCard.getByLabel(/^Nickname/).fill(`ada${Date.now()}`);
   await signupCard.getByLabel("Email").fill(email);
   await signupCard.getByLabel(/^Password/).fill(password);
   await signupCard.getByRole("button", { name: "Create account" }).click();
@@ -80,27 +81,38 @@ test("a student outside SFU can sign up, sign out, and sign back in with their e
   await expect(page).toHaveURL(/\/dashboard$/);
 });
 
-test("sign-up refuses SFU emails, taken emails, and short passwords", async ({ request }) => {
+test("sign-up refuses SFU emails, taken emails and nicknames, and short passwords", async ({ request }) => {
+  const nickname = `sam${Date.now()}`;
   const sfu = await request.post("/api/auth/signup", {
-    data: { firstName: "Sam", email: "sam@cs.sfu.ca", password: "LongEnough123!" },
+    data: { firstName: "Sam", nickname, email: "sam@cs.sfu.ca", password: "LongEnough123!" },
   });
   expect(sfu.status()).toBe(400);
   await expect(sfu.json()).resolves.toEqual({ message: "SFU students sign in with their SFU account instead." });
 
   const shortPassword = await request.post("/api/auth/signup", {
-    data: { firstName: "Sam", email: `short-${Date.now()}@example.com`, password: "short" },
+    data: { firstName: "Sam", nickname, email: `short-${Date.now()}@example.com`, password: "short" },
   });
   expect(shortPassword.status()).toBe(400);
 
+  const badNickname = await request.post("/api/auth/signup", {
+    data: { firstName: "Sam", nickname: "sam smith", email: `bad-${Date.now()}@example.com`, password: "LongEnough123!" },
+  });
+  expect(badNickname.status()).toBe(400);
+
   const email = `taken-${Date.now()}@example.com`;
   const first = await request.post("/api/auth/signup", {
-    data: { firstName: "Sam", email, password: "LongEnough123!" },
+    data: { firstName: "Sam", nickname, email, password: "LongEnough123!" },
   });
   expect(first.status()).toBe(201);
   const second = await request.post("/api/auth/signup", {
-    data: { firstName: "Sam", email: email.toUpperCase(), password: "LongEnough123!" },
+    data: { firstName: "Sam", nickname: `${nickname}x`, email: email.toUpperCase(), password: "LongEnough123!" },
   });
   expect(second.status()).toBe(409);
+  const sameNickname = await request.post("/api/auth/signup", {
+    data: { firstName: "Sam", nickname: nickname.toUpperCase(), email: `other-${email}`, password: "LongEnough123!" },
+  });
+  expect(sameNickname.status()).toBe(409);
+  await expect(sameNickname.json()).resolves.toEqual({ message: "That nickname is taken." });
 });
 
 test("guest login does not reveal whether a username exists", async ({ request }) => {

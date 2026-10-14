@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
 import { dbHelpers } from "@/lib/db-helpers";
+import { NICKNAME_PATTERN, NICKNAME_RULE, NICKNAME_TAKEN } from "@/lib/nickname";
+import { nicknameTaken } from "@/server/api/auth/nickname";
 import { z } from "zod";
 
 const updateProfileSchema = z.object({
@@ -42,6 +44,20 @@ export async function handleUpdateProfile(request: NextRequest) {
       );
     }
     const { fname, lname, nickname, student_number } = parsed.data;
+
+    // Email sign-ups chose an @handle at registration, so a new one must be a valid, free handle.
+    // SFU accounts keep free-form nicknames for now.
+    if (user.accountType === "external") {
+      const current = await dbHelpers.findUserByComputingId(user.computingId);
+      if (current && nickname !== (current.nickname ?? "")) {
+        if (!NICKNAME_PATTERN.test(nickname)) {
+          return NextResponse.json({ error: NICKNAME_RULE }, { status: 400 });
+        }
+        if (await nicknameTaken(nickname, current.id)) {
+          return NextResponse.json({ error: NICKNAME_TAKEN }, { status: 409 });
+        }
+      }
+    }
 
     await dbHelpers.updateUser(user.computingId, {
       firstName: fname,

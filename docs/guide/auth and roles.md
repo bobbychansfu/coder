@@ -275,6 +275,7 @@ Input:
 
 - `firstName`
 - `lastName` (optional)
+- `nickname` (3–20 letters, digits, `_` or `-`; shown on scoreboards as the @handle)
 - `email`
 - `password` (8–128 characters)
 
@@ -282,6 +283,9 @@ Behavior:
 
 - refuses `@sfu.ca` and `*.sfu.ca` addresses; SFU students use CAS
 - refuses an email that already belongs to an account (`409`)
+- refuses a nickname another account already uses, ignoring case (`409`); a self-registered account
+  that changes its nickname in Profile gets the same checks. SFU accounts keep free-form nicknames,
+  and the database does not enforce uniqueness yet
 - creates a `STUDENT` user with a generated `guest_<id>` computing ID and a local credential whose
   username is the email, with no expiry
 - signs the new account in immediately with the same session as guest login

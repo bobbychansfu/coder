@@ -3,7 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createGuestSessionToken } from "@/lib/guestAuthSession";
 import { hashLocalPassword } from "@/lib/localCredential";
+import { NICKNAME_PATTERN, NICKNAME_RULE, NICKNAME_TAKEN } from "@/lib/nickname";
 import { prisma } from "@/lib/prisma";
+import { nicknameTaken } from "@/server/api/auth/nickname";
 import { recordDailyLogin, syncStudentGamification } from "@/server/gamification/persistence";
 
 const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "session";
@@ -12,6 +14,7 @@ const SESSION_TTL_SECONDS = 60 * 60 * 6;
 const signupSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required.").max(50),
   lastName: z.string().trim().max(50).optional().default(""),
+  nickname: z.string({ error: NICKNAME_RULE }).trim().regex(NICKNAME_PATTERN, NICKNAME_RULE),
   email: z
     .string()
     .trim()
@@ -63,7 +66,7 @@ export async function handleSignup(request: NextRequest): Promise<NextResponse> 
     );
   }
 
-  const { firstName, lastName, email, password } = parsed.data;
+  const { firstName, lastName, nickname, email, password } = parsed.data;
   if (isSfuEmail(email)) {
     return NextResponse.json(
       { message: "SFU students sign in with their SFU account instead." },
@@ -71,14 +74,16 @@ export async function handleSignup(request: NextRequest): Promise<NextResponse> 
     );
   }
 
-  const [existingUser, existingCredential] = await Promise.all([
+  const [existingUser, existingCredential, nicknameInUse] = await Promise.all([
     prisma.user.findFirst({
       where: { email: { equals: email, mode: "insensitive" } },
       select: { id: true },
     }),
     prisma.localCredential.findUnique({ where: { username: email }, select: { id: true } }),
+    nicknameTaken(nickname),
   ]);
   if (existingUser || existingCredential) return emailTaken();
+  if (nicknameInUse) return NextResponse.json({ message: NICKNAME_TAKEN }, { status: 409 });
 
   const passwordHash = await hashLocalPassword(password);
   let user: { id: string; computingId: string };
@@ -89,6 +94,7 @@ export async function handleSignup(request: NextRequest): Promise<NextResponse> 
         email,
         firstName,
         lastName,
+        nickname,
         role: "STUDENT",
         localCredential: { create: { username: email, passwordHash } },
       },

@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { NICKNAME_PATTERN, NICKNAME_RULE } from "@/lib/nickname";
 import styles from "@/fe/auth/styles/LoginPage.module.css";
 
 interface EmailSignupFormState {
   firstName: string;
   lastName: string;
+  nickname: string;
   email: string;
   password: string;
 }
@@ -13,6 +15,7 @@ interface EmailSignupFormState {
 const INITIAL_FORM_STATE: EmailSignupFormState = {
   firstName: "",
   lastName: "",
+  nickname: "",
   email: "",
   password: "",
 };
@@ -21,6 +24,7 @@ const MIN_PASSWORD_LENGTH = 8;
 
 function validateForm(form: EmailSignupFormState): string | null {
   if (!form.firstName.trim()) return "First name is required.";
+  if (!NICKNAME_PATTERN.test(form.nickname.trim())) return NICKNAME_RULE;
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) return "Enter a valid email address.";
   if (form.password.length < MIN_PASSWORD_LENGTH) {
     return `Use at least ${MIN_PASSWORD_LENGTH} characters for your password.`;
@@ -95,6 +99,18 @@ export default function EmailSignupForm() {
             onChange={(event) => updateField("lastName", event.target.value)}
             autoComplete="family-name"
             maxLength={50}
+          />
+        </label>
+        <label className={styles.field}>
+          <span className={styles.fieldLabel}>Nickname (shown on scoreboards)</span>
+          <input
+            className={styles.fieldInput}
+            value={form.nickname}
+            onChange={(event) => updateField("nickname", event.target.value)}
+            autoComplete="nickname"
+            autoCapitalize="none"
+            spellCheck={false}
+            maxLength={20}
           />
         </label>
         <label className={styles.field}>
