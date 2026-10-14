@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as React from "react";
-import { Box, Button, Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
-import LaunchOutlinedIcon from "@mui/icons-material/LaunchOutlined";
 import type { ScoreboardRow } from "@/fe/contests/data/contestDetails";
 import styles from "@/fe/contests/styles/ContestDetailPage.module.css";
 
@@ -21,12 +20,7 @@ interface ScoreboardTabProps {
 export default function ScoreboardTab({ rows, problemColumns, scoringRule }: ScoreboardTabProps) {
   const [displayCount, setDisplayCount] = useState(10);
   const [isLoading, setIsLoading] = useState(false);
-  const [highlightUser, setHighlightUser] = useState(false);
-  const [scrollTrigger, setScrollTrigger] = useState(0);
-  const pendingScrollRankRef = useRef<number | null>(null);
-  const tableRef = React.useRef<HTMLDivElement>(null);
   const loadingTimeoutRef = useRef<number | null>(null);
-  const highlightTimeoutRef = useRef<number | null>(null);
 
   const rankIconColor = (rank: number) => {
     if (rank === 1) return "#f59e0b";
@@ -40,7 +34,6 @@ export default function ScoreboardTab({ rows, problemColumns, scoringRule }: Sco
     : rows.some((row) => row.scoringRule === "ICPC");
   const displayRows = rows.slice(0, displayCount);
   const hasMore = displayCount < rows.length;
-  const userRank = rows.findIndex((row) => row.isCurrentUser) + 1;
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
@@ -59,44 +52,10 @@ export default function ScoreboardTab({ rows, problemColumns, scoringRule }: Sco
     }
   };
 
-  const scrollToMyRank = () => {
-    if (userRank > 0) {
-      if (userRank > displayCount) {
-        setDisplayCount(userRank);
-      }
-
-      setHighlightUser(true);
-      pendingScrollRankRef.current = userRank;
-      setScrollTrigger((t) => t + 1);
-
-      if (highlightTimeoutRef.current) {
-        window.clearTimeout(highlightTimeoutRef.current);
-      }
-      highlightTimeoutRef.current = window.setTimeout(() => {
-        setHighlightUser(false);
-      }, 4000);
-    }
-  };
-
-  useEffect(() => {
-    if (!pendingScrollRankRef.current || !tableRef.current) return;
-    const rowElement = tableRef.current.querySelector(`[data-rank="${pendingScrollRankRef.current}"]`);
-    if (!rowElement) return;
-    const rowTop = (rowElement as HTMLElement).offsetTop;
-    tableRef.current.scrollTo({
-      top: rowTop - 100,
-      behavior: "smooth",
-    });
-    pendingScrollRankRef.current = null;
-  }, [scrollTrigger, displayCount]);
-
   useEffect(() => {
     return () => {
       if (loadingTimeoutRef.current) {
         window.clearTimeout(loadingTimeoutRef.current);
-      }
-      if (highlightTimeoutRef.current) {
-        window.clearTimeout(highlightTimeoutRef.current);
       }
     };
   }, []);
@@ -105,22 +64,11 @@ export default function ScoreboardTab({ rows, problemColumns, scoringRule }: Sco
     <Box className={styles.scoreboardCard}>
       <Box className={styles.scoreboardHeader}>
         <Typography className={styles.scoreboardTitle}>Contest Standings</Typography>
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<LaunchOutlinedIcon />}
-          className={styles.scoreboardButton}
-          sx={{ borderColor: "rgba(0, 0, 0, 0.1)", color: "#0a0a0a" }}
-          onClick={scrollToMyRank}
-        >
-          Find My Rank
-        </Button>
       </Box>
 
       <Box
         className={styles.scoreboardTable}
         onScroll={handleScroll}
-        ref={tableRef}
         // One grid column per problem, however many there are
         style={{ "--problem-count": problemColumns.length } as React.CSSProperties}
       >
@@ -145,7 +93,7 @@ export default function ScoreboardTab({ rows, problemColumns, scoringRule }: Sco
           return (
             <Box
               key={row.rank}
-              className={`${styles.scoreboardRow} ${isUserRow ? styles.userRow : ""} ${isUserRow && highlightUser ? styles.userRowHighlighted : ""}`}
+              className={`${styles.scoreboardRow} ${isUserRow ? styles.userRow : ""}`}
               data-rank={row.rank}
             >
               <Box className={styles.rankCell}>
