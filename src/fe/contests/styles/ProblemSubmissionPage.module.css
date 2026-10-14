@@ -110,10 +110,53 @@
   max-width: 1233px;
 }
 
+.containerSingle {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .leftColumn {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.problemHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.openSubmitButton {
+  flex: none;
+  padding: 8px 16px;
+}
+
+.submitDialogPaper {
+  border-radius: 12px !important;
+}
+
+.submitDialogHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 24px 0;
+}
+
+.submitDialogTitle {
+  font-family: Inter, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px;
+  color: #0a0a0a;
+}
+
+.submitDialogBody .card {
+  border: none;
+}
+
+.submitDialogBody .solutionCard {
+  padding-top: 12px;
 }
 
 .rightColumn {

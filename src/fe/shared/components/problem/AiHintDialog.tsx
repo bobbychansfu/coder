@@ -108,7 +108,8 @@ export default function AiHintDialog({
         position: "fixed",
         top: effectivePosition.y,
         left: effectivePosition.x,
-        zIndex: (theme) => theme.zIndex.modal,
+        // Above modal dialogs, so a hint requested from the submit dialog stays visible
+        zIndex: (theme) => theme.zIndex.modal + 1,
         width: { xs: "calc(100vw - 32px)", sm: 420 },
         maxHeight: "calc(100vh - 120px)",
         borderRadius: "8px",
