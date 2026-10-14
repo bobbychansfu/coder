@@ -3,6 +3,7 @@
 import { ReactNode } from "react";
 import { Box } from "@mui/material";
 import Navbar from "./Navbar";
+import NotificationsProvider from "../notifications/NotificationsProvider";
 import styles from "../../styles/AppShell.module.css";
 import type { CurrentUser } from "@/lib/session";
 
@@ -13,9 +14,11 @@ interface AppShellProps {
 
 export default function AppShell({ children, user }: AppShellProps) {
   return (
-    <Box className={styles.container}>
-      <Navbar user={user} />
-      <Box component="main" className={styles.main}>{children}</Box>
-    </Box>
+    <NotificationsProvider>
+      <Box className={styles.container}>
+        <Navbar user={user} />
+        <Box component="main" className={styles.main}>{children}</Box>
+      </Box>
+    </NotificationsProvider>
   );
 }

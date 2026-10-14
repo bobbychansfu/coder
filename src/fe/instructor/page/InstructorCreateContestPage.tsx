@@ -198,6 +198,7 @@ export default function InstructorCreateContestPage() {
         endTime: toLocalTimeInputValue(contestQuery.data.endsAtIso),
         visibility: contestQuery.data.visibility,
         scoringRule: contestQuery.data.scoringRule,
+        maxTeamSize: contestQuery.data.maxTeamSize,
         groupAHintAfterMinutes: contestQuery.data.groupAHintAfterMinutes,
         groupBHintAfterMinutes: contestQuery.data.groupBHintAfterMinutes,
       });
@@ -464,6 +465,7 @@ export default function InstructorCreateContestPage() {
             isEditMode={isEditMode} isSaving={isSaving} isPageLoading={isPageLoading}
             showDifficulty={showDifficulty} onShowDifficultyChange={setShowDifficulty}
             publishLabel={publishLabel} onFieldChange={updateField}
+            onNumberFieldChange={updateNumberField}
             onPublish={() => void handlePublish()}
           />
         }

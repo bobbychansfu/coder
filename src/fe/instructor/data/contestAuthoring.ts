@@ -43,6 +43,8 @@ export interface ContestAuthoringCopy {
   scoringRuleDescription: string;
   scoringRuleLabel: string;
   showDifficultyLabel: string;
+  teamSizeLabel: string;
+  teamSizeHint: string;
   publishLabel: string;
   selectProblemsTitle: string;
   selectProblemsDescription: string;
@@ -89,6 +91,7 @@ export interface ContestFormDraft {
   endTime: string;
   visibility: "course-only" | "public" | "private";
   scoringRule: ContestScoringRule;
+  maxTeamSize: number;
   groupAHintAfterMinutes: number;
   groupBHintAfterMinutes: number;
 }
@@ -157,6 +160,8 @@ export const contestAuthoringCopy: ContestAuthoringCopy = {
   scoringRuleDescription: "How the scoreboard ranks contestants and teams",
   scoringRuleLabel: "Scoring rule *",
   showDifficultyLabel: "Show problem difficulty",
+  teamSizeLabel: "Max team size",
+  teamSizeHint: "Everyone starts as a team of one and can invite teammates up to this size. 1 makes it an individual contest.",
   publishLabel: "Publish Contest",
   selectProblemsTitle: "Select Problems",
   selectProblemsDescription: "Choose problems from your problem bank to include in this contest",
@@ -240,6 +245,7 @@ export const contestFormDraft: ContestFormDraft = {
   endTime: "",
   visibility: "public",
   scoringRule: "points",
+  maxTeamSize: 3,
   groupAHintAfterMinutes: contestAiHintConfig.groupAHintAfterMinutes,
   groupBHintAfterMinutes: contestAiHintConfig.groupBHintAfterMinutes,
 };
