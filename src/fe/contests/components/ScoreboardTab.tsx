@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import * as React from "react";
+import Link from "next/link";
 import { Box, IconButton, Typography } from "@mui/material";
 import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
@@ -13,13 +14,19 @@ function formatSolveTime(minutes: number) {
 }
 
 interface ScoreboardTabProps {
+  contestId: string;
   rows: ScoreboardRow[];
   problemColumns: string[];
   // The contest's rule; rows only carry it once someone has registered
   scoringRule?: "POINTS" | "ICPC";
 }
 
-export default function ScoreboardTab({ rows, problemColumns, scoringRule }: ScoreboardTabProps) {
+export default function ScoreboardTab({
+  contestId,
+  rows,
+  problemColumns,
+  scoringRule,
+}: ScoreboardTabProps) {
   const [displayCount, setDisplayCount] = useState(10);
   const [isLoading, setIsLoading] = useState(false);
   const loadingTimeoutRef = useRef<number | null>(null);
@@ -140,7 +147,12 @@ export default function ScoreboardTab({ rows, problemColumns, scoringRule }: Sco
             )}
             {problemColumns.map((code) => (
               <span key={code} className={`${styles.centerCell} ${styles.headerCell}`}>
-                {code}
+                <Link
+                  href={`/contests/${contestId}/problems/${code.toLowerCase()}`}
+                  className={styles.problemColumnLink}
+                >
+                  {code}
+                </Link>
               </span>
             ))}
           </Box>

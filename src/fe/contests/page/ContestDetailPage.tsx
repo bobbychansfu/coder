@@ -79,6 +79,7 @@ export default function ContestDetailPage({
           />
         ) : (
           <ScoreboardTab
+            contestId={contest.id}
             rows={contest.scoreboard}
             problemColumns={problemColumns}
             scoringRule={contest.scoringRule}
