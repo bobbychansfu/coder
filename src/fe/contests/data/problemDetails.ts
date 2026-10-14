@@ -13,6 +13,11 @@ export interface ProblemExample {
   explanation: string;
 }
 
+export interface ProblemSample {
+  input: string;
+  output: string;
+}
+
 export interface ProblemNarrative {
   id?: string;
   timeLimit: string;
@@ -22,6 +27,8 @@ export interface ProblemNarrative {
   outputFormat: string[];
   constraints: string[];
   example: ProblemExample;
+  // Sample files from the judge; shown instead of `example` when present
+  samples?: ProblemSample[];
   testCases: ProblemTestCase[];
   hiddenCount: number;
   starterCodes?: Partial<Record<"cplusplus" | "java" | "typescript" | "javascript" | "python", string>>;

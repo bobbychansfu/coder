@@ -14,7 +14,9 @@ import { can, normalizeRole } from "@/lib/authz";
 import { getEffectiveContestStatus } from "@/lib/contestStatus";
 import { dbHelpers } from "@/lib/db-helpers";
 import { getCurrentUser } from "@/lib/session";
+import { resolveJudgeProblemId } from "@/server/api/s/problem";
 import { codingLanguageToLabel } from "@/server/coding-language";
+import { fetchJudgeProblemFiles } from "@/server/judge";
 import { findContestInvitationOrDeny } from "@/server/studentContestAccess";
 
 interface ContestProblemRouteProps {
@@ -143,11 +145,15 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
     notFound();
   }
 
+  const judgeProblemId = resolveJudgeProblemId(problemDetail);
+  const judgeProblem = judgeProblemId ? await fetchJudgeProblemFiles(judgeProblemId) : null;
+
   const problemDetailPayload: ContestProblemDetailResponse = {
     computingId: user.computingId,
     cid: contestId,
     pid: problem.problemId,
     problem: problemDetail,
+    judgeProblem,
     downloadContents: [],
     role: user.role,
     htmlContents: [],
