@@ -19,6 +19,23 @@ export function normalizeRole(value: unknown): Role | null {
   return isRole(normalized) ? normalized : null;
 }
 
+export type LocalAccountType = "guest" | "external";
+
+/**
+ * Access for an account that signs in with a Coder password (a LocalCredential).
+ *
+ * Guest is an account type in the database, but intentionally receives the
+ * student authorization profile. Every other local account keeps its database
+ * role; a role the app does not grant (TA) gets no access.
+ */
+export function localAccountAccess(
+  dbRole: unknown,
+): { role: Role; accountType: LocalAccountType } | null {
+  if (dbRole === "GUEST") return { role: "student", accountType: "guest" };
+  const role = normalizeRole(dbRole);
+  return role ? { role, accountType: "external" } : null;
+}
+
 export function hasMinRole(role: Role, minimumRole: Role): boolean {
   return ROLE_LEVEL[role] >= ROLE_LEVEL[minimumRole];
 }

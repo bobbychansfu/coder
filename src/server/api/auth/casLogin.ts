@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { normalizeRole } from "@/lib/authz";
 import { createCasSessionToken } from "@/lib/casAuthSession";
 import { prisma } from "@/lib/prisma";
+import { safeNextPath } from "@/lib/safeNextPath";
 import { recordDailyLogin, syncStudentGamification } from "@/server/gamification/persistence";
 
 const AUTH_BACKEND_BASE_URL = process.env.AUTH_BACKEND_BASE_URL;
@@ -21,19 +22,24 @@ interface CasLoginRequestBody {
 }
 
 function normalizeNextPath(next: unknown): string {
-  if (typeof next !== "string" || next.length === 0) {
-    return DEFAULT_POST_LOGIN_PATH;
-  }
+  return safeNextPath(next, DEFAULT_POST_LOGIN_PATH);
+}
 
-  if (!next.startsWith("/") || next.startsWith("//")) {
-    return DEFAULT_POST_LOGIN_PATH;
+// The browser is on the registered callback's domain. Behind a proxy,
+// request.nextUrl.origin is the app's own address (localhost).
+function getAppOrigin(request: NextRequest): string {
+  if (CAS_SERVICE_URL) {
+    try {
+      return new URL(CAS_SERVICE_URL).origin;
+    } catch {
+      // buildServiceUrl reports an invalid CAS_SERVICE_URL
+    }
   }
-
-  return next;
+  return request.nextUrl.origin;
 }
 
 function getLoginErrorRedirectUrl(request: NextRequest, nextPath: string, error: string): URL {
-  const loginUrl = new URL("/login", request.nextUrl.origin);
+  const loginUrl = new URL("/login", getAppOrigin(request));
   loginUrl.searchParams.set("next", nextPath);
   loginUrl.searchParams.set("error", error);
   return loginUrl;
@@ -147,8 +153,12 @@ async function validateDirectlyWithSfu(ticket: string, serviceUrl: string): Prom
   const email = `${computingId}@sfu.ca`;
   const existingUser = await prisma.user.findFirst({
     where: { OR: [{ computingId }, { email }] },
-    select: { id: true, computingId: true, role: true },
+    select: { id: true, computingId: true, role: true, localCredential: { select: { id: true } } },
   });
+
+  // An account with its own password was created outside CAS (a guest or a
+  // self-registered user), so it is never handed to whoever CAS vouches for.
+  if (existingUser?.localCredential) return null;
 
   // CAS has already proved ownership of this SFU computing ID. Provision new
   // users as students, while preserving the role of any existing account.
@@ -286,7 +296,7 @@ export async function handleCasCallback(request: NextRequest): Promise<NextRespo
         { ...user, ttlSeconds: CAS_SESSION_TTL_SECONDS },
         CAS_AUTH_COOKIE_SECRET,
       );
-      const response = NextResponse.redirect(new URL(nextPath, request.nextUrl.origin));
+      const response = NextResponse.redirect(new URL(nextPath, getAppOrigin(request)));
       response.cookies.set({
         name: SESSION_COOKIE_NAME,
         value: token,
@@ -348,7 +358,7 @@ export async function handleCasCallback(request: NextRequest): Promise<NextRespo
       );
     }
 
-    const appRedirectUrl = new URL(nextPath, request.nextUrl.origin);
+    const appRedirectUrl = new URL(nextPath, getAppOrigin(request));
     const response = NextResponse.redirect(appRedirectUrl);
     response.headers.append("set-cookie", setCookie);
     return clearPostLoginCookie(response);

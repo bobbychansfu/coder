@@ -147,7 +147,13 @@ When guest login is enabled:
 
 - `POST /api/auth/guest-login` validates the local credential and expiry
 - the backend signs the session using `GUEST_AUTH_COOKIE_SECRET`
-- the session identifies the account as a guest while granting the student-facing application role
+- the same token is used for every account with a local password (`LocalCredential`): admin-made
+  guests and self-registered accounts, whose username is their email
+- every request re-checks the credential in the database: it must be enabled, unexpired, and the
+  token must have been issued after `LocalCredential.passwordChangedAt`, so changing a password
+  signs the account out everywhere
+- a `GUEST` database role receives the student-facing application role and is labelled a guest;
+  any other role is used as-is (a `TA` role gets no access)
 - expired guest users are removed when an administrator lists guest accounts
 
 ### 3.5 Logout
@@ -207,6 +213,8 @@ Current behavior:
 Purpose:
 
 - redirect-based CAS login start
+- the `next` destination is kept only if it is a path on this site (`safeNextPath` in
+  `src/lib/safeNextPath.ts`); anything else, including `/\evil.com`, falls back to `/dashboard`
 
 #### `POST /api/auth/cas/login`
 
@@ -223,6 +231,8 @@ Purpose:
 - validate it directly against `CAS_VALIDATE_URL`, passing both `ticket` and the exact `service`
 - read the SFU computing ID from the successful CAS XML response
 - preserve an existing database user's role or create a new `STUDENT` user automatically
+- refuse the login if the matching account has a local password (guest or self-registered), so CAS
+  never hands over an account it did not create
 - create the signed local CAS session cookie
 - fall back to the configured external auth backend only when direct validation is not configured
 
@@ -240,12 +250,50 @@ Purpose:
 
 Purpose:
 
-- authenticate an enabled, unexpired guest credential
+- authenticate an enabled, unexpired local credential (a guest, or a self-registered account)
 
 Input:
 
-- `username`
+- `username` (a guest username, or the email of a self-registered account)
 - `password`
+
+Unknown usernames are checked against a throwaway hash, so they take as long as a wrong password and
+return the same error.
+
+#### `POST /api/auth/signup`
+
+Purpose:
+
+- self-service sign-up for students outside SFU (v0: no email confirmation)
+
+Enabled by:
+
+- `EXTERNAL_SIGNUP_ENABLED="true"` (API) and `NEXT_PUBLIC_EXTERNAL_SIGNUP_ENABLED="true"` (shows the
+  "Create an account" and "Sign in with email" links and the `/signup` form)
+
+Input:
+
+- `firstName`
+- `lastName` (optional)
+- `nickname` (3–20 letters, digits, `_` or `-`; shown on scoreboards as the @handle)
+- `email`
+- `password` (8–128 characters)
+
+Behavior:
+
+- refuses `@sfu.ca` and `*.sfu.ca` addresses; SFU students use CAS
+- refuses an email that already belongs to an account (`409`)
+- refuses a nickname another account already uses, ignoring case (`409`); a self-registered account
+  that changes its nickname in Profile gets the same checks. SFU accounts keep free-form nicknames,
+  and the database does not enforce uniqueness yet
+- creates a `STUDENT` user with a generated `guest_<id>` computing ID and a local credential whose
+  username is the email, with no expiry
+- signs the new account in immediately with the same session as guest login
+- later sign-ins go through `POST /api/auth/guest-login` with the email as the username; that endpoint
+  stays on whenever either `GUEST_LOGIN_ENABLED` or `EXTERNAL_SIGNUP_ENABLED` is on
+
+Without email confirmation, anyone can register an address they do not own, which blocks its real
+owner from signing up with it. Adding confirmation is a follow-up.
 
 #### `GET /api/admin/guest-users`
 
@@ -261,7 +309,7 @@ Purpose:
 
 Input:
 
-- `username`
+- `username` (may not contain `@`, so it can never collide with a self-registered email)
 - `firstName` (optional)
 - `lastName` (optional)
 - `password`
@@ -305,13 +353,16 @@ request is needed for this direct-validation flow.
 
 During the first successful CAS callback, the app uses the SFU computing ID to find a user by
 `computingId` or `<computingId>@sfu.ca`. If none exists, it creates a user with the `STUDENT` role.
-Existing roles are preserved.
+Existing roles are preserved. A match that has a local
+password is refused rather than reused.
 
 ### 5.3 External-backend fallback
 
-If local guest, dev, and CAS session verification do not resolve a user:
+Off unless `AUTH_ME_FALLBACK_ENABLED="true"`. It is not needed when `CAS_VALIDATE_URL` is configured.
 
-- the app forwards all cookies to `AUTH_BACKEND_BASE_URL + AUTH_ME_PATH`
+If local guest, dev, and CAS session verification do not resolve a user and the fallback is enabled:
+
+- the app sends only the session cookie to `AUTH_BACKEND_BASE_URL + AUTH_ME_PATH`
 - expects a JSON payload containing:
   - computing ID
   - role

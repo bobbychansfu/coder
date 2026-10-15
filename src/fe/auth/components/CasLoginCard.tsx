@@ -7,6 +7,7 @@ interface CasLoginCardProps {
   onCasLogin: () => Promise<void> | void;
   loading: boolean;
   showGuestLogin: boolean;
+  showSignup: boolean;
   error?: string | null;
 }
 
@@ -14,6 +15,7 @@ export default function CasLoginCard({
   onCasLogin,
   loading,
   showGuestLogin,
+  showSignup,
   error,
 }: CasLoginCardProps) {
   return (
@@ -42,7 +44,19 @@ export default function CasLoginCard({
         You will be redirected to SFU&apos;s authentication portal
       </p>
 
-      {showGuestLogin ? (
+      {showSignup ? (
+        <>
+          <Link href="/guest-login" className={styles.secondaryLink}>
+            Not at SFU? Sign in with email
+          </Link>
+          <p className={styles.hint}>
+            New here?{" "}
+            <Link href="/signup" className={styles.inlineLink}>
+              Create an account
+            </Link>
+          </p>
+        </>
+      ) : showGuestLogin ? (
         <Link href="/guest-login" className={styles.secondaryLink}>
           Sign in with a guest account
         </Link>
