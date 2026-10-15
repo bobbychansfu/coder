@@ -120,6 +120,62 @@
   font-size: 16px;
 }
 
+.rightGroup {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bellButton {
+  color: #e7000b !important;
+}
+
+.notificationMenu {
+  width: 320px;
+  max-height: 420px;
+  border-radius: 8px !important;
+}
+
+.notificationUnread {
+  background-color: #eff6ff !important;
+}
+
+.notificationItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-family: Inter, sans-serif;
+}
+
+.notificationAccepted,
+.notificationRejected,
+.notificationInvite {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.notificationAccepted {
+  color: #16a34a;
+}
+
+.notificationRejected {
+  color: #dc2626;
+}
+
+.notificationInvite {
+  color: #0a0a0a;
+  white-space: normal;
+}
+
+.notificationMeta {
+  font-size: 12px;
+  color: #6a7282;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .profileMenuWrapper {
   position: relative;
   display: flex;
@@ -130,7 +186,10 @@
   position: absolute;
   right: 0;
   top: 44px;
-  width: 192px;
+  /* Grow to fit long names and emails, but never past the viewport edge. */
+  width: max-content;
+  min-width: 192px;
+  max-width: calc(100vw - 32px);
   background-color: #ffffff;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 6px;
@@ -185,6 +244,7 @@
 }
 
 .profileEmail {
+  overflow-wrap: anywhere;
   font-size: 13px;
   font-weight: 500;
   line-height: 18px;

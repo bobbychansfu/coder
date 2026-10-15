@@ -1,16 +1,14 @@
 "use client";
 
-import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
+import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
 import {
   Alert,
   Box,
   Button,
-  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControlLabel,
   TextField,
   Typography,
 } from "@mui/material";
@@ -23,145 +21,196 @@ interface ContestTeamControlsProps {
   contestId: string;
 }
 
-interface AvailableStudent {
+interface InvitableStudent {
   id: string;
   name: string;
-  computingId: string;
   email: string;
 }
 
+// Every typed word must start the student's name or email.
+function matchesPrefixSearch(student: InvitableStudent, query: string): boolean {
+  const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return true;
+
+  const words = [...student.name.toLowerCase().split(/\s+/), student.email.toLowerCase()];
+  return terms.every((term) => words.some((word) => word.startsWith(term)));
+}
+
+function inviteLink(contestId: string, token: string) {
+  return `${window.location.origin}/contests/${contestId}/invites/${token}`;
+}
+
+// Everyone registered is on a team (a team of one at first). This shows it and lets
+// members invite people, who join only once they accept.
 export default function ContestTeamControls({ contestId }: ContestTeamControlsProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [teamName, setTeamName] = useState("");
-  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
+  const [editingName, setEditingName] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
   const teamQuery = trpc.contestTeams.get.useQuery({ contestId }, { retry: false });
-  const createTeam = trpc.contestTeams.create.useMutation({
+  const refetch = () => teamQuery.refetch();
+  const rename = trpc.contestTeams.rename.useMutation({
     onSuccess: async () => {
-      setDialogOpen(false);
-      setTeamName("");
-      setSelectedStudentIds([]);
-      await teamQuery.refetch();
+      setEditingName(null);
+      await refetch();
     },
   });
+  const invite = trpc.contestTeams.invite.useMutation({ onSuccess: refetch });
+  const revokeInvite = trpc.contestTeams.revokeInvite.useMutation({ onSuccess: refetch });
+  const leave = trpc.contestTeams.leave.useMutation({ onSuccess: refetch });
 
-  if (teamQuery.data?.currentTeam) {
-    return (
-      <Alert severity="info" className={styles.teamNotice}>
-        You are already in a team: {teamQuery.data.currentTeam.name}
-      </Alert>
-    );
+  const data = teamQuery.data;
+  // Not registered, or an individual contest: there is no team to show
+  if (!data || data.maxTeamSize <= 1) {
+    return null;
   }
 
-  if (teamQuery.isError) {
-    return (
-      <Alert severity="warning" className={styles.teamNotice}>
-        Team creation is unavailable. Apply the latest database migration and refresh.
-      </Alert>
-    );
-  }
+  const { team } = data;
+  const error = rename.error ?? invite.error ?? revokeInvite.error ?? leave.error;
+  const visibleStudents = data.invitableStudents.filter((student) =>
+    matchesPrefixSearch(student, search),
+  );
+
+  const copyLink = async (token: string) => {
+    await navigator.clipboard.writeText(inviteLink(contestId, token));
+    setCopiedToken(token);
+  };
 
   return (
     <>
       <Button
         variant="contained"
         color="error"
-        startIcon={<GroupAddOutlinedIcon />}
+        startIcon={<GroupsOutlinedIcon />}
         className={styles.createButton}
-        disabled={teamQuery.isLoading}
         onClick={() => {
-          createTeam.reset();
+          setSearch("");
+          setEditingName(null);
+          setCopiedToken(null);
           setDialogOpen(true);
         }}
       >
-        Create Team
+        Team · {team.members.length} of {data.maxTeamSize}
       </Button>
 
-      <Dialog
-        open={dialogOpen}
-        onClose={() => !createTeam.isPending && setDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Create a team of three</DialogTitle>
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Your team</DialogTitle>
         <DialogContent className={styles.dialogContent}>
-          <Typography color="text.secondary">
-            You are the first member. Select exactly two available students registered for this
-            contest.
-          </Typography>
-          <TextField
-            label="Team name"
-            value={teamName}
-            onChange={(event) => setTeamName(event.target.value)}
-            slotProps={{ htmlInput: { maxLength: 50 } }}
-            fullWidth
-          />
-          <Box className={styles.studentList}>
-            {(teamQuery.data?.availableStudents.length ?? 0) === 0 ? (
-              <Typography color="text.secondary" className={styles.emptyState}>
-                No students are currently available.
-              </Typography>
-            ) : (
-              teamQuery.data?.availableStudents.map((student: AvailableStudent) => {
-                const selected = selectedStudentIds.includes(student.id);
-                const selectionFull = selectedStudentIds.length >= 2;
+          {editingName === null ? (
+            <Box className={styles.teamNameRow}>
+              <Typography className={styles.teamName}>{team.name}</Typography>
+              <Button size="small" onClick={() => setEditingName(team.name)}>
+                Rename
+              </Button>
+            </Box>
+          ) : (
+            <Box className={styles.teamNameRow}>
+              <TextField
+                label="Team name"
+                value={editingName}
+                onChange={(event) => setEditingName(event.target.value)}
+                slotProps={{ htmlInput: { maxLength: 50 } }}
+                size="small"
+                fullWidth
+                autoFocus
+              />
+              <Button
+                variant="contained"
+                color="error"
+                disabled={rename.isPending || editingName.trim().length === 0}
+                onClick={() => rename.mutate({ contestId, name: editingName })}
+              >
+                Save
+              </Button>
+            </Box>
+          )}
 
-                return (
-                  <FormControlLabel
-                    key={student.id}
-                    className={styles.studentOption}
-                    control={
-                      <Checkbox
-                        checked={selected}
-                        disabled={!selected && selectionFull}
-                        onChange={(event) =>
-                          setSelectedStudentIds((current) =>
-                            event.target.checked
-                              ? [...current, student.id]
-                              : current.filter((id) => id !== student.id),
-                          )
-                        }
-                      />
-                    }
-                    label={
+          <Box className={styles.studentList}>
+            {team.members.map((member) => (
+              <Box key={member.id} className={styles.studentOption}>
+                <Typography className={styles.studentName}>
+                  {member.name}
+                  {member.isYou ? " (you)" : ""}
+                </Typography>
+              </Box>
+            ))}
+            {team.pendingInvites.map((pending) => (
+              <Box key={pending.id} className={styles.studentOption}>
+                <Box>
+                  <Typography className={styles.studentName}>{pending.name}</Typography>
+                  <Typography color="text.secondary" className={styles.studentMeta}>
+                    Invited
+                  </Typography>
+                </Box>
+                <Box className={styles.rowActions}>
+                  <Button size="small" onClick={() => void copyLink(pending.token)}>
+                    {copiedToken === pending.token ? "Link copied" : "Copy invite link"}
+                  </Button>
+                  <Button
+                    size="small"
+                    color="error"
+                    disabled={revokeInvite.isPending}
+                    onClick={() => revokeInvite.mutate({ contestId, inviteId: pending.id })}
+                  >
+                    Revoke
+                  </Button>
+                </Box>
+              </Box>
+            ))}
+          </Box>
+
+          {data.canInvite ? (
+            <>
+              <TextField
+                label="Invite a teammate"
+                placeholder="Name or email"
+                type="search"
+                size="small"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                fullWidth
+              />
+              <Box className={styles.studentList}>
+                {data.invitableStudents.length === 0 ? (
+                  <Typography color="text.secondary" className={styles.emptyState}>
+                    No registered students to invite.
+                  </Typography>
+                ) : visibleStudents.length === 0 ? (
+                  <Typography color="text.secondary" className={styles.emptyState}>
+                    No students match “{search.trim()}”.
+                  </Typography>
+                ) : (
+                  visibleStudents.map((student) => (
+                    <Box key={student.id} className={styles.studentOption}>
                       <Box>
                         <Typography className={styles.studentName}>{student.name}</Typography>
                         <Typography color="text.secondary" className={styles.studentMeta}>
-                          {student.computingId} · {student.email}
+                          {student.email}
                         </Typography>
                       </Box>
-                    }
-                  />
-                );
-              })
-            )}
-          </Box>
-          <Typography color="text.secondary" className={styles.selectionCount}>
-            {selectedStudentIds.length} of 2 students selected
-          </Typography>
-          {createTeam.error ? <Alert severity="error">{createTeam.error.message}</Alert> : null}
+                      <Button
+                        size="small"
+                        disabled={invite.isPending}
+                        onClick={() => invite.mutate({ contestId, userId: student.id })}
+                      >
+                        Invite
+                      </Button>
+                    </Box>
+                  ))
+                )}
+              </Box>
+            </>
+          ) : null}
+
+          {error ? <Alert severity="error">{error.message}</Alert> : null}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)} disabled={createTeam.isPending}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            color="error"
-            disabled={
-              createTeam.isPending ||
-              teamName.trim().length === 0 ||
-              selectedStudentIds.length !== 2
-            }
-            onClick={() =>
-              createTeam.mutate({
-                contestId,
-                name: teamName,
-                memberUserIds: selectedStudentIds,
-              })
-            }
-          >
-            {createTeam.isPending ? "Creating…" : "Create team"}
-          </Button>
+          {data.canLeave ? (
+            <Button color="error" disabled={leave.isPending} onClick={() => leave.mutate({ contestId })}>
+              Leave team
+            </Button>
+          ) : null}
+          <Button onClick={() => setDialogOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
     </>

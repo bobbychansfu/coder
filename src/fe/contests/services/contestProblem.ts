@@ -52,11 +52,22 @@ interface ContestSubmissionApiModel {
   judgeOutput?: string;
 }
 
+interface ContestJudgeProblemApiModel {
+  timeSec: number;
+  memMb: number;
+  samples: { input: string; output: string }[];
+  // Statement rendered on the server from the judge's LaTeX source
+  statementHtml?: string;
+  // Its sample explanations / notes, shown after the samples
+  notesHtml?: string;
+}
+
 export interface ContestProblemDetailResponse {
   computingId: string;
   cid: string;
   pid: string;
   problem: ContestProblemApiModel | null;
+  judgeProblem?: ContestJudgeProblemApiModel | null;
   downloadContents: string[];
   role: string;
   htmlContents: string | string[];
@@ -182,6 +193,10 @@ export function adaptContestProblemDetail(
   submissionsPayload?: ContestProblemSubmissionsResponse | null,
 ): ProblemDetail {
   const problem = payload.problem;
+  // The judge's own limits win over the copies stored on the problem row.
+  const judgeProblem = payload.judgeProblem;
+  const timeLimitSeconds = judgeProblem?.timeSec || problem?.timeConstraint;
+  const memoryMb = judgeProblem?.memMb || problem?.memConstraint;
 
   return {
     ...contestProblem,
@@ -192,11 +207,13 @@ export function adaptContestProblemDetail(
         ? problem.topics.map((topic) => topic.name)
         : contestProblem.tags,
     points: problem?.points ?? contestProblem.points,
-    timeLimit: problem?.timeConstraint
-      ? `${problem.timeConstraint} second${problem.timeConstraint !== 1 ? "s" : ""}`
+    timeLimit: timeLimitSeconds
+      ? `${timeLimitSeconds} second${timeLimitSeconds !== 1 ? "s" : ""}`
       : "1 second",
-    memory: problem?.memConstraint ? `${problem.memConstraint} MB` : "256 MB",
+    memory: memoryMb ? `${memoryMb} MB` : "256 MB",
     statement: problem?.statement ? [problem.statement] : [],
+    statementHtml: judgeProblem?.statementHtml,
+    notesHtml: judgeProblem?.notesHtml,
     inputFormat: splitLines(problem?.inputFormat),
     outputFormat: splitLines(problem?.outputFormat),
     constraints: splitLines(problem?.constraints),
@@ -205,6 +222,7 @@ export function adaptContestProblemDetail(
       output: problem?.exampleOutput ? [problem.exampleOutput] : [],
       explanation: problem?.exampleExplanation ?? "",
     },
+    samples: judgeProblem?.samples ?? [],
     testCases: [],
     hiddenCount: 0,
     starterCodes: Object.fromEntries(

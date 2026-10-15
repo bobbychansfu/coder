@@ -1,5 +1,5 @@
 # Contest Section - System Design Notes
-**Schedule-based contest registration + optional three-student teams + contest problem workspace + direct judge integration**
+**Schedule-based contest registration + optional teams of up to three students + contest problem workspace + direct judge integration**
 
 ---
 
@@ -41,7 +41,7 @@ Important current behavior:
 
 - contests are **not** using a per-student countdown timer in the main student flow
 - students can submit **multiple times** to the same problem while the contest is active
-- registered students can create one fixed-size team of three for a contest
+- registered students can create one team of up to three for a contest
 - teams are currently organizational; submissions and progress remain per student
 - a complete student-facing scoreboard is still required
 - practice is now a separate system and should be documented independently
@@ -106,9 +106,9 @@ The student contest detail page supports self-service team creation:
 
 - the creator must be a registered `STUDENT` contestant
 - the creator supplies a team name of 1-50 trimmed characters
-- the creator selects exactly two other registered students
+- the creator selects up to two other registered students (none for a solo team)
 - selected students must not already belong to another team for that contest
-- the resulting contest team always has three members, including the creator
+- the resulting contest team has one to three members, including the creator
 
 There is currently no student join-request, leave-team, rename-team, or delete-team flow.
 
@@ -228,7 +228,7 @@ The application checks that a user belongs to at most one team in the selected c
   - is not yet connected to a complete, validated student-facing scoreboard
 - **Contest team service**
   - reads the current student's contest team and eligible teammates
-  - creates a three-person team in a serializable transaction
+  - creates a team of one to three people in a serializable transaction
 - **Contest status sync cron**
   - keeps stored `Contest.status` aligned with wall-clock schedule
 - **Instructor analytics sidecar**
@@ -479,7 +479,7 @@ Student participation lifecycle:
 
 1. Discover contest from `/api/s/info`
 2. Register through `/api/s/contest/register/:cid`
-3. Optionally create a three-person contest team through `contestTeams.create`
+3. Optionally create a contest team of up to three people through `contestTeams.create`
 4. Enter through `/api/s/entercontest/:cid`
 5. Work on contest problems while the contest is active
 
@@ -552,7 +552,7 @@ Behavior:
 
 - returns the student's existing team, if any
 - otherwise returns registered, unassigned student candidates
-- creates the team and its three membership rows atomically
+- creates the team and its membership rows (one to three) atomically
 - rejects duplicate selections, ineligible users, and members already assigned to a contest team
 
 ### 9.6 Problem detail and submissions
@@ -649,7 +649,7 @@ Contest teams use authenticated student tRPC procedures:
   - returns the current team and available registered students
 
 - `contestTeams.create({ contestId, name, memberUserIds })`
-  - creates one three-student contest team
+  - creates one contest team of one to three students
 
 The related `adminTeams` router manages general student groups where `contestId` is null; it is not the student contest-team API.
 
@@ -697,20 +697,32 @@ The callback route:
 
 ### 12.1 Scoreboard
 
-The project contains supporting contest data and aggregation logic that can be used by a future scoreboard:
+Each contest has a **scoring rule** (`Contest.scoringRule`), chosen by the instructor or admin when
+creating or editing the contest. `findScoreboardRowsForContest` in `src/lib/db-helpers.ts` builds the
+standings with the matching rule.
 
-- rows are derived from `Participation` + `ProblemStatus`
-- score is the sum of per-problem stored scores
-- solved count is based on `correct` or positive-score statuses
-- ranks are sorted by:
-  1. preset rank when present
-  2. total score descending
-  3. solved descending
-  4. display name ascending
+Contest teams are ranked as one entry, named after the team with its members listed under the name.
+Students who are not on a team keep an entry of their own. "Find my rank" highlights the viewer's entry.
+Submissions and `ProblemStatus` are still recorded per student; teams only change how they are ranked.
 
-However, the full scoreboard feature has not been completed. The remaining work includes exposing the aggregation reliably through the active contest API, implementing and validating the student-facing scoreboard UI, defining refresh/freeze behavior, and testing ranking and tie-breaking rules end to end.
+**Problem score** (`POINTS`, the default; `src/lib/pointsStandings.ts`), from `ProblemStatus`:
 
-The first version should use individual participant rows. Team scoreboard aggregation is a separate future enhancement because team membership currently does not change how submissions or scores are recorded.
+- an entry solves a problem when any member's status is `correct` or scores points
+- an entry earns its best member's points on each problem, so two teammates solving the same problem
+  count once; the score is the sum of those
+- ranks: score descending, then solved descending, then name
+
+**ICPC** (`src/lib/icpcStandings.ts`), from `Submission` records:
+
+- a team's submissions are its members' submissions merged in time order
+- a solved problem costs the minutes from contest start to its first accepted submission plus 20 minutes
+  per rejected submission before it (wrong answer, time limit, runtime error); compile errors, system
+  errors and pending submissions do not count, and submissions after the first accept are ignored
+- only submissions made while the contest runs count, so practising after it ends changes nothing
+- ranks: solved descending, then penalty ascending, then the earliest last accepted submission, then name
+- each cell shows the attempts and the solve minute; the first entry to solve a problem is highlighted
+
+Refresh/freeze behaviour (a frozen final hour) is not implemented.
 
 ### 12.2 Hints
 
@@ -790,7 +802,7 @@ See:
 ### Contest teams
 
 - [x] Registered students can view their current contest team
-- [x] Unassigned students can create a named team with exactly two other eligible students
+- [x] Unassigned students can create a named team with up to two other eligible students
 - [x] Contest teams are separated from general admin-created groups by `Team.contestId`
 - [x] Contest deletion cascades to contest teams and memberships
 - [ ] Team-based submissions and scoreboard aggregation

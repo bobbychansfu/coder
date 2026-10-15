@@ -1,5 +1,6 @@
 import { useMemo, type ReactNode } from "react";
 import { Box, Typography } from "@mui/material";
+import "katex/dist/katex.min.css";
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
 import MemoryOutlinedIcon from "@mui/icons-material/MemoryOutlined";
 import TabSwitcher from "@/fe/shared/components/ui/TabSwitcher";
@@ -133,66 +134,106 @@ export default function ProblemDetails({
 
         <Box display="flex" flexDirection="column" gap="12px">
           <Typography className={styles.sectionTitle}>Problem Statement</Typography>
-          {detail.statement.map((paragraph) => (
-            <Typography key={paragraph} className={styles.paragraph}>
-              {renderInlineCode(paragraph)}
-            </Typography>
-          ))}
-        </Box>
-
-        <Box display="flex" flexDirection="column" gap="12px">
-          <Typography className={styles.sectionTitle}>Input Format</Typography>
-          <Box component="ul" className={styles.list}>
-            {detail.inputFormat.map((item) => (
-              <li key={item} className={styles.listItem}>
-                {renderInlineCode(item)}
-              </li>
-            ))}
-          </Box>
-        </Box>
-
-        <Box display="flex" flexDirection="column" gap="12px">
-          <Typography className={styles.sectionTitle}>Output Format</Typography>
-          <Box component="ul" className={styles.list}>
-            {detail.outputFormat.map((item) => (
-              <li key={item} className={styles.listItem}>
-                {renderInlineCode(item)}
-              </li>
-            ))}
-          </Box>
-        </Box>
-
-        <Box display="flex" flexDirection="column" gap="12px">
-          <Typography className={styles.sectionTitle}>Constraints</Typography>
-          <Box component="ul" className={styles.list}>
-            {detail.constraints.map((item) => (
-              <li key={item} className={styles.listItem}>
-                {renderInlineCode(item)}
-              </li>
-            ))}
-          </Box>
-        </Box>
-
-        <Box display="flex" flexDirection="column" gap="12px">
-          <Typography className={styles.sectionTitle}>Example</Typography>
-          <Box className={styles.exampleCard}>
-            <Typography className={styles.exampleLabel}>Input:</Typography>
-            {detail.example.input.map((line) => (
-              <Typography key={line} className={styles.exampleText}>
-                {line}
+          {detail.statementHtml ? (
+            // Rendered on the server from LaTeX: text is escaped, math is KaTeX output
+            <Box
+              className={styles.statementHtml}
+              dangerouslySetInnerHTML={{ __html: detail.statementHtml }}
+            />
+          ) : (
+            detail.statement.map((paragraph) => (
+              <Typography key={paragraph} className={styles.paragraph}>
+                {renderInlineCode(paragraph)}
               </Typography>
-            ))}
-            <Typography className={styles.exampleLabel}>Output:</Typography>
-            {detail.example.output.map((line) => (
-              <Typography key={line} className={styles.exampleText}>
-                {line}
-              </Typography>
-            ))}
-            <Typography className={styles.exampleExplanation}>
-              Explanation: {renderInlineCode(detail.example.explanation)}
-            </Typography>
-          </Box>
+            ))
+          )}
         </Box>
+
+        {!detail.statementHtml && (
+          <>
+            <Box display="flex" flexDirection="column" gap="12px">
+              <Typography className={styles.sectionTitle}>Input Format</Typography>
+              <Box component="ul" className={styles.list}>
+                {detail.inputFormat.map((item) => (
+                  <li key={item} className={styles.listItem}>
+                    {renderInlineCode(item)}
+                  </li>
+                ))}
+              </Box>
+            </Box>
+
+            <Box display="flex" flexDirection="column" gap="12px">
+              <Typography className={styles.sectionTitle}>Output Format</Typography>
+              <Box component="ul" className={styles.list}>
+                {detail.outputFormat.map((item) => (
+                  <li key={item} className={styles.listItem}>
+                    {renderInlineCode(item)}
+                  </li>
+                ))}
+              </Box>
+            </Box>
+
+            <Box display="flex" flexDirection="column" gap="12px">
+              <Typography className={styles.sectionTitle}>Constraints</Typography>
+              <Box component="ul" className={styles.list}>
+                {detail.constraints.map((item) => (
+                  <li key={item} className={styles.listItem}>
+                    {renderInlineCode(item)}
+                  </li>
+                ))}
+              </Box>
+            </Box>
+          </>
+        )}
+
+        {detail.samples && detail.samples.length > 0 ? (
+          <Box display="flex" flexDirection="column" gap="12px">
+            <Typography className={styles.sectionTitle}>
+              {detail.samples.length > 1 ? "Examples" : "Example"}
+            </Typography>
+            {detail.samples.map((sample, index) => (
+              <Box key={index} className={styles.exampleCard}>
+                <Typography className={styles.exampleLabel}>Input:</Typography>
+                <Box component="pre" className={`${styles.exampleText} ${styles.sampleText}`}>
+                  {sample.input}
+                </Box>
+                <Typography className={styles.exampleLabel}>Output:</Typography>
+                <Box component="pre" className={`${styles.exampleText} ${styles.sampleText}`}>
+                  {sample.output}
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        ) : (
+          <Box display="flex" flexDirection="column" gap="12px">
+            <Typography className={styles.sectionTitle}>Example</Typography>
+            <Box className={styles.exampleCard}>
+              <Typography className={styles.exampleLabel}>Input:</Typography>
+              {detail.example.input.map((line) => (
+                <Typography key={line} className={styles.exampleText}>
+                  {line}
+                </Typography>
+              ))}
+              <Typography className={styles.exampleLabel}>Output:</Typography>
+              {detail.example.output.map((line) => (
+                <Typography key={line} className={styles.exampleText}>
+                  {line}
+                </Typography>
+              ))}
+              <Typography className={styles.exampleExplanation}>
+                Explanation: {renderInlineCode(detail.example.explanation)}
+              </Typography>
+            </Box>
+          </Box>
+        )}
+
+        {detail.notesHtml ? (
+          // Sample explanations from the LaTeX statement, after the samples they explain
+          <Box
+            className={styles.statementHtml}
+            dangerouslySetInnerHTML={{ __html: detail.notesHtml }}
+          />
+        ) : null}
       </Box>
     );
   }, [detail, tab, hideEditorial, hideStats, compactSubmissions]);

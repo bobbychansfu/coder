@@ -7,6 +7,10 @@
   min-height: 100%;
 }
 
+.contestNav {
+  align-self: flex-start;
+}
+
 .timerHeaderRow {
   position: relative;
   display: flex;
@@ -110,10 +114,53 @@
   max-width: 1233px;
 }
 
+.containerSingle {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .leftColumn {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.problemHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.openSubmitButton {
+  flex: none;
+  padding: 8px 16px;
+}
+
+.submitDialogPaper {
+  border-radius: 12px !important;
+}
+
+.submitDialogHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 24px 0;
+}
+
+.submitDialogTitle {
+  font-family: Inter, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px;
+  color: #0a0a0a;
+}
+
+.submitDialogBody .card {
+  border: none;
+}
+
+.submitDialogBody .solutionCard {
+  padding-top: 12px;
 }
 
 .rightColumn {
@@ -288,6 +335,86 @@
   color: #364153;
 }
 
+.statementHtml {
+  font-family: Inter, sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: -0.3125px;
+  color: #364153;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.statementHtml p,
+.statementHtml ul,
+.statementHtml ol,
+.statementHtml pre {
+  margin: 0;
+}
+
+.statementHtml h3,
+.statementHtml h4,
+.statementHtml h5 {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px;
+  color: #0a0a0a;
+  margin: 8px 0 0;
+}
+
+.statementHtml ul,
+.statementHtml ol {
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.statementHtml code,
+.statementHtml pre {
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  background-color: #f3f4f6;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.statementHtml code {
+  padding: 1px 6px;
+}
+
+.statementHtml pre {
+  padding: 8px 12px;
+  overflow-x: auto;
+}
+
+.statementHtml :global(.statement-table) {
+  overflow-x: auto;
+}
+
+.statementHtml :global(.statement-center) {
+  text-align: center;
+}
+
+.statementHtml :global(.statement-center) table {
+  margin: 0 auto;
+}
+
+.statementHtml table {
+  border-collapse: collapse;
+}
+
+.statementHtml td {
+  border: 1px solid #e5e7eb;
+  padding: 4px 12px;
+}
+
+.statementHtml :global(.katex-display) {
+  margin: 4px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
 .list {
   margin: 0;
   padding-left: 20px;
@@ -362,10 +489,11 @@
 }
 
 .exampleCard {
-  background-color: #0f172a;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
   padding: 16px;
-  color: #e2e8f0;
+  color: #364153;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -374,20 +502,26 @@
 .exampleLabel {
   font-family: Inter, sans-serif;
   font-size: 12px;
-  color: #94a3b8;
+  color: #6a7282;
 }
 
 .exampleText {
   font-family: "JetBrains Mono", "Fira Code", monospace;
   font-size: 12px;
   line-height: 18px;
-  color: #e2e8f0;
+  color: #0a0a0a;
+}
+
+.sampleText {
+  margin: 0;
+  white-space: pre;
+  overflow-x: auto;
 }
 
 .exampleExplanation {
   font-family: Inter, sans-serif;
   font-size: 12px;
-  color: #cbd5f5;
+  color: #364153;
 }
 
 .solutionCard {

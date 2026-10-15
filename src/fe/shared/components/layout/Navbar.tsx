@@ -7,6 +7,7 @@ import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import MailOutlineIcon from "@mui/icons-material/MailOutline";
 import { AppBar, Toolbar, Box, ButtonBase } from "@mui/material";
+import NotificationBell from "../notifications/NotificationBell";
 import styles from "../../styles/Navbar.module.css";
 import { can } from "@/lib/authz";
 import type { CurrentUser } from "@/lib/session";
@@ -114,61 +115,64 @@ export default function Navbar({ user }: NavbarProps) {
           </Box>
         </Box>
 
-        <Box className={styles.profileMenuWrapper}>
-          <ButtonBase
-            ref={profileButtonRef}
-            className={`${styles.profileButton} ${
-              isActive("/profile") ? styles.navLinkActive : ""
-            }`}
-            aria-haspopup="menu"
-            aria-expanded={isProfileOpen}
-            aria-controls="profile-menu"
-            onClick={() => setIsProfileOpen((prev) => !prev)}
-          >
-            <PersonOutlineIcon className={styles.profileIcon} />
-            Profile
-          </ButtonBase>
-          {isProfileOpen ? (
-            <Box
-              id="profile-menu"
-              ref={profileMenuRef}
-              className={styles.profileMenu}
-              role="menu"
-              aria-label="Profile menu"
+        <Box className={styles.rightGroup}>
+          <NotificationBell />
+          <Box className={styles.profileMenuWrapper}>
+            <ButtonBase
+              ref={profileButtonRef}
+              className={`${styles.profileButton} ${
+                isActive("/profile") ? styles.navLinkActive : ""
+              }`}
+              aria-haspopup="menu"
+              aria-expanded={isProfileOpen}
+              aria-controls="profile-menu"
+              onClick={() => setIsProfileOpen((prev) => !prev)}
             >
-              <Box className={styles.profileMenuHeader}>
-                <Box className={styles.profileMetaRow}>
-                  <Box component="span" className={styles.profileRole}>
-                    {user.accountType === "guest" ? "guest" : user.role}
+              <PersonOutlineIcon className={styles.profileIcon} />
+              Profile
+            </ButtonBase>
+            {isProfileOpen ? (
+              <Box
+                id="profile-menu"
+                ref={profileMenuRef}
+                className={styles.profileMenu}
+                role="menu"
+                aria-label="Profile menu"
+              >
+                <Box className={styles.profileMenuHeader}>
+                  <Box className={styles.profileMetaRow}>
+                    <Box component="span" className={styles.profileRole}>
+                      {user.accountType === "guest" ? "guest" : user.role}
+                    </Box>
+                    <Box component="span" className={styles.profileName}>{user.displayName}</Box>
                   </Box>
-                  <Box component="span" className={styles.profileName}>{user.displayName}</Box>
-                </Box>
-                <Box className={styles.profileEmailRow}>
-                  <MailOutlineIcon className={styles.profileEmailIcon} />
-                  <Box component="span" className={styles.profileEmail}>
-                    Email: {user.accountType === "guest" ? "" : user.identifier}
+                  <Box className={styles.profileEmailRow}>
+                    <MailOutlineIcon className={styles.profileEmailIcon} />
+                    <Box component="span" className={styles.profileEmail}>
+                      Email: {user.accountType === "guest" ? "" : user.identifier}
+                    </Box>
                   </Box>
                 </Box>
+                <Box className={styles.profileDivider} />
+                <Link
+                  href="/profile"
+                  className={styles.profileMenuItem}
+                  onClick={() => setIsProfileOpen(false)}
+                >
+                  <PersonOutlineIcon className={styles.profileMenuIcon} />
+                  View Profile
+                </Link>
+                <Box className={styles.profileDivider} />
+                <ButtonBase
+                  className={`${styles.profileMenuItem} ${styles.profileLogout}`}
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                >
+                  {isLoggingOut ? "Logging out…" : "Log out"}
+                </ButtonBase>
               </Box>
-              <Box className={styles.profileDivider} />
-              <Link
-                href="/profile"
-                className={styles.profileMenuItem}
-                onClick={() => setIsProfileOpen(false)}
-              >
-                <PersonOutlineIcon className={styles.profileMenuIcon} />
-                View Profile
-              </Link>
-              <Box className={styles.profileDivider} />
-              <ButtonBase
-                className={`${styles.profileMenuItem} ${styles.profileLogout}`}
-                onClick={handleLogout}
-                disabled={isLoggingOut}
-              >
-                {isLoggingOut ? "Logging out…" : "Log out"}
-              </ButtonBase>
-            </Box>
-          ) : null}
+            ) : null}
+          </Box>
         </Box>
       </Toolbar>
     </AppBar>

@@ -13,15 +13,27 @@ export interface ProblemExample {
   explanation: string;
 }
 
+export interface ProblemSample {
+  input: string;
+  output: string;
+}
+
 export interface ProblemNarrative {
   id?: string;
   timeLimit: string;
   memory: string;
   statement: string[];
+  // Server-rendered LaTeX statement from the judge; replaces `statement` and
+  // the input/output/constraints sections, which it already contains
+  statementHtml?: string;
+  // Sample explanations / notes split off that statement, shown after the samples
+  notesHtml?: string;
   inputFormat: string[];
   outputFormat: string[];
   constraints: string[];
   example: ProblemExample;
+  // Sample files from the judge; shown instead of `example` when present
+  samples?: ProblemSample[];
   testCases: ProblemTestCase[];
   hiddenCount: number;
   starterCodes?: Partial<Record<"cplusplus" | "java" | "typescript" | "javascript" | "python", string>>;

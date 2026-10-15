@@ -1,6 +1,27 @@
 import { prisma } from "./prisma";
 import { UserRole, SubmissionStatus, CodingLanguage } from "@prisma/client";
-import { getEffectiveContestStatus, isJoinableContestStatus } from "./contestStatus";
+import {
+  getEffectiveContestStatus,
+  isJoinableContestStatus,
+  resolveContestEndTimestamp,
+} from "./contestStatus";
+import { buildIcpcStandings } from "./icpcStandings";
+import {
+  ensureContestTeam,
+  removeFromContestTeam,
+  userHasContestSubmissions,
+} from "@/server/teams/contestTeamService";
+import { buildPointsStandings } from "./pointsStandings";
+
+function groupByUserId<T extends { userId: string }>(rows: T[]): Map<string, T[]> {
+  const grouped = new Map<string, T[]>();
+  for (const row of rows) {
+    const existing = grouped.get(row.userId) ?? [];
+    existing.push(row);
+    grouped.set(row.userId, existing);
+  }
+  return grouped;
+}
 
 const NON_PRIVATE_CONTEST_VISIBILITY = { not: "PRIVATE" as const };
 
@@ -280,26 +301,38 @@ export const dbHelpers = {
   },
 
   findContestsProblemsStatusForUser: async (computingId: string, contestId: string) => {
-    return prisma.contestProblem.findMany({
-      where: {
-        contestId,
-        contest: { manageStatus: "ACTIVE" },
-        problem: { isDraft: false, manageStatus: "ACTIVE" },
-      },
-      include: {
-        problem: {
-          include: {
-            problemStatuses: {
-              where: {
-                user: { computingId },
-                contestId,
+    const [contest, rows] = await Promise.all([
+      prisma.contest.findUnique({ where: { id: contestId }, select: { showDifficulty: true } }),
+      prisma.contestProblem.findMany({
+        where: {
+          contestId,
+          contest: { manageStatus: "ACTIVE" },
+          problem: { isDraft: false, manageStatus: "ACTIVE" },
+        },
+        include: {
+          problem: {
+            include: {
+              problemStatuses: {
+                where: {
+                  user: { computingId },
+                  contestId,
+                },
               },
             },
           },
         },
+        orderBy: { ordering: "asc" },
+      }),
+    ]);
+
+    // Strip difficulty server-side so a hidden value never reaches the browser.
+    return rows.map((row) => ({
+      ...row,
+      problem: {
+        ...row.problem,
+        difficulty: contest?.showDifficulty ? row.problem.difficulty : null,
       },
-      orderBy: { ordering: "asc" },
-    });
+    }));
   },
 
   getProblemsForContest: async (contestId: string) => {
@@ -334,7 +367,11 @@ export const dbHelpers = {
   },
 
   findScoreboardRowsForContest: async (contestId: string, viewerComputingId?: string) => {
-    const [contestProblems, contestants, problemStatuses] = await Promise.all([
+    const [contest, contestProblems, contestants, teams] = await Promise.all([
+      prisma.contest.findFirst({
+        where: { id: contestId, manageStatus: "ACTIVE" },
+        select: { scoringRule: true, status: true, startsAt: true, endsAt: true, durationMinutes: true },
+      }),
       prisma.contestProblem.findMany({
         where: {
           contestId,
@@ -351,7 +388,6 @@ export const dbHelpers = {
         where: { contestId, role: "contestant" },
         select: {
           userId: true,
-          rank: true,
           user: {
             select: {
               computingId: true,
@@ -362,86 +398,98 @@ export const dbHelpers = {
           },
         },
       }),
-      prisma.problemStatus.findMany({
-        where: {
-          contestId,
-          contest: { manageStatus: "ACTIVE" },
-        },
-        select: {
-          userId: true,
-          problemId: true,
-          status: true,
-          score: true,
-        },
+      prisma.team.findMany({
+        where: { contestId },
+        select: { id: true, name: true, members: { select: { userId: true } } },
       }),
     ]);
 
-    const problemCodeById = new Map(
-      contestProblems.map((problem, index) => [problem.problemId, String.fromCharCode(65 + index)]),
-    );
-    const statusesByUserId = new Map<string, typeof problemStatuses>();
-
-    for (const status of problemStatuses) {
-      const existing = statusesByUserId.get(status.userId) ?? [];
-      existing.push(status);
-      statusesByUserId.set(status.userId, existing);
+    if (!contest) {
+      return [];
     }
 
-    const rows = contestants.map((contestant) => {
-      const statuses = statusesByUserId.get(contestant.userId) ?? [];
-      const solvedStatuses = statuses.filter((status) => {
-        const normalizedStatus = status.status.trim().toLowerCase();
-        return normalizedStatus === "correct" || status.score > 0;
-      });
-      const totalScore = statuses.reduce((sum, status) => sum + Math.max(0, status.score), 0);
-      const displayName =
-        contestant.user.nickname?.trim() ||
-        `${contestant.user.firstName} ${contestant.user.lastName}`.trim() ||
-        contestant.user.computingId;
+    type Contestant = (typeof contestants)[number];
+    const displayNameOf = (contestant: Contestant) =>
+      contestant.user.nickname?.trim() ||
+      `${contestant.user.firstName} ${contestant.user.lastName}`.trim() ||
+      contestant.user.computingId;
 
+    // Every contestant is on a team (a team of one by default), ranked as one entry.
+    // A contestant somehow without a team still gets a row keyed by their user id.
+    const teamByUserId = new Map<string, { id: string; name: string }>();
+    for (const team of teams) {
+      for (const member of team.members) {
+        teamByUserId.set(member.userId, { id: team.id, name: team.name });
+      }
+    }
+
+    const entries = new Map<string, { teamName: string | null; members: Contestant[] }>();
+    for (const contestant of contestants) {
+      const team = teamByUserId.get(contestant.userId);
+      const key = team ? team.id : `user:${contestant.userId}`;
+      const entry = entries.get(key) ?? { teamName: team?.name ?? null, members: [] };
+      entry.members.push(contestant);
+      entries.set(key, entry);
+    }
+
+    const problems = contestProblems.map((problem, index) => ({
+      problemId: problem.problemId,
+      code: String.fromCharCode(65 + index),
+    }));
+    const rankedEntries = [...entries.entries()].map(([key, entry]) => {
+      const memberNames = entry.members.map(displayNameOf).sort((a, b) => a.localeCompare(b));
       return {
-        computingId: contestant.user.computingId,
-        name: displayName,
-        solved: solvedStatuses.length,
-        score: totalScore,
-        presetRank: contestant.rank,
-        problems: Object.fromEntries(
-          statuses.flatMap((status) => {
-            const code = problemCodeById.get(status.problemId);
-
-            if (!code) {
-              return [];
-            }
-
-            return [[code, { points: status.score }]] as const;
-          }),
-        ),
-        isCurrentUser: contestant.user.computingId === viewerComputingId,
+        key,
+        name: entry.teamName ?? memberNames[0],
+        // A team of one is just its member, so list members only for real teams
+        members: memberNames.length > 1 ? memberNames : undefined,
+        isCurrentUser: entry.members.some((member) => member.user.computingId === viewerComputingId),
+        userIds: entry.members.map((member) => member.userId),
       };
     });
 
-    const sortedRows = rows.sort((left, right) => {
-      if (typeof left.presetRank === "number" && typeof right.presetRank === "number") {
-        if (left.presetRank !== right.presetRank) {
-          return left.presetRank - right.presetRank;
-        }
+    if (contest.scoringRule === "ICPC") {
+      // Each submission counts for the team it was made for; rows from before teams
+      // were recorded fall back to the submitter's current team.
+      const submissions = await prisma.submission.findMany({
+        where: { contestId },
+        select: { userId: true, teamId: true, problemId: true, status: true, createdAt: true },
+      });
+      const submissionsByEntry = new Map<string, typeof submissions>();
+      for (const submission of submissions) {
+        const key =
+          submission.teamId ?? teamByUserId.get(submission.userId)?.id ?? `user:${submission.userId}`;
+        const list = submissionsByEntry.get(key) ?? [];
+        list.push(submission);
+        submissionsByEntry.set(key, list);
       }
+      return buildIcpcStandings({
+        problems,
+        entries: rankedEntries.map((entry) => ({
+          name: entry.name,
+          members: entry.members,
+          isCurrentUser: entry.isCurrentUser,
+          submissions: submissionsByEntry.get(entry.key) ?? [],
+        })),
+        startsAt: contest.startsAt,
+        endsAt: resolveContestEndTimestamp(contest),
+      });
+    }
 
-      if (right.score !== left.score) {
-        return right.score - left.score;
-      }
-
-      if (right.solved !== left.solved) {
-        return right.solved - left.solved;
-      }
-
-      return left.name.localeCompare(right.name);
+    const statuses = await prisma.problemStatus.findMany({
+      where: { contestId },
+      select: { userId: true, problemId: true, status: true, score: true },
     });
-
-    return sortedRows.map(({ presetRank: _presetRank, ...row }, index) => ({
-      rank: index + 1,
-      ...row,
-    }));
+    const statusesByUserId = groupByUserId(statuses);
+    return buildPointsStandings({
+      problems,
+      entries: rankedEntries.map((entry) => ({
+        name: entry.name,
+        members: entry.members,
+        isCurrentUser: entry.isCurrentUser,
+        statuses: entry.userIds.flatMap((userId) => statusesByUserId.get(userId) ?? []),
+      })),
+    });
   },
 
   findProblemStatus: async (computingId: string, contestId: string, problemId: string) => {
@@ -577,6 +625,8 @@ export const dbHelpers = {
             participants: { increment: 1 },
           },
         });
+        // Registering puts you on a team of one; invites can grow it later
+        await ensureContestTeam(tx, contestId, user.id);
       }
 
       return participation;
@@ -614,6 +664,11 @@ export const dbHelpers = {
           },
         },
       });
+
+      // Results stay with the team; only someone who never submitted leaves it
+      if (!(await userHasContestSubmissions(tx, contestId, user.id))) {
+        await removeFromContestTeam(tx, contestId, user.id);
+      }
 
       if (existingParticipation.role === "contestant") {
         const contest = await tx.contest.findUnique({
@@ -707,15 +762,20 @@ export const dbHelpers = {
     const user = await dbHelpers.findUserByComputingId(data.computingId);
     if (!user) throw new Error("User not found");
 
-    return prisma.submission.create({
-      data: {
-        userId: user.id,
-        contestId: data.contestId,
-        problemId: data.problemId,
-        submission: data.submission,
-        language: data.language,
-        status: "PENDING",
-      },
+    return prisma.$transaction(async (tx) => {
+      // Stamped now, so the result stays with this team whatever changes later
+      const teamId = await ensureContestTeam(tx, data.contestId, user.id);
+      return tx.submission.create({
+        data: {
+          userId: user.id,
+          contestId: data.contestId,
+          problemId: data.problemId,
+          teamId,
+          submission: data.submission,
+          language: data.language,
+          status: "PENDING",
+        },
+      });
     });
   },
 

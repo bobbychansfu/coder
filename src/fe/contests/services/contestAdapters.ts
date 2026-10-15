@@ -33,7 +33,12 @@ function mapContestDetailStatus(contest: BackendContestSummary): ContestDetailSt
 }
 
 function mapDifficulty(value: string | null | undefined): ContestProblem["difficulty"] {
-  const normalized = value?.trim().toLowerCase();
+  // Null means the contest hides difficulty, so no label is shown.
+  if (value == null) {
+    return undefined;
+  }
+
+  const normalized = value.trim().toLowerCase();
 
   if (normalized === "easy" || normalized === "medium" || normalized === "hard") {
     return normalized;
@@ -108,10 +113,13 @@ function toContestProblem(row: BackendContestProblemStatus, index: number): Cont
 
 function toScoreboardRow(row: BackendContestScoreboardRow) {
   return {
+    scoringRule: row.scoringRule,
     rank: row.rank,
     name: row.name,
+    members: row.members,
     solved: row.solved,
     score: row.score,
+    penalty: row.penalty,
     problems: row.problems,
     isCurrentUser: row.isCurrentUser,
   };
@@ -149,10 +157,23 @@ export function toContestDetail(
   contest: BackendContestSummary,
   liveDetail?: ContestProblemStatusResponse | null,
 ): ContestDetail {
+  const scoreboard = (liveDetail?.scoreboard ?? []).map(toScoreboardRow);
+  // The viewer's row is their team's row when they are on one
+  const viewerRow = scoreboard.find((entry) => entry.isCurrentUser);
+  // Solves come from the standings, so a team counts once, as on the scoreboard
   const problems = (liveDetail?.contestProblemsStatus ?? [])
     .slice()
     .sort((left, right) => left.ordering - right.ordering)
-    .map((row, index) => toContestProblem(row, index));
+    .map((row, index) => toContestProblem(row, index))
+    .map((problem) => {
+      // A cell exists only once there is a counted submission for the problem
+      const viewerCell = viewerRow?.problems[problem.code];
+      return {
+        ...problem,
+        solvedBy: scoreboard.filter((entry) => entry.problems[problem.code]?.solved).length,
+        viewerResult: viewerCell ? (viewerCell.solved ? "solved" : "attempted") : undefined,
+      } satisfies ContestProblem;
+    });
 
   return {
     id: contest.id,
@@ -164,7 +185,8 @@ export function toContestDetail(
     problemsCount: problems.length,
     participantsLabel: `${contest.participants} registered`,
     problems,
-    scoreboard: (liveDetail?.scoreboard ?? []).map(toScoreboardRow),
+    scoringRule: contest.scoringRule,
+    scoreboard,
     clarifications: [],
   };
 }

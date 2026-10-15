@@ -14,7 +14,11 @@ import { can, normalizeRole } from "@/lib/authz";
 import { getEffectiveContestStatus } from "@/lib/contestStatus";
 import { dbHelpers } from "@/lib/db-helpers";
 import { getCurrentUser } from "@/lib/session";
+import { resolveJudgeProblemId } from "@/server/api/s/problem";
 import { codingLanguageToLabel } from "@/server/coding-language";
+import { fetchJudgeProblemFiles } from "@/server/judge";
+import { renderLatexStatement } from "@/server/latexStatement";
+import { findContestInvitationOrDeny } from "@/server/studentContestAccess";
 
 interface ContestProblemRouteProps {
   params: Promise<{ id: string; code: string }>;
@@ -98,6 +102,11 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
   }
 
   if (!contestSummary || !isContestViewableByRegisteredUser(contestSummary)) {
+    if (!can(user.role).canManageContest) {
+      // Not registered: the contest page invites them when registration is allowed.
+      await findContestInvitationOrDeny(user.computingId, contestId);
+      redirect(`/contests/${encodeURIComponent(contestId)}`);
+    }
     notFound();
   }
 
@@ -137,11 +146,25 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
     notFound();
   }
 
+  const judgeProblemId = resolveJudgeProblemId(problemDetail);
+  const judgeProblemFiles = judgeProblemId ? await fetchJudgeProblemFiles(judgeProblemId) : null;
+
+  const renderedStatement = judgeProblemFiles?.statement
+    ? renderLatexStatement(judgeProblemFiles.statement)
+    : null;
+
   const problemDetailPayload: ContestProblemDetailResponse = {
     computingId: user.computingId,
     cid: contestId,
     pid: problem.problemId,
     problem: problemDetail,
+    judgeProblem: judgeProblemFiles && {
+      timeSec: judgeProblemFiles.timeSec,
+      memMb: judgeProblemFiles.memMb,
+      samples: judgeProblemFiles.samples,
+      statementHtml: renderedStatement?.statement,
+      notesHtml: renderedStatement?.notes || undefined,
+    },
     downloadContents: [],
     role: user.role,
     htmlContents: [],

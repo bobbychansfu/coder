@@ -4,16 +4,30 @@ import { contestList } from "@/fe/contests/data/contests";
 export type ContestDetailStatus = "upcoming" | "in progress" | "closed";
 
 export interface ScoreboardCell {
+  // Problem score contests.
   points?: number;
   time?: string;
   penalty?: number;
+  // ICPC contests.
+  solved?: boolean;
+  attempts?: number;
+  minutes?: number;
+  firstSolve?: boolean;
 }
 
 export interface ScoreboardRow {
+  // Rows without a rule rank by problem score.
+  scoringRule?: "POINTS" | "ICPC";
   rank: number;
+  // A team's name, or the student's own name when they are not on a team.
   name: string;
+  // Present only for team rows: the members' display names.
+  members?: string[];
   solved: number;
-  score: number;
+  // Problem score contests: summed points.
+  score?: number;
+  // ICPC contests: total penalty minutes.
+  penalty?: number;
   problems: Record<string, ScoreboardCell>;
   isCurrentUser?: boolean;
 }
@@ -30,13 +44,15 @@ export interface ContestProblem {
   code: string;
   title: string;
   practiceProblemCode?: string;
-  difficulty: "easy" | "medium" | "hard";
+  difficulty?: "easy" | "medium" | "hard";
   tags: string[];
   timeComplexity?: string;
   spaceComplexity?: string;
   solvedBy?: number;
   points: number;
   solved?: boolean;
+  // The viewer's (or their team's) standing on this problem, from the scoreboard
+  viewerResult?: "solved" | "attempted";
 }
 
 export interface ContestDetail {
@@ -49,6 +65,8 @@ export interface ContestDetail {
   problemsCount: number;
   participantsLabel: string;
   problems: ContestProblem[];
+  // Known even before anyone registers, unlike the rule on scoreboard rows
+  scoringRule?: "POINTS" | "ICPC";
   scoreboard: ScoreboardRow[];
   clarifications: ClarificationItem[];
 }

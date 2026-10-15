@@ -39,6 +39,10 @@ export interface ContestAuthoringCopy {
   visibilityTitle: string;
   visibilityDescription: string;
   visibilityLabel: string;
+  scoringRuleTitle: string;
+  scoringRuleLabel: string;
+  showDifficultyLabel: string;
+  teamSizeLabel: string;
   publishLabel: string;
   selectProblemsTitle: string;
   selectProblemsDescription: string;
@@ -61,6 +65,13 @@ export interface ContestProblemRecord {
   source?: "public" | "contest-only";
 }
 
+export type ContestScoringRule = "points" | "icpc";
+
+export const CONTEST_SCORING_RULE_OPTIONS: { value: ContestScoringRule; label: string }[] = [
+  { value: "points", label: "Problem score" },
+  { value: "icpc", label: "ICPC" },
+];
+
 export interface ContestFormDraft {
   contestName: string;
   description: string;
@@ -69,6 +80,8 @@ export interface ContestFormDraft {
   endDate: string;
   endTime: string;
   visibility: "course-only" | "public" | "private";
+  scoringRule: ContestScoringRule;
+  maxTeamSize: number;
   groupAHintAfterMinutes: number;
   groupBHintAfterMinutes: number;
 }
@@ -133,6 +146,10 @@ export const contestAuthoringCopy: ContestAuthoringCopy = {
   visibilityTitle: "Visibility",
   visibilityDescription: "Control who can see this contest",
   visibilityLabel: "Visibility *",
+  scoringRuleTitle: "Scoring Rule",
+  scoringRuleLabel: "Scoring rule *",
+  showDifficultyLabel: "Show problem difficulty",
+  teamSizeLabel: "Max team size",
   publishLabel: "Publish Contest",
   selectProblemsTitle: "Select Problems",
   selectProblemsDescription: "Choose problems from your problem bank to include in this contest",
@@ -215,6 +232,8 @@ export const contestFormDraft: ContestFormDraft = {
   endDate: "",
   endTime: "",
   visibility: "public",
+  scoringRule: "points",
+  maxTeamSize: 3,
   groupAHintAfterMinutes: contestAiHintConfig.groupAHintAfterMinutes,
   groupBHintAfterMinutes: contestAiHintConfig.groupBHintAfterMinutes,
 };

@@ -1,12 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Box, ButtonBase, CircularProgress, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  ButtonBase,
+  CircularProgress,
+  Dialog,
+  IconButton,
+  Typography,
+} from "@mui/material";
 import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import PageHeader from "@/fe/shared/components/PageHeader";
+import TabSwitcher from "@/fe/shared/components/ui/TabSwitcher";
+import { buildContestTabs } from "@/fe/shared/constants/routes";
+import { useNotifications } from "@/fe/shared/components/notifications/NotificationsProvider";
 import AiHintDialog from "@/fe/shared/components/problem/AiHintDialog";
 import ProblemHeader from "@/fe/shared/components/problem/ProblemHeader";
 import ProblemDetails from "@/fe/shared/components/problem/ProblemDetails";
@@ -129,8 +141,19 @@ function ProblemSubmissionPageContent({
   const storageKey = getContestDraftStorageKey(computingId, contestId, detail.code);
   const persistedDraft = usePersistedCodeDraft(storageKey);
   const [tab, setTab] = useState("description");
+  const [editorOpen, setEditorOpen] = useState(false);
   const [language, setLanguage] = useState<SupportedLanguage>(DEFAULT_LANGUAGE);
   const [drafts, setDrafts] = useState<Partial<Record<SupportedLanguage, string>>>({});
+  const setViewedSubmissions = useNotifications()?.setViewedSubmissions;
+
+  // This problem's verdicts are already visible on its Submissions tab, so no toast
+  useEffect(() => {
+    if (!setViewedSubmissions || tab !== "submissions" || !detail.problemId) {
+      return;
+    }
+    setViewedSubmissions({ contestId, problemId: detail.problemId });
+    return () => setViewedSubmissions(null);
+  }, [setViewedSubmissions, tab, contestId, detail.problemId]);
   const [hasRun, setHasRun] = useState(false);
   const [hasLocalDraftState, setHasLocalDraftState] = useState(false);
   const [submitState, setSubmitState] = useState<"idle" | "submitting" | "done" | "failed">(
@@ -405,7 +428,8 @@ function ProblemSubmissionPageContent({
           flexWrap="nowrap"
           gap="12px"
         >
-          <PageHeader onBack={() => router.back()} />
+          {/* Always this problem's contest: browser history may hold another page or nothing at all. */}
+          <PageHeader onBack={() => router.push(`/contests/${contestId}`)} />
           <ContestTimer
             startsAt={contestStartsAt}
             endsAt={contestEndsAt}
@@ -420,38 +444,59 @@ function ProblemSubmissionPageContent({
         ) : null}
       </Box>
 
-      <Box className={styles.container}>
+      <TabSwitcher
+        value="problems"
+        options={buildContestTabs(contestId)}
+        ariaLabel="Contest navigation"
+        className={styles.contestNav}
+      />
+
+      {/* The statement takes the full width; the editor opens from Submit, as on Kattis */}
+      <Box className={`${styles.container} ${styles.containerSingle}`}>
         <Box className={styles.leftColumn}>
           <ProblemHeader
-            title={detail.title}
+            // The contest letter, as on Codeforces: "A. Two Sum"
+            title={`${detail.code}. ${detail.title}`}
             difficulty={detail.difficulty}
             tags={detail.tags}
             points={detail.points}
             showPoints={false}
             headerActions={
-              navigator ? (
-                <Box className={styles.problemNavigator}>
-                  <ButtonBase
-                    className={`${styles.problemNavButton} ${!navigator.previousHref ? styles.problemNavButtonDisabled : ""}`}
-                    onClick={() => navigator.previousHref && router.push(navigator.previousHref)}
-                    disabled={!navigator.previousHref}
-                    aria-label="Previous problem"
-                  >
-                    <ChevronLeftRoundedIcon fontSize="small" />
-                  </ButtonBase>
-                  <span className={styles.problemNavCount}>
-                    {navigator.position} / {navigator.total}
-                  </span>
-                  <ButtonBase
-                    className={styles.problemNavButton}
-                    onClick={() => navigator.nextHref && router.push(navigator.nextHref)}
-                    disabled={!navigator.nextHref}
-                    aria-label="Next problem"
-                  >
-                    <ChevronRightRoundedIcon fontSize="small" />
-                  </ButtonBase>
-                </Box>
-              ) : null
+              <Box className={styles.problemHeaderActions}>
+                {navigator ? (
+                  <Box className={styles.problemNavigator}>
+                    <ButtonBase
+                      className={`${styles.problemNavButton} ${!navigator.previousHref ? styles.problemNavButtonDisabled : ""}`}
+                      onClick={() => navigator.previousHref && router.push(navigator.previousHref)}
+                      disabled={!navigator.previousHref}
+                      aria-label="Previous problem"
+                    >
+                      <ChevronLeftRoundedIcon fontSize="small" />
+                    </ButtonBase>
+                    <span className={styles.problemNavCount}>
+                      {navigator.position} / {navigator.total}
+                    </span>
+                    <ButtonBase
+                      className={styles.problemNavButton}
+                      onClick={() => navigator.nextHref && router.push(navigator.nextHref)}
+                      disabled={!navigator.nextHref}
+                      aria-label="Next problem"
+                    >
+                      <ChevronRightRoundedIcon fontSize="small" />
+                    </ButtonBase>
+                  </Box>
+                ) : null}
+                <Button
+                  className={`${styles.submitButton} ${styles.openSubmitButton}`}
+                  variant="contained"
+                  disableElevation
+                  startIcon={<SendRoundedIcon fontSize="small" />}
+                  onClick={() => setEditorOpen(true)}
+                  sx={{ backgroundColor: "#dc2626", "&:hover": { backgroundColor: "#ef4444" } }}
+                >
+                  Submit
+                </Button>
+              </Box>
             }
           />
           <ProblemDetails
@@ -459,13 +504,30 @@ function ProblemSubmissionPageContent({
             tab={tab}
             onTabChange={setTab}
             hideEditorial
-            hideStats
             compactSubmissions
             outputSection={outputSection}
           />
         </Box>
+      </Box>
 
-        <Box className={styles.rightColumn}>
+      <Dialog
+        open={editorOpen}
+        onClose={() => setEditorOpen(false)}
+        fullWidth
+        maxWidth="md"
+        // Keeps the editor (and its undo history) between openings
+        keepMounted
+        // Lets the AI hint panel, which sits outside the dialog, take focus
+        disableEnforceFocus
+        slotProps={{ paper: { className: styles.submitDialogPaper } }}
+      >
+        <Box className={styles.submitDialogHeader}>
+          <Typography className={styles.submitDialogTitle}>{detail.title}</Typography>
+          <IconButton aria-label="Close" size="small" onClick={() => setEditorOpen(false)}>
+            <CloseRoundedIcon fontSize="small" />
+          </IconButton>
+        </Box>
+        <Box className={styles.submitDialogBody}>
           <SolutionEditor
             language={effectiveLanguage}
             code={code}
@@ -483,7 +545,11 @@ function ProblemSubmissionPageContent({
                 [effectiveLanguage]: nextCode,
               }));
             }}
-            onSubmitCode={() => void submitContestCode()}
+            onSubmitCode={() => {
+              // Close so the verdict is visible in the Submissions tab
+              setEditorOpen(false);
+              void submitContestCode();
+            }}
             footerContent={
               submissionsLockedReason ? (
                 <Box px="20px" pb="4px">
@@ -502,7 +568,7 @@ function ProblemSubmissionPageContent({
             onRequestAiHint={requestAiHint}
           />
         </Box>
-      </Box>
+      </Dialog>
 
       <AiHintDialog
         open={aiHintOpen}
