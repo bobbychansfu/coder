@@ -25,8 +25,21 @@ function normalizeNextPath(next: unknown): string {
   return safeNextPath(next, DEFAULT_POST_LOGIN_PATH);
 }
 
+// The browser is on the registered callback's domain. Behind a proxy,
+// request.nextUrl.origin is the app's own address (localhost).
+function getAppOrigin(request: NextRequest): string {
+  if (CAS_SERVICE_URL) {
+    try {
+      return new URL(CAS_SERVICE_URL).origin;
+    } catch {
+      // buildServiceUrl reports an invalid CAS_SERVICE_URL
+    }
+  }
+  return request.nextUrl.origin;
+}
+
 function getLoginErrorRedirectUrl(request: NextRequest, nextPath: string, error: string): URL {
-  const loginUrl = new URL("/login", request.nextUrl.origin);
+  const loginUrl = new URL("/login", getAppOrigin(request));
   loginUrl.searchParams.set("next", nextPath);
   loginUrl.searchParams.set("error", error);
   return loginUrl;
@@ -283,7 +296,7 @@ export async function handleCasCallback(request: NextRequest): Promise<NextRespo
         { ...user, ttlSeconds: CAS_SESSION_TTL_SECONDS },
         CAS_AUTH_COOKIE_SECRET,
       );
-      const response = NextResponse.redirect(new URL(nextPath, request.nextUrl.origin));
+      const response = NextResponse.redirect(new URL(nextPath, getAppOrigin(request)));
       response.cookies.set({
         name: SESSION_COOKIE_NAME,
         value: token,
@@ -345,7 +358,7 @@ export async function handleCasCallback(request: NextRequest): Promise<NextRespo
       );
     }
 
-    const appRedirectUrl = new URL(nextPath, request.nextUrl.origin);
+    const appRedirectUrl = new URL(nextPath, getAppOrigin(request));
     const response = NextResponse.redirect(appRedirectUrl);
     response.headers.append("set-cookie", setCookie);
     return clearPostLoginCookie(response);
