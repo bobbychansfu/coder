@@ -455,7 +455,7 @@ function ProblemSubmissionPageContent({
       <Box className={`${styles.container} ${styles.containerSingle}`}>
         <Box className={styles.leftColumn}>
           <ProblemHeader
-            // The contest letter, as on Codeforces: "A. Alpine Water"
+            // The contest letter, as on Codeforces: "A. Two Sum"
             title={`${detail.code}. ${detail.title}`}
             difficulty={detail.difficulty}
             tags={detail.tags}
