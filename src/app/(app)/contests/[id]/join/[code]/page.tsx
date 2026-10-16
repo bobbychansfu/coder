@@ -3,6 +3,7 @@ import ContestRegisterInvite from "@/fe/contests/components/ContestRegisterInvit
 import { can } from "@/lib/authz";
 import { getEffectiveContestStatus } from "@/lib/contestStatus";
 import { dbHelpers } from "@/lib/db-helpers";
+import { loginPath } from "@/lib/loginPath";
 import { getCurrentUser } from "@/lib/session";
 
 interface ContestJoinRouteProps {
@@ -15,7 +16,7 @@ interface ContestJoinRouteProps {
 export default async function ContestJoinRoute({ params }: ContestJoinRouteProps) {
   const user = await getCurrentUser();
   if (!user) {
-    redirect("/login");
+    redirect(await loginPath());
   }
 
   const { id, code } = await params;
