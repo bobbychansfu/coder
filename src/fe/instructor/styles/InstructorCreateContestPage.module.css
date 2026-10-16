@@ -122,6 +122,10 @@
   gap: 8px;
 }
 
+.joinLinkActions :global(.MuiButton-root) {
+  text-transform: none;
+}
+
 .fieldLabel,
 .fieldLabelRow,
 .subSectionLabel,
