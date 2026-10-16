@@ -9,6 +9,7 @@ import {
 import { can, normalizeRole } from "@/lib/authz";
 import { getEffectiveContestStatus } from "@/lib/contestStatus";
 import { dbHelpers } from "@/lib/db-helpers";
+import { loginPath } from "@/lib/loginPath";
 import { getCurrentUser } from "@/lib/session";
 import { findContestInvitationOrDeny } from "@/server/studentContestAccess";
 
@@ -73,7 +74,7 @@ export default async function ContestDetailRoute({ params }: ContestDetailRouteP
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(await loginPath());
   }
 
   const { id } = await params;

@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import styles from "@/fe/auth/styles/LoginPage.module.css";
+import { withNextPath } from "@/lib/safeNextPath";
 
 interface CasLoginCardProps {
   onCasLogin: () => Promise<void> | void;
   loading: boolean;
   showGuestLogin: boolean;
   showSignup: boolean;
+  next?: string | null;
   error?: string | null;
 }
 
@@ -16,6 +18,7 @@ export default function CasLoginCard({
   loading,
   showGuestLogin,
   showSignup,
+  next,
   error,
 }: CasLoginCardProps) {
   return (
@@ -46,18 +49,18 @@ export default function CasLoginCard({
 
       {showSignup ? (
         <>
-          <Link href="/guest-login" className={styles.secondaryLink}>
+          <Link href={withNextPath("/guest-login", next)} className={styles.secondaryLink}>
             Not at SFU? Sign in with email
           </Link>
           <p className={styles.hint}>
             New here?{" "}
-            <Link href="/signup" className={styles.inlineLink}>
+            <Link href={withNextPath("/signup", next)} className={styles.inlineLink}>
               Create an account
             </Link>
           </p>
         </>
       ) : showGuestLogin ? (
-        <Link href="/guest-login" className={styles.secondaryLink}>
+        <Link href={withNextPath("/guest-login", next)} className={styles.secondaryLink}>
           Sign in with a guest account
         </Link>
       ) : null}

@@ -38,6 +38,7 @@ interface LoginPageViewProps {
   showDevQuickAccess: boolean;
   showGuestLogin: boolean;
   showSignup: boolean;
+  next?: string | null;
   isLoading?: boolean;
   loadingEmail?: string | null;
   casError?: string | null;
@@ -50,6 +51,7 @@ function LoginPageView({
   showDevQuickAccess,
   showGuestLogin,
   showSignup,
+  next = null,
   isLoading = false,
   loadingEmail = null,
   casError = null,
@@ -71,6 +73,7 @@ function LoginPageView({
           loading={isLoading && loadingEmail === null}
           showGuestLogin={showGuestLogin}
           showSignup={showSignup}
+          next={next}
           error={casError}
         />
 
@@ -192,6 +195,7 @@ function LoginPageContent({ showDevQuickAccess, showGuestLogin, showSignup }: Lo
       showDevQuickAccess={showDevQuickAccess}
       showGuestLogin={showGuestLogin}
       showSignup={showSignup}
+      next={searchParams.get("next")}
       isLoading={isLoading}
       loadingEmail={loadingEmail}
       casError={casError}

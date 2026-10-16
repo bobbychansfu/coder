@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { REQUEST_PATH_HEADER } from "@/lib/loginPath";
+import { withNextPath } from "@/lib/safeNextPath";
 
 const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "session";
 
@@ -21,10 +23,12 @@ export function authGuard(request: NextRequest): NextResponse {
   }
 
   if (hasValidSessionCookie(request)) {
-    return NextResponse.next();
+    // The cookie may still be rejected (expired, revoked); pages read this to send
+    // the visitor back here after signing in again.
+    const headers = new Headers(request.headers);
+    headers.set(REQUEST_PATH_HEADER, `${pathname}${search}`);
+    return NextResponse.next({ request: { headers } });
   }
 
-  const loginUrl = new URL("/login", request.url);
-  loginUrl.searchParams.set("next", `${pathname}${search}`);
-  return NextResponse.redirect(loginUrl);
+  return NextResponse.redirect(new URL(withNextPath("/login", `${pathname}${search}`), request.url));
 }

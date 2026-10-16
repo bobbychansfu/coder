@@ -5,10 +5,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import EmailSignupForm from "@/fe/auth/components/EmailSignupForm";
 import styles from "@/fe/auth/styles/LoginPage.module.css";
+import { safeNextPath, withNextPath } from "@/lib/safeNextPath";
 
 interface SignupPageProps {
   showDevSignup: boolean;
   showEmailSignup: boolean;
+  next: string | null;
 }
 
 interface SignupFormState {
@@ -45,7 +47,7 @@ function validateForm(form: SignupFormState): string | null {
   return null;
 }
 
-export default function SignupPage({ showDevSignup, showEmailSignup }: SignupPageProps) {
+export default function SignupPage({ showDevSignup, showEmailSignup, next }: SignupPageProps) {
   const router = useRouter();
   const [form, setForm] = useState(INITIAL_FORM_STATE);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -86,7 +88,7 @@ export default function SignupPage({ showDevSignup, showEmailSignup }: SignupPag
         return;
       }
 
-      router.push("/dashboard");
+      router.push(safeNextPath(next));
       router.refresh();
     } catch {
       setError("Dev signup failed.");
@@ -163,7 +165,7 @@ export default function SignupPage({ showDevSignup, showEmailSignup }: SignupPag
         <article className={styles.card}>
           <h2 className={styles.cardTitle}>Create Account</h2>
           {showEmailSignup ? (
-            <EmailSignupForm />
+            <EmailSignupForm next={next} />
           ) : showDevSignup ? (
             devSignupForm
           ) : (
@@ -172,7 +174,7 @@ export default function SignupPage({ showDevSignup, showEmailSignup }: SignupPag
                 Self-service signup is not enabled in this environment. Use the login page to sign
                 in through the configured authentication provider.
               </p>
-              <Link href="/login" className={styles.secondaryLink}>
+              <Link href={withNextPath("/login", next)} className={styles.secondaryLink}>
                 Back to Login
               </Link>
             </>
@@ -180,7 +182,7 @@ export default function SignupPage({ showDevSignup, showEmailSignup }: SignupPag
 
           <p className={styles.hint}>
             Already have access?{" "}
-            <Link href="/login" className={styles.inlineLink}>
+            <Link href={withNextPath("/login", next)} className={styles.inlineLink}>
               Sign in
             </Link>
           </p>

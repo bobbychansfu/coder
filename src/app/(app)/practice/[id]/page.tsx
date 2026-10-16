@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import PracticeProblemSubmissionPage from "@/fe/practice/page/PracticeProblemSubmissionPage";
+import { loginPath } from "@/lib/loginPath";
 import { getCurrentUser } from "@/lib/session";
 
 interface PracticeProblemRouteProps {
@@ -12,7 +13,7 @@ export default async function PracticeProblemRoute({ params }: PracticeProblemRo
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(await loginPath());
   }
 
   const { id } = await params;

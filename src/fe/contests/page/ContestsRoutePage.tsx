@@ -4,6 +4,7 @@ import ContestsPage from "@/fe/contests/page/ContestsPage";
 import { toContestListItem } from "@/fe/contests/services/contestAdapters";
 import { can } from "@/lib/authz";
 import { dbHelpers } from "@/lib/db-helpers";
+import { loginPath } from "@/lib/loginPath";
 import { getCurrentUser } from "@/lib/session";
 import { getStudentContestInfoPayload, toBackendContestSummary } from "@/server/api/s/studentContestInfo";
 
@@ -15,7 +16,7 @@ export default async function ContestsRoutePage() {
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(await loginPath());
   }
 
   const permissions = can(user.role);
