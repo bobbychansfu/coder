@@ -117,6 +117,11 @@
   gap: 8px;
 }
 
+.joinLinkActions {
+  display: flex;
+  gap: 8px;
+}
+
 .fieldLabel,
 .fieldLabelRow,
 .subSectionLabel,

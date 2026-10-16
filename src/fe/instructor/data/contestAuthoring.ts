@@ -39,6 +39,9 @@ export interface ContestAuthoringCopy {
   visibilityTitle: string;
   visibilityDescription: string;
   visibilityLabel: string;
+  allowedUsersLabel: string;
+  allowedUsersPlaceholder: string;
+  joinLinkLabel: string;
   scoringRuleTitle: string;
   scoringRuleLabel: string;
   showDifficultyLabel: string;
@@ -82,6 +85,8 @@ export interface ContestFormDraft {
   visibility: "course-only" | "public" | "private";
   scoringRule: ContestScoringRule;
   maxTeamSize: number;
+  // Private contests: computing IDs or emails, as typed
+  allowedUsers: string;
   groupAHintAfterMinutes: number;
   groupBHintAfterMinutes: number;
 }
@@ -146,6 +151,9 @@ export const contestAuthoringCopy: ContestAuthoringCopy = {
   visibilityTitle: "Visibility",
   visibilityDescription: "Control who can see this contest",
   visibilityLabel: "Visibility *",
+  allowedUsersLabel: "Allowed users",
+  allowedUsersPlaceholder: "Computing IDs or emails",
+  joinLinkLabel: "Join link",
   scoringRuleTitle: "Scoring Rule",
   scoringRuleLabel: "Scoring rule *",
   showDifficultyLabel: "Show problem difficulty",
@@ -234,6 +242,7 @@ export const contestFormDraft: ContestFormDraft = {
   visibility: "public",
   scoringRule: "points",
   maxTeamSize: 3,
+  allowedUsers: "",
   groupAHintAfterMinutes: contestAiHintConfig.groupAHintAfterMinutes,
   groupBHintAfterMinutes: contestAiHintConfig.groupBHintAfterMinutes,
 };

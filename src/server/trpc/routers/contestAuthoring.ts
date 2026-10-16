@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { TRPCError } from "@trpc/server";
 import type { Prisma } from "@prisma/client";
 import { z } from "zod";
@@ -10,6 +11,8 @@ const scoringRuleSchema = z.enum(["points", "icpc"]);
 // People per team; 1 makes it an individual contest
 const maxTeamSizeSchema = z.number().int().min(1).max(5);
 const hintDelayMinutesSchema = z.number().int().min(0).max(10_080);
+// Private contest allowlist entries: computing IDs or emails
+const allowedUsersSchema = z.array(z.string().trim().toLowerCase().min(1).max(254));
 const DEFAULT_GROUP_A_HINT_DELAY_MINUTES = 5;
 const DEFAULT_GROUP_B_HINT_DELAY_MINUTES = 10;
 
@@ -31,6 +34,8 @@ const contestMutationSchema = z.object({
   groupBHintAfterMinutes: hintDelayMinutesSchema.default(DEFAULT_GROUP_B_HINT_DELAY_MINUTES),
   isDraft: z.boolean().default(false),
   selectedProblemIds: z.array(z.string().min(1)).default([]),
+  allowedUsersAdded: allowedUsersSchema.default([]),
+  allowedUsersRemoved: allowedUsersSchema.default([]),
 });
 
 const contestPatchSchema = z
@@ -52,6 +57,9 @@ const contestPatchSchema = z
     groupBHintAfterMinutes: hintDelayMinutesSchema.optional(),
     isDraft: z.boolean().optional(),
     selectedProblemIds: z.array(z.string().min(1)).optional(),
+    // Changes rather than the whole list, so saving never drops people who joined by link meanwhile
+    allowedUsersAdded: allowedUsersSchema.optional(),
+    allowedUsersRemoved: allowedUsersSchema.optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field must be provided.",
@@ -216,6 +224,26 @@ async function replaceContestExperimentGroups(
   });
 }
 
+async function updateContestAllowlist(
+  tx: Prisma.TransactionClient,
+  contestId: string,
+  added: string[],
+  removed: string[],
+) {
+  if (removed.length > 0) {
+    await tx.contestAllowedUser.deleteMany({
+      where: { contestId, identifier: { in: removed } },
+    });
+  }
+
+  if (added.length > 0) {
+    await tx.contestAllowedUser.createMany({
+      data: added.map((identifier) => ({ contestId, identifier })),
+      skipDuplicates: true,
+    });
+  }
+}
+
 async function getContestAuthoringUserOrThrow(ctx: Context) {
   if (!ctx.user) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
@@ -334,6 +362,10 @@ export const contestAuthoringRouter = router({
         where: { id: input.contestId },
         include: {
           experimentGroups: true,
+          allowedUsers: {
+            select: { identifier: true },
+            orderBy: [{ createdAt: "asc" }, { identifier: "asc" }],
+          },
           contestProblems: {
             orderBy: { ordering: "asc" },
             include: {
@@ -374,6 +406,8 @@ export const contestAuthoringRouter = router({
         scoringRule: contest.scoringRule === "ICPC" ? ("icpc" as const) : ("points" as const),
         showDifficulty: contest.showDifficulty,
         maxTeamSize: contest.maxTeamSize,
+        allowedUsers: contest.allowedUsers.map((entry) => entry.identifier),
+        joinCode: contest.joinCode,
         aiHintEnabled: contest.aiHintEnabled,
         groupAHintAfterMinutes,
         groupBHintAfterMinutes,
@@ -493,6 +527,8 @@ export const contestAuthoringRouter = router({
           groupAHintAfterMinutes: input.groupAHintAfterMinutes,
           groupBHintAfterMinutes: input.groupBHintAfterMinutes,
         });
+
+        await updateContestAllowlist(tx, created.id, input.allowedUsersAdded, []);
 
         return created;
       });
@@ -732,8 +768,55 @@ export const contestAuthoringRouter = router({
               input.data.groupBHintAfterMinutes ?? existingGroupBHintAfterMinutes,
           });
         }
+
+        await updateContestAllowlist(
+          tx,
+          input.contestId,
+          input.data.allowedUsersAdded ?? [],
+          input.data.allowedUsersRemoved ?? [],
+        );
       });
 
       return { id: input.contestId };
+    }),
+
+  // Turns a private contest's join link on (keeping its code), resets it to a new code, or turns it off
+  setJoinLink: publicProcedure
+    .input(
+      z.object({
+        contestId: z.string().min(1),
+        action: z.enum(["enable", "reset", "disable"]),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const dbUser = await getContestAuthoringUserOrThrow(ctx);
+      const isAdmin = ctx.user?.role === "admin";
+
+      const contest = await ctx.prisma.contest.findUnique({
+        where: { id: input.contestId },
+        select: { instructorId: true, manageStatus: true, joinCode: true },
+      });
+
+      if (!contest || contest.manageStatus === "DELETED") {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Contest not found." });
+      }
+
+      if (!isAdmin && contest.instructorId !== dbUser.id) {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+
+      const joinCode =
+        input.action === "disable"
+          ? null
+          : input.action === "enable" && contest.joinCode
+            ? contest.joinCode
+            : randomBytes(12).toString("base64url");
+
+      await ctx.prisma.contest.update({
+        where: { id: input.contestId },
+        data: { joinCode },
+      });
+
+      return { joinCode };
     }),
 });

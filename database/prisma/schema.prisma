@@ -262,6 +262,8 @@ model Contest {
   showDifficulty  Boolean       @default(false)
   // Contestants per team; 1 makes it an individual contest
   maxTeamSize     Int           @default(3)
+  // Secret in a private contest's join link; null turns the link off
+  joinCode        String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -277,6 +279,19 @@ model Contest {
   contestProblemSessions ContestProblemSession[]
   teams                  Team[]
   notifications          Notification[]
+  allowedUsers           ContestAllowedUser[]
+}
+
+// Who may see and register for a private contest: a lowercased computing ID or email,
+// matched against the signed-in user, so entries can name people before they sign up
+model ContestAllowedUser {
+  contestId  String
+  identifier String
+  createdAt  DateTime @default(now())
+
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+
+  @@id([contestId, identifier])
 }
 
 enum NotificationType {

@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
-import { UserRole, SubmissionStatus, CodingLanguage } from "@prisma/client";
+import { UserRole, SubmissionStatus, CodingLanguage, type Prisma } from "@prisma/client";
+import { allowlistEntryFor, allowlistIdentifiersFor } from "./contestAllowlist";
 import {
   getEffectiveContestStatus,
   isJoinableContestStatus,
@@ -24,6 +25,27 @@ function groupByUserId<T extends { userId: string }>(rows: T[]): Map<string, T[]
 }
 
 const NON_PRIVATE_CONTEST_VISIBILITY = { not: "PRIVATE" as const };
+
+// Matches private contests whose allowlist names this user
+async function allowlistedContestFilter(computingId: string): Promise<Prisma.ContestWhereInput> {
+  const user = await prisma.user.findUnique({
+    where: { computingId },
+    select: { computingId: true, email: true },
+  });
+  const identifiers = user ? allowlistIdentifiersFor(user) : [computingId.toLowerCase()];
+
+  return { allowedUsers: { some: { identifier: { in: identifiers } } } };
+}
+
+// Contests a student may see: every non-private one, plus private ones that allowlist them
+async function studentVisibleContestFilter(computingId: string): Promise<Prisma.ContestWhereInput> {
+  return {
+    OR: [
+      { visibility: NON_PRIVATE_CONTEST_VISIBILITY },
+      await allowlistedContestFilter(computingId),
+    ],
+  };
+}
 
 function withParticipantCount<T extends { participations: Array<{ role: string }> }>(
   contest: T,
@@ -96,7 +118,7 @@ export const dbHelpers = {
       where: {
         manageStatus: "ACTIVE",
         published: true,
-        visibility: NON_PRIVATE_CONTEST_VISIBILITY,
+        ...(await studentVisibleContestFilter(computingId)),
         status: {
           not: "DRAFT",
         },
@@ -152,6 +174,7 @@ export const dbHelpers = {
               OR: [
                 { visibility: NON_PRIVATE_CONTEST_VISIBILITY },
                 { instructor: { is: { computingId } } },
+                await allowlistedContestFilter(computingId),
               ],
             }),
       },
@@ -171,7 +194,7 @@ export const dbHelpers = {
       where: {
         id: contestId,
         manageStatus: "ACTIVE",
-        visibility: NON_PRIVATE_CONTEST_VISIBILITY,
+        ...(await studentVisibleContestFilter(computingId)),
         participations: {
           some: {
             user: { computingId },
@@ -199,7 +222,7 @@ export const dbHelpers = {
       where: {
         manageStatus: "ACTIVE",
         published: true,
-        visibility: NON_PRIVATE_CONTEST_VISIBILITY,
+        ...(await studentVisibleContestFilter(computingId)),
         participations: {
           none: {
             user: { computingId },
@@ -220,13 +243,23 @@ export const dbHelpers = {
       .filter((contest) => isJoinableContestStatus(getEffectiveContestStatus(contest)));
   },
 
-  findJoinableContestForUser: async (computingId: string, contestId: string, role: string) => {
+  // A join link's code also opens a private contest to someone not on its allowlist
+  findJoinableContestForUser: async (
+    computingId: string,
+    contestId: string,
+    role: string,
+    joinCode?: string,
+  ) => {
     const contest = await prisma.contest.findFirst({
       where: {
         id: contestId,
         manageStatus: "ACTIVE",
         published: true,
-        visibility: NON_PRIVATE_CONTEST_VISIBILITY,
+        OR: [
+          { visibility: NON_PRIVATE_CONTEST_VISIBILITY },
+          await allowlistedContestFilter(computingId),
+          ...(joinCode ? [{ joinCode }] : []),
+        ],
         participations: {
           none: {
             user: { computingId },
@@ -283,6 +316,7 @@ export const dbHelpers = {
               OR: [
                 { visibility: NON_PRIVATE_CONTEST_VISIBILITY },
                 { instructor: { is: { computingId } } },
+                await allowlistedContestFilter(computingId),
               ],
             }),
       },
@@ -586,6 +620,28 @@ export const dbHelpers = {
         nickname: data.nickname,
         email: data.email,
       },
+    });
+  },
+
+  // Joining through a link puts you on the allowlist unless it already names you
+  addToContestAllowlist: async (computingId: string, contestId: string) => {
+    const user = await prisma.user.findUnique({
+      where: { computingId },
+      select: { computingId: true, email: true },
+    });
+    if (!user) throw new Error("User not found");
+
+    const listed = await prisma.contestAllowedUser.findFirst({
+      where: { contestId, identifier: { in: allowlistIdentifiersFor(user) } },
+      select: { identifier: true },
+    });
+    if (listed) {
+      return;
+    }
+
+    await prisma.contestAllowedUser.createMany({
+      data: [{ contestId, identifier: allowlistEntryFor(user) }],
+      skipDuplicates: true,
     });
   },
 
