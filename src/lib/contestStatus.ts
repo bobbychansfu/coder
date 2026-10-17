@@ -65,6 +65,13 @@ export function hasContestStarted(contest: ContestStatusInput) {
   return status === "ACTIVE" || status === "ENDED";
 }
 
+// A contest's problems stay open after it ends, for upsolving. Only submissions made by
+// the end count towards the standings.
+export function isSubmittedDuringContest(contest: ContestStatusInput, submittedAt: Date) {
+  const end = resolveContestEndTimestamp(contest);
+  return !Number.isFinite(end) || submittedAt.getTime() <= end;
+}
+
 export function isJoinableContestStatus(status: ContestStatusValue) {
   return status === "UPCOMING" || status === "ACTIVE";
 }

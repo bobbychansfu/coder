@@ -205,10 +205,6 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
       contestStartsAt={normalizedContestSummary.startsAt}
       contestEndsAt={normalizedContestSummary.endsAt}
       contestDurationMinutes={normalizedContestSummary.durationMinutes}
-      practiceProblemLinks={contest.problems.map((contestProblem) => ({
-        contestCode: contestProblem.code,
-        practiceProblemCode: contestProblem.practiceProblemCode ?? contestProblem.code,
-      }))}
       aiHintEnabled={normalizedContestSummary.aiHintEnabled}
       detail={adaptContestProblemDetail(
         problem,
