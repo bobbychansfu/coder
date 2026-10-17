@@ -11,7 +11,7 @@ import {
   type ContestProblemStatusResponse,
 } from "@/fe/contests/services/contestApi";
 import { can, normalizeRole } from "@/lib/authz";
-import { getEffectiveContestStatus } from "@/lib/contestStatus";
+import { getEffectiveContestStatus, hasContestStarted } from "@/lib/contestStatus";
 import { dbHelpers } from "@/lib/db-helpers";
 import { loginPath } from "@/lib/loginPath";
 import { getCurrentUser } from "@/lib/session";
@@ -109,6 +109,11 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
       redirect(`/contests/${encodeURIComponent(contestId)}`);
     }
     notFound();
+  }
+
+  // Students reach the problems only once the contest has started.
+  if (!can(user.role).canManageContest && !hasContestStarted(contestSummary)) {
+    redirect(`/contests/${encodeURIComponent(contestId)}`);
   }
 
   const contestProblemStatus = await getContestProblemStatusDirect(

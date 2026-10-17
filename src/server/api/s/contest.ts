@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
 import { can } from "@/lib/authz";
-import { getEffectiveContestStatus, isJoinableContestStatus } from "@/lib/contestStatus";
+import { getEffectiveContestStatus, hasContestStarted, isJoinableContestStatus } from "@/lib/contestStatus";
 import { dbHelpers } from "@/lib/db-helpers";
 
 function isContestViewableByRegisteredUser(contest: { published: boolean; status: string }) {
@@ -153,6 +153,11 @@ export async function handleGetContestDetails(
 
     if (!isContestViewableByRegisteredUser(contest)) {
       return NextResponse.json({ error: "Contest not found" }, { status: 404 });
+    }
+
+    // Students see the problems and standings only once the contest has started.
+    if (!can(role).canManageContest && !hasContestStarted(contest)) {
+      return NextResponse.json({ computingId, contestProblemsStatus: [], scoreboard: [], role });
     }
 
     const contestProblemsStatus = await dbHelpers.findContestsProblemsStatusForUser(

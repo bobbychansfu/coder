@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
 import { can, normalizeRole } from "@/lib/authz";
-import { getEffectiveContestStatus } from "@/lib/contestStatus";
+import { getEffectiveContestStatus, hasContestStarted } from "@/lib/contestStatus";
 import { dbHelpers } from "@/lib/db-helpers";
 import path from "path";
 import { promises as fs } from "fs";
@@ -196,6 +196,10 @@ export async function handleGetProblemDetails(
 
     if (!isContestViewableByRegisteredUser(contest)) {
       return NextResponse.json({ error: "Contest not found" }, { status: 404 });
+    }
+
+    if (!can(role).canManageContest && !hasContestStarted(contest)) {
+      return NextResponse.json({ error: "Contest has not started yet" }, { status: 403 });
     }
 
     const problem = await dbHelpers.findProblemWithDetails(pid);

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { can, normalizeRole } from "@/lib/authz";
-import { getEffectiveContestStatus } from "@/lib/contestStatus";
+import { getEffectiveContestStatus, hasContestStarted } from "@/lib/contestStatus";
 import crypto from "crypto";
 import { getCurrentUser } from "@/lib/session";
 import { dbHelpers } from "@/lib/db-helpers";
+import { prisma } from "@/lib/prisma";
 
 type HintRequestBody = Record<string, unknown> & {
   pid?: unknown;
@@ -51,6 +52,11 @@ async function assertContestAllowsAiHint(computingId: string, role: string, cont
       { error: "AI hints are disabled for this contest" },
       { status: 403 },
     );
+  }
+
+  const normalizedRole = normalizeRole(role);
+  if (!(normalizedRole && can(normalizedRole).canManageContest) && !hasContestStarted(contest)) {
+    return NextResponse.json({ error: "Contest has not started yet" }, { status: 403 });
   }
 
   const now = new Date();
@@ -141,6 +147,19 @@ export async function handleRequestHint(request: NextRequest) {
     const topics = await dbHelpers.getProblemTopic(pid);
 
     if (!problem) {
+      return NextResponse.json({ error: "Problem not found" }, { status: 404 });
+    }
+
+    // A contest problem gets hints only through its own contest, so the checks above apply.
+    const inRequestedContest = contestId
+      ? Boolean(
+          await prisma.contestProblem.findFirst({
+            where: { contestId, problemId: pid },
+            select: { problemId: true },
+          }),
+        )
+      : problem.source !== "CONTEST";
+    if (!inRequestedContest) {
       return NextResponse.json({ error: "Problem not found" }, { status: 404 });
     }
 

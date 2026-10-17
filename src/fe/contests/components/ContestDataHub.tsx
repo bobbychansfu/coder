@@ -5,6 +5,7 @@ import EmojiEventsOutlinedIcon from "@mui/icons-material/EmojiEventsOutlined";
 import PeopleOutlineOutlinedIcon from "@mui/icons-material/PeopleOutlineOutlined";
 import StatCard from "@/fe/shared/components/StatCard";
 import CountdownTimer from "@/fe/contests/components/CountdownTimer";
+import ContestStartCountdown from "@/fe/contests/components/ContestStartCountdown";
 import type { ContestDetail } from "@/fe/contests/data/contestDetails";
 import styles from "@/fe/contests/styles/ContestDetailPage.module.css";
 
@@ -19,17 +20,23 @@ export default function ContestDataHub({ contest }: ContestDataHubProps) {
       icon: CalendarTodayOutlinedIcon,
       value: contest.startTime,
     },
-    {
-      label: "Time Left",
-      icon: ScheduleOutlinedIcon,
-      content: (
-        <CountdownTimer
-          startsAt={contest.startTimeISO ?? contest.startTime}
-          durationMinutes={contest.durationMinutes}
-          endedLabel="Contest Ended"
-        />
-      ),
-    },
+    contest.status === "upcoming"
+      ? {
+          label: "Starts In",
+          icon: ScheduleOutlinedIcon,
+          content: <ContestStartCountdown startsAt={contest.startTimeISO ?? contest.startTime} />,
+        }
+      : {
+          label: "Time Left",
+          icon: ScheduleOutlinedIcon,
+          content: (
+            <CountdownTimer
+              startsAt={contest.startTimeISO ?? contest.startTime}
+              durationMinutes={contest.durationMinutes}
+              endedLabel="Contest Ended"
+            />
+          ),
+        },
     {
       label: "Problems",
       icon: EmojiEventsOutlinedIcon,

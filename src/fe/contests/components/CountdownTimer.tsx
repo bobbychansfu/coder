@@ -47,7 +47,7 @@ function getRemainingMs(startTime: number | null, endTime: number, now: number) 
   return Math.max(0, endTime - now);
 }
 
-function formatTimeLeft(milliseconds: number) {
+export function formatTimeLeft(milliseconds: number) {
   const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
