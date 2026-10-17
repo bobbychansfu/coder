@@ -59,6 +59,12 @@ export function getEffectiveContestStatus(contest: ContestStatusInput): ContestS
   return "ACTIVE";
 }
 
+// Before a contest starts, only staff may see its problems.
+export function hasContestStarted(contest: ContestStatusInput) {
+  const status = getEffectiveContestStatus(contest);
+  return status === "ACTIVE" || status === "ENDED";
+}
+
 export function isJoinableContestStatus(status: ContestStatusValue) {
   return status === "UPCOMING" || status === "ACTIVE";
 }

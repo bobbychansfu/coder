@@ -7,7 +7,7 @@ import {
   type ContestProblemStatusResponse,
 } from "@/fe/contests/services/contestApi";
 import { can, normalizeRole } from "@/lib/authz";
-import { getEffectiveContestStatus } from "@/lib/contestStatus";
+import { getEffectiveContestStatus, hasContestStarted } from "@/lib/contestStatus";
 import { dbHelpers } from "@/lib/db-helpers";
 import { getCurrentUser } from "@/lib/session";
 import { findContestInvitationOrDeny } from "@/server/studentContestAccess";
@@ -52,6 +52,11 @@ async function getContestProblemStatusDirect(
 
   if (!contest || !contest.published || contest.status === "DRAFT") {
     return null;
+  }
+
+  // Students see the problems and standings only once the contest has started.
+  if (!(normalizedRole && can(normalizedRole).canManageContest) && !hasContestStarted(contest)) {
+    return { computingId, contestProblemsStatus: [], scoreboard: [], role };
   }
 
   const [contestProblemsStatus, scoreboard] = await Promise.all([

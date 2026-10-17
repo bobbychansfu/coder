@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { can, normalizeRole } from "@/lib/authz";
-import { getEffectiveContestStatus } from "@/lib/contestStatus";
+import { getEffectiveContestStatus, hasContestStarted } from "@/lib/contestStatus";
 import crypto from "crypto";
 import { getCurrentUser } from "@/lib/session";
 import { dbHelpers } from "@/lib/db-helpers";
@@ -51,6 +51,11 @@ async function assertContestAllowsAiHint(computingId: string, role: string, cont
       { error: "AI hints are disabled for this contest" },
       { status: 403 },
     );
+  }
+
+  const normalizedRole = normalizeRole(role);
+  if (!(normalizedRole && can(normalizedRole).canManageContest) && !hasContestStarted(contest)) {
+    return NextResponse.json({ error: "Contest has not started yet" }, { status: 403 });
   }
 
   const now = new Date();
