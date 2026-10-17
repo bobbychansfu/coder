@@ -1,4 +1,5 @@
 import { SubmissionStatus } from "@prisma/client";
+import { isSubmittedDuringContest } from "@/lib/contestStatus";
 import { prisma } from "@/lib/prisma";
 import { syncStudentGamification } from "@/server/gamification/persistence";
 import { normalizeJudgeStatusToSubmissionStatus } from "./judge";
@@ -40,6 +41,9 @@ export async function applyContestJudgeResult(
             title: true,
           },
         },
+        contest: {
+          select: { status: true, startsAt: true, endsAt: true, durationMinutes: true },
+        },
       },
     });
 
@@ -63,10 +67,13 @@ export async function applyContestJudgeResult(
     const shouldApplyProblemStatus = nextStatus !== "PENDING" && !isSystemError;
     const shouldIncrementTries =
       previousStatus === "PENDING" && nextStatus !== "PENDING" && !isSystemError;
-    const pointsDelta = Math.max(0, nextScore - previousScore);
-    const problemsSolvedDelta = previousScore > 0 ? 0 : nextScore > 0 ? 1 : 0;
+    // Upsolving, after the contest ended: judged, but no results, standings or points
+    const countsForContest = isSubmittedDuringContest(submission.contest, submission.createdAt);
+    const pointsDelta = countsForContest ? Math.max(0, nextScore - previousScore) : 0;
+    const problemsSolvedDelta =
+      !countsForContest || previousScore > 0 ? 0 : nextScore > 0 ? 1 : 0;
 
-    if (shouldApplyProblemStatus) {
+    if (shouldApplyProblemStatus && countsForContest) {
       await tx.problemStatus.upsert({
         where: {
           userId_contestId_problemId: {

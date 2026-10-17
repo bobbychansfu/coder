@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
 import { can, normalizeRole } from "@/lib/authz";
-import { getEffectiveContestStatus, hasContestStarted } from "@/lib/contestStatus";
+import { hasContestStarted, isSubmittedDuringContest } from "@/lib/contestStatus";
 import { dbHelpers } from "@/lib/db-helpers";
 import path from "path";
 import { promises as fs } from "fs";
@@ -131,6 +131,7 @@ export function resolveJudgeProblemId(problem: JudgeProblemMapping): string | nu
   return null;
 }
 
+// Open from the start for good: after the end, submissions are upsolving and don't count.
 function isContestOpenForSubmission(
   contest: {
     published: boolean;
@@ -140,25 +141,11 @@ function isContestOpenForSubmission(
     durationMinutes?: number | null;
   },
 ) {
-  if (!isContestViewableByRegisteredUser(contest)) {
-    return false;
-  }
-
-  if (getEffectiveContestStatus(contest) !== "ACTIVE") {
-    return false;
-  }
-
-  const now = new Date();
-
-  if (contest.startsAt > now) {
-    return false;
-  }
-
-  if (contest.endsAt && contest.endsAt <= now) {
-    return false;
-  }
-
-  return true;
+  return (
+    isContestViewableByRegisteredUser(contest) &&
+    hasContestStarted(contest) &&
+    contest.startsAt <= new Date()
+  );
 }
 
 async function findContestForViewer(computingId: string, role: string, contestId: string) {
@@ -304,19 +291,7 @@ export async function handleSubmitCode(
     }
 
     if (!isContestOpenForSubmission(contest)) {
-      const effectiveStatus = getEffectiveContestStatus(contest);
-
-      return NextResponse.json(
-        {
-          error:
-            effectiveStatus === "ENDED" || (contest.endsAt && contest.endsAt <= new Date())
-              ? "Contest has ended"
-              : effectiveStatus === "UPCOMING"
-                ? "Contest has not started yet"
-              : "Contest is not accepting submissions",
-        },
-        { status: 403 },
-      );
+      return NextResponse.json({ error: "Contest has not started yet" }, { status: 403 });
     }
 
     const problem = await dbHelpers.findProblem(pid);
@@ -340,7 +315,10 @@ export async function handleSubmitCode(
       );
     }
 
-    await dbHelpers.createProblemStatus(computingId, cid, pid);
+    // An upsolve leaves the contest's results alone
+    if (isSubmittedDuringContest(contest, new Date())) {
+      await dbHelpers.createProblemStatus(computingId, cid, pid);
+    }
 
     const codingLanguage = appLanguageToCodingLanguage(language);
     const judgeLanguage = appLanguageToJudgeLanguage(language);

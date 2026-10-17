@@ -42,9 +42,7 @@ import {
 } from "./ProblemSubmissionTiming";
 import {
   getContestDraftStorageKey,
-  type ContestPracticeProblemLink,
   useContestDraftPersistence,
-  useContestPracticeRedirect,
 } from "./ProblemSubmissionDraftTransfer";
 import {
   buildRunResult,
@@ -68,7 +66,6 @@ interface ProblemSubmissionPageProps {
   contestStartsAt?: string | null;
   contestEndsAt?: string | null;
   contestDurationMinutes?: number | null;
-  practiceProblemLinks?: ContestPracticeProblemLink[];
   aiHintEnabled?: boolean;
   detail: ProblemDetail;
   navigator?: ProblemNavigator;
@@ -104,7 +101,6 @@ export default function ProblemSubmissionPage({
   contestStartsAt,
   contestEndsAt,
   contestDurationMinutes,
-  practiceProblemLinks,
   aiHintEnabled = false,
   detail,
   navigator,
@@ -118,7 +114,6 @@ export default function ProblemSubmissionPage({
       contestStartsAt={contestStartsAt}
       contestEndsAt={contestEndsAt}
       contestDurationMinutes={contestDurationMinutes}
-      practiceProblemLinks={practiceProblemLinks}
       aiHintEnabled={aiHintEnabled}
       detail={detail}
       navigator={navigator}
@@ -133,7 +128,6 @@ function ProblemSubmissionPageContent({
   contestStartsAt,
   contestEndsAt,
   contestDurationMinutes,
-  practiceProblemLinks = [],
   aiHintEnabled = false,
   detail,
   navigator,
@@ -185,12 +179,14 @@ function ProblemSubmissionPageContent({
       ? "AI hints are disabled after the contest ends."
       : null;
   const submissionsLockedReason =
-    contestStatus === "upcoming"
-      ? "Submissions open when this contest starts."
-      : contestStatus === "closed" || contestEndedByTime
-        ? "This contest has ended. You can review problems and submissions, but new submissions and AI hints are disabled."
-        : null;
+    contestStatus === "upcoming" ? "Submissions open when this contest starts." : null;
   const submissionsLocked = submissionsLockedReason !== null;
+  // After the end the problems stay open for upsolving, which doesn't count
+  const submissionsNote =
+    submissionsLockedReason ??
+    (contestStatus === "closed" || contestEndedByTime
+      ? "The contest has ended. New submissions don't count."
+      : null);
   const displayedRunResult = runResult;
   const detailWithHistory = {
     ...detail,
@@ -209,22 +205,6 @@ function ProblemSubmissionPageContent({
     effectiveLanguage,
     effectiveDrafts,
     persistedDraft,
-  });
-
-  useContestPracticeRedirect({
-    computingId,
-    contestId,
-    contestStatus,
-    contestStartsAt,
-    contestEndsAt,
-    contestDurationMinutes,
-    contestProblemCode: detail.code,
-    practiceProblemCode: detail.practiceProblemCode ?? detail.code,
-    practiceProblemLinks,
-    effectiveLanguage,
-    effectiveDrafts,
-    persistedDraft,
-    router,
   });
 
   const refetchSubmissions = async (): Promise<SubmissionRecord[]> => {
@@ -578,10 +558,10 @@ function ProblemSubmissionPageContent({
               void submitContestCode();
             }}
             footerContent={
-              submissionsLockedReason ? (
+              submissionsNote ? (
                 <Box px="20px" pb="4px">
                   <Typography variant="body2" color="text.secondary">
-                    {submissionsLockedReason}
+                    {submissionsNote}
                   </Typography>
                 </Box>
               ) : undefined
