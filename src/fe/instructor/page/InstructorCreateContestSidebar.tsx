@@ -1,3 +1,4 @@
+import { useState } from "react";
 import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
 import { Button, Card, CardContent, MenuItem, Switch, TextField, Typography } from "@mui/material";
 import StatusSummaryCard, {
@@ -42,6 +43,10 @@ interface InstructorCreateContestSidebarProps {
   isEditMode: boolean;
   isSaving: boolean;
   isPageLoading: boolean;
+  contestId: string | null;
+  joinCode: string | null;
+  isJoinLinkSaving: boolean;
+  onJoinLinkChange: (action: "enable" | "reset" | "disable") => void;
   publishLabel: string;
   onFieldChange: (field: keyof ContestFormDraft, value: string) => void;
   onShowDifficultyChange: (enabled: boolean) => void;
@@ -58,12 +63,27 @@ export default function InstructorCreateContestSidebar({
   isEditMode,
   isSaving,
   isPageLoading,
+  contestId,
+  joinCode,
+  isJoinLinkSaving,
+  onJoinLinkChange,
   publishLabel,
   onFieldChange,
   onShowDifficultyChange,
   onNumberFieldChange,
   onPublish,
 }: InstructorCreateContestSidebarProps) {
+  const [copiedJoinLink, setCopiedJoinLink] = useState<string | null>(null);
+  const joinLink =
+    contestId && joinCode && typeof window !== "undefined"
+      ? `${window.location.origin}/contests/${contestId}/join/${joinCode}`
+      : null;
+
+  const copyJoinLink = async (link: string) => {
+    await navigator.clipboard.writeText(link);
+    setCopiedJoinLink(link);
+  };
+
   const contestStatusRows: StatusSummaryRow[] = aiHintEnabled
     ? [
         {
@@ -178,6 +198,76 @@ export default function InstructorCreateContestSidebar({
               ))}
             </TextField>
           </div>
+
+          {formValues.visibility === "private" ? (
+            <>
+              <div className={styles.fieldBlock}>
+                <Typography className={styles.fieldLabel}>
+                  {contestAuthoringCopy.allowedUsersLabel}
+                </Typography>
+                <TextField
+                  fullWidth
+                  multiline
+                  minRows={4}
+                  placeholder={contestAuthoringCopy.allowedUsersPlaceholder}
+                  value={formValues.allowedUsers}
+                  onChange={(event) => onFieldChange("allowedUsers", event.target.value)}
+                  className={`${styles.inputField} ${styles.textAreaField}`}
+                  slotProps={{
+                    htmlInput: { "aria-label": contestAuthoringCopy.allowedUsersLabel },
+                  }}
+                />
+              </div>
+
+              {contestId ? (
+                <div className={styles.fieldBlock}>
+                  <div className={styles.aiHeaderRow}>
+                    <Typography className={styles.fieldLabel}>
+                      {contestAuthoringCopy.joinLinkLabel}
+                    </Typography>
+                    <Switch
+                      checked={Boolean(joinCode)}
+                      disabled={isJoinLinkSaving}
+                      onChange={(_, checked) => onJoinLinkChange(checked ? "enable" : "disable")}
+                      className={styles.aiSwitch}
+                      slotProps={{
+                        input: { role: "switch", "aria-label": contestAuthoringCopy.joinLinkLabel },
+                      }}
+                    />
+                  </div>
+                  {joinLink ? (
+                    <>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        value={joinLink}
+                        className={styles.inputField}
+                        slotProps={{
+                          htmlInput: {
+                            readOnly: true,
+                            "aria-label": contestAuthoringCopy.joinLinkLabel,
+                          },
+                        }}
+                      />
+                      <div className={styles.joinLinkActions}>
+                        <Button size="small" onClick={() => void copyJoinLink(joinLink)}>
+                          {copiedJoinLink === joinLink ? "Link copied" : "Copy link"}
+                        </Button>
+                        <Button
+                          size="small"
+                          color="error"
+                          disabled={isJoinLinkSaving}
+                          onClick={() => onJoinLinkChange("reset")}
+                        >
+                          Reset
+                        </Button>
+                      </div>
+                    </>
+                  ) : null}
+                </div>
+              ) : null}
+            </>
+          ) : null}
 
           <div className={styles.aiHeaderRow}>
             <Typography className={styles.fieldLabel}>

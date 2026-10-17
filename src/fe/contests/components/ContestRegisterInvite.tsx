@@ -9,6 +9,7 @@ interface ContestRegisterInviteProps {
   name: string;
   statusLabel: string;
   startsAtIso: string;
+  joinCode?: string;
 }
 
 // Shown instead of the contest when a student opens a contest they can still register for.
@@ -17,6 +18,7 @@ export default function ContestRegisterInvite({
   name,
   statusLabel,
   startsAtIso,
+  joinCode,
 }: ContestRegisterInviteProps) {
   const router = useRouter();
   const [isRegistering, setIsRegistering] = useState(false);
@@ -29,6 +31,9 @@ export default function ContestRegisterInvite({
       const response = await fetch(`/api/s/contest/register/${contestId}`, {
         method: "POST",
         credentials: "include",
+        ...(joinCode
+          ? { headers: { "content-type": "application/json" }, body: JSON.stringify({ joinCode }) }
+          : {}),
       });
       if (!response.ok) {
         throw new Error("Failed to register contest.");

@@ -11,13 +11,14 @@ import {
 } from "@/fe/dashboard/services/dashboardPracticeHistory";
 import { redirect } from "next/navigation";
 import { getStudentContestInfoPayload } from "@/server/api/s/studentContestInfo";
+import { loginPath } from "@/lib/loginPath";
 import { getCurrentUser } from "@/lib/session";
 
 export default async function DashboardRoute() {
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(await loginPath());
   }
 
   let practiceHistory: StudentDashboardPracticeHistoryItem[] = [];

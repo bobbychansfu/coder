@@ -24,6 +24,7 @@ import {
 } from "@/fe/instructor/data/contestAuthoring";
 import AuthoringPageShell from "@/fe/shared/components/authoring/AuthoringPageShell";
 import { ROUTES } from "@/fe/shared/constants/routes";
+import { parseAllowlist } from "@/lib/contestAllowlist";
 import { trpc } from "@/lib/trpc/client";
 import subpageStyles from "@/fe/instructor/styles/InstructorSubpageHeader.module.css";
 import styles from "@/fe/instructor/styles/InstructorCreateContestPage.module.css";
@@ -139,6 +140,8 @@ export default function InstructorCreateContestPage() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [aiHintEnabled, setAiHintEnabled] = useState(false);
   const [showDifficulty, setShowDifficulty] = useState(false);
+  const [savedAllowedUsers, setSavedAllowedUsers] = useState<string[]>([]);
+  const [joinCode, setJoinCode] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const contestQuery = trpc.contestAuthoring.getContestById.useQuery(
     { contestId: contestId ?? "" },
@@ -152,6 +155,10 @@ export default function InstructorCreateContestPage() {
   });
   const createContestMutation = trpc.contestAuthoring.createContest.useMutation();
   const updateContestMutation = trpc.contestAuthoring.updateContest.useMutation();
+  const setJoinLinkMutation = trpc.contestAuthoring.setJoinLink.useMutation({
+    onSuccess: (result) => setJoinCode(result.joinCode),
+    onError: (mutationError) => setSaveError(mutationError.message),
+  });
   const deleteDraftMutation = trpc.instructorManageContent.updateContestManageStatus.useMutation({
     onSuccess: async () => {
       await Promise.all([
@@ -199,9 +206,12 @@ export default function InstructorCreateContestPage() {
         visibility: contestQuery.data.visibility,
         scoringRule: contestQuery.data.scoringRule,
         maxTeamSize: contestQuery.data.maxTeamSize,
+        allowedUsers: contestQuery.data.allowedUsers.join("\n"),
         groupAHintAfterMinutes: contestQuery.data.groupAHintAfterMinutes,
         groupBHintAfterMinutes: contestQuery.data.groupBHintAfterMinutes,
       });
+      setSavedAllowedUsers(contestQuery.data.allowedUsers);
+      setJoinCode(contestQuery.data.joinCode);
       setSelectedProblemIds(contestQuery.data.selectedProblemIds);
       setAiHintEnabled(contestQuery.data.aiHintEnabled);
       setShowDifficulty(contestQuery.data.showDifficulty);
@@ -218,6 +228,8 @@ export default function InstructorCreateContestPage() {
 
     queueMicrotask(() => {
       setFormValues(contestFormDraft);
+      setSavedAllowedUsers([]);
+      setJoinCode(null);
       setSelectedProblemIds([]);
       setPendingProblemIds([]);
       setAiHintEnabled(false);
@@ -297,18 +309,25 @@ export default function InstructorCreateContestPage() {
     }));
   };
 
-  const buildContestMutationInput = (isDraft: boolean) => ({
-    ...formValues,
-    startUtcOffsetMinutes: getLocalDateTimeOffsetMinutes(formValues.startDate, formValues.startTime),
-    endUtcOffsetMinutes:
-      formValues.endDate.trim() && formValues.endTime.trim()
-        ? getLocalDateTimeOffsetMinutes(formValues.endDate, formValues.endTime)
-        : null,
-    isDraft,
-    aiHintEnabled,
-    showDifficulty,
-    selectedProblemIds,
-  });
+  const buildContestMutationInput = (isDraft: boolean) => {
+    const { allowedUsers, ...contestFields } = formValues;
+    const allowedUserList = parseAllowlist(allowedUsers);
+
+    return {
+      ...contestFields,
+      startUtcOffsetMinutes: getLocalDateTimeOffsetMinutes(formValues.startDate, formValues.startTime),
+      endUtcOffsetMinutes:
+        formValues.endDate.trim() && formValues.endTime.trim()
+          ? getLocalDateTimeOffsetMinutes(formValues.endDate, formValues.endTime)
+          : null,
+      isDraft,
+      aiHintEnabled,
+      showDifficulty,
+      selectedProblemIds,
+      allowedUsersAdded: allowedUserList.filter((entry) => !savedAllowedUsers.includes(entry)),
+      allowedUsersRemoved: savedAllowedUsers.filter((entry) => !allowedUserList.includes(entry)),
+    };
+  };
 
   const openSelectProblems = () => {
     setPendingProblemIds(selectedProblemIds);
@@ -464,6 +483,14 @@ export default function InstructorCreateContestPage() {
             draftContestsCount={draftContests.length} aiHintEnabled={aiHintEnabled}
             isEditMode={isEditMode} isSaving={isSaving} isPageLoading={isPageLoading}
             showDifficulty={showDifficulty} onShowDifficultyChange={setShowDifficulty}
+            contestId={contestId} joinCode={joinCode}
+            isJoinLinkSaving={setJoinLinkMutation.isPending}
+            onJoinLinkChange={(action) => {
+              if (contestId) {
+                setSaveError(null);
+                setJoinLinkMutation.mutate({ contestId, action });
+              }
+            }}
             publishLabel={publishLabel} onFieldChange={updateField}
             onNumberFieldChange={updateNumberField}
             onPublish={() => void handlePublish()}

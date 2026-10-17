@@ -13,6 +13,7 @@ import {
 import { can, normalizeRole } from "@/lib/authz";
 import { getEffectiveContestStatus } from "@/lib/contestStatus";
 import { dbHelpers } from "@/lib/db-helpers";
+import { loginPath } from "@/lib/loginPath";
 import { getCurrentUser } from "@/lib/session";
 import { resolveJudgeProblemId } from "@/server/api/s/problem";
 import { codingLanguageToLabel } from "@/server/coding-language";
@@ -84,7 +85,7 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(await loginPath());
   }
 
   const { id, code } = await params;

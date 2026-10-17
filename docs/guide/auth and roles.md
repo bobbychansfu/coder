@@ -391,7 +391,7 @@ If normalization fails, the user is treated as unauthenticated.
 
 Global route protection is applied in:
 
-- `middleware.ts`
+- `src/proxy.ts` (Next.js only loads it next to `app/`, so here in `src/`)
 - `src/middlewares/authGuard.ts`
 
 Protected route prefixes:
@@ -399,6 +399,8 @@ Protected route prefixes:
 - `/dashboard/:path*`
 - `/contests/:path*`
 - `/practice/:path*`
+- `/problems/:path*`
+- `/profile/:path*`
 - `/instructor/:path*`
 - `/admin/:path*`
 

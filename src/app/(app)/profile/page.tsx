@@ -1,11 +1,12 @@
 import ProfilePage, { type ProfileData } from "@/fe/profile/page/ProfilePage";
+import { loginPath } from "@/lib/loginPath";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 
 export default async function ProfilePageRoute() {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect(await loginPath());
 
   const record = await prisma.user.findUnique({
     where: { computingId: user.computingId },
@@ -31,7 +32,7 @@ export default async function ProfilePageRoute() {
     },
   });
 
-  if (!record) redirect("/login");
+  if (!record) redirect(await loginPath());
 
   const profile: ProfileData = {
     points: record.pointsAcquired,

@@ -23,3 +23,9 @@ export function safeNextPath(next: unknown, fallback: string = DEFAULT_NEXT_PATH
     return fallback;
   }
 }
+
+/** Adds `?next=` to an auth page link, so the return path survives sign-in. */
+export function withNextPath(href: string, next: unknown): string {
+  const nextPath = safeNextPath(next, "");
+  return nextPath ? `${href}?next=${encodeURIComponent(nextPath)}` : href;
+}

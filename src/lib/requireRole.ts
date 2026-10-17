@@ -1,12 +1,13 @@
 import { redirect } from "next/navigation";
 import type { Role } from "@/lib/authz";
+import { loginPath } from "@/lib/loginPath";
 import { getCurrentUser, type CurrentUser } from "@/lib/session";
 
 export async function requireRole(allowedRoles: Role[]): Promise<CurrentUser> {
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(await loginPath());
   }
 
   if (!allowedRoles.includes(user.role)) {

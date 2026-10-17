@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { NICKNAME_PATTERN, NICKNAME_RULE } from "@/lib/nickname";
+import { safeNextPath } from "@/lib/safeNextPath";
 import styles from "@/fe/auth/styles/LoginPage.module.css";
 
 interface EmailSignupFormState {
@@ -33,7 +34,7 @@ function validateForm(form: EmailSignupFormState): string | null {
 }
 
 // Self-service sign-up for students outside SFU; the new account is signed in immediately.
-export default function EmailSignupForm() {
+export default function EmailSignupForm({ next }: { next: string | null }) {
   const [form, setForm] = useState(INITIAL_FORM_STATE);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,7 +67,7 @@ export default function EmailSignupForm() {
         setError(payload?.message ?? "Sign-up failed.");
         return;
       }
-      window.location.assign("/dashboard");
+      window.location.assign(safeNextPath(next));
     } catch {
       setError("Sign-up failed.");
     } finally {

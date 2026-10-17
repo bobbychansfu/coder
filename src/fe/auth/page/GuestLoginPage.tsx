@@ -5,15 +5,17 @@ import { useState } from "react";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
 import styles from "@/fe/auth/styles/LoginPage.module.css";
+import { safeNextPath, withNextPath } from "@/lib/safeNextPath";
 
 interface GuestLoginPageProps {
   enabled: boolean;
   showSignup: boolean;
+  next: string | null;
 }
 
 // Password sign-in for everyone outside SFU CAS: self-registered students (by email)
 // and admin-made guests (by username).
-export default function GuestLoginPage({ enabled, showSignup }: GuestLoginPageProps) {
+export default function GuestLoginPage({ enabled, showSignup, next }: GuestLoginPageProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -38,7 +40,7 @@ export default function GuestLoginPage({ enabled, showSignup }: GuestLoginPagePr
         setError(payload?.message ?? "Sign-in failed.");
         return;
       }
-      window.location.assign("/dashboard");
+      window.location.assign(safeNextPath(next));
     } catch {
       setError("Sign-in failed.");
     } finally {
@@ -100,12 +102,12 @@ export default function GuestLoginPage({ enabled, showSignup }: GuestLoginPagePr
           {showSignup ? (
             <p className={styles.hint}>
               No account yet?{" "}
-              <Link href="/signup" className={styles.inlineLink}>
+              <Link href={withNextPath("/signup", next)} className={styles.inlineLink}>
                 Create one
               </Link>
             </p>
           ) : null}
-          <Link href="/login" className={styles.secondaryLink}>Back to SFU Login</Link>
+          <Link href={withNextPath("/login", next)} className={styles.secondaryLink}>Back to SFU Login</Link>
         </article>
       </section>
     </main>

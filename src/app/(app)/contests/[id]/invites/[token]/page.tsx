@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import TeamInviteResponse from "@/fe/contests/components/TeamInviteResponse";
 import { prisma } from "@/lib/prisma";
+import { loginPath } from "@/lib/loginPath";
 import { getCurrentUser } from "@/lib/session";
 import { teamDisplayName } from "@/server/teams/contestTeamService";
 
@@ -14,7 +15,7 @@ const nameSelect = { nickname: true, firstName: true, lastName: true, computingI
 export default async function TeamInviteRoute({ params }: TeamInviteRouteProps) {
   const user = await getCurrentUser();
   if (!user) {
-    redirect("/login");
+    redirect(await loginPath());
   }
 
   const { id, token } = await params;

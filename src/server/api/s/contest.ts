@@ -16,12 +16,16 @@ async function findContestForViewer(computingId: string, role: string, contestId
   return dbHelpers.findSpecificContestForUser(computingId, contestId, "contestant");
 }
 
+async function readJoinCode(request: NextRequest) {
+  const body: unknown = await request.json().catch(() => null);
+  const joinCode = (body as { joinCode?: unknown } | null)?.joinCode;
+  return typeof joinCode === "string" && joinCode ? joinCode : undefined;
+}
+
 export async function handleRegisterContest(
   request: NextRequest,
   cid: string
 ) {
-  void request;
-
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -32,14 +36,20 @@ export async function handleRegisterContest(
     const existingContest = await dbHelpers.findSpecificContestForUser(computingId, cid, "contestant");
 
     if (!existingContest) {
+      const joinCode = await readJoinCode(request);
       const joinableContest = await dbHelpers.findJoinableContestForUser(
         computingId,
         cid,
         "contestant",
+        joinCode,
       );
 
       if (!joinableContest || !isJoinableContestStatus(getEffectiveContestStatus(joinableContest))) {
         return NextResponse.json({ error: "Contest is not open for registration" }, { status: 403 });
+      }
+
+      if (joinCode && joinableContest.visibility === "PRIVATE") {
+        await dbHelpers.addToContestAllowlist(computingId, cid);
       }
     }
 
