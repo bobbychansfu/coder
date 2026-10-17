@@ -16,6 +16,8 @@ interface ProblemDetailsProps {
   hideStats?: boolean;
   compactSubmissions?: boolean;
   outputSection?: ReactNode;
+  // Makes each submission row open that submission
+  onSubmissionClick?: (submissionId: string) => void;
 }
 
 const renderInlineCode = (text: string) => {
@@ -39,20 +41,27 @@ export default function ProblemDetails({
   hideStats = false,
   compactSubmissions = false,
   outputSection,
+  onSubmissionClick,
 }: ProblemDetailsProps) {
   const tabContent = useMemo(() => {
     if (tab === "submissions") {
       const headerClass = compactSubmissions
         ? `${styles.submissionsHeader} ${styles.submissionsHeaderCompact}`
         : styles.submissionsHeader;
-      const rowClass = compactSubmissions
-        ? `${styles.submissionsRow} ${styles.submissionsRowCompact}`
-        : styles.submissionsRow;
+      const rowClass = [
+        styles.submissionsRow,
+        compactSubmissions ? styles.submissionsRowCompact : "",
+        onSubmissionClick ? styles.submissionsRowButton : "",
+      ].join(" ");
+      // Only a list that mixes people or teams says who made each one
+      const showBy = detail.submissions.some((submission) => submission.by && !submission.isOwn);
+      const columns = showBy ? { gridTemplateColumns: "1.6fr 1.4fr 1fr 1fr" } : undefined;
 
       return (
         <Box className={styles.submissionsTable}>
-          <Box className={headerClass}>
+          <Box className={headerClass} sx={columns}>
             <Typography className={styles.submissionsHeaderCell}>Status</Typography>
+            {showBy && <Typography className={styles.submissionsHeaderCell}>By</Typography>}
             <Typography className={styles.submissionsHeaderCell}>Language</Typography>
             {!compactSubmissions && (
               <>
@@ -69,13 +78,25 @@ export default function ProblemDetails({
               const config = SUBMISSION_STATUS_CONFIG[submission.status];
               const StatusIcon = config.icon;
               return (
-                <Box key={submission.id} className={rowClass}>
+                <Box
+                  key={submission.id}
+                  className={rowClass}
+                  sx={columns}
+                  {...(onSubmissionClick
+                    ? { component: "button" as const, type: "button", onClick: () => onSubmissionClick(submission.id) }
+                    : {})}
+                >
                   <Box className={styles.submissionStatusCell}>
                     <StatusIcon sx={{ fontSize: 16, color: config.color }} />
                     <Typography className={styles.submissionStatusText} sx={{ color: config.color }}>
                       {config.label}
                     </Typography>
                   </Box>
+                  {showBy && (
+                    <Typography className={styles.submissionsCell} noWrap>
+                      {submission.isOwn ? "You" : submission.by}
+                    </Typography>
+                  )}
                   <Typography className={styles.submissionsCell}>{submission.language}</Typography>
                   {!compactSubmissions && (
                     <>
@@ -236,7 +257,7 @@ export default function ProblemDetails({
         ) : null}
       </Box>
     );
-  }, [detail, tab, hideEditorial, hideStats, compactSubmissions]);
+  }, [detail, tab, hideEditorial, hideStats, compactSubmissions, onSubmissionClick]);
 
   const tabOptions = [
     { value: "description", label: "Description" },

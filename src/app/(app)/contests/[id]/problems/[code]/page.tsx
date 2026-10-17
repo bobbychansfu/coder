@@ -16,7 +16,7 @@ import { dbHelpers } from "@/lib/db-helpers";
 import { loginPath } from "@/lib/loginPath";
 import { getCurrentUser } from "@/lib/session";
 import { resolveJudgeProblemId } from "@/server/api/s/problem";
-import { codingLanguageToLabel } from "@/server/coding-language";
+import { listVisibleContestSubmissions } from "@/server/contestSubmissions";
 import { fetchJudgeProblemFiles } from "@/server/judge";
 import { renderLatexStatement } from "@/server/latexStatement";
 import { findContestInvitationOrDeny } from "@/server/studentContestAccess";
@@ -145,7 +145,11 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
       : undefined;
   const [problemDetail, submissions] = await Promise.all([
     dbHelpers.findProblemWithDetails(problem.problemId),
-    dbHelpers.findSubmissionsForProblem(user.computingId, contestId, problem.problemId),
+    listVisibleContestSubmissions(
+      contestId,
+      { computingId: user.computingId, isStaff: can(user.role).canManageContest },
+      problem.problemId,
+    ),
   ]);
 
   if (!problemDetail) {
@@ -182,12 +186,14 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
       id: submission.id,
       status: submission.status,
       language: submission.language,
-      languageLabel: codingLanguageToLabel(submission.language),
-      createdAt: submission.createdAt.toISOString(),
+      languageLabel: submission.languageLabel,
+      createdAt: submission.createdAt,
       score: submission.score,
       runtime: null,
       memory: null,
       judgeOutput: submission.judgeOutput ?? "",
+      by: submission.by,
+      isOwn: submission.isOwn,
     })),
   };
 

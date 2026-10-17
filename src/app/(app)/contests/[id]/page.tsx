@@ -11,10 +11,13 @@ import { getEffectiveContestStatus, hasContestStarted } from "@/lib/contestStatu
 import { dbHelpers } from "@/lib/db-helpers";
 import { loginPath } from "@/lib/loginPath";
 import { getCurrentUser } from "@/lib/session";
+import { parseContestTab } from "@/fe/shared/constants/routes";
+import { listVisibleContestSubmissions } from "@/server/contestSubmissions";
 import { findContestInvitationOrDeny } from "@/server/studentContestAccess";
 
 interface ContestDetailRouteProps {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ tab?: string | string[] }>;
 }
 
 function toBackendContestSummary(
@@ -75,7 +78,7 @@ async function getContestProblemStatusDirect(
 
 export const dynamicParams = true;
 
-export default async function ContestDetailRoute({ params }: ContestDetailRouteProps) {
+export default async function ContestDetailRoute({ params, searchParams }: ContestDetailRouteProps) {
   const user = await getCurrentUser();
 
   if (!user) {
@@ -128,10 +131,22 @@ export default async function ContestDetailRoute({ params }: ContestDetailRouteP
     ? contest
     : toBackendContestSummary(contest);
 
+  // Students see submissions only once the contest has started, like its problems
+  const { tab } = await searchParams;
+  const submissions =
+    parseContestTab(typeof tab === "string" ? tab : null) === "submissions" &&
+    (isManager || hasContestStarted(contest))
+      ? await listVisibleContestSubmissions(contestId, {
+          computingId: user.computingId,
+          isStaff: isManager,
+        })
+      : [];
+
   return (
     <ContestDetailPage
       isStudent={user.role === "student"}
       canEditContest={can(user.role).canManageContest}
+      submissions={submissions}
       contest={toContestDetail(
         normalizedContest,
         contestProblemStatus,

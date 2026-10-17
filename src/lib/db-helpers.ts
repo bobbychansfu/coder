@@ -542,17 +542,6 @@ export const dbHelpers = {
     });
   },
 
-  findSubmissionsForProblem: async (computingId: string, contestId: string, problemId: string) => {
-    return prisma.submission.findMany({
-      where: {
-        user: { computingId },
-        contestId,
-        problemId,
-      },
-      orderBy: { createdAt: "desc" },
-    });
-  },
-
   findAllSubmissions: async (computingId: string) => {
     return prisma.submission.findMany({
       where: { user: { computingId } },

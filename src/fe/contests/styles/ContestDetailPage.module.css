@@ -571,3 +571,34 @@ a.problemTableRowAttempted:hover {
     font-size: 12px;
   }
 }
+
+/* Submissions tab: each row opens that submission's code */
+.problemTableButton {
+  width: 100%;
+  border-top: 0;
+  border-right: 0;
+  border-left: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.problemTableButton:hover {
+  background-color: #f9fafb;
+}
+
+.submissionsStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.submissionsMuted {
+  color: #6a7282;
+  white-space: nowrap;
+}
+
+.submissionsEmpty {
+  color: #6a7282;
+}

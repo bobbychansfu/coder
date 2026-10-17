@@ -8,9 +8,12 @@ import { promises as fs } from "fs";
 import {
   appLanguageToCodingLanguage,
   appLanguageToJudgeLanguage,
-  codingLanguageToLabel,
 } from "@/server/coding-language";
 import { applyContestJudgeResult } from "@/server/contestJudging";
+import {
+  findVisibleContestSubmission,
+  listVisibleContestSubmissions,
+} from "@/server/contestSubmissions";
 import {
   normalizeJudgeStatusToSubmissionStatus,
   parseJudgeResult,
@@ -453,7 +456,11 @@ export async function handleGetSubmissionsForProblem(
       return NextResponse.json({ error: "Contest not found" }, { status: 404 });
     }
 
-    const subs = await dbHelpers.findSubmissionsForProblem(user.computingId, cid, pid);
+    const subs = await listVisibleContestSubmissions(
+      cid,
+      { computingId: user.computingId, isStaff: can(user.role).canManageContest },
+      pid,
+    );
     const problem = await dbHelpers.findProblem(pid);
 
     return NextResponse.json({
@@ -462,15 +469,45 @@ export async function handleGetSubmissionsForProblem(
         id: submission.id,
         status: submission.status,
         language: submission.language,
-        languageLabel: codingLanguageToLabel(submission.language),
-        createdAt: submission.createdAt.toISOString(),
+        languageLabel: submission.languageLabel,
+        createdAt: submission.createdAt,
         score: submission.score,
         runtime: formatRuntimeFromJudgeResponse({}, submission.judgeOutput),
         memory: formatMemoryFromJudgeResponse({}, submission.judgeOutput),
         judgeOutput: submission.judgeOutput ?? "",
+        by: submission.by,
+        isOwn: submission.isOwn,
       })),
       problem,
     });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+// One contest submission with its code: the viewer's own, their team's, or any for staff
+export async function handleGetSubmissionCode(_request: NextRequest, cid: string, sid: string) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const contest = await findContestForViewer(user.computingId, user.role, cid);
+    if (!contest || !isContestViewableByRegisteredUser(contest)) {
+      return NextResponse.json({ error: "Submission not found" }, { status: 404 });
+    }
+
+    const submission = await findVisibleContestSubmission(sid, cid, {
+      computingId: user.computingId,
+      isStaff: can(user.role).canManageContest,
+    });
+    if (!submission) {
+      return NextResponse.json({ error: "Submission not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ submission });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

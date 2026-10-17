@@ -9,6 +9,7 @@ import { useTimedRouterRefresh } from "@/fe/shared/hooks/useTimedRouterRefresh";
 import ContestDataHub from "@/fe/contests/components/ContestDataHub";
 import ProblemsTab from "@/fe/contests/components/ProblemsTab";
 import ScoreboardTab from "@/fe/contests/components/ScoreboardTab";
+import SubmissionsTab, { type ContestSubmissionRow } from "@/fe/contests/components/SubmissionsTab";
 import ContestTeamControls from "@/fe/contests/components/ContestTeamControls";
 import { CONTEST_STATUS_CONFIG } from "@/fe/shared/constants/options";
 import type { ContestDetail } from "@/fe/contests/data/contestDetails";
@@ -24,12 +25,15 @@ interface ContestDetailPageProps {
   contest: ContestDetail;
   isStudent?: boolean;
   canEditContest?: boolean;
+  // Loaded only while the Submissions tab is open
+  submissions?: ContestSubmissionRow[];
 }
 
 export default function ContestDetailPage({
   contest,
   isStudent = false,
   canEditContest = false,
+  submissions = [],
 }: ContestDetailPageProps) {
   const router = useRouter();
   useTimedRouterRefresh(contest.status !== "closed");
@@ -76,6 +80,12 @@ export default function ContestDetailPage({
             contestId={contest.id}
             problems={contest.problems}
             showPoints={contest.scoringRule !== "ICPC"}
+          />
+        ) : tab === "submissions" ? (
+          <SubmissionsTab
+            contestId={contest.id}
+            problems={contest.problems}
+            submissions={submissions}
           />
         ) : (
           <ScoreboardTab
