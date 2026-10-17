@@ -23,6 +23,7 @@ import AiHintDialog from "@/fe/shared/components/problem/AiHintDialog";
 import ProblemHeader from "@/fe/shared/components/problem/ProblemHeader";
 import ProblemDetails from "@/fe/shared/components/problem/ProblemDetails";
 import SolutionEditor from "@/fe/shared/components/problem/SolutionEditor";
+import SubmissionCodeDialog from "@/fe/contests/components/SubmissionCodeDialog";
 import type { ContestDetailStatus } from "@/fe/contests/data/contestDetails";
 import {
   DEFAULT_CODE_LANGUAGE,
@@ -161,6 +162,7 @@ function ProblemSubmissionPageContent({
   );
   const [runResult, setRunResult] = useState<RunResult | null>(null);
   const [submissions, setSubmissions] = useState(detail.submissions);
+  const [openSubmissionId, setOpenSubmissionId] = useState<string | null>(null);
   const [aiHintOpen, setAiHintOpen] = useState(false);
   const [aiHintMessage, setAiHintMessage] = useState<string | null>(null);
   const [aiHintError, setAiHintError] = useState<string | null>(null);
@@ -244,6 +246,30 @@ function ProblemSubmissionPageContent({
     setSubmissions(records);
     return records;
   };
+
+  // Teammates may have submitted since the page loaded
+  useEffect(() => {
+    if (tab !== "submissions" || isJudging || !detail.problemId) {
+      return;
+    }
+
+    let cancelled = false;
+    fetch(`/api/s/submissions/${contestId}/${detail.problemId}`, {
+      credentials: "include",
+      cache: "no-store",
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload: ContestProblemSubmissionsResponse | null) => {
+        if (!cancelled && payload) {
+          setSubmissions(adaptContestSubmissionRecords(payload));
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, isJudging, contestId, detail.problemId]);
 
   const pollForSubmissionSettlement = async (submissionId: string) => {
     for (let attempt = 0; attempt < SUBMISSION_POLL_ATTEMPTS; attempt += 1) {
@@ -506,6 +532,7 @@ function ProblemSubmissionPageContent({
             hideEditorial
             compactSubmissions
             outputSection={outputSection}
+            onSubmissionClick={setOpenSubmissionId}
           />
         </Box>
       </Box>
@@ -569,6 +596,13 @@ function ProblemSubmissionPageContent({
           />
         </Box>
       </Dialog>
+
+      <SubmissionCodeDialog
+        contestId={contestId}
+        submissionId={openSubmissionId}
+        title={`${detail.code}. ${detail.title}`}
+        onClose={() => setOpenSubmissionId(null)}
+      />
 
       <AiHintDialog
         open={aiHintOpen}

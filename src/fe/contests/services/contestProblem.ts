@@ -3,7 +3,7 @@ import type { ProblemDetail, SubmissionRecord } from "@/fe/contests/data/problem
 
 type StarterCodeLanguage = "CPLUSPLUS" | "JAVA" | "TYPESCRIPT" | "JAVASCRIPT" | "PYTHON";
 type SubmissionLanguage = StarterCodeLanguage;
-type SubmissionStatus =
+export type SubmissionStatus =
   | "PENDING"
   | "ACCEPTED"
   | "WRONG_ANSWER"
@@ -50,6 +50,8 @@ interface ContestSubmissionApiModel {
   runtime?: string | null;
   memory?: string | null;
   judgeOutput?: string;
+  by?: string;
+  isOwn?: boolean;
 }
 
 interface ContestJudgeProblemApiModel {
@@ -109,7 +111,7 @@ function mapLanguageToLabel(language: SubmissionLanguage) {
   }
 }
 
-function mapSubmissionStatus(status: SubmissionStatus): SubmissionRecord["status"] {
+export function mapSubmissionStatus(status: SubmissionStatus): SubmissionRecord["status"] {
   switch (status) {
     case "ACCEPTED":
       return "accepted";
@@ -129,7 +131,7 @@ function mapSubmissionStatus(status: SubmissionStatus): SubmissionRecord["status
   }
 }
 
-function formatTimeAgo(value: string) {
+export function formatTimeAgo(value: string) {
   const timestamp = new Date(value).getTime();
   const diffMs = Date.now() - timestamp;
 
@@ -184,6 +186,8 @@ export function adaptContestSubmissionRecords(
     runtime: submission.runtime?.trim() || "-",
     memory: submission.memory?.trim() || "-",
     submitted: formatTimeAgo(submission.createdAt),
+    by: submission.by,
+    isOwn: submission.isOwn,
   }));
 }
 

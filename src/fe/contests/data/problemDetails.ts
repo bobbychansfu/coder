@@ -59,6 +59,9 @@ export interface SubmissionRecord {
   runtime: string;
   memory: string;
   submitted: string;
+  // Contest submissions only: who made it, shown once a list mixes people or teams
+  by?: string;
+  isOwn?: boolean;
 }
 
 export interface EditorialDetail {
