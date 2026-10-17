@@ -4,6 +4,7 @@ import { getEffectiveContestStatus, hasContestStarted } from "@/lib/contestStatu
 import crypto from "crypto";
 import { getCurrentUser } from "@/lib/session";
 import { dbHelpers } from "@/lib/db-helpers";
+import { prisma } from "@/lib/prisma";
 
 type HintRequestBody = Record<string, unknown> & {
   pid?: unknown;
@@ -146,6 +147,19 @@ export async function handleRequestHint(request: NextRequest) {
     const topics = await dbHelpers.getProblemTopic(pid);
 
     if (!problem) {
+      return NextResponse.json({ error: "Problem not found" }, { status: 404 });
+    }
+
+    // A contest problem gets hints only through its own contest, so the checks above apply.
+    const inRequestedContest = contestId
+      ? Boolean(
+          await prisma.contestProblem.findFirst({
+            where: { contestId, problemId: pid },
+            select: { problemId: true },
+          }),
+        )
+      : problem.source !== "CONTEST";
+    if (!inRequestedContest) {
       return NextResponse.json({ error: "Problem not found" }, { status: 404 });
     }
 
