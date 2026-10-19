@@ -216,6 +216,58 @@ export const dbHelpers = {
     return withParticipantCount(contest);
   },
 
+  // A contest a student may open: one they registered for, or an ended one its setter
+  // opened to every student for upsolving
+  findViewableContestForStudent: async (computingId: string, contestId: string) => {
+    return (
+      (await dbHelpers.findSpecificContestForUser(computingId, contestId, "contestant")) ??
+      (await dbHelpers.findContestOpenForUpsolving(contestId))
+    );
+  },
+
+  findContestOpenForUpsolving: async (contestId: string) => {
+    const contest = await prisma.contest.findFirst({
+      where: {
+        id: contestId,
+        manageStatus: "ACTIVE",
+        published: true,
+        status: { not: "DRAFT" },
+        openForUpsolving: true,
+      },
+      include: {
+        participations: {
+          select: { role: true },
+        },
+      },
+    });
+
+    return contest && getEffectiveContestStatus(contest) === "ENDED"
+      ? withParticipantCount(contest)
+      : null;
+  },
+
+  // Ended contests opened for upsolving that this student never registered for
+  findUpsolvingContestsForUser: async (computingId: string) => {
+    const contests = await prisma.contest.findMany({
+      where: {
+        manageStatus: "ACTIVE",
+        published: true,
+        status: { not: "DRAFT" },
+        openForUpsolving: true,
+        participations: { none: { user: { computingId }, role: "contestant" } },
+      },
+      include: {
+        participations: {
+          select: { role: true },
+        },
+      },
+    });
+
+    return contests
+      .filter((contest) => getEffectiveContestStatus(contest) === "ENDED")
+      .map(withParticipantCount);
+  },
+
   findOpenContestsForUser: async (computingId: string, role: string) => {
     // Finds contests students can still join.
     const contests = await prisma.contest.findMany({
@@ -808,8 +860,16 @@ export const dbHelpers = {
     if (!user) throw new Error("User not found");
 
     return prisma.$transaction(async (tx) => {
-      // Stamped now, so the result stays with this team whatever changes later
-      const teamId = await ensureContestTeam(tx, data.contestId, user.id);
+      // Stamped now, so the result stays with this team whatever changes later. Someone
+      // upsolving a contest they never registered for gets no team.
+      const participation = await tx.participation.findUnique({
+        where: { userId_contestId: { userId: user.id, contestId: data.contestId } },
+        select: { role: true },
+      });
+      const teamId =
+        participation?.role === "contestant"
+          ? await ensureContestTeam(tx, data.contestId, user.id)
+          : null;
       return tx.submission.create({
         data: {
           userId: user.id,

@@ -260,6 +260,8 @@ model Contest {
   scoringRule     ContestScoringRule @default(POINTS)
   // Contestants see problem difficulty only when the setter turns this on.
   showDifficulty  Boolean       @default(false)
+  // Once it ends, any student may open it and upsolve, registered or not
+  openForUpsolving Boolean      @default(false)
   // Contestants per team; 1 makes it an individual contest
   maxTeamSize     Int           @default(3)
   // Secret in a private contest's join link; null turns the link off

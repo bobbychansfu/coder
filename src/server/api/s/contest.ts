@@ -13,7 +13,7 @@ async function findContestForViewer(computingId: string, role: string, contestId
     return dbHelpers.findContestForViewer(contestId, computingId, role);
   }
 
-  return dbHelpers.findSpecificContestForUser(computingId, contestId, "contestant");
+  return dbHelpers.findViewableContestForStudent(computingId, contestId);
 }
 
 async function readJoinCode(request: NextRequest) {

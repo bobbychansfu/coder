@@ -24,6 +24,8 @@ import listPageStyles from "@/fe/shared/styles/ListPageLayout.module.css";
 interface ContestDetailPageProps {
   contest: ContestDetail;
   isStudent?: boolean;
+  // Registered, so on a team; others may only be upsolving an ended contest
+  isParticipant?: boolean;
   canEditContest?: boolean;
   // Loaded only while the Submissions tab is open
   submissions?: ContestSubmissionRow[];
@@ -32,6 +34,7 @@ interface ContestDetailPageProps {
 export default function ContestDetailPage({
   contest,
   isStudent = false,
+  isParticipant = false,
   canEditContest = false,
   submissions = [],
 }: ContestDetailPageProps) {
@@ -53,7 +56,7 @@ export default function ContestDetailPage({
         titleClassName={styles.title}
         statusChipClassName={styles.statusChip}
         actions={
-          isStudent ? (
+          isStudent && isParticipant ? (
             <ContestTeamControls contestId={contest.id} />
           ) : canEditContest ? (
             <Link

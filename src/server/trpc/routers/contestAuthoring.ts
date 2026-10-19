@@ -28,6 +28,7 @@ const contestMutationSchema = z.object({
   visibility: visibilitySchema,
   scoringRule: scoringRuleSchema.default("points"),
   showDifficulty: z.boolean().default(false),
+  openForUpsolving: z.boolean().default(false),
   maxTeamSize: maxTeamSizeSchema.default(3),
   aiHintEnabled: z.boolean(),
   groupAHintAfterMinutes: hintDelayMinutesSchema.default(DEFAULT_GROUP_A_HINT_DELAY_MINUTES),
@@ -51,6 +52,7 @@ const contestPatchSchema = z
     visibility: visibilitySchema.optional(),
     scoringRule: scoringRuleSchema.optional(),
     showDifficulty: z.boolean().optional(),
+    openForUpsolving: z.boolean().optional(),
     maxTeamSize: maxTeamSizeSchema.optional(),
     aiHintEnabled: z.boolean().optional(),
     groupAHintAfterMinutes: hintDelayMinutesSchema.optional(),
@@ -405,6 +407,7 @@ export const contestAuthoringRouter = router({
         visibility: toUiVisibility(contest.visibility),
         scoringRule: contest.scoringRule === "ICPC" ? ("icpc" as const) : ("points" as const),
         showDifficulty: contest.showDifficulty,
+        openForUpsolving: contest.openForUpsolving,
         maxTeamSize: contest.maxTeamSize,
         allowedUsers: contest.allowedUsers.map((entry) => entry.identifier),
         joinCode: contest.joinCode,
@@ -502,6 +505,7 @@ export const contestAuthoringRouter = router({
             visibility: toDbVisibility(input.visibility),
             scoringRule: toDbScoringRule(input.scoringRule),
             showDifficulty: input.showDifficulty,
+            openForUpsolving: input.openForUpsolving,
             maxTeamSize: input.maxTeamSize,
             startsAt,
             endsAt,
@@ -708,6 +712,10 @@ export const contestAuthoringRouter = router({
 
         if (hasOwnKey(input.data, "showDifficulty") && input.data.showDifficulty !== undefined) {
           contestUpdateData.showDifficulty = input.data.showDifficulty;
+        }
+
+        if (hasOwnKey(input.data, "openForUpsolving") && input.data.openForUpsolving !== undefined) {
+          contestUpdateData.openForUpsolving = input.data.openForUpsolving;
         }
 
         if (hasOwnKey(input.data, "isDraft") && input.data.isDraft !== undefined) {

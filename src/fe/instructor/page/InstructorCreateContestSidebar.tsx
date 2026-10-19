@@ -40,6 +40,7 @@ interface InstructorCreateContestSidebarProps {
   draftContestsCount: number;
   aiHintEnabled: boolean;
   showDifficulty: boolean;
+  openForUpsolving: boolean;
   isEditMode: boolean;
   isSaving: boolean;
   isPageLoading: boolean;
@@ -50,6 +51,7 @@ interface InstructorCreateContestSidebarProps {
   publishLabel: string;
   onFieldChange: (field: keyof ContestFormDraft, value: string) => void;
   onShowDifficultyChange: (enabled: boolean) => void;
+  onOpenForUpsolvingChange: (enabled: boolean) => void;
   onNumberFieldChange: (field: keyof ContestFormDraft, value: string) => void;
   onPublish: () => void;
 }
@@ -60,6 +62,7 @@ export default function InstructorCreateContestSidebar({
   draftContestsCount,
   aiHintEnabled,
   showDifficulty,
+  openForUpsolving,
   isEditMode,
   isSaving,
   isPageLoading,
@@ -70,6 +73,7 @@ export default function InstructorCreateContestSidebar({
   publishLabel,
   onFieldChange,
   onShowDifficultyChange,
+  onOpenForUpsolvingChange,
   onNumberFieldChange,
   onPublish,
 }: InstructorCreateContestSidebarProps) {
@@ -280,6 +284,20 @@ export default function InstructorCreateContestSidebar({
               // Setting slotProps.input drops MUI's default role, so it is restated here.
               slotProps={{
                 input: { role: "switch", "aria-label": contestAuthoringCopy.showDifficultyLabel },
+              }}
+            />
+          </div>
+
+          <div className={styles.aiHeaderRow}>
+            <Typography className={styles.fieldLabel}>
+              {contestAuthoringCopy.openForUpsolvingLabel}
+            </Typography>
+            <Switch
+              checked={openForUpsolving}
+              onChange={(_, checked) => onOpenForUpsolvingChange(checked)}
+              className={styles.aiSwitch}
+              slotProps={{
+                input: { role: "switch", "aria-label": contestAuthoringCopy.openForUpsolvingLabel },
               }}
             />
           </div>

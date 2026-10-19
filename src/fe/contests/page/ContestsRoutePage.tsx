@@ -23,6 +23,7 @@ export default async function ContestsRoutePage() {
   let initialContests: ContestListItem[] = [];
   let myContests: ContestListItem[] = [];
   let availableContests: ContestListItem[] = [];
+  let pastContests: ContestListItem[] = [];
   let pageErrorMessage: string | undefined;
 
   try {
@@ -33,8 +34,13 @@ export default async function ContestsRoutePage() {
         ...contestInfoPayload.contests,
         ...contestInfoPayload.contestsOpen,
       ]);
-      myContests = mapContestList(contestInfoPayload.contests);
-      availableContests = mapContestList(contestInfoPayload.contestsOpen);
+      // Ended contests, their own and those opened for upsolving, go under Past, as on
+      // Codeforces and Kattis
+      const registered = mapContestList(contestInfoPayload.contests);
+      const open = mapContestList(contestInfoPayload.contestsOpen);
+      myContests = registered.filter((contest) => contest.status !== "Closed");
+      availableContests = open.filter((contest) => contest.status !== "Closed");
+      pastContests = [...registered, ...open].filter((contest) => contest.status === "Closed");
     } else {
       const publishedContests = await dbHelpers.findPublishedContestsForViewer(
         user.computingId,
@@ -60,6 +66,7 @@ export default async function ContestsRoutePage() {
       initialContests={initialContests}
       myContests={myContests}
       availableContests={availableContests}
+      pastContests={pastContests}
       isStudent={user.role === "student"}
       showCreateContest={permissions.canCreateContest}
       showManageContest={permissions.canManageContest}

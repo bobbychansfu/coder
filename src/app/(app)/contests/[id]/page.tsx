@@ -52,7 +52,7 @@ async function getContestProblemStatusDirect(
   const normalizedRole = normalizeRole(role);
   const contest = normalizedRole && can(normalizedRole).canManageContest
     ? await dbHelpers.findContestForViewer(contestId, computingId, role)
-    : await dbHelpers.findSpecificContestForUser(computingId, contestId, "contestant");
+    : await dbHelpers.findViewableContestForStudent(computingId, contestId);
 
   if (!contest || !contest.published || contest.status === "DRAFT") {
     return null;
@@ -90,12 +90,16 @@ export default async function ContestDetailRoute({ params, searchParams }: Conte
   let contest = null;
 
   const isManager = can(user.role).canManageContest;
+  let isParticipant = false;
 
   if (isManager) {
     contest = await dbHelpers.findContestForViewer(contestId, user.computingId, user.role);
   } else {
     const registeredContests = await dbHelpers.findContestsForUser(user.computingId, "contestant");
     contest = registeredContests.find((item) => item.id === contestId) ?? null;
+    isParticipant = contest !== null;
+    // Anyone may open an ended contest its setter opened for upsolving
+    contest ??= await dbHelpers.findContestOpenForUpsolving(contestId);
   }
 
   if (!contest) {
@@ -145,6 +149,7 @@ export default async function ContestDetailRoute({ params, searchParams }: Conte
   return (
     <ContestDetailPage
       isStudent={user.role === "student"}
+      isParticipant={isParticipant}
       canEditContest={can(user.role).canManageContest}
       submissions={submissions}
       contest={toContestDetail(
