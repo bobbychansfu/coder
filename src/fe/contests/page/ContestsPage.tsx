@@ -28,6 +28,8 @@ interface ContestsPageProps {
   initialContests: ContestListItem[];
   myContests?: ContestListItem[];
   availableContests?: ContestListItem[];
+  // Ended contests: the student's own, and any opened for upsolving
+  pastContests?: ContestListItem[];
   isStudent?: boolean;
   showCreateContest: boolean;
   showManageContest: boolean;
@@ -35,7 +37,13 @@ interface ContestsPageProps {
   pageErrorMessage?: string;
 }
 
-type ContestSectionMode = "registered" | "available";
+type ContestSectionMode = "registered" | "available" | "past";
+
+const SECTION_TITLES: Record<ContestSectionMode, string> = {
+  registered: "My Contests",
+  available: "Available Contests",
+  past: "Past Contests",
+};
 
 function filterContests(
   contests: ContestListItem[],
@@ -61,6 +69,7 @@ export default function ContestsPage({
   initialContests,
   myContests = [],
   availableContests = [],
+  pastContests = [],
   isStudent = false,
   showCreateContest,
   pageErrorMessage,
@@ -129,7 +138,9 @@ export default function ContestsPage({
         <div className={sectionStyles.emptyState}>
           {mode === "registered"
             ? "You have not registered for any contests yet."
-            : "No contests are currently open for registration."}
+            : mode === "past"
+              ? "No past contests yet."
+              : "No contests are currently open for registration."}
         </div>
       );
     }
@@ -146,20 +157,15 @@ export default function ContestsPage({
             durationMinutes={contest.durationMinutes}
             href={`/contests/${contest.id}`}
             actionLabel={
-              mode === "registered" || contest.status === "Closed"
+              mode !== "available"
                 ? getRegisteredActionLabel(contest.status)
                 : pendingContestId === contest.id
                   ? "Registering..."
                   : "Register"
             }
-            // An ended contest opened for upsolving needs no registration
-            actionKind={mode === "registered" || contest.status === "Closed" ? "link" : "button"}
-            actionVariant={mode === "registered" || contest.status === "Closed" ? "secondary" : "primary"}
-            onAction={
-              mode === "available" && contest.status !== "Closed"
-                ? () => setContestToConfirm(contest)
-                : undefined
-            }
+            actionKind={mode === "available" ? "button" : "link"}
+            actionVariant={mode === "available" ? "primary" : "secondary"}
+            onAction={mode === "available" ? () => setContestToConfirm(contest) : undefined}
             actionDisabled={mode === "available" && pendingContestId === contest.id}
           />
         ))}
@@ -168,8 +174,21 @@ export default function ContestsPage({
   };
 
   const activeStudentContests =
-    studentView === "registered" ? studentMyContests : studentAvailableContests;
-  const allowedStatusOptions = BASE_STATUS_FILTERS;
+    studentView === "registered"
+      ? studentMyContests
+      : studentView === "available"
+        ? studentAvailableContests
+        : pastContests;
+  // Students see ended contests only under Past, so each tab offers just its own statuses
+  const allowedStatusOptions = useMemo(() => {
+    if (!isStudent) {
+      return BASE_STATUS_FILTERS;
+    }
+
+    return studentView === "past"
+      ? BASE_STATUS_FILTERS.filter((option) => option.label === DEFAULT_STATUS_FILTER)
+      : BASE_STATUS_FILTERS.filter((option) => option.label !== "Closed");
+  }, [isStudent, studentView]);
   const normalizedStatusFilter = allowedStatusOptions.some((option) => option.label === statusFilter)
     ? statusFilter
     : DEFAULT_STATUS_FILTER;
@@ -190,7 +209,9 @@ export default function ContestsPage({
   const activeStudentDescription =
     studentView === "registered"
       ? "Contests you have already joined through a Participation record."
-      : "Contests you can still register for, and ended ones open for upsolving.";
+      : studentView === "available"
+        ? "Published upcoming or active contests you can still register for."
+        : "Contests that have ended.";
   const filterGroups = [
     {
       label: STATUS_FILTER_LABEL,
@@ -221,8 +242,9 @@ export default function ContestsPage({
             value={studentView}
             onChange={(value) => setStudentView(value as ContestSectionMode)}
             options={[
-              { value: "registered", label: "My Contests" },
-              { value: "available", label: "Available Contests" },
+              { value: "registered", label: SECTION_TITLES.registered },
+              { value: "available", label: SECTION_TITLES.available },
+              { value: "past", label: SECTION_TITLES.past },
             ]}
             size="sm"
             ariaLabel="Student contest views"
@@ -242,9 +264,7 @@ export default function ContestsPage({
       {isStudent ? (
         <section className={sectionStyles.section}>
           <div className={sectionStyles.sectionHeader}>
-            <h2 className={sectionStyles.sectionTitle}>
-              {studentView === "registered" ? "My Contests" : "Available Contests"}
-            </h2>
+            <h2 className={sectionStyles.sectionTitle}>{SECTION_TITLES[studentView]}</h2>
             <p className={sectionStyles.sectionDescription}>{activeStudentDescription}</p>
           </div>
           {renderContestGrid(orderedStudentContests, studentView)}
