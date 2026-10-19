@@ -435,9 +435,11 @@ export async function handleGetSubmissionsForProblem(
       return NextResponse.json({ error: "Contest not found" }, { status: 404 });
     }
 
+    // A problem's own list is the viewer's team's submissions to it, staff included; staff
+    // see every team's on the contest's Submissions tab
     const subs = await listVisibleContestSubmissions(
       cid,
-      { computingId: user.computingId, isStaff: can(user.role).canManageContest },
+      { computingId: user.computingId, isStaff: false },
       pid,
     );
     const problem = await dbHelpers.findProblem(pid);

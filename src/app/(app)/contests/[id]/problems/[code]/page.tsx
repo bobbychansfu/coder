@@ -141,9 +141,10 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
       : undefined;
   const [problemDetail, submissions] = await Promise.all([
     dbHelpers.findProblemWithDetails(problem.problemId),
+    // The viewer's team's submissions to this problem, staff included
     listVisibleContestSubmissions(
       contestId,
-      { computingId: user.computingId, isStaff: can(user.role).canManageContest },
+      { computingId: user.computingId, isStaff: false },
       problem.problemId,
     ),
   ]);
