@@ -67,8 +67,15 @@ export async function applyContestJudgeResult(
     const shouldApplyProblemStatus = nextStatus !== "PENDING" && !isSystemError;
     const shouldIncrementTries =
       previousStatus === "PENDING" && nextStatus !== "PENDING" && !isSystemError;
-    // Upsolving, after the contest ended: judged, but no results, standings or points
-    const countsForContest = isSubmittedDuringContest(submission.contest, submission.createdAt);
+    // Only a registered contestant's submission during the contest counts. Upsolves after
+    // the end and staff submissions are judged, with no results, standings or points.
+    const participation = await tx.participation.findUnique({
+      where: { userId_contestId: { userId: submission.userId, contestId: submission.contestId } },
+      select: { role: true },
+    });
+    const countsForContest =
+      participation?.role === "contestant" &&
+      isSubmittedDuringContest(submission.contest, submission.createdAt);
     const pointsDelta = countsForContest ? Math.max(0, nextScore - previousScore) : 0;
     const problemsSolvedDelta =
       !countsForContest || previousScore > 0 ? 0 : nextScore > 0 ? 1 : 0;

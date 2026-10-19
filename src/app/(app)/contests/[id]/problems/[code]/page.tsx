@@ -202,6 +202,7 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
       contestEndsAt={normalizedContestSummary.endsAt}
       contestDurationMinutes={normalizedContestSummary.durationMinutes}
       aiHintEnabled={normalizedContestSummary.aiHintEnabled}
+      isStaff={can(user.role).canManageContest}
       detail={adaptContestProblemDetail(
         problem,
         problemDetailPayload,

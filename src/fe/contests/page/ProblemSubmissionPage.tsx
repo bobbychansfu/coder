@@ -67,6 +67,8 @@ interface ProblemSubmissionPageProps {
   contestEndsAt?: string | null;
   contestDurationMinutes?: number | null;
   aiHintEnabled?: boolean;
+  // Instructors and admins: may submit at any time, and it never counts
+  isStaff?: boolean;
   detail: ProblemDetail;
   navigator?: ProblemNavigator;
 }
@@ -102,6 +104,7 @@ export default function ProblemSubmissionPage({
   contestEndsAt,
   contestDurationMinutes,
   aiHintEnabled = false,
+  isStaff = false,
   detail,
   navigator,
 }: ProblemSubmissionPageProps) {
@@ -115,6 +118,7 @@ export default function ProblemSubmissionPage({
       contestEndsAt={contestEndsAt}
       contestDurationMinutes={contestDurationMinutes}
       aiHintEnabled={aiHintEnabled}
+      isStaff={isStaff}
       detail={detail}
       navigator={navigator}
     />
@@ -129,6 +133,7 @@ function ProblemSubmissionPageContent({
   contestEndsAt,
   contestDurationMinutes,
   aiHintEnabled = false,
+  isStaff = false,
   detail,
   navigator,
 }: ProblemSubmissionPageProps) {
@@ -179,14 +184,16 @@ function ProblemSubmissionPageContent({
       ? "AI hints are disabled after the contest ends."
       : null;
   const submissionsLockedReason =
-    contestStatus === "upcoming" ? "Submissions open when this contest starts." : null;
+    contestStatus === "upcoming" && !isStaff ? "Submissions open when this contest starts." : null;
   const submissionsLocked = submissionsLockedReason !== null;
-  // After the end the problems stay open for upsolving, which doesn't count
+  // Staff submissions and upsolves after the end are judged but don't count
   const submissionsNote =
     submissionsLockedReason ??
-    (contestStatus === "closed" || contestEndedByTime
-      ? "The contest has ended. New submissions don't count."
-      : null);
+    (isStaff
+      ? "Staff submissions don't count."
+      : contestStatus === "closed" || contestEndedByTime
+        ? "The contest has ended. New submissions don't count."
+        : null);
   const displayedRunResult = runResult;
   const detailWithHistory = {
     ...detail,
