@@ -253,10 +253,8 @@ export async function handleSubmitCode(
 
     const computingId = user.computingId;
     const role = user.role;
-
-    if (can(role).canManageContest) {
-      return NextResponse.json({ error: "Only student participants can submit" }, { status: 403 });
-    }
+    // Instructors and admins may submit at any time to try the problems; it never counts
+    const isStaff = can(role).canManageContest;
 
     let language: string = "";
     let connection_id: string = "";
@@ -293,7 +291,7 @@ export async function handleSubmitCode(
       return NextResponse.json({ error: "Contest not found" }, { status: 404 });
     }
 
-    if (!isContestOpenForSubmission(contest)) {
+    if (!isStaff && !isContestOpenForSubmission(contest)) {
       return NextResponse.json({ error: "Contest has not started yet" }, { status: 403 });
     }
 
@@ -318,8 +316,8 @@ export async function handleSubmitCode(
       );
     }
 
-    // An upsolve leaves the contest's results alone
-    if (isSubmittedDuringContest(contest, new Date())) {
+    // Staff submissions and upsolves leave the contest's results alone
+    if (!isStaff && isSubmittedDuringContest(contest, new Date())) {
       await dbHelpers.createProblemStatus(computingId, cid, pid);
     }
 
@@ -437,9 +435,11 @@ export async function handleGetSubmissionsForProblem(
       return NextResponse.json({ error: "Contest not found" }, { status: 404 });
     }
 
+    // A problem's own list is the viewer's team's submissions to it, staff included; staff
+    // see every team's on the contest's Submissions tab
     const subs = await listVisibleContestSubmissions(
       cid,
-      { computingId: user.computingId, isStaff: can(user.role).canManageContest },
+      { computingId: user.computingId, isStaff: false },
       pid,
     );
     const problem = await dbHelpers.findProblem(pid);
