@@ -163,6 +163,40 @@
   padding-top: 12px;
 }
 
+/* The editor gives up height to fit the window, so Submit stays in view when zoomed in */
+.submitDialogPaper {
+  display: flex;
+  flex-direction: column;
+}
+
+.submitDialogBody,
+.submitDialogBody .solutionCard {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.submitDialogBody .solutionCard > * {
+  flex-shrink: 0;
+}
+
+.submitDialogBody .solutionCard > .codeEditorWrapper {
+  flex: 0 1 520px;
+  height: auto;
+  min-height: 120px;
+}
+
+/* Zoomed in so far that the dialog scrolls anyway: Submit stays pinned to its bottom */
+.submitDialogBody .solutionCard > .buttonRow {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  margin: 0 -24px -24px;
+  padding: 0 24px 24px;
+  background-color: #ffffff;
+}
+
 .rightColumn {
   display: flex;
   flex-direction: column;
