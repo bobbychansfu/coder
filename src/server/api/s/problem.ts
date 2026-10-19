@@ -154,7 +154,7 @@ async function findContestForViewer(computingId: string, role: string, contestId
     return dbHelpers.findContestForViewer(contestId, computingId, role);
   }
 
-  return dbHelpers.findSpecificContestForUser(computingId, contestId, "contestant");
+  return dbHelpers.findViewableContestForStudent(computingId, contestId);
 }
 
 export async function handleGetProblemDetails(
@@ -220,7 +220,10 @@ export async function handleGetProblemDetails(
       downloadContents = [];
     }
 
-    await dbHelpers.createProblemStatus(computingId, cid, pid);
+    // Opening a problem after the end leaves the contest's results alone
+    if (isSubmittedDuringContest(contest, new Date())) {
+      await dbHelpers.createProblemStatus(computingId, cid, pid);
+    }
 
     return NextResponse.json({
       computingId,

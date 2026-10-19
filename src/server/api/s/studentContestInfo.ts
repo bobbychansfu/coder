@@ -28,15 +28,20 @@ export function toBackendContestSummary(contest: ContestListRecord): BackendCont
 export async function getStudentContestInfoPayload(
   user: Pick<CurrentUser, "computingId" | "role">,
 ): Promise<StudentContestInfoResponse> {
-  const [registeredContests, openContests] = await Promise.all([
+  const [registeredContests, openContests, upsolvingContests] = await Promise.all([
     dbHelpers.findContestsForUser(user.computingId, "contestant"),
     dbHelpers.findOpenContestsForUser(user.computingId, "contestant"),
+    dbHelpers.findUpsolvingContestsForUser(user.computingId),
   ]);
 
   const registeredContestSummaries = registeredContests.map(toBackendContestSummary);
-  const openContestSummaries = openContests
-    .map(toBackendContestSummary)
-    .filter((contest) => isJoinableContestStatus(contest.status));
+  // Contests they can still join, plus ended ones opened to everyone for upsolving
+  const openContestSummaries = [
+    ...openContests
+      .map(toBackendContestSummary)
+      .filter((contest) => isJoinableContestStatus(contest.status)),
+    ...upsolvingContests.map(toBackendContestSummary),
+  ];
 
   return {
     computingId: user.computingId,

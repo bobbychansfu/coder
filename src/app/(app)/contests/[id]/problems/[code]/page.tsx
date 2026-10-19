@@ -60,7 +60,7 @@ async function getContestProblemStatusDirect(
   const normalizedRole = normalizeRole(role);
   const contest = normalizedRole && can(normalizedRole).canManageContest
     ? await dbHelpers.findContestForViewer(contestId, computingId, role)
-    : await dbHelpers.findSpecificContestForUser(computingId, contestId, "contestant");
+    : await dbHelpers.findViewableContestForStudent(computingId, contestId);
 
   if (!contest || !isContestViewableByRegisteredUser(contest)) {
     return null;
@@ -95,11 +95,7 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
   if (can(user.role).canManageContest) {
     contestSummary = await dbHelpers.findContestForViewer(contestId, user.computingId, user.role);
   } else {
-    contestSummary = await dbHelpers.findSpecificContestForUser(
-      user.computingId,
-      contestId,
-      "contestant",
-    );
+    contestSummary = await dbHelpers.findViewableContestForStudent(user.computingId, contestId);
   }
 
   if (!contestSummary || !isContestViewableByRegisteredUser(contestSummary)) {

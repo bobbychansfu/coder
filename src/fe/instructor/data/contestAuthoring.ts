@@ -45,6 +45,7 @@ export interface ContestAuthoringCopy {
   scoringRuleTitle: string;
   scoringRuleLabel: string;
   showDifficultyLabel: string;
+  openForUpsolvingLabel: string;
   teamSizeLabel: string;
   publishLabel: string;
   selectProblemsTitle: string;
@@ -157,6 +158,7 @@ export const contestAuthoringCopy: ContestAuthoringCopy = {
   scoringRuleTitle: "Scoring Rule",
   scoringRuleLabel: "Scoring rule *",
   showDifficultyLabel: "Show problem difficulty",
+  openForUpsolvingLabel: "Open for upsolving after it ends",
   teamSizeLabel: "Max team size",
   publishLabel: "Publish Contest",
   selectProblemsTitle: "Select Problems",

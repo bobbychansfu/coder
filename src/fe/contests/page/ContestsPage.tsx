@@ -146,15 +146,20 @@ export default function ContestsPage({
             durationMinutes={contest.durationMinutes}
             href={`/contests/${contest.id}`}
             actionLabel={
-              mode === "registered"
+              mode === "registered" || contest.status === "Closed"
                 ? getRegisteredActionLabel(contest.status)
                 : pendingContestId === contest.id
                   ? "Registering..."
                   : "Register"
             }
-            actionKind={mode === "registered" ? "link" : "button"}
-            actionVariant={mode === "registered" ? "secondary" : "primary"}
-            onAction={mode === "available" ? () => setContestToConfirm(contest) : undefined}
+            // An ended contest opened for upsolving needs no registration
+            actionKind={mode === "registered" || contest.status === "Closed" ? "link" : "button"}
+            actionVariant={mode === "registered" || contest.status === "Closed" ? "secondary" : "primary"}
+            onAction={
+              mode === "available" && contest.status !== "Closed"
+                ? () => setContestToConfirm(contest)
+                : undefined
+            }
             actionDisabled={mode === "available" && pendingContestId === contest.id}
           />
         ))}
@@ -164,13 +169,7 @@ export default function ContestsPage({
 
   const activeStudentContests =
     studentView === "registered" ? studentMyContests : studentAvailableContests;
-  const allowedStatusOptions = useMemo(() => {
-    if (isStudent && studentView === "available") {
-      return BASE_STATUS_FILTERS.filter((option) => option.label !== "Closed");
-    }
-
-    return BASE_STATUS_FILTERS;
-  }, [isStudent, studentView]);
+  const allowedStatusOptions = BASE_STATUS_FILTERS;
   const normalizedStatusFilter = allowedStatusOptions.some((option) => option.label === statusFilter)
     ? statusFilter
     : DEFAULT_STATUS_FILTER;
@@ -191,7 +190,7 @@ export default function ContestsPage({
   const activeStudentDescription =
     studentView === "registered"
       ? "Contests you have already joined through a Participation record."
-      : "Published upcoming or active contests you can still register for.";
+      : "Contests you can still register for, and ended ones open for upsolving.";
   const filterGroups = [
     {
       label: STATUS_FILTER_LABEL,

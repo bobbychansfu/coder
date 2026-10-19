@@ -140,6 +140,7 @@ export default function InstructorCreateContestPage() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [aiHintEnabled, setAiHintEnabled] = useState(false);
   const [showDifficulty, setShowDifficulty] = useState(false);
+  const [openForUpsolving, setOpenForUpsolving] = useState(false);
   const [savedAllowedUsers, setSavedAllowedUsers] = useState<string[]>([]);
   const [joinCode, setJoinCode] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -215,6 +216,7 @@ export default function InstructorCreateContestPage() {
       setSelectedProblemIds(contestQuery.data.selectedProblemIds);
       setAiHintEnabled(contestQuery.data.aiHintEnabled);
       setShowDifficulty(contestQuery.data.showDifficulty);
+      setOpenForUpsolving(contestQuery.data.openForUpsolving);
       initializedContestIdRef.current = contestQuery.data.id;
     });
   }, [contestQuery.data]);
@@ -323,6 +325,7 @@ export default function InstructorCreateContestPage() {
       isDraft,
       aiHintEnabled,
       showDifficulty,
+      openForUpsolving,
       selectedProblemIds,
       allowedUsersAdded: allowedUserList.filter((entry) => !savedAllowedUsers.includes(entry)),
       allowedUsersRemoved: savedAllowedUsers.filter((entry) => !allowedUserList.includes(entry)),
@@ -483,6 +486,7 @@ export default function InstructorCreateContestPage() {
             draftContestsCount={draftContests.length} aiHintEnabled={aiHintEnabled}
             isEditMode={isEditMode} isSaving={isSaving} isPageLoading={isPageLoading}
             showDifficulty={showDifficulty} onShowDifficultyChange={setShowDifficulty}
+            openForUpsolving={openForUpsolving} onOpenForUpsolvingChange={setOpenForUpsolving}
             contestId={contestId} joinCode={joinCode}
             isJoinLinkSaving={setJoinLinkMutation.isPending}
             onJoinLinkChange={(action) => {
