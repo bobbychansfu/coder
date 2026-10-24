@@ -10,6 +10,7 @@ import {
   contestAuthoringCopy,
   type ContestFormDraft,
 } from "@/fe/instructor/data/contestAuthoring";
+import InfoTooltip from "@/fe/shared/components/ui/InfoTooltip";
 import { VISIBILITY_OPTIONS } from "@/fe/shared/constants/options";
 import styles from "@/fe/instructor/styles/InstructorCreateContestPage.module.css";
 
@@ -183,9 +184,20 @@ export default function InstructorCreateContestSidebar({
           </Typography>
 
           <div className={styles.fieldBlock}>
-            <Typography className={styles.fieldLabel}>
-              {contestAuthoringCopy.visibilityLabel}
-            </Typography>
+            <div className={styles.fieldLabelRow}>
+              <Typography className={styles.fieldLabel}>
+                {contestAuthoringCopy.visibilityLabel}
+              </Typography>
+              <InfoTooltip
+                ariaLabel="About visibility"
+                title={VISIBILITY_OPTIONS.map((option) => (
+                  <div key={option.value}>
+                    <strong>{toVisibilityLabel(option.value)}:</strong>{" "}
+                    {contestAuthoringCopy.visibilityHelp[option.value]}
+                  </div>
+                ))}
+              />
+            </div>
             <TextField
               select
               fullWidth
@@ -289,9 +301,15 @@ export default function InstructorCreateContestSidebar({
           </div>
 
           <div className={styles.aiHeaderRow}>
-            <Typography className={styles.fieldLabel}>
-              {contestAuthoringCopy.openForUpsolvingLabel}
-            </Typography>
+            <div className={styles.fieldLabelRow}>
+              <Typography className={styles.fieldLabel}>
+                {contestAuthoringCopy.openForUpsolvingLabel}
+              </Typography>
+              <InfoTooltip
+                ariaLabel="About upsolving"
+                title={contestAuthoringCopy.openForUpsolvingHelp}
+              />
+            </div>
             <Switch
               checked={openForUpsolving}
               onChange={(_, checked) => onOpenForUpsolvingChange(checked)}

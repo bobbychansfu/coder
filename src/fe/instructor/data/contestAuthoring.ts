@@ -39,6 +39,8 @@ export interface ContestAuthoringCopy {
   visibilityTitle: string;
   visibilityDescription: string;
   visibilityLabel: string;
+  // Keyed by VISIBILITY_OPTIONS value
+  visibilityHelp: Record<string, string>;
   allowedUsersLabel: string;
   allowedUsersPlaceholder: string;
   joinLinkLabel: string;
@@ -46,6 +48,7 @@ export interface ContestAuthoringCopy {
   scoringRuleLabel: string;
   showDifficultyLabel: string;
   openForUpsolvingLabel: string;
+  openForUpsolvingHelp: string;
   teamSizeLabel: string;
   publishLabel: string;
   selectProblemsTitle: string;
@@ -152,6 +155,12 @@ export const contestAuthoringCopy: ContestAuthoringCopy = {
   visibilityTitle: "Visibility",
   visibilityDescription: "Control who can see this contest",
   visibilityLabel: "Visibility *",
+  visibilityHelp: {
+    public: "Every signed-in student can see and register for it.",
+    "course-only": "For now this works the same as Public; no course check is applied yet.",
+    private:
+      "Only students on the allowed users list, or who open the join link, can see and register for it.",
+  },
   allowedUsersLabel: "Allowed users",
   allowedUsersPlaceholder: "Computing IDs or emails",
   joinLinkLabel: "Join link",
@@ -159,6 +168,10 @@ export const contestAuthoringCopy: ContestAuthoringCopy = {
   scoringRuleLabel: "Scoring rule *",
   showDifficultyLabel: "Show problem difficulty",
   openForUpsolvingLabel: "Open for upsolving after it ends",
+  openForUpsolvingHelp:
+    "After the contest ends, every student can open it and submit, even if they never registered " +
+    "and even if it is private. Registered contestants can upsolve either way. Submissions after " +
+    "the end never change the scoreboard.",
   teamSizeLabel: "Max team size",
   publishLabel: "Publish Contest",
   selectProblemsTitle: "Select Problems",
