@@ -17,6 +17,7 @@ const problemSourceSchema = z.enum(["contest-only", "public"]);
 const generatedStarterCodesSchema = z
   .object({
     cplusplus: z.string().min(1).optional(),
+    c: z.string().min(1).optional(),
     java: z.string().min(1).optional(),
     python: z.string().min(1).optional(),
     typescript: z.string().min(1).optional(),
@@ -26,6 +27,7 @@ const generatedStarterCodesSchema = z
 
 const starterCodesInputSchema = z.object({
   cplusplus: z.string(),
+  c: z.string(),
   java: z.string(),
   python: z.string(),
   typescript: z.string(),

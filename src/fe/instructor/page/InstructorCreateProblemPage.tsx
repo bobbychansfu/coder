@@ -320,7 +320,7 @@ export default function InstructorCreateProblemPage() {
         inputFormat: statementValues.inputFormat,
         outputFormat: statementValues.outputFormat,
         constraints: statementValues.constraints,
-        baseLanguage: baseLanguage as "cplusplus" | "java" | "typescript" | "javascript" | "python",
+        baseLanguage,
         baseCode,
       });
 
