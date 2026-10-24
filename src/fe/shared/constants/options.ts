@@ -4,6 +4,7 @@ import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
 
 export const LANGUAGE_OPTIONS = [
   { value: "cplusplus", label: "C++", monacoLanguage: "cpp" },
+  { value: "c", label: "C", monacoLanguage: "c" },
   { value: "java", label: "Java", monacoLanguage: "java" },
   { value: "python", label: "Python", monacoLanguage: "python" },
   { value: "typescript", label: "TypeScript", monacoLanguage: "typescript" },

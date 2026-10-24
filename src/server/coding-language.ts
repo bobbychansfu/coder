@@ -1,11 +1,12 @@
 import { CodingLanguage } from "@prisma/client";
 
-export const APP_LANGUAGES = ["cplusplus", "java", "typescript", "javascript", "python"] as const;
+export const APP_LANGUAGES = ["cplusplus", "c", "java", "typescript", "javascript", "python"] as const;
 
 export type AppLanguage = (typeof APP_LANGUAGES)[number];
 
 const APP_TO_DB_LANGUAGE: Record<AppLanguage, CodingLanguage> = {
   cplusplus: "CPLUSPLUS",
+  c: "C",
   java: "JAVA",
   typescript: "TYPESCRIPT",
   javascript: "JAVASCRIPT",
@@ -14,6 +15,7 @@ const APP_TO_DB_LANGUAGE: Record<AppLanguage, CodingLanguage> = {
 
 const DB_TO_APP_LANGUAGE: Record<CodingLanguage, AppLanguage> = {
   CPLUSPLUS: "cplusplus",
+  C: "c",
   JAVA: "java",
   TYPESCRIPT: "typescript",
   JAVASCRIPT: "javascript",
@@ -22,6 +24,7 @@ const DB_TO_APP_LANGUAGE: Record<CodingLanguage, AppLanguage> = {
 
 const DB_TO_LABEL: Record<CodingLanguage, string> = {
   CPLUSPLUS: "C++",
+  C: "C",
   JAVA: "Java",
   TYPESCRIPT: "TypeScript",
   JAVASCRIPT: "JavaScript",
@@ -30,6 +33,7 @@ const DB_TO_LABEL: Record<CodingLanguage, string> = {
 
 const APP_TO_JUDGE_LANGUAGE: Record<AppLanguage, string> = {
   cplusplus: "C++17",
+  c: "C17",
   java: "Java17",
   typescript: "NodeJS",
   javascript: "NodeJS",

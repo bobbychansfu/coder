@@ -26,7 +26,7 @@ export interface JudgingProblemContext {
 
 export interface JudgingProviderInput {
   submissionId: string;
-  language: "cpp" | "java" | "typescript" | "javascript" | "python";
+  language: "cpp" | "c" | "java" | "typescript" | "javascript" | "python";
   code: string;
   problem: JudgingProblemContext;
   visibleTests: VisiblePracticeTest[];

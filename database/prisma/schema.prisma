@@ -61,6 +61,7 @@ enum SubmissionStatus {
 
 enum CodingLanguage {
   CPLUSPLUS
+  C
   JAVA
   TYPESCRIPT
   JAVASCRIPT

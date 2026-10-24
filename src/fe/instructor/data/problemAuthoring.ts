@@ -180,6 +180,7 @@ export const problemExamplesDraft: ProblemExampleDraft[] = [
 
 export const starterCodeDraft: Record<StarterLanguage, string> = {
   cplusplus: "",
+  c: "",
   java: "",
   python: "",
   typescript: "",

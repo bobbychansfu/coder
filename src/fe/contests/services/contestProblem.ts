@@ -1,7 +1,7 @@
 import type { ContestProblem } from "@/fe/contests/data/contestDetails";
 import type { ProblemDetail, SubmissionRecord } from "@/fe/contests/data/problemDetails";
 
-type StarterCodeLanguage = "CPLUSPLUS" | "JAVA" | "TYPESCRIPT" | "JAVASCRIPT" | "PYTHON";
+type StarterCodeLanguage = "CPLUSPLUS" | "C" | "JAVA" | "TYPESCRIPT" | "JAVASCRIPT" | "PYTHON";
 type SubmissionLanguage = StarterCodeLanguage;
 export type SubmissionStatus =
   | "PENDING"
@@ -85,6 +85,8 @@ function mapLanguageToAppLanguage(language: StarterCodeLanguage) {
   switch (language) {
     case "CPLUSPLUS":
       return "cplusplus";
+    case "C":
+      return "c";
     case "JAVA":
       return "java";
     case "TYPESCRIPT":
@@ -100,6 +102,8 @@ function mapLanguageToLabel(language: SubmissionLanguage) {
   switch (language) {
     case "CPLUSPLUS":
       return "C++";
+    case "C":
+      return "C";
     case "JAVA":
       return "Java";
     case "TYPESCRIPT":

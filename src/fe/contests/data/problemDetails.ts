@@ -36,7 +36,7 @@ export interface ProblemNarrative {
   samples?: ProblemSample[];
   testCases: ProblemTestCase[];
   hiddenCount: number;
-  starterCodes?: Partial<Record<"cplusplus" | "java" | "typescript" | "javascript" | "python", string>>;
+  starterCodes?: Partial<Record<"cplusplus" | "c" | "java" | "typescript" | "javascript" | "python", string>>;
   submissions: SubmissionRecord[];
   editorial: EditorialDetail;
 }
@@ -77,6 +77,14 @@ const defaultStarterCodes: NonNullable<ProblemNarrative["starterCodes"]> = {
 using namespace std;
 
 int main() {
+  // TODO: read input, solve the problem, and print the answer.
+  return 0;
+}
+`,
+  c: `#include <stdio.h>
+#include <stdlib.h>
+
+int main(void) {
   // TODO: read input, solve the problem, and print the answer.
   return 0;
 }

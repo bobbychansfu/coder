@@ -410,7 +410,7 @@ async function runPracticeSubmissionJudging(args: {
   await publishPracticeSubmissionEvent(record.id);
 }
 
-function toProviderLanguage(language: CodingLanguage): "cpp" | "java" | "typescript" | "javascript" | "python" {
+function toProviderLanguage(language: CodingLanguage): "cpp" | "c" | "java" | "typescript" | "javascript" | "python" {
   const appLanguage = codingLanguageToAppLanguage(language);
   return appLanguage === "cplusplus" ? "cpp" : appLanguage;
 }

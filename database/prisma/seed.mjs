@@ -78,7 +78,8 @@ function toCodingLanguage(language) {
     case "python3":
       return "PYTHON";
     case "c":
-      return "CPLUSPLUS";
+    case "c17":
+      return "C";
     default:
       return "PYTHON";
   }
