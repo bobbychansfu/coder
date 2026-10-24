@@ -121,6 +121,11 @@ export async function handleRequestHint(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Site-wide switch, above the per-contest one: practice hints have no other gate
+    if (process.env.AI_HINTS_ENABLED !== "true") {
+      return NextResponse.json({ error: "AI hints are turned off" }, { status: 403 });
+    }
+
     const requestData = (await request.json()) as HintRequestBody;
     const pid = toStringValue(requestData.pid);
     const contestId = toStringValue(requestData.contest_id);

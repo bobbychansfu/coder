@@ -576,7 +576,7 @@ function ProblemSubmissionPageContent({
             submitButtonDisabled={!hasCode || isJudging || !detail.problemId || submissionsLocked}
             submitButtonLabel={submitState === "submitting" ? "Submitting..." : "Submit"}
             submitButtonStartIcon={<SendRoundedIcon fontSize="small" />}
-            showAiHint={aiHintEnabled}
+            showAiHint={aiHintEnabled && process.env.NEXT_PUBLIC_AI_HINTS_ENABLED === "true"}
             aiHintDisabled={Boolean(aiHintLockedReason)}
             aiHintLoading={aiHintLoading}
             onRequestAiHint={requestAiHint}

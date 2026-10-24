@@ -139,7 +139,7 @@ export default function PracticeSolutionEditorWithAiHint({
         {...editorProps}
         language={language}
         code={code}
-        showAiHint
+        showAiHint={process.env.NEXT_PUBLIC_AI_HINTS_ENABLED === "true"}
         aiHintLoading={loading}
         onRequestAiHint={requestAiHint}
       />
