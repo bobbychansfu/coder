@@ -89,10 +89,14 @@ In practice, this usually means:
 The judge problem files are located at:
 
 ```text
-/home/usr/ablondal/sfu_judge_problems/
+/srv/problems/problems/sfu_judge_problems/
 ```
 
-This folder contains the problem-related files used by the judge.
+This folder contains the problem-related files used by the judge. The judge workers bind-mount it at
+`/locked/problems` (see `rq-worker@.service` in the SFU_Judge repo).
+
+Each problem is a folder named by its numeric judge problem id, for example `1036/`. Set the Coder
+problem's `judgeProblemId` to that same number so submissions reach the right folder.
 
 If there is a problem with a specific judge problem or test data, this is one of the first places to inspect.
 
@@ -499,7 +503,7 @@ If a submission stays queued or pending, do not only inspect the application cod
 
 ```text
 Problem files:
-/home/usr/ablondal/sfu_judge_problems/
+/srv/problems/problems/sfu_judge_problems/
 
 Apache config:
 /etc/apache2/sites-available/judge-api.conf
