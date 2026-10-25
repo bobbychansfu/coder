@@ -115,6 +115,7 @@ Important variables:
 
 - `JUDGE_URL`
 - `AI_HINT_URL`
+- `AI_HINTS_ENABLED`, `NEXT_PUBLIC_AI_HINTS_ENABLED`
 - `JUDGING_MODE`
 - `GEMINI_API_KEY`
 - `GEMINI_MODEL`
@@ -389,7 +390,9 @@ That affects:
 - contest submission
 - contest hint requests
 
-AI hints use `AI_HINT_URL` when it is set; otherwise they fall back to `JUDGE_URL` and append
+AI hints are off unless `AI_HINTS_ENABLED` and `NEXT_PUBLIC_AI_HINTS_ENABLED` are both `"true"`
+(the second is built into the page, so rebuild after changing it). A contest also needs its own
+AI hint setting turned on. AI hints use `AI_HINT_URL` when it is set; otherwise they fall back to `JUDGE_URL` and append
 `/request_hint`. Both URLs must be reachable from the machine running Coder. Do not use `127.0.0.1`
 unless the corresponding judge service runs on the same VM.
 
