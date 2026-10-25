@@ -5,6 +5,8 @@ import crypto from "crypto";
 import { getCurrentUser } from "@/lib/session";
 import { dbHelpers } from "@/lib/db-helpers";
 import { prisma } from "@/lib/prisma";
+import { AI_HINT_COOLDOWN_SECONDS, AI_HINT_DAILY_LIMIT } from "@/lib/aiHintLimits";
+import { redactStudentCode, type StudentIdentity } from "@/server/aiHintPrivacy";
 
 type HintRequestBody = Record<string, unknown> & {
   pid?: unknown;
@@ -74,47 +76,94 @@ async function assertContestAllowsAiHint(computingId: string, role: string, cont
   return null;
 }
 
+// Only these fields leave Coder, none of which identifies the student: the hint service
+// passes everything on to a third-party model.
 function buildHintPayload(args: {
   requestData: HintRequestBody;
+  student: StudentIdentity;
   problemId: string;
   problemCode: string;
   problemTitle: string;
   problemDescription: string;
-  username: string;
-  context: unknown;
+  relatedSolvedTitles: string[];
   userRank: string;
   topics: unknown;
 }) {
-  const code = toStringValue(args.requestData.code);
   const language = toStringValue(args.requestData.language);
-  const connectionId =
-    toStringValue(args.requestData.connection_id) || crypto.randomUUID();
+  const code = redactStudentCode(toStringValue(args.requestData.code), language, args.student);
 
   return {
-    ...args.requestData,
     pid: args.problemId,
     problem_id: args.problemId,
     problem: args.problemTitle,
     description: args.problemDescription,
-    username: args.username,
-    computing_id: args.username,
+    // The hint service's prompt still addresses the user by name, so give it a neutral one
+    username: "the student",
     code,
     submission: code,
     textcode: code,
     language,
-    connection_id: connectionId,
-    contest_id: args.requestData.contest_id,
+    // Fresh for every request, so it cannot link one student's hints together
+    connection_id: crypto.randomUUID(),
     problem_code: args.problemCode,
     problem_title: args.problemTitle,
     title: args.problemTitle,
-    context: args.context || "",
+    context: args.relatedSolvedTitles.join(", "),
     user_rank: args.userRank,
     topic: args.topics,
     topics: args.topics,
   };
 }
 
+// Reserves the student's next hint, or explains why they must wait. The row is the
+// rate-limit record and, once the hint arrives, the log of what the student was shown.
+async function reserveHint(userId: string, problemId: string) {
+  const now = Date.now();
+  const cooldownStart = new Date(now - AI_HINT_COOLDOWN_SECONDS * 1000);
+  const dayStart = new Date(now - 24 * 60 * 60 * 1000);
+
+  const latest = await prisma.hint.findFirst({
+    where: { userId, createdAt: { gt: cooldownStart } },
+    orderBy: { createdAt: "desc" },
+    select: { createdAt: true },
+  });
+  if (latest) {
+    const wait = Math.ceil((latest.createdAt.getTime() + AI_HINT_COOLDOWN_SECONDS * 1000 - now) / 1000);
+    return { error: `You can ask for another hint in ${Math.max(wait, 1)} seconds.` };
+  }
+
+  const lastDay = await prisma.hint.findMany({
+    where: { userId, createdAt: { gt: dayStart } },
+    orderBy: { createdAt: "asc" },
+    select: { createdAt: true },
+  });
+  if (lastDay.length >= AI_HINT_DAILY_LIMIT) {
+    const freesAt = new Date(lastDay[0].createdAt.getTime() + 24 * 60 * 60 * 1000);
+    const minutes = Math.ceil((freesAt.getTime() - now) / 60000);
+    return {
+      error: `You have used all ${AI_HINT_DAILY_LIMIT} hints for the last 24 hours. Your next hint is available in ${minutes} minutes.`,
+    };
+  }
+
+  const hintNum = (await prisma.hint.count({ where: { userId, problemId } })) + 1;
+  const hint = await prisma.hint.create({ data: { userId, problemId, hintNum }, select: { id: true } });
+
+  // Two requests at the same moment can both pass the checks above; keep only the earliest
+  const sameWindow = await prisma.hint.findMany({
+    where: { userId, createdAt: { gt: cooldownStart } },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    select: { id: true },
+  });
+  if (sameWindow[0]?.id !== hint.id) {
+    await prisma.hint.delete({ where: { id: hint.id } });
+    return { error: `You can ask for another hint in ${AI_HINT_COOLDOWN_SECONDS} seconds.` };
+  }
+
+  return { hintId: hint.id };
+}
+
 export async function handleRequestHint(request: NextRequest) {
+  let reservedHintId: string | null = null;
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -146,7 +195,7 @@ export async function handleRequestHint(request: NextRequest) {
       }
     }
 
-    const prior_problems = await dbHelpers.getReleventSolvedProblems(user.computingId, pid);
+    const priorSubmissions = await dbHelpers.getReleventSolvedProblems(user.computingId, pid);
     const userData = await dbHelpers.findUserByComputingId(user.computingId);
     const problem = await dbHelpers.findProblem(pid);
     const topics = await dbHelpers.getProblemTopic(pid);
@@ -167,16 +216,25 @@ export async function handleRequestHint(request: NextRequest) {
     if (!inRequestedContest) {
       return NextResponse.json({ error: "Problem not found" }, { status: 404 });
     }
+    if (!userData) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const reservation = await reserveHint(userData.id, pid);
+    if ("error" in reservation) {
+      return NextResponse.json({ error: reservation.error }, { status: 429 });
+    }
+    reservedHintId = reservation.hintId;
 
     const hintPayload = buildHintPayload({
       requestData,
+      student: userData,
       problemId: pid,
       problemCode: problem.code,
       problemTitle: problem.title,
       problemDescription: problem.statement,
-      username: user.computingId,
-      context: prior_problems,
-      userRank: userData?.rank || "Beginner",
+      relatedSolvedTitles: [...new Set((priorSubmissions ?? []).map((s) => s.problem.title))],
+      userRank: userData.rank || "Beginner",
       topics,
     });
 
@@ -201,10 +259,22 @@ export async function handleRequestHint(request: NextRequest) {
       throw new Error(`Judge returned ${response.status}: ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as { code?: unknown; feedback?: unknown; validation?: unknown };
+    await prisma.hint.update({
+      where: { id: reservedHintId },
+      data: {
+        code: toStringValue(data.code) || null,
+        feedback: toStringValue(data.feedback) || null,
+        validation: toStringValue(data.validation) || null,
+      },
+    });
     return NextResponse.json(data);
   } catch (error: unknown) {
     console.error(error);
+    // A failed hint does not count against the student's limits
+    if (reservedHintId) {
+      await prisma.hint.delete({ where: { id: reservedHintId } }).catch(() => undefined);
+    }
     return NextResponse.json(
       {
         error: "Failed to generate hint",

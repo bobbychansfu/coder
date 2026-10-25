@@ -982,10 +982,10 @@ export const dbHelpers = {
           },
         },
       },
-      include: {
+      select: {
         problem: {
           select: {
-            statement: true,
+            title: true,
           },
         },
       },

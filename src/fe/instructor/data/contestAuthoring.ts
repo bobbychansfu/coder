@@ -1,3 +1,5 @@
+import { AI_HINT_COOLDOWN_SECONDS, AI_HINT_DAILY_LIMIT } from "@/lib/aiHintLimits";
+
 export interface ContestAuthoringCopy {
   backButtonLabel: string;
   pageTitle: string;
@@ -143,7 +145,7 @@ export const contestAuthoringCopy: ContestAuthoringCopy = {
   groupConfigurationTitle: "Group Configuration",
   groupAHintLabel: "Hints available after (min)",
   groupBHintLabel: "Hints available after (min)",
-  cooldownLabel: "Cooldown between hint requests: 2 minutes",
+  cooldownLabel: `Hint limits per student: 1 every ${AI_HINT_COOLDOWN_SECONDS} seconds, ${AI_HINT_DAILY_LIMIT} per day`,
   assignmentTitle: "Assignment Method",
   assignmentBadge: "Only method",
   assignmentDescription: "Students are evenly and automatically split across groups",
