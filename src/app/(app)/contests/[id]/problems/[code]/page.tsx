@@ -20,6 +20,7 @@ import { listVisibleContestSubmissions } from "@/server/contestSubmissions";
 import { fetchJudgeProblemFiles } from "@/server/judge";
 import { renderLatexStatement } from "@/server/latexStatement";
 import { findContestInvitationOrDeny } from "@/server/studentContestAccess";
+import { getAiHintsEnabled } from "@/server/siteSettings";
 
 interface ContestProblemRouteProps {
   params: Promise<{ id: string; code: string }>;
@@ -202,7 +203,7 @@ export default async function ContestProblemRoute({ params }: ContestProblemRout
       contestStartsAt={normalizedContestSummary.startsAt}
       contestEndsAt={normalizedContestSummary.endsAt}
       contestDurationMinutes={normalizedContestSummary.durationMinutes}
-      aiHintEnabled={normalizedContestSummary.aiHintEnabled}
+      aiHintEnabled={normalizedContestSummary.aiHintEnabled && (await getAiHintsEnabled())}
       isStaff={can(user.role).canManageContest}
       detail={adaptContestProblemDetail(
         problem,

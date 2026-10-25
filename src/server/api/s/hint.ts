@@ -7,6 +7,7 @@ import { dbHelpers } from "@/lib/db-helpers";
 import { prisma } from "@/lib/prisma";
 import { AI_HINT_COOLDOWN_SECONDS, AI_HINT_DAILY_LIMIT } from "@/lib/aiHintLimits";
 import { redactStudentCode, type StudentIdentity } from "@/server/aiHintPrivacy";
+import { getAiHintsEnabled } from "@/server/siteSettings";
 
 type HintRequestBody = Record<string, unknown> & {
   pid?: unknown;
@@ -170,8 +171,8 @@ export async function handleRequestHint(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Site-wide switch, above the per-contest one: practice hints have no other gate
-    if (process.env.AI_HINTS_ENABLED !== "true") {
+    // Site-wide switch (Admin -> System Settings), above the per-contest one: practice hints have no other gate
+    if (!(await getAiHintsEnabled())) {
       return NextResponse.json({ error: "AI hints are turned off" }, { status: 403 });
     }
 

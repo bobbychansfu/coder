@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import PracticeProblemSubmissionPage from "@/fe/practice/page/PracticeProblemSubmissionPage";
 import { loginPath } from "@/lib/loginPath";
 import { getCurrentUser } from "@/lib/session";
+import { getAiHintsEnabled } from "@/server/siteSettings";
 
 interface PracticeProblemRouteProps {
   params: Promise<{ id: string }>;
@@ -22,6 +23,7 @@ export default async function PracticeProblemRoute({ params }: PracticeProblemRo
       problemCode={id}
       persistSubmissions={user.role === "student"}
       currentUserComputingId={user.computingId}
+      aiHintsEnabled={await getAiHintsEnabled()}
     />
   );
 }

@@ -6,6 +6,11 @@ export interface AdminSystemToggleSetting {
 }
 
 export interface AdminSystemSettingsData {
+  aiHintsTitle: string;
+  aiHintsDescription: string;
+  aiHintsLabel: string;
+  aiHintsOnDescription: string;
+  aiHintsOffDescription: string;
   contestSettingsTitle: string;
   contestSettingsDescription: string;
   securityTitle: string;
@@ -17,6 +22,12 @@ export interface AdminSystemSettingsData {
 }
 
 export const adminSystemSettingsData: AdminSystemSettingsData = {
+  aiHintsTitle: "AI Hints",
+  aiHintsDescription: "Platform-wide switch for AI hints. Saves immediately.",
+  aiHintsLabel: "Allow AI hints",
+  aiHintsOnDescription:
+    "On: students can ask for hints in practice, and in contests whose own AI hint setting is on.",
+  aiHintsOffDescription: "Off: no student can ask for an AI hint anywhere, in practice or contests.",
   contestSettingsTitle: "Contest Settings",
   contestSettingsDescription: "Default contest and problem settings",
   securityTitle: "Security & Access",

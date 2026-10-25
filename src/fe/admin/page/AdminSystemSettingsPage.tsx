@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
@@ -14,6 +15,7 @@ import SubpageHeader from "@/fe/shared/components/SubpageHeader";
 import { ROUTES } from "@/fe/shared/constants/routes";
 import subpageStyles from "@/fe/shared/styles/SubpageHeader.module.css";
 import styles from "@/fe/admin/styles/AdminSystemSettingsPage.module.css";
+import { trpc } from "@/lib/trpc/client";
 
 export default function AdminSystemSettingsPage() {
   const router = useRouter();
@@ -21,6 +23,17 @@ export default function AdminSystemSettingsPage() {
   const [sessionTimeout, setSessionTimeout] = useState(
     String(adminSystemSettingsData.sessionTimeoutMinutes),
   );
+
+  // Saved as soon as it is switched, unlike the settings below
+  const settings = trpc.adminSettings.get.useQuery();
+  const setAiHints = trpc.adminSettings.setAiHintsEnabled.useMutation({
+    onSuccess: async () => {
+      await settings.refetch();
+    },
+  });
+  const aiHintsEnabled = setAiHints.isPending
+    ? Boolean(setAiHints.variables?.enabled)
+    : Boolean(settings.data?.aiHintsEnabled);
 
   const handleToggleChange = (id: string) => {
     setToggles((current) =>
@@ -49,6 +62,36 @@ export default function AdminSystemSettingsPage() {
       />
 
       <Box className={styles.sections}>
+        <SettingsCard
+          icon={AutoAwesomeOutlinedIcon}
+          title={adminSystemSettingsData.aiHintsTitle}
+          description={adminSystemSettingsData.aiHintsDescription}
+        >
+          <Box className={styles.settingRow}>
+            <Box className={styles.settingCopy}>
+              <Typography className={styles.settingLabel}>
+                {adminSystemSettingsData.aiHintsLabel}
+              </Typography>
+              <Typography className={styles.settingDescription}>
+                {settings.error || setAiHints.error
+                  ? (setAiHints.error ?? settings.error)?.message
+                  : aiHintsEnabled
+                    ? adminSystemSettingsData.aiHintsOnDescription
+                    : adminSystemSettingsData.aiHintsOffDescription}
+              </Typography>
+            </Box>
+            <Switch
+              checked={aiHintsEnabled}
+              disabled={settings.isLoading || setAiHints.isPending}
+              onChange={(_, checked) => setAiHints.mutate({ enabled: checked })}
+              className={styles.settingSwitch}
+              slotProps={{
+                input: { role: "switch", "aria-label": adminSystemSettingsData.aiHintsLabel },
+              }}
+            />
+          </Box>
+        </SettingsCard>
+
         <SettingsCard
           icon={SettingsOutlinedIcon}
           title={adminSystemSettingsData.contestSettingsTitle}

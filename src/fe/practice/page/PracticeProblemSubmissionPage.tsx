@@ -26,6 +26,8 @@ interface PracticeProblemSubmissionPageProps {
   problemCode: string;
   persistSubmissions?: boolean;
   currentUserComputingId?: string;
+  // The site-wide AI hint switch, read on the server
+  aiHintsEnabled?: boolean;
 }
 
 type SupportedLanguage = SupportedCodeLanguage;
@@ -89,6 +91,7 @@ export default function PracticeProblemSubmissionPage({
   problemCode,
   persistSubmissions = true,
   currentUserComputingId,
+  aiHintsEnabled = false,
 }: PracticeProblemSubmissionPageProps) {
   return (
     <PracticeProblemSubmissionPageContent
@@ -96,6 +99,7 @@ export default function PracticeProblemSubmissionPage({
       problemCode={problemCode}
       persistSubmissions={persistSubmissions}
       currentUserComputingId={currentUserComputingId}
+      aiHintsEnabled={aiHintsEnabled}
     />
   );
 }
@@ -104,6 +108,7 @@ function PracticeProblemSubmissionPageContent({
   problemCode,
   persistSubmissions = true,
   currentUserComputingId,
+  aiHintsEnabled = false,
 }: PracticeProblemSubmissionPageProps) {
   const router = useRouter();
   const [tab, setTab] = useState("description");
@@ -529,6 +534,7 @@ function PracticeProblemSubmissionPageContent({
             problemId={detail.id}
             problemCode={problemCode}
             problemTitle={detail.title}
+            showAiHint={aiHintsEnabled}
             language={language}
             code={code}
             onLanguageChange={(nextLanguage) => setLanguage(nextLanguage as SupportedLanguage)}
