@@ -1,5 +1,6 @@
 import { router } from "../init";
 import { adminDashboardRouter } from "./adminDashboard";
+import { adminSettingsRouter } from "./adminSettings";
 import { adminTeamsRouter } from "./adminTeams";
 import { adminUsersRouter } from "./adminUsers";
 import { contestAuthoringRouter } from "./contestAuthoring";
@@ -17,6 +18,7 @@ export const appRouter = router({
   practice: practiceRouter,
   practiceExecution: practiceExecutionRouter,
   adminDashboard: adminDashboardRouter,
+  adminSettings: adminSettingsRouter,
   adminTeams: adminTeamsRouter,
   adminUsers: adminUsersRouter,
   dashboardMetadata: dashboardMetadataRouter,

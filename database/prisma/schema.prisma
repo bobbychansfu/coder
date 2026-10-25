@@ -548,3 +548,11 @@ model Submission {
   @@index([userId, createdAt])
   @@index([teamId])
 }
+
+// Platform-wide switches an admin changes at runtime. A missing row means the default.
+model SiteSetting {
+  key       String   @id
+  value     String
+  updatedBy String?
+  updatedAt DateTime @updatedAt
+}

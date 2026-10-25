@@ -12,6 +12,7 @@ interface PracticeSolutionEditorWithAiHintProps
   problemId: string;
   problemCode: string;
   problemTitle: string;
+  showAiHint: boolean;
 }
 
 function getHintText(payload: unknown, depth = 0): string | null {
@@ -60,6 +61,7 @@ export default function PracticeSolutionEditorWithAiHint({
   problemId,
   problemCode,
   problemTitle,
+  showAiHint,
   language,
   code,
   ...editorProps
@@ -139,7 +141,7 @@ export default function PracticeSolutionEditorWithAiHint({
         {...editorProps}
         language={language}
         code={code}
-        showAiHint={process.env.NEXT_PUBLIC_AI_HINTS_ENABLED === "true"}
+        showAiHint={showAiHint}
         aiHintLoading={loading}
         onRequestAiHint={requestAiHint}
       />
