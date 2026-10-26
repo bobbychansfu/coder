@@ -47,6 +47,11 @@ function getJudgingProvider(): JudgingProvider {
   throw new Error(`Unsupported JUDGING_MODE "${mode}".`);
 }
 
+// Practice submissions go to the SFU Judge when JUDGING_MODE is "judge"; otherwise Gemini reviews them
+export function isJudgeMode(): boolean {
+  return (process.env.JUDGING_MODE ?? "gemini").trim().toLowerCase() === "judge";
+}
+
 function getConfiguredProviderName(): PracticeSubmissionPayload["judgedBy"] {
   const mode = (process.env.JUDGING_MODE ?? "gemini").trim().toLowerCase();
   return mode === "gemini" || mode === "judge" ? mode : null;
@@ -60,6 +65,14 @@ export function getSubmissionVerdictLabel(verdict: PracticeSubmissionVerdict | n
       return "Partial";
     case "runtime_error":
       return "Runtime Error";
+    case "time_limit_exceeded":
+      return "Time Limit Exceeded";
+    case "memory_limit_exceeded":
+      return "Memory Limit Exceeded";
+    case "compile_error":
+      return "Compile Error";
+    case "system_error":
+      return "System Error";
     case "failed":
       return "Failed";
     case "wrong_answer":
@@ -67,6 +80,82 @@ export function getSubmissionVerdictLabel(verdict: PracticeSubmissionVerdict | n
     default:
       return "Pending";
   }
+}
+
+// Status codes sent by the SFU Judge (judge.py and judge_utils/sandbox.py)
+function judgeStatusToVerdict(status: string | null | undefined): PracticeSubmissionVerdict {
+  switch (status?.trim().toUpperCase().replace(/\s+/g, "_")) {
+    case "AC":
+    case "ACCEPTED":
+      return "accepted";
+    case "WA":
+    case "WRONG_ANSWER":
+      return "wrong_answer";
+    case "TLE":
+    case "TIME_LIMIT_EXCEEDED":
+      return "time_limit_exceeded";
+    case "MLE":
+    case "MEMORY_LIMIT_EXCEEDED":
+      return "memory_limit_exceeded";
+    case "CE":
+    case "CERR":
+    case "COMPILE_ERROR":
+      return "compile_error";
+    case "RE":
+    case "ERR":
+    case "RUNTIME_ERROR":
+      return "runtime_error";
+    default:
+      return "system_error";
+  }
+}
+
+// Records a judge callback on a practice submission. Returns false when no such submission exists.
+export async function applyPracticeJudgeResult(args: {
+  submissionId: string;
+  status: string | null | undefined;
+  score: number;
+  judgeOutput: string | null | undefined;
+}): Promise<boolean> {
+  const record = await prisma.practiceRunRecord.findUnique({
+    where: { id: args.submissionId },
+    select: { id: true, sessionId: true },
+  });
+  if (!record) {
+    return false;
+  }
+
+  const verdict = judgeStatusToVerdict(args.status);
+  await prisma.practiceRunRecord.update({
+    where: { id: record.id },
+    data: {
+      status: "done",
+      score: args.score,
+      verdict: getSubmissionVerdictLabel(verdict),
+      compilePassed: verdict !== "compile_error" && verdict !== "system_error",
+      feedback: args.judgeOutput || null,
+      stdout: args.judgeOutput || null,
+      stderr: null,
+      errorMessage: null,
+      judgedBy: "judge",
+    },
+  });
+
+  if (verdict === "accepted") {
+    await prisma.practiceSession.updateMany({
+      where: { id: record.sessionId, solvedAt: null },
+      data: { solvedAt: getNow() },
+    });
+  }
+
+  await publishPracticeSubmissionEvent(record.id);
+  logInfo("judge result recorded", {
+    submissionId: record.id,
+    status: args.status,
+    verdict,
+    score: args.score,
+  });
+  return true;
 }
 
 function buildVisibleTests(problem: PracticeProblemRecord): VisiblePracticeTest[] {
@@ -228,7 +317,7 @@ export async function judgePracticeSubmissionEphemerally(args: {
   language: AppLanguage;
   code: string;
 }): Promise<PracticeSubmissionPayload> {
-  if ((process.env.JUDGING_MODE ?? "gemini").trim().toLowerCase() === "judge") {
+  if (isJudgeMode()) {
     throw new Error(
       "Judge mode requires a persisted submission so the asynchronous result callback can be recorded.",
     );
@@ -308,8 +397,7 @@ async function runPracticeSubmissionJudging(args: {
   await publishPracticeSubmissionEvent(record.id);
 
   try {
-    const mode = (process.env.JUDGING_MODE ?? "gemini").trim().toLowerCase();
-    if (mode === "judge") {
+    if (isJudgeMode()) {
       await submitPracticeSubmissionToJudge({
         submissionId: record.id,
         language: codingLanguageToAppLanguage(record.language),
@@ -543,6 +631,14 @@ function normalizeVerdictLabel(verdict: string): PracticeSubmissionPayload["verd
       return "partial";
     case "runtime error":
       return "runtime_error";
+    case "time limit exceeded":
+      return "time_limit_exceeded";
+    case "memory limit exceeded":
+      return "memory_limit_exceeded";
+    case "compile error":
+      return "compile_error";
+    case "system error":
+      return "system_error";
     case "failed":
       return "failed";
     case "wrong answer":

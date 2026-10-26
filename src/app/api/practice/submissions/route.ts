@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/session";
 import {
   createPracticeSubmission,
   findDbUserIdByComputingId,
+  isJudgeMode,
   judgePracticeSubmissionEphemerally,
   parseSubmissionLanguage,
 } from "@/server/practice/submissionService";
@@ -49,7 +50,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    if (user.role === "instructor" || user.role === "admin") {
+    // Gemini reviews instructor code without saving it. The judge replies through a callback,
+    // so in judge mode instructor submissions are saved like everyone else's.
+    if ((user.role === "instructor" || user.role === "admin") && !isJudgeMode()) {
       const payload = await judgePracticeSubmissionEphemerally({
         problemId,
         language,

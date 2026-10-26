@@ -1,5 +1,5 @@
 import { useMemo, useSyncExternalStore } from "react";
-import { LANGUAGE_OPTIONS } from "@/fe/shared/constants/options";
+import { EDITOR_LANGUAGE_OPTIONS, LANGUAGE_OPTIONS } from "@/fe/shared/constants/options";
 
 export type SupportedCodeLanguage = (typeof LANGUAGE_OPTIONS)[number]["value"];
 export type CodeDraftMap = Partial<Record<SupportedCodeLanguage, string>>;
@@ -16,6 +16,7 @@ export interface PersistedCodeDraft {
 export const DEFAULT_CODE_LANGUAGE: SupportedCodeLanguage = "cplusplus";
 
 const SUPPORTED_CODE_LANGUAGES = LANGUAGE_OPTIONS.map((option) => option.value) as SupportedCodeLanguage[];
+const EDITOR_LANGUAGES: readonly string[] = EDITOR_LANGUAGE_OPTIONS.map((option) => option.value);
 const subscribeToCodeDraftStorage = () => () => {};
 
 export function isSupportedCodeLanguage(value: unknown): value is SupportedCodeLanguage {
@@ -60,7 +61,8 @@ function parsePersistedCodeDraft(rawValue: string | null): PersistedCodeDraft | 
     ) as CodeDraftMap;
 
     return {
-      language: parsed.language,
+      // A draft saved in a language the editor no longer offers reopens in the default language
+      language: EDITOR_LANGUAGES.includes(parsed.language) ? parsed.language : DEFAULT_CODE_LANGUAGE,
       drafts,
       updatedAt: typeof parsed.updatedAt === "number" ? parsed.updatedAt : undefined,
       userModifiedAt: typeof parsed.userModifiedAt === "number" ? parsed.userModifiedAt : undefined,
