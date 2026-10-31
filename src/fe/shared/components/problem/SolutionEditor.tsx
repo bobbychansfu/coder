@@ -6,7 +6,7 @@ import { Box, Button, CircularProgress, MenuItem, Select, Typography } from "@mu
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import PlayArrowRoundedIcon from "@mui/icons-material/PlayArrowRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
-import { LANGUAGE_OPTIONS } from "@/fe/shared/constants/options";
+import { EDITOR_LANGUAGE_OPTIONS, LANGUAGE_OPTIONS } from "@/fe/shared/constants/options";
 import styles from "@/fe/contests/styles/ProblemSubmissionPage.module.css";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
@@ -84,7 +84,7 @@ export default function SolutionEditor({
             onChange={(event) => onLanguageChange(event.target.value as string)}
             size="small"
           >
-            {LANGUAGE_OPTIONS.map((option) => (
+            {EDITOR_LANGUAGE_OPTIONS.map((option) => (
               <MenuItem key={option.value} value={option.value}>
                 {option.label}
               </MenuItem>

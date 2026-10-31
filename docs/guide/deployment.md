@@ -60,7 +60,8 @@ Default app URL:
 ### 2.4 External services
 
 - contest submissions and hint requests use `JUDGE_URL`
-- practice judging can use Gemini through `JUDGING_MODE="gemini"`
+- practice submissions go to the judge with `JUDGING_MODE="judge"` (production), or to Gemini with
+  `JUDGING_MODE="gemini"` (local development, where the judge cannot call Coder back)
 
 ---
 
@@ -394,11 +395,14 @@ A contest also needs its own AI hint setting turned on. AI hints use `AI_HINT_UR
 `/request_hint`. Both URLs must be reachable from the machine running Coder. Do not use `127.0.0.1`
 unless the corresponding judge service runs on the same VM.
 
-Practice judging may additionally depend on:
+Practice judging depends on `JUDGING_MODE`:
 
-- `JUDGING_MODE`
-- `GEMINI_API_KEY`
-- `GEMINI_MODEL`
+- `judge`: every practice submission, including instructors', goes to `JUDGE_URL` like a contest
+  submission, and the verdict arrives through the judge callback. Every practice problem needs a
+  numeric `judgeProblemId` that matches a folder in the judge's problem directory.
+- `gemini` (the default when unset): Gemini reviews the code against the problem's example, using
+  `GEMINI_API_KEY` and `GEMINI_MODEL`. Nothing is run, so the verdict is only a guess; use it for
+  local development only.
 
 ---
 

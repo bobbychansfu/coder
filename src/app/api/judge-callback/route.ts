@@ -1,25 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { applyContestJudgeResult } from "@/server/contestJudging";
 import { parseJudgeResult } from "@/server/judge";
-import { publishPracticeSubmissionEvent } from "@/server/practice/submissionService";
-
-const STATUS_MAP: Record<string, string> = {
-  AC: "Accepted",
-  ACCEPTED: "Accepted",
-  WA: "Wrong Answer",
-  WRONG_ANSWER: "Wrong Answer",
-  TLE: "Time Limit Exceeded",
-  TIME_LIMIT_EXCEEDED: "Time Limit Exceeded",
-  CE: "Compile Error",
-  COMPILE_ERROR: "Compile Error",
-  RE: "Runtime Error",
-  ERR: "Runtime Error",
-  RUNTIME_ERROR: "Runtime Error",
-  IERR: "System Error",
-  INTERNALERROR: "System Error",
-  INTERNAL_ERROR: "System Error",
-};
+import { applyPracticeJudgeResult } from "@/server/practice/submissionService";
 
 interface JudgeResultPayload {
   sid: string;
@@ -77,22 +59,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const rawStatus = normalized.status?.trim().toUpperCase().replace(/\s+/g, "_") ?? "";
-    const verdict = STATUS_MAP[rawStatus] ?? normalized.status ?? "Pending";
-    const compilePassed =
-      rawStatus === "AC" ||
-      rawStatus === "ACCEPTED" ||
-      rawStatus === "WA" ||
-      rawStatus === "WRONG_ANSWER" ||
-      rawStatus === "TLE" ||
-      rawStatus === "TIME_LIMIT_EXCEEDED";
-
-    const practiceRecord = await prisma.practiceRunRecord.findUnique({
-      where: { id: practiceSubmissionId },
-      select: { id: true },
+    const found = await applyPracticeJudgeResult({
+      submissionId: practiceSubmissionId,
+      status: normalized.status,
+      score: normalized.score,
+      judgeOutput: normalized.judgeOutput,
     });
 
-    if (!practiceRecord) {
+    if (!found) {
       console.warn("[judge-callback] no matching contest or practice submission found", callbackSummary);
       return NextResponse.json(
         { ok: false, error: "Submission not found" },
@@ -100,27 +74,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    await prisma.practiceRunRecord.update({
-      where: { id: practiceSubmissionId },
-      data: {
-        status: "done",
-        score: normalized.score,
-        verdict,
-        compilePassed,
-        feedback: normalized.judgeOutput || null,
-        stdout: normalized.judgeOutput || null,
-        stderr: null,
-        errorMessage: null,
-        judgedBy: "judge",
-        runtimeMs: normalized.score || null,
-      },
-    });
-    await publishPracticeSubmissionEvent(practiceSubmissionId);
-
     console.info("[judge-callback] practice submission updated", {
       ...callbackSummary,
       target: "practice",
-      finalStatus: verdict,
     });
 
     return NextResponse.json({ ok: true, target: "practice" });

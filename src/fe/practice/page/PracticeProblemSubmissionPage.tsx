@@ -28,6 +28,8 @@ interface PracticeProblemSubmissionPageProps {
   currentUserComputingId?: string;
   // The site-wide AI hint switch, read on the server
   aiHintsEnabled?: boolean;
+  // True when submissions are graded by the SFU Judge rather than reviewed by AI
+  judgeMode?: boolean;
 }
 
 type SupportedLanguage = SupportedCodeLanguage;
@@ -53,6 +55,18 @@ function formatVerdictLabel(verdict: string | null | undefined) {
     case "runtime_error":
     case "runtime error":
       return "Runtime Error";
+    case "time_limit_exceeded":
+    case "time limit exceeded":
+      return "Time Limit Exceeded";
+    case "memory_limit_exceeded":
+    case "memory limit exceeded":
+      return "Memory Limit Exceeded";
+    case "compile_error":
+    case "compile error":
+      return "Compile Error";
+    case "system_error":
+    case "system error":
+      return "System Error";
     case "failed":
       return "Failed";
     default:
@@ -92,6 +106,7 @@ export default function PracticeProblemSubmissionPage({
   persistSubmissions = true,
   currentUserComputingId,
   aiHintsEnabled = false,
+  judgeMode = false,
 }: PracticeProblemSubmissionPageProps) {
   return (
     <PracticeProblemSubmissionPageContent
@@ -100,6 +115,7 @@ export default function PracticeProblemSubmissionPage({
       persistSubmissions={persistSubmissions}
       currentUserComputingId={currentUserComputingId}
       aiHintsEnabled={aiHintsEnabled}
+      judgeMode={judgeMode}
     />
   );
 }
@@ -109,6 +125,7 @@ function PracticeProblemSubmissionPageContent({
   persistSubmissions = true,
   currentUserComputingId,
   aiHintsEnabled = false,
+  judgeMode = false,
 }: PracticeProblemSubmissionPageProps) {
   const router = useRouter();
   const [tab, setTab] = useState("description");
@@ -458,7 +475,7 @@ function PracticeProblemSubmissionPageContent({
   }
 
   const detailWithHistory = { ...detail, submissions: runHistory ?? [] };
-  const persistenceNote = !persistSubmissions ? (
+  const persistenceNote = !persistSubmissions && !judgeMode ? (
     <Box px="20px" pb="4px">
       <Typography variant="body2" color="text.secondary">
         Instructor AI reviews are temporary and are not saved to submission history.
@@ -468,25 +485,42 @@ function PracticeProblemSubmissionPageContent({
 
   const outputSection = hasRun ? (
     <div className={styles.outputSection}>
-      <Typography className={styles.outputTitle}>AI Feedback</Typography>
+      <Typography className={styles.outputTitle}>{judgeMode ? "Result" : "AI Feedback"}</Typography>
       <div className={styles.outputBlock}>
         {isJudging || displayedRunResult?.status === "queued" || displayedRunResult?.status === "running" ? (
           <Box display="flex" alignItems="center" gap="10px">
             <CircularProgress size={14} sx={{ color: "#f3f4f6" }} />
             <span className={styles.outputText}>
-              {submitState === "queued"
-                ? "Queued for AI review..."
-                : "Reviewing your code with AI..."}
+              {judgeMode
+                ? submitState === "queued"
+                  ? "Queued for judging..."
+                  : "Judging your code..."
+                : submitState === "queued"
+                  ? "Queued for AI review..."
+                  : "Reviewing your code with AI..."}
             </span>
           </Box>
         ) : (
           <Box display="flex" flexDirection="column" gap="8px">
-            <span className={styles.outputText}>
-              {displayedRunResult?.feedback ??
-                displayedRunResult?.errorMessage ??
-                displayedRunResult?.verdict ??
-                "No AI feedback returned."}
-            </span>
+            {judgeMode && displayedRunResult?.verdict ? (
+              <span className={styles.outputText}>{displayedRunResult.verdict}</span>
+            ) : null}
+            {judgeMode ? (
+              displayedRunResult?.feedback || displayedRunResult?.errorMessage ? (
+                <span className={styles.outputText}>
+                  {displayedRunResult.feedback ?? displayedRunResult.errorMessage}
+                </span>
+              ) : displayedRunResult?.verdict ? null : (
+                <span className={styles.outputText}>No result returned.</span>
+              )
+            ) : (
+              <span className={styles.outputText}>
+                {displayedRunResult?.feedback ??
+                  displayedRunResult?.errorMessage ??
+                  displayedRunResult?.verdict ??
+                  "No AI feedback returned."}
+              </span>
+            )}
             {displayedRunResult && displayedRunResult.testcases.length > 0 ? (
               <Box display="flex" flexDirection="column" gap="6px">
                 {displayedRunResult.testcases.map((testcase) => (

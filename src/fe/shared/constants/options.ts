@@ -11,6 +11,10 @@ export const LANGUAGE_OPTIONS = [
   { value: "javascript", label: "JavaScript", monacoLanguage: "javascript" },
 ] as const;
 
+// Languages a student can pick in the solution editor. The judge runs TypeScript as plain
+// Node, which rejects type annotations, so TypeScript is hidden until the judge supports it.
+export const EDITOR_LANGUAGE_OPTIONS = LANGUAGE_OPTIONS.filter((option) => option.value !== "typescript");
+
 export const DIFFICULTY_OPTIONS = [
   { value: "easy", label: "Easy" },
   { value: "medium", label: "Medium" },

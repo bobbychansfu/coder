@@ -17,7 +17,8 @@ export async function GET(
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (user.role !== "student") {
+  // Instructors and admins only have saved submissions in judge mode; records are looked up by owner
+  if (!(["student", "instructor", "admin"] as const).includes(user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

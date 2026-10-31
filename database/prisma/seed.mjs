@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { readFileSync } from "node:fs";
 import { Pool } from "pg";
 
 function getDatabaseUrl() {
@@ -320,7 +321,7 @@ async function main() {
       exampleExplanation: "nums[0] + nums[1] = 2 + 7 = 9 == target.",
     },
     "valid-palindrome": {
-      inputFormat: "A single string s consisting of printable ASCII characters.",
+      inputFormat: "One line: the string s. It may contain spaces and punctuation.",
       outputFormat: "Print true if s is a palindrome after keeping only alphanumeric characters and lowercasing; otherwise print false.",
       constraints: "1 <= s.length <= 2 * 10^5\ns consists of printable ASCII characters.",
       exampleInput: "A man, a plan, a canal: Panama",
@@ -328,9 +329,9 @@ async function main() {
       exampleExplanation: "After filtering and lowercasing: \"amanaplanacanalpanama\", which reads the same forwards and backwards.",
     },
     "binary-tree-traversal": {
-      inputFormat: "Level-order representation of the binary tree as space-separated integers, with -1 representing null nodes.",
+      inputFormat: "One line: the tree in level order (top to bottom, left to right), with -1 for a missing child. Children are listed only for nodes that exist, and trailing -1s may be left out.",
       outputFormat: "Three lines: preorder, inorder, and postorder traversals, each as space-separated integers.",
-      constraints: "0 <= number of nodes <= 100\n-100 <= node value <= 100",
+      constraints: "1 <= number of nodes <= 100\n0 <= node value <= 100",
       exampleInput: "1 2 3 4 5 -1 -1",
       exampleOutput: "1 2 4 5 3\n4 2 5 1 3\n4 5 2 3 1",
       exampleExplanation: "Tree has root 1, left child 2 (with children 4 and 5), and right child 3.",
@@ -353,16 +354,16 @@ async function main() {
     },
     "merge-k-sorted-lists": {
       inputFormat: "First line: k (number of lists). Next k lines: each starts with n_i (length) followed by n_i sorted integers.",
-      outputFormat: "All integers from all lists merged and sorted in ascending order on a single line.",
+      outputFormat: "All integers from all lists merged and sorted in ascending order on a single line (an empty line if there are none).",
       constraints: "0 <= k <= 10^4\n0 <= n_i <= 500\n-10^4 <= node value <= 10^4\nTotal nodes across all lists <= 10^4.",
       exampleInput: "3\n3 1 4 5\n3 1 3 4\n2 2 6",
       exampleOutput: "1 1 2 3 4 4 5 6",
       exampleExplanation: "Merging [1,4,5], [1,3,4], [2,6] into one sorted list.",
     },
     "segment-tree-range-query": {
-      inputFormat: "First line: n and q. Second line: n integers (initial array). Next q lines: op l r [val] where op=1 means range-sum query [l,r], op=2 means point update at index l to val.",
+      inputFormat: "First line: n and q. Second line: the n array values a[1..n]. Next q lines: either \"1 l r\" (print a[l] + a[l+1] + ... + a[r]) or \"2 i v\" (set a[i] to v).",
       outputFormat: "For each query of type 1, print the sum on a new line.",
-      constraints: "1 <= n, q <= 10^5\n-10^9 <= array[i] <= 10^9\nIndices are 1-based.",
+      constraints: "1 <= n, q <= 10^5\n-10^9 <= a[i], v <= 10^9\n1 <= l <= r <= n and 1 <= i <= n (indices are 1-based)\nSums can exceed 32 bits, so use 64-bit integers.",
       exampleInput: "5 3\n1 3 5 7 9\n1 1 3\n2 3 6\n1 1 3",
       exampleOutput: "9\n10",
       exampleExplanation: "Initial sum [1,3] = 1+3+5=9. After updating index 3 to 6, sum [1,3] = 1+3+6=10.",
@@ -372,8 +373,8 @@ async function main() {
       outputFormat: "All 0-based starting indices where P occurs in T, space-separated. Print -1 if no match.",
       constraints: "1 <= |T| <= 10^6\n1 <= |P| <= 10^4\nStrings contain only lowercase English letters.",
       exampleInput: "aabxaabaab\naab",
-      exampleOutput: "0 5 7",
-      exampleExplanation: "Pattern \"aab\" starts at positions 0, 5, and 7 in the text.",
+      exampleOutput: "0 4 7",
+      exampleExplanation: "Pattern \"aab\" starts at positions 0, 4 and 7 in the text. Matches may overlap.",
     },
     "longest-increasing-subsequence": {
       inputFormat: "First line: integer n. Second line: n space-separated integers.",
@@ -385,7 +386,7 @@ async function main() {
     },
     "reverse-linked-list": {
       inputFormat: "First line: n (number of nodes). Second line: n space-separated integers (node values).",
-      outputFormat: "Node values of the reversed list, space-separated.",
+      outputFormat: "Node values of the reversed list, space-separated (an empty line if the list is empty).",
       constraints: "0 <= n <= 5000\n-5000 <= node value <= 5000",
       exampleInput: "5\n1 2 3 4 5",
       exampleOutput: "5 4 3 2 1",
@@ -405,13 +406,13 @@ async function main() {
       constraints: "1 <= word length <= 5\n1 <= word list size <= 500\nAll words consist of lowercase English letters.",
       exampleInput: "hit\ncog\n6\nhot\ndot\ndog\nlot\nlog\ncog",
       exampleOutput: "5",
-      exampleExplanation: "hit → hot → dot → dog → cog is 5 steps.",
+      exampleExplanation: "hit → hot → dot → dog → cog uses 5 words (4 changes).",
     },
     "valid-parentheses": {
       inputFormat: "A single string containing only '(', ')', '{', '}', '[', and ']'.",
       outputFormat: "Print true if the brackets are valid; otherwise false.",
       constraints: "1 <= s.length <= 10^4",
-      exampleInput: "()[]{} ",
+      exampleInput: "()[]{}",
       exampleOutput: "true",
       exampleExplanation: "Each bracket is properly opened and closed.",
     },
@@ -424,8 +425,8 @@ async function main() {
       exampleExplanation: "Topological order 0→1→2→3 (or 0→2→1→3) is valid; no cycle exists.",
     },
     "serialize-binary-tree": {
-      inputFormat: "Level-order representation of the binary tree as space-separated integers, with 'null' for missing nodes.",
-      outputFormat: "Serialize the tree to a string, then deserialize it back. Print the level-order of the reconstructed tree.",
+      inputFormat: "One line: the tree in level order (top to bottom, left to right), with 'null' for a missing child. Children are listed only for nodes that exist, and trailing nulls may be left out. An empty line is an empty tree.",
+      outputFormat: "Serialize the tree to a string in a format of your choice, deserialize that string, and print the rebuilt tree in the same level-order format as the input, without trailing nulls.",
       constraints: "0 <= number of nodes <= 10^4\n-1000 <= node value <= 1000",
       exampleInput: "1 2 3 null null 4 5",
       exampleOutput: "1 2 3 null null 4 5",
@@ -449,7 +450,7 @@ async function main() {
     },
     "n-queens-problem": {
       inputFormat: "A single integer n.",
-      outputFormat: "All distinct solutions. Each solution is printed as n lines of length n using '.' and 'Q', with a blank line between solutions.",
+      outputFormat: "Every distinct solution as n lines of n characters ('Q' for a queen, '.' for an empty square), with one blank line between solutions. List the solutions in order of the queen's column in the first row, then in the second row, and so on (the order you find them in if each row tries its columns from left to right). If there is no solution, print nothing.",
       constraints: "1 <= n <= 9",
       exampleInput: "4",
       exampleOutput: ".Q..\n...Q\nQ...\n..Q.\n\n..Q.\nQ...\n...Q\n.Q..",
@@ -485,7 +486,7 @@ async function main() {
       constraints: "1 <= n <= 10^5\n0 <= prices[i] <= 10^4",
       exampleInput: "6\n7 1 5 3 6 4",
       exampleOutput: "5",
-      exampleExplanation: "Buy on day 2 (price=1), sell on day 5 (price=6), profit = 5.",
+      exampleExplanation: "Buy at price 1 and sell later at price 6, for a profit of 6 - 1 = 5.",
     },
     "longest-common-subsequence": {
       inputFormat: "First line: string s1. Second line: string s2.",
@@ -496,7 +497,7 @@ async function main() {
       exampleExplanation: "LCS is \"ace\" with length 3.",
     },
     "edit-distance": {
-      inputFormat: "First line: string word1. Second line: string word2.",
+      inputFormat: "First line: word1. Second line: word2. Either line may be empty.",
       outputFormat: "Minimum edit distance (number of insert/delete/replace operations).",
       constraints: "0 <= |word1|, |word2| <= 500\nStrings contain only lowercase English letters.",
       exampleInput: "horse\nros",
@@ -504,15 +505,15 @@ async function main() {
       exampleExplanation: "horse → rorse (replace h→r) → rose (remove r) → ros (remove e): 3 operations.",
     },
     "merge-intervals": {
-      inputFormat: "First line: n. Next n lines: two integers start_i and end_i per interval.",
-      outputFormat: "Merged intervals, one per line as two space-separated integers.",
+      inputFormat: "First line: n. Next n lines: two integers start_i and end_i per interval, in any order.",
+      outputFormat: "The merged intervals sorted by start, one per line as two space-separated integers.",
       constraints: "1 <= n <= 10^4\n0 <= start_i <= end_i <= 10^4",
       exampleInput: "4\n1 3\n2 6\n8 10\n15 18",
       exampleOutput: "1 6\n8 10\n15 18",
       exampleExplanation: "[1,3] and [2,6] overlap and merge to [1,6]. The other intervals are disjoint.",
     },
     "longest-substring-without-repeating": {
-      inputFormat: "A single string s.",
+      inputFormat: "One line: the string s. It may contain spaces and may be empty.",
       outputFormat: "Length of the longest substring without repeating characters.",
       constraints: "0 <= s.length <= 5 * 10^4\ns consists of printable ASCII characters.",
       exampleInput: "pwwkew",
@@ -521,8 +522,8 @@ async function main() {
     },
     "find-median-data-stream": {
       inputFormat: "First line: q. Next q lines: either 'add x' to insert x, or 'median' to query the current median.",
-      outputFormat: "For each 'median' query, print the median. If even number of elements, print the average as a decimal.",
-      constraints: "1 <= q <= 5 * 10^4\n-10^5 <= x <= 10^5",
+      outputFormat: "For each 'median' query, print the median of all numbers added so far with exactly one digit after the decimal point (for example 2.0 or 1.5). With an even count, the median is the average of the two middle numbers.",
+      constraints: "1 <= q <= 5 * 10^4\n-10^5 <= x <= 10^5\nA 'median' query only comes after at least one 'add'.",
       exampleInput: "5\nadd 1\nadd 2\nmedian\nadd 3\nmedian",
       exampleOutput: "1.5\n2.0",
       exampleExplanation: "After [1,2] median is 1.5. After [1,2,3] median is 2.",
@@ -545,11 +546,11 @@ async function main() {
     },
     "alien-dictionary": {
       inputFormat: "First line: n (number of words). Next n lines: one word each (sorted in the alien language's lexicographic order).",
-      outputFormat: "A string of unique characters in the derived lexicographic order. If no valid order exists, print \"\".",
+      outputFormat: "One line: every letter that appears in the words, in alien order. If no valid order exists, print an empty line.",
       constraints: "1 <= n <= 100\n1 <= word length <= 100\nWords contain only lowercase English letters.",
-      exampleInput: "4\nwrt\nwrf\ner\nett",
+      exampleInput: "5\nwrt\nwrf\ner\nett\nrftt",
       exampleOutput: "wertf",
-      exampleExplanation: "Comparing adjacent words: t<f, w<e, r<t, e<r. Topological sort gives w→e→r→t→f.",
+      exampleExplanation: "Neighbouring words give t<f (wrt, wrf), w<e (wrf, er), r<t (er, ett) and e<r (ett, rftt), so the order is w, e, r, t, f.",
     },
   };
 
@@ -565,7 +566,7 @@ async function main() {
     { code: "longest-increasing-subsequence", title: "Longest Increasing Subsequence", statement: "Given an integer array nums, return the length of the longest strictly increasing subsequence. A subsequence is derived from the array by deleting some or no elements without changing the relative order of the remaining elements.", difficulty: "Medium", points: 250, ...problemDetails["longest-increasing-subsequence"] },
     { code: "reverse-linked-list", title: "Reverse Linked List", statement: "Given the head of a singly linked list, reverse the list and return the new head. Implement the solution iteratively in O(n) time and O(1) space.", difficulty: "Easy", points: 100, ...problemDetails["reverse-linked-list"] },
     { code: "maximum-subarray-sum", title: "Maximum Subarray Sum", statement: "Given an integer array nums (which may contain negative numbers), find the contiguous subarray with the largest sum and return that sum. Use Kadane's algorithm for an O(n) solution.", difficulty: "Medium", points: 200, ...problemDetails["maximum-subarray-sum"] },
-    { code: "word-ladder", title: "Word Ladder", statement: "Given two words beginWord and endWord, and a dictionary wordList, return the number of words in the shortest transformation sequence from beginWord to endWord. Each step changes exactly one letter, and each intermediate word must be in wordList.", difficulty: "Hard", points: 350, ...problemDetails["word-ladder"] },
+    { code: "word-ladder", title: "Word Ladder", statement: "Given two words beginWord and endWord, and a dictionary wordList, return the number of words in the shortest transformation sequence from beginWord to endWord. Each step changes exactly one letter, and each intermediate word must be in wordList. All words have the same length. beginWord does not need to be in wordList, but endWord does: if it is missing, the answer is 0.", difficulty: "Hard", points: 350, ...problemDetails["word-ladder"] },
     { code: "valid-parentheses", title: "Valid Parentheses", statement: "Given a string s containing only the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid. Brackets must close in the correct order and every open bracket must have a matching close bracket.", difficulty: "Easy", points: 100, ...problemDetails["valid-parentheses"] },
     { code: "course-schedule", title: "Course Schedule", statement: "There are n courses labeled 0 to n-1. You are given an array of prerequisite pairs where [a, b] means you must take course b before course a. Determine if it is possible to finish all courses (i.e., no circular dependency exists).", difficulty: "Medium", points: 250, ...problemDetails["course-schedule"] },
     { code: "serialize-binary-tree", title: "Serialize Binary Tree", statement: "Design an algorithm to serialize a binary tree to a string and deserialize that string back to the original tree structure. Your codec should work for any valid binary tree.", difficulty: "Hard", points: 300, ...problemDetails["serialize-binary-tree"] },
@@ -578,17 +579,52 @@ async function main() {
     { code: "best-time-to-buy-stock", title: "Best Time to Buy and Sell Stock", statement: "You are given an array prices where prices[i] is the price of a stock on day i. You want to maximize profit by choosing a single day to buy and a later day to sell. Return the maximum profit achievable, or 0 if no profit is possible.", difficulty: "Easy", points: 100, ...problemDetails["best-time-to-buy-stock"] },
     { code: "longest-common-subsequence", title: "Longest Common Subsequence", statement: "Given two strings text1 and text2, return the length of their longest common subsequence. A common subsequence is a sequence that appears in both strings in the same relative order, but not necessarily contiguously.", difficulty: "Medium", points: 250, ...problemDetails["longest-common-subsequence"] },
     { code: "edit-distance", title: "Edit Distance", statement: "Given two strings word1 and word2, return the minimum number of operations required to convert word1 to word2. Allowed operations: insert a character, delete a character, or replace a character.", difficulty: "Hard", points: 350, ...problemDetails["edit-distance"] },
-    { code: "merge-intervals", title: "Merge Intervals", statement: "Given an array of intervals where intervals[i] = [start_i, end_i], merge all overlapping intervals and return an array of non-overlapping intervals that cover all the intervals in the input.", difficulty: "Medium", points: 200, ...problemDetails["merge-intervals"] },
+    { code: "merge-intervals", title: "Merge Intervals", statement: "Given an array of intervals where intervals[i] = [start_i, end_i], merge all overlapping intervals and return an array of non-overlapping intervals that cover all the intervals in the input. Intervals that touch, such as [1,4] and [4,5], count as overlapping.", difficulty: "Medium", points: 200, ...problemDetails["merge-intervals"] },
     { code: "longest-substring-without-repeating", title: "Longest Substring Without Repeating", statement: "Given a string s, find the length of the longest substring that does not contain repeating characters. Use a sliding window approach for an O(n) solution.", difficulty: "Medium", points: 250, ...problemDetails["longest-substring-without-repeating"] },
     { code: "find-median-data-stream", title: "Find Median in Data Stream", statement: "Design a data structure that supports two operations: addNum(int num) inserts a number into the data structure, and findMedian() returns the median of all current elements. Use two heaps to achieve O(log n) insertion and O(1) median retrieval.", difficulty: "Hard", points: 400, ...problemDetails["find-median-data-stream"] },
     { code: "contains-duplicate", title: "Contains Duplicate", statement: "Given an integer array nums, return true if any value appears at least twice in the array, and return false if every element is distinct.", difficulty: "Easy", points: 100, ...problemDetails["contains-duplicate"] },
     { code: "product-of-array-except-self", title: "Product of Array Except Self", statement: "Given an integer array nums, return an array answer such that answer[i] is equal to the product of all the elements of nums except nums[i]. You must solve it in O(n) time without using the division operation.", difficulty: "Medium", points: 200, ...problemDetails["product-of-array-except-self"] },
-    { code: "alien-dictionary", title: "Alien Dictionary", statement: "You are given a list of words from an alien language's dictionary, sorted lexicographically by the rules of this language. Derive the order of characters in the alien alphabet using topological sort. Return an empty string if no valid ordering exists.", difficulty: "Hard", points: 450, ...problemDetails["alien-dictionary"] },
+    { code: "alien-dictionary", title: "Alien Dictionary", statement: "You are given a list of words from an alien language's dictionary, sorted lexicographically by the rules of this language. Derive the order of the letters in the alien alphabet using topological sort. If several orders fit the dictionary, print the one that comes first alphabetically (always place the smallest letter that can come next). If no order fits, because the words contradict each other or a word comes before its own prefix (such as \"abc\" before \"ab\"), print an empty line.", difficulty: "Hard", points: 450, ...problemDetails["alien-dictionary"] },
   ];
+
+  // Judge problem folders on the judge VM (sfu_judge_problems repo)
+  const judgeProblemIds = {
+    "two-sum": "1149",
+    "valid-palindrome": "1150",
+    "binary-tree-traversal": "1151",
+    "graphs-shortest-path": "1152",
+    "dynamic-programming-fundamentals": "1153",
+    "merge-k-sorted-lists": "1154",
+    "segment-tree-range-query": "1155",
+    "strings-kmp": "1156",
+    "longest-increasing-subsequence": "1157",
+    "reverse-linked-list": "1158",
+    "maximum-subarray-sum": "1159",
+    "word-ladder": "1160",
+    "valid-parentheses": "1161",
+    "course-schedule": "1162",
+    "serialize-binary-tree": "1163",
+    "climbing-stairs": "1164",
+    "house-robber": "1165",
+    "n-queens-problem": "1166",
+    "missing-number": "1167",
+    "coin-change": "1168",
+    "trapping-rain-water": "1169",
+    "best-time-to-buy-stock": "1170",
+    "longest-common-subsequence": "1171",
+    "edit-distance": "1172",
+    "merge-intervals": "1173",
+    "longest-substring-without-repeating": "1174",
+    "find-median-data-stream": "1175",
+    "contains-duplicate": "1176",
+    "product-of-array-except-self": "1177",
+    "alien-dictionary": "1178"
+  };
 
   await prisma.problem.createMany({
     data: problemRecords.map((problem) => ({
       ...problem,
+      judgeProblemId: judgeProblemIds[problem.code] ?? null,
       source: "BOTH",
     })),
   });
@@ -596,13 +632,21 @@ async function main() {
   const problems = await prisma.problem.findMany();
   const problemByCode = new Map(problems.map((problem) => [problem.code, problem]));
 
+  // C starters read the input for each problem; the other languages use the generic template
+  const cStarters = JSON.parse(
+    readFileSync(new URL("./seed-data/practice-c-starters.json", import.meta.url), "utf8"),
+  );
+
   await prisma.problemStarterCode.createMany({
-    data: problems.flatMap((problem) =>
-      buildStarterCodes(problem.code, problem.title).map((starterCode) => ({
+    data: problems.flatMap((problem) => [
+      ...buildStarterCodes(problem.code, problem.title).map((starterCode) => ({
         problemId: problem.id,
         ...starterCode,
       })),
-    ),
+      ...(cStarters[problem.code]
+        ? [{ problemId: problem.id, language: "C", code: cStarters[problem.code], isAiGenerated: false, generatedFrom: null }]
+        : []),
+    ]),
   });
 
   const topicsByCode = {

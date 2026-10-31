@@ -7,6 +7,10 @@ export const PRACTICE_SUBMISSION_VERDICTS = [
   "wrong_answer",
   "partial",
   "runtime_error",
+  "time_limit_exceeded",
+  "memory_limit_exceeded",
+  "compile_error",
+  "system_error",
   "failed",
 ] as const;
 
